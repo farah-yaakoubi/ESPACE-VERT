@@ -1,0 +1,143 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "about": "Quiénes Somos",
+    "activities": "Nuestras Actividades",
+    "brands": "Nuestras Marcas",
+    "contact": "Contacto",
+    "ctaButton": "Contáctenos"
+  },
+  "activities": {
+    "seeds": "Semillas y Plantas",
+    "irrigation": "Riego",
+    "fertilization": "Fertilización",
+    "machinery": "Maquinaria y Jardinería",
+    "spraying": "Pulverización"
+  },
+  "brands": {
+    "fertivert": "Fertivert",
+    "pulvert": "Pulvert",
+    "matar": "Matar"
+  },
+  "hero": {
+    "title": "Líder en Agricultura\nModerna en Túnez",
+    "subtitle": "Soluciones innovadoras para agricultura, riego y espacios verdes desde 1994",
+    "cta": "Descubre nuestras soluciones",
+    "quote": "Solicitar presupuesto"
+  },
+  "home": {
+    "title": "Bienvenido",
+    "subtitle": "Descubre nuestros productos y servicios",
+    "news": "Noticias",
+    "stayInformed": "Mantente Informado",
+    "allNews": "Todas las noticias",
+    "ourActivities": "Nuestras Actividades",
+    "ourBrands": "Nuestras Marcas"
+  },
+  "about": {
+    "title": "Quiénes Somos",
+    "subtitle": "Más de 30 años de experiencia",
+    "history": "Historia",
+    "evolution": "Evolución",
+    "mission": "Nuestra Misión",
+    "values": "Nuestros Valores"
+  },
+  "contact": {
+    "title": "Contáctenos",
+    "subtitle": "Nuestros expertos están disponibles",
+    "name": "Nombre Completo",
+    "email": "Email",
+    "phone": "Teléfono",
+    "subject": "Asunto",
+    "message": "Tu mensaje",
+    "send": "Enviar",
+    "requestQuote": "Solicitar presupuesto",
+    "company": "Empresa",
+    "product": "Producto",
+    "quantity": "Cantidad",
+    "details": "Detalles",
+    "submit": "Enviar"
+  },
+  "fertivert": {
+    "title": "Fertivert — Fertilización Profesional",
+    "subtitle": "Soluciones completas de fertilización y bioestimulación",
+    "pro": "Fertivert Pro",
+    "garden": "Fertivert Garden",
+    "since": "Desde 2001",
+    "allProducts": "Todos los productos",
+    "categories": {
+      "all": "Todos los productos",
+      "substrate": "Sustratos",
+      "base": "Abonos de Fondo",
+      "organic": "Abonos Orgánicos",
+      "specialized": "Abonos Especializados",
+      "biostimulants": "Bioestimulantes",
+      "soluble": "Soluble",
+      "liquid": "Líquido",
+      "lawn": "Césped"
+    },
+    "filters": {
+      "all": "Todos",
+      "category": "Categoría",
+      "search": "Buscar un producto...",
+      "clear": "Limpiar"
+    },
+    "facebook": "Seguir en Facebook",
+    "contactForPrice": "Contáctenos para el precio",
+    "requestQuote": "Solicitar presupuesto",
+    "viewDetails": "Ver detalles",
+    "stats": {
+      "products": "Productos",
+      "categories": "Categorías",
+      "years": "Años",
+      "clients": "Clientes"
+    }
+  },
+  "pulvert": {
+    "title": "Pulvert — Pulverizadores & Accesorios",
+    "subtitle": "Equipos de pulverización profesionales"
+  },
+  "matar": {
+    "title": "Matar — Riego & Regado",
+    "subtitle": "Soluciones de riego completas"
+  },
+  "seeds": {
+    "title": "Semillas y Plantas",
+    "subtitle": "Selección de las mejores variedades",
+    "calculator": "Calculadora IA",
+    "calculatorDesc": "Recomendaciones personalizadas",
+    "selectCulture": "Elige tu cultivo",
+    "surface": "Área",
+    "calculate": "Calcular",
+    "results": "Resultados"
+  },
+  "footer": {
+    "followUs": "Síguenos",
+    "quickLinks": "Enlaces Rápidos",
+    "ourBrands": "Nuestras Marcas",
+    "contact": "Contacto",
+    "agencies": "Nuestras Agencias",
+    "legal": "Aviso Legal",
+    "privacy": "Privacidad",
+    "terms": "Términos",
+    "allRightsReserved": "Todos los derechos reservados",
+    "openMaps": "Abrir Maps",
+    "directions": "Cómo llegar",
+    "appointment": "Reservar cita"
+  },
+  "common": {
+    "learnMore": "Saber más",
+    "viewAll": "Ver todo",
+    "close": "Cerrar",
+    "loading": "Cargando...",
+    "error": "Ocurrió un error",
+    "call": "Llamar",
+    "quote": "Solicitar presupuesto",
+    "discover": "Descubrir →",
+    "sendMessage": "Enviar mensaje",
+    "followFacebook": "Seguir en Facebook",
+    "backToTop": "Volver arriba",
+    "goToBottom": "Ir abajo",
+    "scrollProgress": "Progreso"
+  }
+}

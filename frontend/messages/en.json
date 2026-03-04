@@ -1,0 +1,143 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About Us",
+    "activities": "Our Activities",
+    "brands": "Our Brands",
+    "contact": "Contact",
+    "ctaButton": "Contact Us"
+  },
+  "activities": {
+    "seeds": "Seeds & Plants",
+    "irrigation": "Irrigation",
+    "fertilization": "Fertilization",
+    "machinery": "Machinery & Gardening",
+    "spraying": "Spraying"
+  },
+  "brands": {
+    "fertivert": "Fertivert",
+    "pulvert": "Pulvert",
+    "matar": "Matar"
+  },
+  "hero": {
+    "title": "Leader in Modern\nAgriculture in Tunisia",
+    "subtitle": "Innovative solutions for agriculture, irrigation and green spaces since 1994",
+    "cta": "Discover our solutions",
+    "quote": "Request a quote"
+  },
+  "home": {
+    "title": "Welcome",
+    "subtitle": "Discover our products and services",
+    "news": "News",
+    "stayInformed": "Stay Informed",
+    "allNews": "All News",
+    "ourActivities": "Our Activities",
+    "ourBrands": "Our Brands"
+  },
+  "about": {
+    "title": "About Us",
+    "subtitle": "Over 30 years of expertise",
+    "history": "History",
+    "evolution": "Evolution",
+    "mission": "Our Mission",
+    "values": "Our Values"
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "Our experts are available",
+    "name": "Full Name",
+    "email": "Email",
+    "phone": "Phone",
+    "subject": "Subject",
+    "message": "Your message",
+    "send": "Send",
+    "requestQuote": "Request a Quote",
+    "company": "Company",
+    "product": "Product",
+    "quantity": "Quantity",
+    "details": "Details",
+    "submit": "Submit"
+  },
+  "fertivert": {
+    "title": "Fertivert — Professional Fertilization",
+    "subtitle": "Complete fertilization and biostimulation solutions",
+    "pro": "Fertivert Pro",
+    "garden": "Fertivert Garden",
+    "since": "Since 2001",
+    "allProducts": "All products",
+    "categories": {
+      "all": "All products",
+      "substrate": "Growing Media",
+      "base": "Base Fertilizers",
+      "organic": "Organic Fertilizers",
+      "specialized": "Specialized Fertilizers",
+      "biostimulants": "Biostimulants",
+      "soluble": "Soluble",
+      "liquid": "Liquid",
+      "lawn": "Lawn"
+    },
+    "filters": {
+      "all": "All",
+      "category": "Category",
+      "search": "Search a product...",
+      "clear": "Clear"
+    },
+    "facebook": "Follow on Facebook",
+    "contactForPrice": "Contact us for pricing",
+    "requestQuote": "Request a quote",
+    "viewDetails": "View details",
+    "stats": {
+      "products": "Products",
+      "categories": "Categories",
+      "years": "Years",
+      "clients": "Clients"
+    }
+  },
+  "pulvert": {
+    "title": "Pulvert — Sprayers & Accessories",
+    "subtitle": "Professional spraying equipment"
+  },
+  "matar": {
+    "title": "Matar — Irrigation & Watering",
+    "subtitle": "Complete irrigation solutions"
+  },
+  "seeds": {
+    "title": "Seeds & Plants",
+    "subtitle": "Selection of the best varieties",
+    "calculator": "AI Calculator",
+    "calculatorDesc": "Personalized recommendations",
+    "selectCulture": "Choose your crop",
+    "surface": "Area",
+    "calculate": "Calculate",
+    "results": "Results"
+  },
+  "footer": {
+    "followUs": "Follow Us",
+    "quickLinks": "Quick Links",
+    "ourBrands": "Our Brands",
+    "contact": "Contact",
+    "agencies": "Our Agencies",
+    "legal": "Legal Notice",
+    "privacy": "Privacy",
+    "terms": "T&C",
+    "allRightsReserved": "All rights reserved",
+    "openMaps": "Open Maps",
+    "directions": "Directions",
+    "appointment": "Book appointment"
+  },
+  "common": {
+    "learnMore": "Learn more",
+    "viewAll": "View all",
+    "close": "Close",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "call": "Call",
+    "quote": "Request a quote",
+    "discover": "Discover →",
+    "sendMessage": "Send a message",
+    "followFacebook": "Follow on Facebook",
+    "backToTop": "Back to top",
+    "goToBottom": "Go to bottom",
+    "scrollProgress": "Progress"
+  }
+}

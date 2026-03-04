@@ -1,0 +1,143 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "Chi Siamo",
+    "activities": "Le Nostre Attività",
+    "brands": "I Nostri Marchi",
+    "contact": "Contatto",
+    "ctaButton": "Contattaci"
+  },
+  "activities": {
+    "seeds": "Semi e Piante",
+    "irrigation": "Irrigazione",
+    "fertilization": "Fertilizzazione",
+    "machinery": "Macchinari e Giardinaggio",
+    "spraying": "Irrorazione"
+  },
+  "brands": {
+    "fertivert": "Fertivert",
+    "pulvert": "Pulvert",
+    "matar": "Matar"
+  },
+  "hero": {
+    "title": "Leader dell'Agricoltura\nModerna in Tunisia",
+    "subtitle": "Soluzioni innovative per agricoltura, irrigazione e spazi verdi dal 1994",
+    "cta": "Scopri le nostre soluzioni",
+    "quote": "Richiedi un preventivo"
+  },
+  "home": {
+    "title": "Benvenuto",
+    "subtitle": "Scopri i nostri prodotti e servizi",
+    "news": "Notizie",
+    "stayInformed": "Rimani Aggiornato",
+    "allNews": "Tutte le notizie",
+    "ourActivities": "Le Nostre Attività",
+    "ourBrands": "I Nostri Marchi"
+  },
+  "about": {
+    "title": "Chi Siamo",
+    "subtitle": "Oltre 30 anni di esperienza",
+    "history": "Storia",
+    "evolution": "Evoluzione",
+    "mission": "La Nostra Missione",
+    "values": "I Nostri Valori"
+  },
+  "contact": {
+    "title": "Contattaci",
+    "subtitle": "I nostri esperti sono disponibili",
+    "name": "Nome Completo",
+    "email": "Email",
+    "phone": "Telefono",
+    "subject": "Oggetto",
+    "message": "Il tuo messaggio",
+    "send": "Invia",
+    "requestQuote": "Richiedi preventivo",
+    "company": "Azienda",
+    "product": "Prodotto",
+    "quantity": "Quantità",
+    "details": "Dettagli",
+    "submit": "Invia"
+  },
+  "fertivert": {
+    "title": "Fertivert — Fertilizzazione Professionale",
+    "subtitle": "Soluzioni complete di fertilizzazione e biostimolazione",
+    "pro": "Fertivert Pro",
+    "garden": "Fertivert Garden",
+    "since": "Dal 2001",
+    "allProducts": "Tutti i prodotti",
+    "categories": {
+      "all": "Tutti i prodotti",
+      "substrate": "Substrati",
+      "base": "Concimi di Fondo",
+      "organic": "Concimi Organici",
+      "specialized": "Concimi Specializzati",
+      "biostimulants": "Biostimolanti",
+      "soluble": "Solubile",
+      "liquid": "Liquido",
+      "lawn": "Prato"
+    },
+    "filters": {
+      "all": "Tutti",
+      "category": "Categoria",
+      "search": "Cerca un prodotto...",
+      "clear": "Cancella"
+    },
+    "facebook": "Segui su Facebook",
+    "contactForPrice": "Contattaci per il prezzo",
+    "requestQuote": "Richiedi preventivo",
+    "viewDetails": "Vedi dettagli",
+    "stats": {
+      "products": "Prodotti",
+      "categories": "Categorie",
+      "years": "Anni",
+      "clients": "Clienti"
+    }
+  },
+  "pulvert": {
+    "title": "Pulvert — Irroratori & Accessori",
+    "subtitle": "Attrezzatura professionale per irrorazione"
+  },
+  "matar": {
+    "title": "Matar — Irrigazione & Annaffiatura",
+    "subtitle": "Soluzioni di irrigazione complete"
+  },
+  "seeds": {
+    "title": "Semi e Piante",
+    "subtitle": "Selezione delle migliori varietà",
+    "calculator": "Calcolatore IA",
+    "calculatorDesc": "Raccomandazioni personalizzate",
+    "selectCulture": "Scegli la tua coltura",
+    "surface": "Superficie",
+    "calculate": "Calcola",
+    "results": "Risultati"
+  },
+  "footer": {
+    "followUs": "Seguici",
+    "quickLinks": "Link Rapidi",
+    "ourBrands": "I Nostri Marchi",
+    "contact": "Contatto",
+    "agencies": "Le Nostre Agenzie",
+    "legal": "Note Legali",
+    "privacy": "Privacy",
+    "terms": "Termini",
+    "allRightsReserved": "Tutti i diritti riservati",
+    "openMaps": "Apri Maps",
+    "directions": "Indicazioni",
+    "appointment": "Prenota appuntamento"
+  },
+  "common": {
+    "learnMore": "Scopri di più",
+    "viewAll": "Vedi tutto",
+    "close": "Chiudi",
+    "loading": "Caricamento...",
+    "error": "Si è verificato un errore",
+    "call": "Chiama",
+    "quote": "Richiedi preventivo",
+    "discover": "Scopri →",
+    "sendMessage": "Invia un messaggio",
+    "followFacebook": "Segui su Facebook",
+    "backToTop": "Torna in cima",
+    "goToBottom": "Vai in fondo",
+    "scrollProgress": "Progresso"
+  }
+}

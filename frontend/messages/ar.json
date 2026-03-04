@@ -1,0 +1,143 @@
+{
+  "nav": {
+    "home": "الرئيسية",
+    "about": "من نحن",
+    "activities": "أنشطتنا",
+    "brands": "علاماتنا التجارية",
+    "contact": "اتصل بنا",
+    "ctaButton": "اتصل بنا"
+  },
+  "activities": {
+    "seeds": "البذور والنباتات",
+    "irrigation": "الري",
+    "fertilization": "التسميد",
+    "machinery": "الآلات والبستنة",
+    "spraying": "الرش"
+  },
+  "brands": {
+    "fertivert": "فرتيفارت",
+    "pulvert": "بولفارت",
+    "matar": "مطر"
+  },
+  "hero": {
+    "title": "رائد الزراعة الحديثة\nفي تونس",
+    "subtitle": "حلول مبتكرة للزراعة والري والمساحات الخضراء منذ 1994",
+    "cta": "اكتشف حلولنا",
+    "quote": "طلب عرض أسعار"
+  },
+  "home": {
+    "title": "مرحبا بكم",
+    "subtitle": "اكتشف منتجاتنا وخدماتنا",
+    "news": "الأخبار",
+    "stayInformed": "ابق على اطلاع",
+    "allNews": "جميع الأخبار",
+    "ourActivities": "أنشطتنا",
+    "ourBrands": "علاماتنا التجارية"
+  },
+  "about": {
+    "title": "من نحن",
+    "subtitle": "أكثر من 30 عامًا من الخبرة",
+    "history": "التاريخ",
+    "evolution": "التطور",
+    "mission": "مهمتنا",
+    "values": "قيمنا"
+  },
+  "contact": {
+    "title": "اتصل بنا",
+    "subtitle": "خبراؤنا في خدمتكم",
+    "name": "الاسم الكامل",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "subject": "الموضوع",
+    "message": "رسالتك",
+    "send": "إرسال",
+    "requestQuote": "طلب عرض أسعار",
+    "company": "الشركة",
+    "product": "المنتج",
+    "quantity": "الكمية",
+    "details": "التفاصيل",
+    "submit": "تقديم"
+  },
+  "fertivert": {
+    "title": "فرتيفارت — التسميد الاحترافي",
+    "subtitle": "حلول التسميد والتحفيز الحيوي الشاملة",
+    "pro": "فرتيفارت برو",
+    "garden": "فرتيفارت غاردن",
+    "since": "منذ 2001",
+    "allProducts": "جميع المنتجات",
+    "categories": {
+      "all": "جميع المنتجات",
+      "substrate": "ركائز الزراعة",
+      "base": "أسمدة أساسية",
+      "organic": "أسمدة عضوية",
+      "specialized": "أسمدة متخصصة",
+      "biostimulants": "المحفزات الحيوية",
+      "soluble": "قابل للذوبان",
+      "liquid": "سائل",
+      "lawn": "العشب"
+    },
+    "filters": {
+      "all": "الكل",
+      "category": "الفئة",
+      "search": "البحث عن منتج...",
+      "clear": "مسح"
+    },
+    "facebook": "تابع على فيسبوك",
+    "contactForPrice": "اتصل بنا للسعر",
+    "requestQuote": "طلب عرض أسعار",
+    "viewDetails": "عرض التفاصيل",
+    "stats": {
+      "products": "منتج",
+      "categories": "فئة",
+      "years": "سنة",
+      "clients": "عميل"
+    }
+  },
+  "pulvert": {
+    "title": "بولفارت — الرشاشات والملحقات",
+    "subtitle": "معدات رش احترافية"
+  },
+  "matar": {
+    "title": "مطر — الري والسقي",
+    "subtitle": "حلول الري الشاملة"
+  },
+  "seeds": {
+    "title": "البذور والنباتات",
+    "subtitle": "اختيار أفضل الأصناف",
+    "calculator": "حاسبة الذكاء الاصطناعي",
+    "calculatorDesc": "توصيات مخصصة",
+    "selectCulture": "اختر محصولك",
+    "surface": "المساحة",
+    "calculate": "احسب",
+    "results": "النتائج"
+  },
+  "footer": {
+    "followUs": "تابعنا",
+    "quickLinks": "روابط سريعة",
+    "ourBrands": "علاماتنا التجارية",
+    "contact": "اتصل بنا",
+    "agencies": "وكالاتنا",
+    "legal": "إشعار قانوني",
+    "privacy": "الخصوصية",
+    "terms": "الشروط والأحكام",
+    "allRightsReserved": "جميع الحقوق محفوظة",
+    "openMaps": "فتح الخرائط",
+    "directions": "الاتجاهات",
+    "appointment": "حجز موعد"
+  },
+  "common": {
+    "learnMore": "اعرف المزيد",
+    "viewAll": "عرض الكل",
+    "close": "إغلاق",
+    "loading": "جار التحميل...",
+    "error": "حدث خطأ",
+    "call": "اتصل",
+    "quote": "طلب عرض أسعار",
+    "discover": "اكتشف ←",
+    "sendMessage": "إرسال رسالة",
+    "followFacebook": "تابع على فيسبوك",
+    "backToTop": "أعلى الصفحة",
+    "goToBottom": "أسفل الصفحة",
+    "scrollProgress": "التقدم"
+  }
+}

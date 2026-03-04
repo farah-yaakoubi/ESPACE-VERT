@@ -1,0 +1,143 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "about": "Qui sommes-nous",
+    "activities": "Nos activités",
+    "brands": "Nos marques",
+    "contact": "Contact",
+    "ctaButton": "Contactez-nous"
+  },
+  "activities": {
+    "seeds": "Semences & Plants",
+    "irrigation": "Irrigation",
+    "fertilization": "Fertilisation",
+    "machinery": "Machinisme & Jardinage",
+    "spraying": "Pulvérisation"
+  },
+  "brands": {
+    "fertivert": "Fertivert",
+    "pulvert": "Pulvert",
+    "matar": "Matar"
+  },
+  "hero": {
+    "title": "Leader de l'agriculture\nmoderne en Tunisie",
+    "subtitle": "Solutions innovantes pour l'agriculture, l'irrigation et les espaces verts depuis 1994",
+    "cta": "Découvrir nos solutions",
+    "quote": "Demander un devis"
+  },
+  "home": {
+    "title": "Bienvenue",
+    "subtitle": "Découvrez nos produits et services",
+    "news": "Actualités",
+    "stayInformed": "Restez Informés",
+    "allNews": "Toutes les actualités",
+    "ourActivities": "Nos Activités",
+    "ourBrands": "Nos Marques"
+  },
+  "about": {
+    "title": "Qui sommes-nous",
+    "subtitle": "Plus de 30 ans d'expertise",
+    "history": "Histoire",
+    "evolution": "Évolution",
+    "mission": "Notre Mission",
+    "values": "Nos Valeurs"
+  },
+  "contact": {
+    "title": "Contactez-nous",
+    "subtitle": "Nos experts sont disponibles",
+    "name": "Nom complet",
+    "email": "Email",
+    "phone": "Téléphone",
+    "subject": "Sujet",
+    "message": "Votre message",
+    "send": "Envoyer",
+    "requestQuote": "Demander un devis",
+    "company": "Société",
+    "product": "Produit",
+    "quantity": "Quantité",
+    "details": "Détails",
+    "submit": "Soumettre"
+  },
+  "fertivert": {
+    "title": "Fertivert — Fertilisation Professionnelle",
+    "subtitle": "Solutions complètes de fertilisation et biostimulation",
+    "pro": "Fertivert Pro",
+    "garden": "Fertivert Garden",
+    "since": "Depuis 2001",
+    "allProducts": "Tous les produits",
+    "categories": {
+      "all": "Tous les produits",
+      "substrate": "Support de Culture",
+      "base": "Engrais de Fond",
+      "organic": "Engrais Organique",
+      "specialized": "Fertilisant Spécialisé",
+      "biostimulants": "Biostimulants",
+      "soluble": "Soluble",
+      "liquid": "Liquide",
+      "lawn": "Gazon"
+    },
+    "filters": {
+      "all": "Tous",
+      "category": "Catégorie",
+      "search": "Rechercher un produit...",
+      "clear": "Effacer"
+    },
+    "facebook": "Suivre sur Facebook",
+    "contactForPrice": "Contactez-nous pour le prix",
+    "requestQuote": "Demander un devis",
+    "viewDetails": "Voir les détails",
+    "stats": {
+      "products": "Produits",
+      "categories": "Catégories",
+      "years": "Années",
+      "clients": "Clients"
+    }
+  },
+  "pulvert": {
+    "title": "Pulvert — Pulvérisateurs & Accessoires",
+    "subtitle": "Matériel de pulvérisation professionnel"
+  },
+  "matar": {
+    "title": "Matar — Irrigation & Arrosage",
+    "subtitle": "Solutions d'irrigation complètes"
+  },
+  "seeds": {
+    "title": "Semences & Plants",
+    "subtitle": "Sélection des meilleures variétés",
+    "calculator": "Calculateur IA",
+    "calculatorDesc": "Recommandations personnalisées",
+    "selectCulture": "Choisissez votre culture",
+    "surface": "Surface",
+    "calculate": "Calculer",
+    "results": "Résultats"
+  },
+  "footer": {
+    "followUs": "Suivez-nous",
+    "quickLinks": "Liens Rapides",
+    "ourBrands": "Nos Marques",
+    "contact": "Contact",
+    "agencies": "Nos Agences",
+    "legal": "Mentions légales",
+    "privacy": "Confidentialité",
+    "terms": "CGV",
+    "allRightsReserved": "Tous droits réservés",
+    "openMaps": "Ouvrir Maps",
+    "directions": "Itinéraire",
+    "appointment": "Prendre rendez-vous"
+  },
+  "common": {
+    "learnMore": "En savoir plus",
+    "viewAll": "Voir tout",
+    "close": "Fermer",
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "call": "Appeler",
+    "quote": "Demander un devis",
+    "discover": "Découvrir →",
+    "sendMessage": "Envoyer un message",
+    "followFacebook": "Suivre sur Facebook",
+    "backToTop": "Haut de page",
+    "goToBottom": "Bas de page",
+    "scrollProgress": "Progression"
+  }
+}

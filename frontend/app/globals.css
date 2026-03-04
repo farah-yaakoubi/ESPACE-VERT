@@ -1,0 +1,299 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   PALETTE DE COULEURS — Espace Vert & Fertivert
+   Basée sur les logos fournis
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ─── ESPACE VERT (Logo principal) ─────────────────────────────────────── */
+  --ev-dark-forest: #1a5035;    /* Vert très foncé */
+  --ev-forest: #237547;          /* Vert forêt principal */
+  --ev-main: #2d8659;            /* Vert principal */
+  --ev-leaf: #8bc34a;            /* Vert clair des feuilles */
+  --ev-lime: #a3d977;            /* Vert citron clair */
+  --ev-pale: #e8f5e9;            /* Vert très pâle */
+  --ev-lightest: #f1f8f4;        /* Quasi-blanc verdâtre */
+
+  /* ─── FERTIVERT (Logo produit) ─────────────────────────────────────────── */
+  --fv-primary: #37b648;         /* Vert principal Fertivert */
+  --fv-bright: #4caf50;          /* Vert vif */
+  --fv-light: #81c784;           /* Vert clair */
+  --fv-pale: #e8f5e9;            /* Vert pâle */
+
+  /* ─── NEUTRES ──────────────────────────────────────────────────────────── */
+  --white: #ffffff;
+  --gray-50: #f8faf9;
+  --gray-100: #f0f4f2;
+  --gray-200: #e5e9e7;
+  --gray-300: #d1d5d3;
+  --gray-400: #9ca3a0;
+  --gray-500: #6b716e;
+  --gray-600: #4a4f4d;
+  --gray-700: #374139;
+  --gray-800: #2d322f;
+  --gray-900: #1a1d1b;
+  --black: #000000;
+
+  /* ─── ACCENTS ──────────────────────────────────────────────────────────── */
+  --accent-success: #4caf50;
+  --accent-warning: #ff9800;
+  --accent-error: #f44336;
+  --accent-info: #2196f3;
+
+  /* ─── OMBRES ───────────────────────────────────────────────────────────── */
+  --shadow-sm: 0 1px 2px rgba(26, 80, 53, 0.05);
+  --shadow-md: 0 4px 12px rgba(26, 80, 53, 0.08);
+  --shadow-lg: 0 8px 24px rgba(26, 80, 53, 0.12);
+  --shadow-xl: 0 16px 48px rgba(26, 80, 53, 0.15);
+  --shadow-glow: 0 0 40px rgba(139, 195, 74, 0.2);
+
+  /* ─── DÉGRADÉS ─────────────────────────────────────────────────────────── */
+  --gradient-primary: linear-gradient(135deg, var(--ev-forest), var(--ev-main));
+  --gradient-accent: linear-gradient(135deg, var(--ev-leaf), var(--ev-lime));
+  --gradient-fertivert: linear-gradient(135deg, var(--fv-primary), var(--fv-bright));
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RESET & BASE
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  @apply bg-white text-gray-800;
+  font-family: 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SCROLLBAR PERSONNALISÉE
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gray-100);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, var(--ev-main), var(--ev-leaf));
+  border-radius: 10px;
+  border: 2px solid var(--gray-100);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, var(--ev-forest), var(--ev-main));
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--gray-100);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ev-main) var(--gray-100);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   ANIMATIONS GLOBALES
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(139, 195, 74, 0.5);
+  }
+  50% { 
+    box-shadow: 0 0 0 20px rgba(139, 195, 74, 0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   CLASSES UTILITAIRES
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.animate-fade-in { animation: fadeIn 0.3s ease forwards; }
+.animate-fade-down { animation: fadeDown 0.4s ease forwards; }
+.animate-fade-up { animation: fadeUp 0.4s ease forwards; }
+.animate-slide-left { animation: slideInLeft 0.4s ease forwards; }
+.animate-slide-right { animation: slideInRight 0.4s ease forwards; }
+.animate-scale-in { animation: scaleIn 0.3s ease forwards; }
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+/* ─── Skeleton Loading ────────────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--gray-100) 25%,
+    var(--gray-200) 50%,
+    var(--gray-100) 75%
+  );
+  background-size: 2000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: 8px;
+}
+
+/* ─── Glass Effect ────────────────────────────────────────────────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* ─── Gradient Text ───────────────────────────────────────────────────────── */
+.gradient-text-primary {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-accent {
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-fertivert {
+  background: var(--gradient-fertivert);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FOCUS & ACCESSIBILITY
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+:focus-visible {
+  outline: 3px solid var(--ev-leaf);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--ev-leaf);
+  outline-offset: 2px;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────── */
+/* Reduced motion pour l'accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE UTILITIES
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* Container avec padding responsive */
+.container-responsive {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+  .container-responsive {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-responsive {
+    padding: 0 2rem;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DIRECTION RTL (Support arabe)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+[dir="rtl"] {
+  direction: rtl;
+}
+
+[dir="rtl"] .rtl\:mirror {
+  transform: scaleX(-1);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   PRINT STYLES
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+@media print {
+  body {
+    background: white;
+  }
+  
+  nav,
+  .no-print {
+    display: none;
+  }
+}
