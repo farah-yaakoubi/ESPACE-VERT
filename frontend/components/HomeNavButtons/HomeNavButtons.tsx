@@ -25,7 +25,7 @@ const ChevronRight = () => (
 //     Si aucune photo n'existe encore, le dégradé de secours s'affiche.
 const ACTIVITES = [
   {
-    href:    "/activites/semences",
+    href:    "/activites/semences-et-plants",
     label:   "Semences & plants",
     // ⚠️  PHOTO 1 — place ton image ici : /public/images/activites/pesticides.jpg
     photo:   "/images/activites/pesticides.jpg",
@@ -76,67 +76,69 @@ function ActivityCard({ item, locale, index }: {
       viewport={{ once: true }}
       transition={{ delay: index * 0.08, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       className="flex-1 min-w-0"
+      style={{ height: "clamp(320px, 52vw, 520px)" }}
     >
       <Link
         href={`/${locale}${item.href}`}
-        className="group relative flex flex-col overflow-hidden cursor-pointer block"
-        style={{ height: "clamp(320px, 52vw, 520px)" }}
+        className="group relative block w-full h-full overflow-hidden cursor-pointer"
       >
-        {/* ── Photo ou fallback dégradé ── */}
-        {!imgError ? (
-          <Image
-            src={item.photo}
-            alt={item.label}
-            fill
-            className="object-cover transition-transform duration-700 group-hover:scale-105"
-            onError={() => setImgError(true)}
-            sizes="(max-width: 768px) 50vw, 25vw"
-          />
-        ) : (
-          <div
-            className="absolute inset-0 transition-transform duration-700 group-hover:scale-105"
-            style={{ background: item.fallback }}
-          />
-        )}
+        {/* ── Photo pleine — zoom au hover ── */}
+        <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-110 will-change-transform">
+          {!imgError ? (
+            <Image
+              src={item.photo}
+              alt={item.label}
+              fill
+              className="object-cover"
+              onError={() => setImgError(true)}
+              sizes="(max-width: 768px) 50vw, 20vw"
+            />
+          ) : (
+            <div className="w-full h-full" style={{ background: item.fallback }} />
+          )}
+        </div>
 
         {/* overlay progressif bas */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 z-10"
           style={{
             background:
-              "linear-gradient(to top, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.08) 75%, transparent 100%)",
+              "linear-gradient(to top, rgba(0,0,0,0.80) 0%, rgba(0,0,0,0.30) 45%, rgba(0,0,0,0.06) 75%, transparent 100%)",
           }}
         />
 
         {/* contenu bas */}
-        <div className="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between">
-          {/* titre */}
+        <div className="absolute bottom-0 left-0 right-0 z-20 p-5 flex items-end justify-between">
           <h3
             className="text-white font-black leading-tight drop-shadow"
-            style={{ fontSize: "clamp(18px, 2.2vw, 26px)" }}
+            style={{ fontSize: "clamp(16px, 2vw, 24px)" }}
           >
             {item.label}
           </h3>
 
-          {/* bouton rond vert */}
+          {/* bouton rond vert animé */}
           <motion.div
             className="flex-shrink-0 rounded-full flex items-center justify-center shadow-lg"
             style={{
-              width: 48,
-              height: 48,
+              width: 48, height: 48,
               background: GREEN_MAIN,
-              boxShadow: `0 4px 18px rgba(40,180,60,0.5)`,
+              boxShadow: `0 4px 18px rgba(40,180,60,0.55)`,
             }}
-            whileHover={{ scale: 1.12 }}
+            whileHover={{ scale: 1.18 }}
             transition={{ type: "spring", stiffness: 400, damping: 18 }}
           >
-            <ChevronRight />
+            <motion.div
+              animate={{ x: [0, 5, 0] }}
+              transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay: index * 0.25 }}
+            >
+              <ChevronRight />
+            </motion.div>
           </motion.div>
         </div>
 
         {/* bordure verte hover */}
         <div
-          className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          className="absolute inset-0 z-30 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
           style={{ boxShadow: `inset 0 0 0 3px ${GREEN_MAIN}` }}
         />
       </Link>
@@ -227,7 +229,7 @@ export default function HomeNavButtons() {
       </div>
 
       {/* ══ NOS MARQUES ════════════════════════════════════════════════════════ */}
-      <div className="px-6 pt-12 pb-4 max-w-[1400px] mx-auto flex items-end justify-between">
+      <div id="nos-marques" className="px-6 pt-12 pb-4 max-w-[1400px] mx-auto flex items-end justify-between">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -279,45 +281,58 @@ function BrandCard({ item, locale, index }: {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ delay: 0.1 + index * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      style={{ height: 260 }}
     >
       <Link
         href={`/${locale}${item.href}`}
-        className="group relative flex overflow-hidden cursor-pointer block"
-        style={{ height: 260 }}
+        className="group relative block w-full h-full overflow-hidden cursor-pointer"
       >
-        {/* Photo ou fallback */}
-        {!imgError ? (
-          <Image
-            src={item.photo}
-            alt={item.label}
-            fill
-            className="object-cover transition-transform duration-700 group-hover:scale-105"
-            onError={() => setImgError(true)}
-            sizes="(max-width: 768px) 100vw, 33vw"
-          />
-        ) : (
-          <div
-            className="absolute inset-0 transition-transform duration-700 group-hover:scale-105"
-            style={{ background: item.fallback }}
-          />
-        )}
+        {/* ── Fond / image pleine — zoom au hover ── */}
+        <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-110 will-change-transform">
+          {item.label === "Fertivert" ? (
+            <>
+              <div className="w-full h-full" style={{ background: item.fallback }} />
+              <div className="absolute inset-0 flex items-center justify-center p-8">
+                <Image
+                  src={item.photo}
+                  alt={item.label}
+                  width={240} height={120}
+                  className="object-contain w-full max-w-[240px] max-h-[120px]"
+                  style={{ filter: "drop-shadow(0 4px 24px rgba(40,180,60,0.55)) brightness(1.15)" }}
+                  onError={() => setImgError(true)}
+                />
+              </div>
+            </>
+          ) : !imgError ? (
+            <Image
+              src={item.photo}
+              alt={item.label}
+              fill
+              className="object-cover"
+              onError={() => setImgError(true)}
+              sizes="(max-width: 768px) 100vw, 33vw"
+            />
+          ) : (
+            <div className="w-full h-full" style={{ background: item.fallback }} />
+          )}
+        </div>
 
         {/* overlay */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 z-10"
           style={{
             background:
-              "linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.05) 100%)",
+              "linear-gradient(to top, rgba(0,0,0,0.84) 0%, rgba(0,0,0,0.30) 55%, rgba(0,0,0,0.04) 100%)",
           }}
         />
 
         {/* séparateur droite */}
         {index < MARQUES.length - 1 && (
-          <div className="absolute top-0 right-0 bottom-0 w-px" style={{ background: "rgba(255,255,255,0.12)" }} />
+          <div className="absolute top-0 right-0 bottom-0 z-20 w-px" style={{ background: "rgba(255,255,255,0.12)" }} />
         )}
 
         {/* contenu */}
-        <div className="absolute bottom-0 left-0 right-0 p-5 flex items-end justify-between">
+        <div className="absolute bottom-0 left-0 right-0 z-20 p-5 flex items-end justify-between">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-widest mb-0.5" style={{ color: item.accent }}>
               {item.sub}
@@ -331,21 +346,25 @@ function BrandCard({ item, locale, index }: {
           <motion.div
             className="flex-shrink-0 rounded-full flex items-center justify-center shadow-lg"
             style={{
-              width: 44,
-              height: 44,
+              width: 44, height: 44,
               background: item.accent,
               boxShadow: `0 4px 16px ${item.accent}66`,
             }}
             whileHover={{ scale: 1.12 }}
             transition={{ type: "spring", stiffness: 400, damping: 18 }}
           >
-            <ChevronRight />
+            <motion.div
+              animate={{ x: [0, 5, 0] }}
+              transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut", delay: index * 0.3 }}
+            >
+              <ChevronRight />
+            </motion.div>
           </motion.div>
         </div>
 
         {/* bordure hover */}
         <div
-          className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          className="absolute inset-0 z-30 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
           style={{ boxShadow: `inset 0 0 0 3px ${item.accent}` }}
         />
       </Link>

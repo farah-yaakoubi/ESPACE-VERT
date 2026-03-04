@@ -523,203 +523,223 @@ function useHover(delay = 180) {
   return { open, show, hide, keep };
 }
 
-// ─── SEARCH BAR ───────────────────────────────────────────────────────────────
-function SearchBar({ dark, locale }: { dark: boolean; locale: string }) {
-  const [on, setOn] = useState(false);
+// ─── SEARCH OVERLAY ───────────────────────────────────────────────────────────
+const SEARCH_IDX = [
+  { label: "Fertivert Pro", href: "/marques/fertivert?division=pro", cat: "Marque" },
+  { label: "Fertivert Garden", href: "/marques/fertivert?division=garden", cat: "Marque" },
+  { label: "Pulvert", href: "/marques/pulvert", cat: "Marque" },
+  { label: "Matar", href: "/marques/matar", cat: "Marque" },
+  { label: "Nos Marques", href: "/marques", cat: "Page" },
+  { label: "Contact", href: "/contact", cat: "Page" },
+  { label: "Rendez-vous", href: "/rendez-vous", cat: "Page" },
+  { label: "Qui Sommes-Nous", href: "/qui-sommes-nous", cat: "Page" },
+  { label: "Irrigation", href: "/activites/irrigation", cat: "Activité" },
+  { label: "Fertilisation", href: "/activites/fertilisation", cat: "Activité" },
+  { label: "Semences & Plants", href: "/activites/semences-et-plants", cat: "Activité" },
+  { label: "Pulvérisation", href: "/activites/pulverisation", cat: "Activité" },
+  { label: "Machinisme", href: "/activites/machinisme-et-jardinage", cat: "Activité" },
+];
+
+const BADGE_COLORS: Record<string, string> = {
+  Page: "bg-[#1a3d0a] text-white",
+  Activité: "bg-[#2d5a1b] text-white",
+  Marque: "bg-[#4a7c2f] text-white",
+};
+
+function SearchOverlay({ open, onClose, locale }: { open: boolean; onClose: () => void; locale: string }) {
   const [q, setQ] = useState("");
-  const ref = useRef<HTMLInputElement>(null);
-  const wrap = useRef<HTMLDivElement>(null);
+  const [pages, setPages] = useState(SEARCH_IDX);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  const IDX = [
-    {
-      label: "Fertivert Pro",
-      href: "/marques/fertivert?division=pro",
-      cat: "Marque",
-    },
-    {
-      label: "Fertivert Garden",
-      href: "/marques/fertivert?division=garden",
-      cat: "Marque",
-    },
-    { label: "Pulvert", href: "/marques/pulvert", cat: "Marque" },
-    { label: "Matar", href: "/marques/matar", cat: "Marque" },
-    { label: "Nos Marques", href: "/marques", cat: "Page" },
-    { label: "Contact", href: "/contact", cat: "Page" },
-    { label: "Rendez-vous", href: "/rendez-vous", cat: "Page" },
-    { label: "Irrigation", href: "/activites/irrigation", cat: "Activité" },
-    {
-      label: "Fertilisation",
-      href: "/activites/fertilisation",
-      cat: "Activité",
-    },
-    {
-      label: "Semences & Plants",
-      href: "/activites/semences-et-plants",
-      cat: "Activité",
-    },
-    {
-      label: "Pulvérisation",
-      href: "/activites/pulverisation",
-      cat: "Activité",
-    },
-    {
-      label: "Machinisme",
-      href: "/activites/machinisme-et-jardinage",
-      cat: "Activité",
-    },
-  ];
-
-  const BADGE: Record<string, string> = {
-    Page: "bg-[#1a3d0a] text-white",
-    Activité: "bg-[#2d5a1b] text-white",
-    Marque: "bg-[#4a7c2f] text-white",
-  };
-
-  const results =
-    q.length >= 2
-      ? IDX.filter((i) =>
-          i.label.toLowerCase().includes(q.toLowerCase()),
-        ).slice(0, 6)
-      : [];
-  const close = useCallback(() => {
-    setOn(false);
-    setQ("");
-  }, []);
-  const go = (href: string) => {
-    router.push(`/${locale}${href}`);
-    close();
-  };
+  useEffect(() => {
+    if (open) { setQ(""); setTimeout(() => inputRef.current?.focus(), 60); }
+  }, [open]);
 
   useEffect(() => {
-    const fn = (e: MouseEvent) => {
-      if (wrap.current && !wrap.current.contains(e.target as Node)) close();
-    };
-    document.addEventListener("mousedown", fn);
-    return () => document.removeEventListener("mousedown", fn);
-  }, [close]);
+    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", fn);
+    return () => window.removeEventListener("keydown", fn);
+  }, [onClose]);
+
+  const results = q.length >= 1
+    ? pages.filter(i => i.label.toLowerCase().includes(q.toLowerCase())).slice(0, 8)
+    : pages.slice(0, 8);
+
+  const go = (href: string) => { router.push(`/${locale}${href}`); onClose(); };
+
+  const handleDelete = (href: string) => setPages(p => p.filter(x => x.href !== href));
+  const handleEdit = (item: typeof SEARCH_IDX[0]) => { setEditing(item.href); setEditLabel(item.label); };
+  const handleSave = (href: string) => {
+    setPages(p => p.map(x => x.href === href ? { ...x, label: editLabel } : x));
+    setEditing(null);
+  };
+
+  if (!open) return null;
 
   return (
-    <div ref={wrap} className="relative">
-      <div
-        onClick={() => {
-          setOn(true);
-          setTimeout(() => ref.current?.focus(), 10);
-        }}
-        style={{
-          width: on ? 256 : 168,
-          transition: "width .25s cubic-bezier(.4,0,.2,1)",
-        }}
-        className={`flex items-center gap-2.5 rounded-xl px-4 py-2.5 cursor-text border-2 overflow-hidden ${
-          on
-            ? "bg-white border-[#10693B] shadow-[0_0_0_4px_rgba(16,105,59,0.10)]"
-            : "bg-white border-gray-200 hover:border-[#10693B]/40"
-        }`}
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18 }}
+        className="fixed inset-0 z-[200]"
+        style={{ background: "rgba(5,15,5,0.82)", backdropFilter: "blur(18px)" }}
+        onClick={e => e.target === e.currentTarget && onClose()}
       >
-        <Ico.Search
-          className={`w-[18px] h-[18px] flex-shrink-0 ${on ? "text-[#10693B]" : "text-gray-400"}`}
-        />
-        <input
-          ref={ref}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onFocus={() => setOn(true)}
-          placeholder={on ? "Produit, marque…" : "Rechercher…"}
-          className={`flex-1 bg-transparent outline-none text-[14px] font-medium min-w-0 ${
-            on
-              ? "text-gray-900 placeholder-gray-400"
-              : "text-gray-600 placeholder-gray-400"
-          }`}
-        />
-        {q && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setQ("");
-              ref.current?.focus();
-            }}
-            className="w-5 h-5 rounded-full bg-gray-300 hover:bg-gray-400 flex items-center justify-center flex-shrink-0"
-          >
-            <Ico.X className="w-3 h-3 text-white" />
-          </button>
-        )}
-      </div>
-
-      <AnimatePresence>
-        {on && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 6 }}
-            transition={{ duration: 0.14 }}
-            className="absolute top-full right-0 mt-3 w-80 bg-white rounded-2xl overflow-hidden z-[70]"
+        <motion.div
+          initial={{ opacity: 0, y: -28, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -16, scale: 0.97 }}
+          transition={{ type: "spring", stiffness: 340, damping: 28 }}
+          className="max-w-2xl mx-auto mt-[12vh] px-4"
+        >
+          {/* Input */}
+          <div
+            className="flex items-center gap-3 rounded-2xl px-5 py-4 mb-3"
             style={{
-              boxShadow:
-                "0 24px 64px rgba(26,61,10,.16),0 0 0 1px rgba(26,61,10,.07)",
+              background: "rgba(255,255,255,0.07)",
+              border: "1.5px solid rgba(140,198,63,0.35)",
+              boxShadow: "0 0 0 6px rgba(140,198,63,0.07), 0 32px 64px rgba(0,0,0,0.4)",
             }}
           >
-            <div className="h-[3px] bg-gradient-to-r from-[#1a3d0a] via-[#4a7c2f] to-[#8cc63f]" />
-            {results.length === 0 && q.length < 2 ? (
-              <div className="p-4">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">
-                  Accès rapide
-                </p>
-                {["Nos Marques", "Fertivert Pro", "Irrigation", "Contact"].map(
-                  (s) => {
-                    const item = IDX.find((x) => x.label === s);
-                    return item ? (
-                      <button
-                        key={s}
-                        onClick={() => go(item.href)}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#f0f9eb] text-left group transition-colors"
-                      >
-                        <div className="w-7 h-7 rounded-lg bg-[#f0f9eb] group-hover:bg-[#ddf0c5] flex items-center justify-center text-[#4a7c2f] text-sm transition-colors">
-                          🔗
-                        </div>
-                        <span className="text-[14px] font-semibold text-gray-600 group-hover:text-[#1a3d0a]">
-                          {s}
-                        </span>
-                        <ChevronRightIcon className="w-4 h-4 text-gray-200 group-hover:text-[#4a7c2f] ml-auto" />
-                      </button>
-                    ) : null;
-                  },
-                )}
-              </div>
-            ) : results.length === 0 ? (
-              <div className="py-10 text-center">
-                <p className="text-gray-500 text-sm">
-                  Aucun résultat pour <strong>«{q}»</strong>
-                </p>
+            <Ico.Search className="w-5 h-5 flex-shrink-0" style={{ color: "#8cc63f" }} />
+            <input
+              ref={inputRef}
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              placeholder="Rechercher un produit, une page, une activité…"
+              className="flex-1 bg-transparent outline-none text-white text-base font-medium placeholder-white/30"
+            />
+            {q && (
+              <button onClick={() => setQ("")} className="text-white/30 hover:text-white transition-colors">
+                <Ico.X className="w-4 h-4" />
+              </button>
+            )}
+            <kbd
+              onClick={onClose}
+              className="text-[11px] font-mono border border-white/15 rounded-lg px-2 py-1 text-white/25 cursor-pointer hover:text-white/50 transition-colors flex-shrink-0"
+            >
+              ESC
+            </kbd>
+          </div>
+
+          {/* Results */}
+          <div
+            className="rounded-2xl overflow-hidden"
+            style={{
+              background: "rgba(12,25,8,0.92)",
+              border: "1px solid rgba(140,198,63,0.12)",
+              boxShadow: "0 24px 64px rgba(0,0,0,0.5)",
+            }}
+          >
+            <div className="h-[3px]" style={{ background: "linear-gradient(90deg, #1a3d0a, #8cc63f, #1a3d0a)" }} />
+            {results.length === 0 ? (
+              <div className="py-12 text-center text-white/30 text-sm">
+                Aucun résultat pour « {q} »
               </div>
             ) : (
-              <>
-                <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    {results.length} résultat{results.length > 1 ? "s" : ""}
-                  </span>
-                </div>
+              <ul>
                 {results.map((item, i) => (
-                  <button
-                    key={i}
-                    onClick={() => go(item.href)}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#f0f9eb] text-left group transition-colors border-b border-gray-50 last:border-0"
+                  <motion.li
+                    key={item.href}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.03 }}
+                    className="group border-b border-white/5 last:border-0"
                   >
-                    <span className="text-[14px] font-semibold text-gray-700 group-hover:text-[#1a3d0a] flex-1">
-                      {item.label}
-                    </span>
-                    <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full font-black flex-shrink-0 ${BADGE[item.cat]}`}
-                    >
-                      {item.cat}
-                    </span>
-                  </button>
+                    <div className="flex items-center gap-3 px-5 py-3.5 hover:bg-white/5 transition-colors">
+                      {editing === item.href ? (
+                        <div className="flex-1 flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                          <input
+                            autoFocus
+                            value={editLabel}
+                            onChange={e => setEditLabel(e.target.value)}
+                            className="flex-1 bg-white/10 border border-[#8cc63f]/40 rounded-lg px-3 py-1.5 text-sm text-white outline-none"
+                          />
+                          <button onClick={() => handleSave(item.href)} className="text-[#8cc63f] text-xs font-bold hover:text-[#aee065] transition-colors">Sauver</button>
+                          <button onClick={() => setEditing(null)} className="text-white/30 text-xs hover:text-white transition-colors">✕</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => go(item.href)} className="flex-1 text-left flex items-center gap-3">
+                          <span className="text-sm font-semibold text-white/85 group-hover:text-white transition-colors">{item.label}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-black flex-shrink-0 ${BADGE_COLORS[item.cat]}`}>{item.cat}</span>
+                        </button>
+                      )}
+                      {editing !== item.href && (
+                        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleEdit(item)}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-[#8cc63f] hover:bg-[#8cc63f]/10 transition-all"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(item.href)}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                      {editing !== item.href && (
+                        <ChevronRightIcon className="w-4 h-4 text-white/15 group-hover:text-[#8cc63f]/50 transition-colors flex-shrink-0" />
+                      )}
+                    </div>
+                  </motion.li>
                 ))}
-              </>
+              </ul>
             )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+            <div className="px-5 py-2.5 border-t border-white/5 flex items-center justify-between">
+              <span className="text-[11px] text-white/20">{results.length} résultat{results.length !== 1 ? "s" : ""}</span>
+              <span className="text-[11px] text-white/20">Survolez pour modifier · supprimer</span>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+// ─── SEARCH BAR ───────────────────────────────────────────────────────────────
+function SearchBar({ dark, locale }: { dark: boolean; locale: string }) {
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const fn = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setSearchOpen(true); }
+    };
+    window.addEventListener("keydown", fn);
+    return () => window.removeEventListener("keydown", fn);
+  }, []);
+
+  return (
+    <>
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} locale={locale} />
+      <motion.button
+        onClick={() => setSearchOpen(true)}
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.92 }}
+        title="Rechercher (⌘K)"
+        className="relative flex items-center gap-2.5 rounded-xl px-4 py-2.5 transition-all group"
+        style={{ border: "1.5px solid rgba(16,105,59,0.22)", background: "rgba(16,105,59,0.04)" }}
+      >
+        <Ico.Search className="w-[17px] h-[17px] text-gray-500 group-hover:text-[#10693B] transition-colors" />
+        <span className="text-[13px] font-medium text-gray-400 group-hover:text-[#10693B] transition-colors hidden xl:block">
+          Rechercher…
+        </span>
+        <kbd className="hidden xl:flex items-center gap-0.5 text-[10px] font-mono border border-gray-200 rounded px-1.5 py-0.5 text-gray-300 bg-gray-50">
+          ⌘K
+        </kbd>
+      </motion.button>
+    </>
   );
 }
 
@@ -1118,14 +1138,25 @@ export default function Navbar() {
   const changeLocale = (code: string) =>
     router.push(`/${code}${pathname.replace(`/${locale}`, "")}`);
   const curLang = LANGS.find((l) => l.code === locale) ?? LANGS[0];
+
+  // Scroll to section on homepage, or navigate to homepage first
+  const scrollToSection = (sectionId: string) => {
+    const isHome = pathname === `/${locale}` || pathname === `/${locale}/`;
+    if (isHome) {
+      const el = document.getElementById(sectionId);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      router.push(`/${locale}/#${sectionId}`);
+    }
+  };
   const dark = false;
 
   const lnk =
-    "flex items-center gap-2 px-4 py-2 rounded-xl text-[14px] font-medium tracking-tight transition-all duration-150 text-gray-700 hover:text-[#10693B] hover:bg-[#f0f7f2]";
+    "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[14px] font-semibold tracking-tight transition-all duration-150 text-[#1a3d0a] hover:text-[#006428] hover:bg-[#e8f5dc]";
   const lnkOn =
-    "flex items-center gap-2 px-4 py-2 rounded-xl text-[14px] font-semibold tracking-tight text-[#10693B] bg-[#e4f2e8]";
+    "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[14px] font-bold tracking-tight text-[#006428] bg-[#d4edba]";
   const lnkActive =
-    "flex items-center gap-2 px-4 py-2 rounded-xl text-[14px] font-bold tracking-tight text-[#10693B] bg-[#daf0e4]";
+    "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[14px] font-black tracking-tight text-[#006428] bg-[#c8e8a8]";
 
   return (
     <>
@@ -1162,19 +1193,18 @@ export default function Navbar() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
                 whileHover={{ scale: 1.025 }}
-                /* Conteneur avec hauteur fixe par breakpoint pour éviter
-                   tout saut de layout pendant le chargement de l'image */
-                className="flex items-center h-[56px] sm:h-[60px] lg:h-[68px]"
+                /* Logo bien visible — hauteur augmentée */
+                className="flex items-center h-[64px] sm:h-[70px] lg:h-[78px]"
               >
                 <Image
                   src="/logos/LOGO ESPACE VERT.png"
                   alt="Espace Vert — الفضاء الأخضر"
                   width={400}
                   height={172}
-                  className="h-full w-auto max-w-[240px] sm:max-w-[300px] lg:max-w-[360px] object-contain"
+                  className="h-full w-auto max-w-[260px] sm:max-w-[320px] lg:max-w-[400px] object-contain"
                   style={{
                     filter:
-                      "drop-shadow(0 1px 4px rgba(16,105,59,0.18))",
+                      "drop-shadow(0 2px 6px rgba(0,100,40,0.22))",
                   }}
                   priority
                 />
@@ -1183,7 +1213,7 @@ export default function Navbar() {
             {/* ──────────────────────────────────────────────────────── */}
 
             {/* MENU CENTRAL */}
-            <div className="hidden lg:flex flex-1 items-center gap-0.5">
+            <div className="hidden lg:flex flex-1 items-center justify-center gap-0.5">
               <Link
                 href={`/${locale}/qui-sommes-nous`}
                 className={isActive("/qui-sommes-nous") ? lnkActive : lnk}
@@ -1199,6 +1229,7 @@ export default function Navbar() {
               >
                 <button
                   className={acts.open || isActive("/activites") ? lnkOn : lnk}
+                  onClick={() => scrollToSection("nos-activites")}
                 >
                   {t("activities")}
                   <motion.div
@@ -1217,7 +1248,7 @@ export default function Navbar() {
                       transition={{ duration: 0.14 }}
                       onMouseEnter={acts.keep}
                       onMouseLeave={acts.hide}
-                      className="absolute top-full left-0 mt-2 rounded-2xl overflow-hidden z-[60]"
+                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 rounded-2xl overflow-hidden z-[60]"
                       style={{
                         boxShadow: "0 24px 64px rgba(13,33,6,0.25), 0 0 0 1px rgba(26,61,10,0.15)",
                       }}
@@ -1237,6 +1268,7 @@ export default function Navbar() {
               >
                 <button
                   className={marques.open || isActive("/marques") ? lnkOn : lnk}
+                  onClick={() => scrollToSection("nos-marques")}
                 >
                   {t("brands")}
                   <motion.div
@@ -1255,7 +1287,7 @@ export default function Navbar() {
                       transition={{ duration: 0.14 }}
                       onMouseEnter={marques.keep}
                       onMouseLeave={marques.hide}
-                      className="absolute top-full left-0 mt-2 rounded-2xl overflow-hidden z-[60]"
+                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 rounded-2xl overflow-hidden z-[60]"
                       style={{
                         boxShadow: "0 24px 64px rgba(13,33,6,0.25), 0 0 0 1px rgba(26,61,10,0.15)",
                       }}

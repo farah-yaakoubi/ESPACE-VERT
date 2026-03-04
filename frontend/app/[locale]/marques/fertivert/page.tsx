@@ -96,100 +96,101 @@ const FacebookIcon = () => (
 
 // ─── HeroSection ─────────────────────────────────────────────────────────────
 function HeroSection({
-  locale, gammeId, onGammeSwitch,
+  locale, gammeId, onGammeSwitch, tree, onCatSelect, selectedId,
 }: {
   locale: string;
   gammeId: "pro" | "garden";
   onGammeSwitch: (g: "pro" | "garden") => void;
+  tree: ReturnType<typeof buildTree>;
+  onCatSelect: (id: string | null) => void;
+  selectedId: string | null;
 }) {
-  // Phases FB: hidden → slide-in → open (label visible) → closed (icône seule, reste là) 
   type FbPhase = "hidden" | "in" | "open" | "closed";
   const [fbPhase, setFbPhase] = useState<FbPhase>("hidden");
   const t = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // Entre après 1.6s
     t.current = setTimeout(() => {
       setFbPhase("in");
-      // Ouvre le label après 0.7s
       t.current = setTimeout(() => {
         setFbPhase("open");
-        // Se referme après 2s → reste comme icône
-        t.current = setTimeout(() => setFbPhase("closed"), 2000);
+        t.current = setTimeout(() => setFbPhase("closed"), 2200);
       }, 700);
-    }, 1600);
+    }, 1200);
     return () => { if (t.current) clearTimeout(t.current); };
   }, []);
 
-  const onEnter = () => {
-    if (t.current) clearTimeout(t.current);
-    setFbPhase("open");
-  };
-  const onLeave = () => {
-    t.current = setTimeout(() => setFbPhase("closed"), 300);
-  };
+  const onEnter = () => { if (t.current) clearTimeout(t.current); setFbPhase("open"); };
+  const onLeave = () => { t.current = setTimeout(() => setFbPhase("closed"), 300); };
 
-  const fv = FV[gammeId];
+  const allCats = tree.flatMap((div: ReturnType<typeof buildTree>[number]) => div.cats);
 
   return (
-    <section className="relative overflow-hidden" style={{ background: SITE.heroBg }}>
-
-      {/* fond dégradé profond */}
-      <div className="absolute inset-0" style={{
+    <section
+      className="relative overflow-hidden"
+      style={{
+        height: "100vh",
+        minHeight: 600,
         background: "linear-gradient(158deg, #050e07 0%, #091808 22%, #0d2a10 52%, #122e14 78%, #081008 100%)",
-      }} />
-
-      {/* grain subtil */}
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {/* Grain */}
       <div className="absolute inset-0 pointer-events-none" style={{
-        opacity: 0.11,
+        opacity: 0.09,
         backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
         mixBlendMode: "overlay",
       }} />
 
-      {/* ─── LOGO PLEINE SECTION — fade-in + zoom-in lent ─── */}
-      <motion.div
-        className="absolute inset-0 flex items-center justify-center pointer-events-none"
-        initial={{ opacity: 0, scale: 1.12 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 2.8, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
+      {/* ── LOGO : positionné en absolu, couvre toute la zone haute ── */}
+      <div
+        className="absolute inset-x-0 top-0 flex items-center justify-center pointer-events-none"
+        style={{ bottom: 200 }}
       >
-        {/* halo vert pulsant */}
+        {/* Halo pulsant */}
         <motion.div
           className="absolute pointer-events-none"
           style={{
-            width: "min(860px, 112vw)", height: "min(860px, 112vw)",
+            width: "min(1000px, 130vw)", height: "min(1000px, 130vw)",
             borderRadius: "50%",
-            background: `radial-gradient(circle, rgba(40,180,60,0.2) 0%, rgba(14,48,20,0.06) 52%, transparent 70%)`,
-            filter: "blur(54px)",
+            background: "radial-gradient(circle, rgba(40,180,60,0.20) 0%, rgba(14,48,20,0.06) 52%, transparent 70%)",
+            filter: "blur(70px)",
           }}
-          animate={{ opacity: [0.45, 0.9, 0.45], scale: [0.95, 1.05, 0.95] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+          animate={{ opacity: [0.45, 0.95, 0.45], scale: [0.93, 1.07, 0.93] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2.5 }}
         />
 
-        {/* logo flottant */}
+        {/* Logo */}
         <motion.div
-          animate={{ y: [0, -18, 0] }}
-          transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-          style={{ position: "relative", width: "min(820px, 94vw)", height: "min(590px, 70vw)" }}
+          initial={{ opacity: 0, scale: 1.16 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 2.4, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
+          style={{ position: "relative", width: "min(860px, 90vw)", height: "min(620px, 65vw)" }}
         >
-          <Image
-            src="/logos/LOGO_FERTiVERT.webp"
-            alt="Fertivert" fill priority className="object-contain"
-            style={{
-              filter:
-                "drop-shadow(0 0 70px rgba(40,180,60,0.65))" +
-                " drop-shadow(0 0 130px rgba(40,180,60,0.25))" +
-                " drop-shadow(0 28px 70px rgba(0,0,0,0.72))",
-            }}
-          />
+          <motion.div
+            className="w-full h-full relative"
+            animate={{ y: [0, -16, 0] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 3 }}
+          >
+            <Image
+              src="/logos/LOGO_FERTiVERT.webp"
+              alt="Fertivert"
+              fill priority
+              className="object-contain"
+              style={{
+                filter:
+                  "drop-shadow(0 0 80px rgba(40,180,60,0.75))" +
+                  " drop-shadow(0 0 160px rgba(40,180,60,0.30))" +
+                  " drop-shadow(0 32px 80px rgba(0,0,0,0.82))",
+              }}
+            />
+          </motion.div>
         </motion.div>
-      </motion.div>
+      </div>
 
-      {/* spacer hauteur hero */}
-      <div style={{ height: "82vh", minHeight: 520 }} />
-
-      {/* ─── FACEBOOK — slide-in → ouvre → se referme → reste comme icône ─── */}
-      <div className="absolute bottom-[88px] right-8 z-20">
+      {/* ── FACEBOOK badge — ancré en bas à droite, au-dessus du switcher ── */}
+      <div className="absolute z-20" style={{ bottom: 210, right: 32 }}>
         <AnimatePresence>
           {fbPhase !== "hidden" && (
             <motion.a
@@ -197,10 +198,10 @@ function HeroSection({
               target="_blank" rel="noopener noreferrer" aria-label="Fertivert sur Facebook"
               className="flex items-center rounded-full cursor-pointer select-none"
               style={{
-                background: "rgba(9,28,12,0.88)",
+                background: "rgba(9,28,12,0.90)",
                 backdropFilter: "blur(22px)", WebkitBackdropFilter: "blur(22px)",
-                border: `1px solid rgba(40,180,60,0.45)`,
-                boxShadow: `0 6px 28px rgba(0,0,0,0.45), 0 0 18px rgba(40,180,60,0.14), inset 0 1px 0 rgba(255,255,255,0.06)`,
+                border: "1px solid rgba(40,180,60,0.45)",
+                boxShadow: "0 6px 28px rgba(0,0,0,0.45), 0 0 18px rgba(40,180,60,0.14), inset 0 1px 0 rgba(255,255,255,0.06)",
                 color: "white", overflow: "hidden", textDecoration: "none",
               }}
               initial={{ opacity: 0, x: 56 }}
@@ -210,14 +211,12 @@ function HeroSection({
               onMouseEnter={onEnter}
               onMouseLeave={onLeave}
             >
-              {/* icône toujours visible */}
               <div style={{ width: 52, height: 52, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <FacebookIcon />
               </div>
-              {/* label glisse au hover / open */}
               <motion.div
                 style={{ overflow: "hidden" }}
-                animate={{ width: fbPhase === "open" ? 116 : 0, opacity: fbPhase === "open" ? 1 : 0 }}
+                animate={{ width: fbPhase === "open" ? 120 : 0, opacity: fbPhase === "open" ? 1 : 0 }}
                 transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
               >
                 <span style={{ display: "block", whiteSpace: "nowrap", paddingRight: 18, fontSize: 13, fontWeight: 600, letterSpacing: "0.02em", color: "rgba(255,255,255,0.92)" }}>
@@ -229,71 +228,123 @@ function HeroSection({
         </AnimatePresence>
       </div>
 
-      {/* ─── switcher gamme — fond sombre cohérent ─── */}
-      <div className="relative z-10 flex" style={{ borderTop: "1px solid rgba(40,180,60,0.12)" }}>
-        {(["pro", "garden"] as const).map((g) => {
-          const active = gammeId === g;
-          return (
-            <motion.button
-              key={g}
-              onClick={() => onGammeSwitch(g)}
-              className="flex-1 flex items-center gap-4 px-8 py-5 text-left"
-              style={{
-                background: active ? "rgba(40,180,60,0.08)" : "transparent",
-                borderTop: active ? `2px solid ${SITE.greenLeaf}` : "2px solid transparent",
-                borderRight: g === "pro" ? "1px solid rgba(40,180,60,0.08)" : "none",
-                transition: "background 0.2s",
-              }}
-              whileHover={{ background: active ? "rgba(40,180,60,0.11)" : "rgba(255,255,255,0.025)" }}
-            >
-              <div style={{
-                width: 40, height: 40, borderRadius: 10,
-                background: active ? SITE.greenLeaf : "rgba(255,255,255,0.06)",
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                boxShadow: active ? `0 4px 18px rgba(40,180,60,0.4)` : "none",
-                transition: "all 0.2s",
-              }}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
-                  stroke={active ? "#071a09" : "rgba(255,255,255,0.35)"}
-                  strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
+      {/* ── Contenu bas : pills catégories + switcher ── */}
+      <div className="absolute inset-x-0 bottom-0 z-10" style={{ background: "linear-gradient(to top, rgba(5,14,7,0.97) 0%, rgba(5,14,7,0.7) 60%, transparent 100%)" }}>
+
+        {/* Pills catégories */}
+        <div className="px-6 pt-6 pb-4">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.35 }}
+            className="flex flex-wrap gap-2 justify-center"
+          >
+            {allCats.map((cat, i) => {
+              const active = selectedId === cat.id;
+              return (
+                <motion.button
+                  key={cat.id}
+                  onClick={() => onCatSelect(active ? null : cat.id)}
+                  initial={{ opacity: 0, scale: 0.82 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.45 + i * 0.045, duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+                  whileHover={{ scale: 1.06, y: -2 }}
+                  whileTap={{ scale: 0.96 }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all"
+                  style={{
+                    background: active ? SITE.greenLeaf : "rgba(40,180,60,0.12)",
+                    border: `1px solid ${active ? SITE.greenLeaf : "rgba(40,180,60,0.28)"}`,
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                    boxShadow: active ? `0 0 16px rgba(40,180,60,0.45)` : "none",
+                  }}
                 >
-                  {g === "pro"
-                    ? <><path d="M20 5c0 0-8 0-13 5C4 13 4 19 4 19s6 0 9-3c5-5 5-11 7-11z"/><path d="M4 19l7-7"/></>
-                    : <><path d="M2 20h20M6 20V11c0-3 2-5 4-6M12 20V9c0-4 3-6 5-7"/></>
-                  }
-                </svg>
-              </div>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 800, color: active ? "rgba(255,255,255,0.94)" : "rgba(255,255,255,0.3)", letterSpacing: "-0.01em" }}>
-                  Fertivert {g === "pro" ? "Pro" : "Garden"}
-                </p>
-                <p style={{ fontSize: 11, color: active ? "rgba(255,255,255,0.42)" : "rgba(255,255,255,0.18)" }}>
-                  {g === "pro" ? "Agriculture professionnelle" : "Jardin & Gazon"}
-                </p>
-              </div>
-              {active && (
-                <div className="ml-auto flex items-center gap-2">
-                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: SITE.greenLeaf, boxShadow: `0 0 8px rgba(40,180,60,0.9)`, animation: "dotpulse 2s ease-in-out infinite" }} />
-                  <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.18em", color: SITE.greenLeaf, textTransform: "uppercase" }}>Actif</span>
+                  <div
+                    className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
+                    style={{
+                      background: active ? "rgba(0,0,0,0.25)" : "rgba(40,180,60,0.25)",
+                      color: active ? "#fff" : SITE.greenLeaf,
+                    }}
+                  >
+                    <cat.Icon className="w-3 h-3" />
+                  </div>
+                  <span
+                    className="text-xs font-semibold whitespace-nowrap"
+                    style={{ color: active ? "#fff" : "rgba(255,255,255,0.80)" }}
+                  >
+                    {cat.label}
+                  </span>
+                </motion.button>
+              );
+            })}
+          </motion.div>
+        </div>
+
+        {/* Switcher Pro / Garden */}
+        <div className="flex" style={{ borderTop: "1px solid rgba(40,180,60,0.12)" }}>
+          {(["pro", "garden"] as const).map((g) => {
+            const active = gammeId === g;
+            return (
+              <motion.button
+                key={g}
+                onClick={() => onGammeSwitch(g)}
+                className="flex-1 flex items-center gap-4 px-8 py-5 text-left"
+                style={{
+                  background: active ? "rgba(40,180,60,0.08)" : "transparent",
+                  borderTop: active ? `2px solid ${SITE.greenLeaf}` : "2px solid transparent",
+                  borderRight: g === "pro" ? "1px solid rgba(40,180,60,0.08)" : "none",
+                  transition: "background 0.2s",
+                }}
+                whileHover={{ background: active ? "rgba(40,180,60,0.11)" : "rgba(255,255,255,0.025)" }}
+              >
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10,
+                  background: active ? SITE.greenLeaf : "rgba(255,255,255,0.06)",
+                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                  boxShadow: active ? `0 4px 18px rgba(40,180,60,0.4)` : "none",
+                  transition: "all 0.2s",
+                }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                    stroke={active ? "#071a09" : "rgba(255,255,255,0.35)"}
+                    strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
+                  >
+                    {g === "pro"
+                      ? <><path d="M20 5c0 0-8 0-13 5C4 13 4 19 4 19s6 0 9-3c5-5 5-11 7-11z"/><path d="M4 19l7-7"/></>
+                      : <><path d="M2 20h20M6 20V11c0-3 2-5 4-6M12 20V9c0-4 3-6 5-7"/></>
+                    }
+                  </svg>
                 </div>
-              )}
-            </motion.button>
-          );
-        })}
+                <div>
+                  <p style={{ fontSize: 14, fontWeight: 800, color: active ? "rgba(255,255,255,0.94)" : "rgba(255,255,255,0.3)", letterSpacing: "-0.01em" }}>
+                    Fertivert {g === "pro" ? "Pro" : "Garden"}
+                  </p>
+                  <p style={{ fontSize: 11, color: active ? "rgba(255,255,255,0.42)" : "rgba(255,255,255,0.18)" }}>
+                    {g === "pro" ? "Agriculture professionnelle" : "Jardin & Gazon"}
+                  </p>
+                </div>
+                {active && (
+                  <div className="ml-auto flex items-center gap-2">
+                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: SITE.greenLeaf, boxShadow: `0 0 8px rgba(40,180,60,0.9)`, animation: "dotpulse 2s ease-in-out infinite" }} />
+                    <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.18em", color: SITE.greenLeaf, textTransform: "uppercase" }}>Actif</span>
+                  </div>
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
       </div>
 
       <style>{`@keyframes dotpulse{0%,100%{opacity:1}50%{opacity:0.3}}`}</style>
 
-      {/* vague vers le blanc du site */}
-      <div className="relative z-10">
-        <svg viewBox="0 0 1440 48" preserveAspectRatio="none" style={{ width: "100%", height: 48, display: "block", marginTop: -1 }}>
-          <path d="M0,24 C240,48 480,0 720,20 C900,36 1100,2 1300,18 C1380,26 1420,12 1440,24 L1440,48 L0,48 Z" fill={SITE.bg} />
+      {/* Vague de transition */}
+      <div className="absolute bottom-0 inset-x-0 z-0 pointer-events-none" style={{ transform: "translateY(1px)" }}>
+        <svg viewBox="0 0 1440 40" preserveAspectRatio="none" style={{ width: "100%", height: 40, display: "block" }}>
+          <path d="M0,20 C240,40 480,0 720,18 C900,32 1100,2 1300,16 C1380,22 1420,10 1440,20 L1440,40 L0,40 Z" fill={SITE.bg} />
         </svg>
       </div>
     </section>
   );
 }
-
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 function Sidebar({
   gammeId, onGammeSwitch, tree, selectedId, onSelect, totalCount, filteredCount,
@@ -521,7 +572,7 @@ export default function FertivertPage() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: SITE.bg }}>
 
-      <HeroSection locale={locale} gammeId={gammeId} onGammeSwitch={handleGammeSwitch} />
+      <HeroSection locale={locale} gammeId={gammeId} onGammeSwitch={handleGammeSwitch} tree={tree} onCatSelect={setSelectedId} selectedId={selectedId} />
 
       <div className="max-w-7xl mx-auto px-4 lg:px-6 py-7">
         <div className="flex gap-6 items-start">

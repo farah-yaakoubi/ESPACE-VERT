@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar/Navbar";
 import Footer from "@/components/Footer/Footer";
 import FloatingCallButton from "@/components/FloatingCallButton/FloatingCallButton";
 import ScrollControls from "@/components/ScrollControls/ScrollControls";
+import HashScrollHandler from "@/components/HashScrollHandler/HashScrollHandler";
 import "../globals.css";
 import SocialSidebar from "@/components/SocialSidebar/SocialSidebar";
 import PromoPopup from "@/components/PromoPopup/PromoPopup";
@@ -36,11 +37,12 @@ export default async function LocaleLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Navbar />
           <SocialSidebar />
+          <HashScrollHandler />
           <main className="pt-20">
             {children}
           </main>
           <Footer />
-          <FloatingCallButton />
+          <FloatingCallButton/>
           <ScrollControls />
         </NextIntlClientProvider>
       </body>
