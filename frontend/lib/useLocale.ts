@@ -12,10 +12,9 @@ export function useLocale() {
   const locale = (params?.locale as string) || 'fr';
 
   const setLocale = (newLocale: string) => {
-    // Remplace /locale_actuelle/ par /nouvelle_locale/ dans le chemin
-    const newPath = pathname.replace(/^\/[a-z]{2}(\/|$)/, `/${newLocale}$1`);
-    router.push(newPath || `/${newLocale}`);
-  };
+  const newPath = pathname.replace(/^\/[a-z]{2}(\/|$)/, `/${newLocale}$1`);
+  window.location.href = newPath || `/${newLocale}`;
+};
 
   return { locale, setLocale };
 }

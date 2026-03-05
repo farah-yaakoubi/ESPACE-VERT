@@ -7,10 +7,10 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { AnimatePresence, motion } from "framer-motion";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams, usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const NAV_H = 90;
@@ -441,188 +441,347 @@ function useHover(delay = 180) {
   return { open, show, hide, keep };
 }
 
-// ─── SEARCH OVERLAY ───────────────────────────────────────────────────────────
-const SEARCH_IDX = [
-  { label: "Fertivert Pro",     href: "/marques/fertivert?division=pro",    cat: "Marque" },
-  { label: "Fertivert Garden",  href: "/marques/fertivert?division=garden", cat: "Marque" },
-  { label: "Pulvert",           href: "/marques/pulvert",                   cat: "Marque" },
-  { label: "Matar",             href: "/marques/matar",                     cat: "Marque" },
-  { label: "Nos Marques",       href: "/marques",                           cat: "Page" },
-  { label: "Contact",           href: "/contact",                           cat: "Page" },
-  { label: "Rendez-vous",       href: "/rendez-vous",                       cat: "Page" },
-  { label: "Qui Sommes-Nous",   href: "/qui-sommes-nous",                   cat: "Page" },
-  { label: "Irrigation",        href: "/activites/irrigation",              cat: "Activité" },
-  { label: "Fertilisation",     href: "/activites/fertilisation",           cat: "Activité" },
-  { label: "Semences & Plants", href: "/activites/semences-et-plants",      cat: "Activité" },
-  { label: "Pulvérisation",     href: "/activites/pulverisation",           cat: "Activité" },
-  { label: "Machinisme",        href: "/activites/machinisme-et-jardinage", cat: "Activité" },
-];
-
-const BADGE_COLORS: Record<string, string> = {
-  Page:     "bg-[#1a3d0a] text-white",
-  Activité: "bg-[#2d5a1b] text-white",
-  Marque:   "bg-[#4a7c2f] text-white",
+// ─── SEARCH INDEX — swap data source here when moving to DB ──────────────────
+// Shape: { label, href, cat, desc, icon, tags[] }
+// When using a DB: fetch this array from /api/search-index and pass it in.
+export type SearchItem = {
+  label: string;
+  href: string;
+  cat: string;
+  desc: string;
+  icon: string;
+  tags: string[];
 };
 
+const SEARCH_IDX: SearchItem[] = [
+  // ── Pages
+  { label: "Accueil",           href: "/",                  cat: "Page",     icon: "🏠", desc: "Page principale",                          tags: ["home","accueil","principal"] },
+  { label: "Qui Sommes-Nous",   href: "/qui-sommes-nous",   cat: "Page",     icon: "🏢", desc: "Notre histoire, valeurs et équipe",         tags: ["about","histoire","équipe","mission","valeurs"] },
+  { label: "Nos Marques",       href: "/marques",           cat: "Page",     icon: "🏷️", desc: "Toutes nos marques partenaires",            tags: ["marques","brands","fertivert","pulvert","matar"] },
+  { label: "Contact",           href: "/contact",           cat: "Page",     icon: "✉️", desc: "Formulaire de contact et agences",          tags: ["contact","email","téléphone","agence","adresse"] },
+  { label: "Rendez-vous",       href: "/rendez-vous",       cat: "Page",     icon: "📅", desc: "Prendre un rendez-vous avec un expert",     tags: ["rdv","rendez-vous","appointment","expert","visite"] },
+
+  // ── Activités
+  { label: "Irrigation",            href: "/activites/irrigation",              cat: "Activité", icon: "💦", desc: "Goutte-à-goutte, aspersion, pompage",          tags: ["irrigation","eau","tuyau","drip","aspersion","pompe","filtre","fertigation"] },
+  { label: "Fertilisation",         href: "/activites/fertilisation",           cat: "Activité", icon: "🌾", desc: "Engrais organiques, NPK, biostimulants",        tags: ["fertilisation","engrais","npk","organique","biostimulant","sol","nutrition","ferti"] },
+  { label: "Semences & Plants",     href: "/activites/semences-et-plants",      cat: "Activité", icon: "🌰", desc: "Graines, plants maraîchers, gazon, fourrages",  tags: ["semences","plants","graines","maraîcher","gazon","fourrage","pomme de terre","arbres"] },
+  { label: "Pulvérisation",         href: "/activites/pulverisation",           cat: "Activité", icon: "🔬", desc: "Pulvérisateurs, buses, protection des cultures", tags: ["pulvérisation","pulvérisateur","traitement","buse","protection","phytosanitaire","pesticide"] },
+  { label: "Machinisme & Jardinage",href: "/activites/machinisme-et-jardinage", cat: "Activité", icon: "🚜", desc: "Matériel agricole et espaces verts",             tags: ["machinisme","jardinage","tracteur","outillage","matériel","espaces verts","récolte","tondeuse"] },
+
+  // ── Marques
+  { label: "Fertivert",         href: "/marques/fertivert",                   cat: "Marque", icon: "🌿", desc: "Fertilisation Pro & Garden",                   tags: ["fertivert","engrais","fertilisant","biostimulant","terreau","fumier","compost","ferti"] },
+  { label: "Fertivert Pro",     href: "/marques/fertivert?division=pro",      cat: "Marque", icon: "🌿", desc: "Solutions de fertilisation professionnelle",    tags: ["fertivert pro","professionnel","npk","organique","biostimulant","ferti roots","ferti micro"] },
+  { label: "Fertivert Garden",  href: "/marques/fertivert?division=garden",   cat: "Marque", icon: "🌱", desc: "Engrais et substrats pour jardin & gazon",      tags: ["garden","gazon","jardin","plantes","terreau","liquide","soluble","fleurs","agrumes","oliviers"] },
+  { label: "Pulvert",           href: "/marques/pulvert",                     cat: "Marque", icon: "💧", desc: "Pulvérisateurs agricoles et de jardin",         tags: ["pulvert","pulvérisateur","dos","tracteur","jardin","buses","protection","sav"] },
+  { label: "Matar",             href: "/marques/matar",                       cat: "Marque", icon: "🚿", desc: "Systèmes d'irrigation connectés",               tags: ["matar","irrigation","drip","smart","filtration","goutte-à-goutte","connecté","tuyau"] },
+
+  // ── Produits Fertivert Pro
+  { label: "Terreau Professionnel",  href: "/marques/fertivert?division=pro&cat=support-culture-pro",  cat: "Produit", icon: "🪴", desc: "Substrat professionnel 50L",                    tags: ["terreau","substrat","professionnel","culture","sol"] },
+  { label: "Fumier Composté",        href: "/marques/fertivert?division=pro&cat=support-culture-pro",  cat: "Produit", icon: "♻️", desc: "Amendement organique 40kg",                     tags: ["fumier","compost","organique","amendement","sol"] },
+  { label: "Ferti Fond NPK",         href: "/marques/fertivert?division=pro&cat=engrais-fond-pro",     cat: "Produit", icon: "🌾", desc: "Engrais de fond minéral NPK",                   tags: ["npk","fond","minéral","engrais","nutrition"] },
+  { label: "Ferti Micro Granulé",    href: "/marques/fertivert?division=pro&cat=engrais-organique-pro",cat: "Produit", icon: "🔵", desc: "Biostimulant micro-granulé",                    tags: ["micro","granulé","biostimulant","organique","ferti"] },
+  { label: "Ferti Micro Liquide",    href: "/marques/fertivert?division=pro&cat=engrais-organique-pro",cat: "Produit", icon: "💧", desc: "Biostimulant liquide",                          tags: ["micro","liquide","biostimulant","organique","ferti"] },
+  { label: "Ferti Actif",            href: "/marques/fertivert?division=pro&cat=engrais-organique-pro",cat: "Produit", icon: "⚡", desc: "Activateur de sol biologique",                 tags: ["actif","activateur","sol","biologique","ferti"] },
+  { label: "Ferti Fruit",            href: "/marques/fertivert?division=pro&cat=engrais-organique-pro",cat: "Produit", icon: "🍎", desc: "Nutrition floraison & fructification",          tags: ["fruit","floraison","fructification","potassium","ferti"] },
+  { label: "Ferti Leaf",             href: "/marques/fertivert?division=pro&cat=engrais-organique-pro",cat: "Produit", icon: "🍃", desc: "Nutrition foliaire",                            tags: ["leaf","foliaire","feuilles","microéléments","ferti"] },
+  { label: "Ferti Go",               href: "/marques/fertivert?division=pro&cat=engrais-organique-pro",cat: "Produit", icon: "🚀", desc: "Stimulant de démarrage rapide",                 tags: ["go","démarrage","starter","germination","ferti"] },
+  { label: "Pouss Roots+",           href: "/marques/fertivert?division=pro&cat=fertilisant-pro",      cat: "Produit", icon: "🌱", desc: "Enracinement renforcé",                         tags: ["roots","racines","enracinement","rhizosphère","pouss"] },
+  { label: "Aminal+",                href: "/marques/fertivert?division=pro&cat=fertilisant-pro",      cat: "Produit", icon: "🐾", desc: "Acides aminés & peptides",                      tags: ["aminal","acides aminés","peptides","stress","nutrition"] },
+  { label: "Fort Start+",            href: "/marques/fertivert?division=pro&cat=fertilisant-pro",      cat: "Produit", icon: "💪", desc: "Starter NPK haute concentration",               tags: ["start","démarrage","npk","starter","fort"] },
+  { label: "Oceano+",                href: "/marques/fertivert?division=pro&cat=fertilisant-pro",      cat: "Produit", icon: "🌊", desc: "Extrait d'algues marines",                      tags: ["algues","marines","ocean","biostimulant","stress"] },
+  { label: "Fulvical+",              href: "/marques/fertivert?division=pro&cat=fertilisant-pro",      cat: "Produit", icon: "🟡", desc: "Acides fulviques & humiques + calcium",         tags: ["fulvique","humique","calcium","sol","correcteur"] },
+  { label: "Sweeter+",               href: "/marques/fertivert?division=pro&cat=fertilisant-pro",      cat: "Produit", icon: "🍬", desc: "Qualité des fruits — sucre & couleur",          tags: ["sucre","couleur","qualité","fruits","sweeter"] },
+  { label: "CalciMag+",              href: "/marques/fertivert?division=pro&cat=fertilisant-pro",      cat: "Produit", icon: "🦴", desc: "Calcium + Magnésium équilibrés",                tags: ["calcium","magnésium","carence","correcteur","calcimag"] },
+  { label: "Calcial+",               href: "/marques/fertivert?division=pro&cat=fertilisant-pro",      cat: "Produit", icon: "⬜", desc: "Calcium pur haute disponibilité",               tags: ["calcium","correcteur","carence","fermeté","calcial"] },
+
+  // ── Produits Fertivert Garden
+  { label: "Terreau Gazon",          href: "/marques/fertivert?division=garden&cat=gazon",             cat: "Produit", icon: "🌿", desc: "Substrat spécial pelouse",                      tags: ["gazon","pelouse","terreau","substrat","jardin"] },
+  { label: "Ferti Fond Gazon",       href: "/marques/fertivert?division=garden&cat=gazon",             cat: "Produit", icon: "🌾", desc: "Engrais de fond pour gazon",                    tags: ["gazon","fond","engrais","pelouse","ferti"] },
+  { label: "Granulé Gazon",          href: "/marques/fertivert?division=garden&cat=gazon",             cat: "Produit", icon: "🔵", desc: "Engrais granulé longue durée",                  tags: ["granulé","gazon","longue durée","pelouse","ferti"] },
+  { label: "Engrais Oliviers 2kg",   href: "/marques/fertivert?division=garden&cat=engrais-chimiques", cat: "Produit", icon: "🫒", desc: "Granulés spéciaux oliviers",                    tags: ["oliviers","engrais","granulés","jardin","fruitiers"] },
+  { label: "Engrais Agrumes 2kg",    href: "/marques/fertivert?division=garden&cat=engrais-chimiques", cat: "Produit", icon: "🍊", desc: "Granulés spéciaux agrumes",                     tags: ["agrumes","oranges","citrons","engrais","granulés"] },
+  { label: "Engrais Potager 2kg",    href: "/marques/fertivert?division=garden&cat=engrais-chimiques", cat: "Produit", icon: "🥕", desc: "Granulés légumes & potager",                    tags: ["potager","légumes","tomates","engrais","granulés"] },
+  { label: "Engrais Fleurs 2kg",     href: "/marques/fertivert?division=garden&cat=engrais-chimiques", cat: "Produit", icon: "🌸", desc: "Granulés spéciaux fleurs",                      tags: ["fleurs","floraison","engrais","granulés","jardin"] },
+  { label: "Fertivit 20.20.20",      href: "/marques/fertivert?division=garden&cat=soluble-garden",    cat: "Produit", icon: "💊", desc: "Engrais hydrosoluble équilibré",                tags: ["soluble","hydrosoluble","npk","20.20.20","fertivit"] },
+  { label: "Fertivit 13.40.13",      href: "/marques/fertivert?division=garden&cat=soluble-garden",    cat: "Produit", icon: "💊", desc: "Engrais hydrosoluble riche en phosphore",       tags: ["soluble","phosphore","floraison","fertivit","13.40.13"] },
+  { label: "Engrais Universel 1L",   href: "/marques/fertivert?division=garden&cat=liquide-garden",    cat: "Produit", icon: "🧴", desc: "Engrais liquide universel",                     tags: ["liquide","universel","toutes plantes","prêt emploi","jardin"] },
+  { label: "Engrais Plantes Vertes", href: "/marques/fertivert?division=garden&cat=liquide-garden",    cat: "Produit", icon: "🪴", desc: "Engrais liquide plantes d'intérieur",            tags: ["intérieur","plantes vertes","liquide","pot","appartement"] },
+  { label: "Engrais Cactées 1L",     href: "/marques/fertivert?division=garden&cat=liquide-garden",    cat: "Produit", icon: "🌵", desc: "Engrais liquide cactées & succulentes",         tags: ["cactées","succulentes","liquidie","intérieur","jardin"] },
+  { label: "Ferti Fort 250g",        href: "/marques/fertivert?division=garden&cat=engrais-organique-garden", cat: "Produit", icon: "💪", desc: "Engrais organique concentré",             tags: ["bio","organique","concentré","naturel","ferti"] },
+
+  // ── Pulvert produits
+  { label: "Pulvérisateur à dos",    href: "/marques/pulvert",  cat: "Produit", icon: "🎒", desc: "Pulvérisateur dorsal manuel",                   tags: ["dos","manuel","dorsal","traitement","pulvérisateur"] },
+  { label: "Pulvérisateur tracteur", href: "/marques/pulvert",  cat: "Produit", icon: "🚜", desc: "Pulvérisateur porté pour tracteur",              tags: ["tracteur","porté","grandes cultures","traitement","pulvert"] },
+  { label: "Buses & Accessoires",    href: "/marques/pulvert",  cat: "Produit", icon: "🔩", desc: "Buses, jets, pièces de rechange",               tags: ["buse","jet","accessoire","pièce","rechange","pulvert"] },
+
+  // ── Matar produits
+  { label: "Irrigation Goutte-à-goutte", href: "/marques/matar", cat: "Produit", icon: "💧", desc: "Systèmes drip professionnels",                 tags: ["drip","goutte","tuyau","goutteur","matar","irrigation"] },
+  { label: "Matar Smart",               href: "/marques/matar", cat: "Produit", icon: "📱", desc: "Irrigation connectée et automatisée",           tags: ["smart","connecté","automatique","iot","matar","application"] },
+  { label: "Pompes & Filtration",       href: "/marques/matar", cat: "Produit", icon: "⚙️", desc: "Pompes, filtres, régulateurs de pression",     tags: ["pompe","filtre","pression","débit","matar","irrigation"] },
+];
+
 function SearchOverlay({ open, onClose, locale }: { open: boolean; onClose: () => void; locale: string }) {
-  const t = useTranslations("nav"); // ← FIX: added missing hook
+  const t = useTranslations("nav");
   const [q, setQ] = useState("");
-  const [pages, setPages] = useState(SEARCH_IDX);
-  const [editing, setEditing] = useState<string | null>(null);
-  const [editLabel, setEditLabel] = useState("");
+  const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
+  // ── Fuse.js instance (lazy-loaded to avoid SSR issues)
+  const fuseRef = useRef<any>(null);
   useEffect(() => {
-    if (open) { setQ(""); setTimeout(() => inputRef.current?.focus(), 60); }
+    import("fuse.js").then(({ default: Fuse }) => {
+      fuseRef.current = new Fuse(SEARCH_IDX, {
+        keys: [
+          { name: "label", weight: 3 },
+          { name: "desc",  weight: 2 },
+          { name: "tags",  weight: 1.5 },
+          { name: "cat",   weight: 0.5 },
+        ],
+        threshold: 0.35,      // 0 = exact, 1 = match anything
+        includeScore: true,
+        minMatchCharLength: 2,
+        ignoreLocation: true,
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    if (open) { setQ(""); setActiveIdx(0); setTimeout(() => inputRef.current?.focus(), 60); }
   }, [open]);
 
+  useEffect(() => { setActiveIdx(0); }, [q]);
+
+  // ── Compute results
+  const results: SearchItem[] = q.trim().length >= 2
+    ? (fuseRef.current
+        ? fuseRef.current.search(q).slice(0, 10).map((r: any) => r.item)
+        : SEARCH_IDX.filter(i =>
+            i.label.toLowerCase().includes(q.toLowerCase()) ||
+            i.tags.some(tag => tag.includes(q.toLowerCase()))
+          ).slice(0, 10)
+      )
+    : SEARCH_IDX.filter(i => ["Page","Activité","Marque"].includes(i.cat)).slice(0, 6);
+
+  // ── Keyboard navigation
   useEffect(() => {
-    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const fn = (e: KeyboardEvent) => {
+      if (!open) return;
+      if (e.key === "Escape")    { onClose(); return; }
+      if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, results.length - 1)); }
+      if (e.key === "ArrowUp")   { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)); }
+      if (e.key === "Enter")     { e.preventDefault(); if (results[activeIdx]) go(results[activeIdx].href); }
+    };
     window.addEventListener("keydown", fn);
     return () => window.removeEventListener("keydown", fn);
-  }, [onClose]);
-
-  const results = q.length >= 1
-    ? pages.filter(i => i.label.toLowerCase().includes(q.toLowerCase())).slice(0, 8)
-    : pages.slice(0, 8);
+  }, [open, activeIdx, results]);
 
   const go = (href: string) => { router.push(`/${locale}${href}`); onClose(); };
 
-  const handleDelete = (href: string) => setPages(p => p.filter(x => x.href !== href));
-  const handleEdit = (item: typeof SEARCH_IDX[0]) => { setEditing(item.href); setEditLabel(item.label); };
-  const handleSave = (href: string) => {
-    setPages(p => p.map(x => x.href === href ? { ...x, label: editLabel } : x));
-    setEditing(null);
+  // ── Group by category, preserving score order
+  const CAT_ORDER = ["Page", "Activité", "Marque", "Produit"];
+  const grouped = results.reduce<Record<string, SearchItem[]>>((acc, item) => {
+    (acc[item.cat] = acc[item.cat] || []).push(item);
+    return acc;
+  }, {});
+  const sortedCats = Object.keys(grouped).sort(
+    (a, b) => CAT_ORDER.indexOf(a) - CAT_ORDER.indexOf(b)
+  );
+
+  const CAT_META: Record<string, { color: string; bg: string; border: string; label: string }> = {
+    Page:     { color: "#1D4ED8", bg: "#EFF6FF", border: "#BFDBFE", label: "Pages" },
+    Activité: { color: "#065F46", bg: "#ECFDF5", border: "#A7F3D0", label: "Activités" },
+    Marque:   { color: "#92400E", bg: "#FFFBEB", border: "#FDE68A", label: "Marques" },
+    Produit:  { color: "#6B21A8", bg: "#FAF5FF", border: "#E9D5FF", label: "Produits" },
   };
 
-  if (!open) return null;
+  // flat list for keyboard nav
+  const flatResults = sortedCats.flatMap(cat => grouped[cat]);
+
+  // highlight matched text
+  const highlight = (text: string) => {
+    if (!q || q.trim().length < 2) return text;
+    const regex = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+    return text.split(regex).map((part, i) =>
+      regex.test(part)
+        ? <mark key={i} style={{ background: "#bbf7d0", color: "#14532d", borderRadius: 3, padding: "0 1px" }}>{part}</mark>
+        : part
+    );
+  };
 
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.18 }}
-        className="fixed inset-0 z-[200]"
-        style={{ background: "rgba(5,15,5,0.82)", backdropFilter: "blur(18px)" }}
-        onClick={e => e.target === e.currentTarget && onClose()}
-      >
-        <motion.div
-          initial={{ opacity: 0, y: -28, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -16, scale: 0.97 }}
-          transition={{ type: "spring", stiffness: 340, damping: 28 }}
-          className="max-w-2xl mx-auto mt-[12vh] px-4"
-        >
-          {/* Input */}
-          <div
-            className="flex items-center gap-3 rounded-2xl px-5 py-4 mb-3"
-            style={{
-              background: "rgba(255,255,255,0.07)",
-              border: "1.5px solid rgba(140,198,63,0.35)",
-              boxShadow: "0 0 0 6px rgba(140,198,63,0.07), 0 32px 64px rgba(0,0,0,0.4)",
-            }}
-          >
-            <Ico.Search className="w-5 h-5 flex-shrink-0" style={{ color: "#8cc63f" }} />
-            <input
-              ref={inputRef}
-              value={q}
-              onChange={e => setQ(e.target.value)}
-              placeholder={t("searchPlaceholder")}
-              className="flex-1 bg-transparent outline-none text-white text-base font-medium placeholder-white/30"
-            />
-            {q && (
-              <button onClick={() => setQ("")} className="text-white/30 hover:text-white transition-colors">
-                <Ico.X className="w-4 h-4" />
-              </button>
-            )}
-            <kbd
-              onClick={onClose}
-              className="text-[11px] font-mono border border-white/15 rounded-lg px-2 py-1 text-white/25 cursor-pointer hover:text-white/50 transition-colors flex-shrink-0"
-            >
-              ESC
-            </kbd>
-          </div>
+      {open && (
+        <>
+          {/* ── Backdrop ── */}
+          <motion.div
+            key="sb"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-[199]"
+            style={{ background: "rgba(0,0,0,0.40)", backdropFilter: "blur(8px)" }}
+            onMouseDown={onClose}
+          />
 
-          {/* Results */}
-          <div
-            className="rounded-2xl overflow-hidden"
-            style={{
-              background: "rgba(12,25,8,0.92)",
-              border: "1px solid rgba(140,198,63,0.12)",
-              boxShadow: "0 24px 64px rgba(0,0,0,0.5)",
-            }}
+          {/* ── Panel ── */}
+          <motion.div
+            key="sp"
+            initial={{ opacity: 0, scale: 0.97, y: -16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.97, y: -8 }}
+            transition={{ type: "spring", stiffness: 500, damping: 38 }}
+            className="fixed inset-x-0 z-[200] mx-auto px-4"
+            style={{ maxWidth: 600, top: "8vh" }}
+            onMouseDown={e => e.stopPropagation()}
           >
-            <div className="h-[3px]" style={{ background: "linear-gradient(90deg, #1a3d0a, #8cc63f, #1a3d0a)" }} />
-            {results.length === 0 ? (
-              <div className="py-12 text-center text-white/30 text-sm">
-                Aucun résultat pour « {q} »
+            <div
+              className="rounded-2xl overflow-hidden"
+              style={{
+                background: "#fff",
+                boxShadow: "0 0 0 1px rgba(0,0,0,0.07), 0 40px 100px rgba(0,0,0,0.25)",
+              }}
+            >
+              {/* ── Input ── */}
+              <div className="flex items-center gap-3 px-4 py-3.5" style={{ borderBottom: "1px solid #f1f5f9" }}>
+                <Ico.Search className="w-5 h-5 flex-shrink-0 text-gray-400" />
+                <input
+                  ref={inputRef}
+                  value={q}
+                  onChange={e => setQ(e.target.value)}
+                  placeholder={t("searchPlaceholder")}
+                  style={{ background: "transparent", outline: "none", color: "#0f172a", width: "100%", fontSize: 15, fontWeight: 500 }}
+                  className="flex-1 placeholder-gray-400"
+                />
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {q && (
+                    <button
+                      onMouseDown={e => { e.stopPropagation(); setQ(""); inputRef.current?.focus(); }}
+                      className="w-5 h-5 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                    >
+                      <Ico.X className="w-3 h-3 text-gray-400" />
+                    </button>
+                  )}
+                  <kbd
+                    onMouseDown={e => { e.stopPropagation(); onClose(); }}
+                    className="cursor-pointer text-[11px] font-mono border border-gray-200 rounded-md px-1.5 py-0.5 text-gray-400 bg-gray-50 hover:bg-gray-100 transition-colors leading-tight"
+                  >ESC</kbd>
+                </div>
               </div>
-            ) : (
-              <ul>
-                {results.map((item, i) => (
-                  <motion.li
-                    key={item.href}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.03 }}
-                    className="group border-b border-white/5 last:border-0"
-                  >
-                    <div className="flex items-center gap-3 px-5 py-3.5 hover:bg-white/5 transition-colors">
-                      {editing === item.href ? (
-                        <div className="flex-1 flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                          <input
-                            autoFocus
-                            value={editLabel}
-                            onChange={e => setEditLabel(e.target.value)}
-                            className="flex-1 bg-white/10 border border-[#8cc63f]/40 rounded-lg px-3 py-1.5 text-sm text-white outline-none"
-                          />
-                          <button onClick={() => handleSave(item.href)} className="text-[#8cc63f] text-xs font-bold hover:text-[#aee065] transition-colors">Sauver</button>
-                          <button onClick={() => setEditing(null)} className="text-white/30 text-xs hover:text-white transition-colors">✕</button>
-                        </div>
-                      ) : (
-                        <button onClick={() => go(item.href)} className="flex-1 text-left flex items-center gap-3">
-                          <span className="text-sm font-semibold text-white/85 group-hover:text-white transition-colors">{item.label}</span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-black flex-shrink-0 ${BADGE_COLORS[item.cat]}`}>{item.cat}</span>
-                        </button>
-                      )}
-                      {editing !== item.href && (
-                        <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => handleEdit(item)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-[#8cc63f] hover:bg-[#8cc63f]/10 transition-all"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDelete(item.href)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-400/10 transition-all"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                            </svg>
-                          </button>
-                        </div>
-                      )}
-                      {editing !== item.href && (
-                        <ChevronRightIcon className="w-4 h-4 text-white/15 group-hover:text-[#8cc63f]/50 transition-colors flex-shrink-0" />
-                      )}
-                    </div>
-                  </motion.li>
-                ))}
-              </ul>
-            )}
-            <div className="px-5 py-2.5 border-t border-white/5 flex items-center justify-between">
-              <span className="text-[11px] text-white/20">{results.length} résultat{results.length !== 1 ? "s" : ""}</span>
-              <span className="text-[11px] text-white/20">Survolez pour modifier · supprimer</span>
+
+              {/* ── Results ── */}
+              <div className="overflow-y-auto" style={{ maxHeight: 440 }}>
+                {results.length === 0 && q.trim().length >= 2 ? (
+                  <div className="py-12 flex flex-col items-center gap-2">
+                    <span className="text-3xl">🌾</span>
+                    <p className="text-sm font-semibold text-gray-600">Aucun résultat pour « {q} »</p>
+                    <p className="text-xs text-gray-400">Essayez « engrais », « irrigation », « fertivert »…</p>
+                  </div>
+                ) : (
+                  <div className="py-1.5">
+                    {/* Section label when no query */}
+                    {!q && (
+                      <p className="px-4 pt-2 pb-1 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                        Navigation rapide
+                      </p>
+                    )}
+                    {sortedCats.map(cat => (
+                      <div key={cat}>
+                        {/* Category pill header */}
+                        {q && (
+                          <div className="flex items-center gap-2 px-4 pt-2.5 pb-1">
+                            <span
+                              className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                              style={{
+                                background: CAT_META[cat]?.bg,
+                                color: CAT_META[cat]?.color,
+                                border: `1px solid ${CAT_META[cat]?.border}`,
+                              }}
+                            >
+                              {CAT_META[cat]?.label ?? cat}
+                            </span>
+                            <div className="flex-1 h-px" style={{ background: CAT_META[cat]?.border }} />
+                          </div>
+                        )}
+                        {/* Items */}
+                        {grouped[cat].map(item => {
+                          const fi = flatResults.indexOf(item);
+                          const active = fi === activeIdx;
+                          return (
+                            <div
+                              key={item.href + item.label}
+                              onMouseEnter={() => setActiveIdx(fi)}
+                              onMouseDown={e => { e.stopPropagation(); go(item.href); }}
+                              className="flex items-center gap-3 mx-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all"
+                              style={{
+                                background: active ? "#f0fdf4" : "transparent",
+                                borderLeft: active ? "2px solid #10693B" : "2px solid transparent",
+                              }}
+                            >
+                              {/* Icon bubble */}
+                              <div
+                                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-base transition-all"
+                                style={{ background: active ? "#10693B" : CAT_META[cat]?.bg ?? "#f3f4f6" }}
+                              >
+                                <span style={{ fontSize: 16, filter: active ? "brightness(10)" : "none" }}>
+                                  {item.icon}
+                                </span>
+                              </div>
+                              {/* Text */}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[13.5px] font-semibold text-gray-900 truncate leading-snug">
+                                  {highlight(item.label)}
+                                </p>
+                                <p className="text-[11px] text-gray-400 truncate mt-px">
+                                  {highlight(item.desc)}
+                                </p>
+                              </div>
+                              {/* Cat badge (only when no query grouping) */}
+                              {!q && (
+                                <span
+                                  className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                                  style={{ background: CAT_META[cat]?.bg, color: CAT_META[cat]?.color }}
+                                >
+                                  {cat}
+                                </span>
+                              )}
+                              <ChevronRightIcon
+                                className="w-3.5 h-3.5 flex-shrink-0 transition-all"
+                                style={{ color: active ? "#10693B" : "#cbd5e1", transform: active ? "translateX(1px)" : "none" }}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Footer ── */}
+              <div
+                className="flex items-center justify-between px-4 py-2"
+                style={{ borderTop: "1px solid #f1f5f9", background: "#fafafa" }}
+              >
+                <div className="flex items-center gap-3">
+                  {[["↑↓","naviguer"],["↵","ouvrir"],["ESC","fermer"]].map(([k, l]) => (
+                    <span key={k} className="flex items-center gap-1 text-[11px] text-gray-400">
+                      <kbd className="border border-gray-200 rounded px-1.5 py-0.5 bg-white font-mono text-[10px] text-gray-500 shadow-sm leading-tight">{k}</kbd>
+                      {l}
+                    </span>
+                  ))}
+                </div>
+                <span className="text-[11px] text-gray-400 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#10693B] inline-block" />
+                  Espace Vert
+                </span>
+              </div>
+
             </div>
-          </div>
-        </motion.div>
-      </motion.div>
+          </motion.div>
+        </>
+      )}
     </AnimatePresence>
   );
 }
@@ -967,7 +1126,7 @@ function MarquesDropdown({
                 Catégories
               </p>
               <div className="space-y-0.5">
-                {brand.cats.map((cat) => (
+                {brand.cats.map((cat:string) => (
                   <Link
                     key={cat}
                     href={`/${locale}${brand.href}`}
@@ -1035,8 +1194,7 @@ export default function Navbar() {
     ...b,
     sub: t(b.subKey as any),
   }));
-  const params = useParams();
-  const locale = (params?.locale as string) || "fr";
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -1061,8 +1219,11 @@ export default function Navbar() {
     setMobileOpen(false);
   }, [pathname]);
 
-  const changeLocale = (code: string) =>
-    router.push(`/${code}${pathname.replace(`/${locale}`, "")}`);
+  const changeLocale = (code: string) => {
+    const segments = pathname.split("/");
+    segments[1] = code;
+    window.location.href = segments.join("/") || `/${code}`;
+  };
   const curLang = LANGS.find((l) => l.code === locale) ?? LANGS[0];
 
   const scrollToSection = (sectionId: string) => {
