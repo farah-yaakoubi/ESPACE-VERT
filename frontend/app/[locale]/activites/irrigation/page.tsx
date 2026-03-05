@@ -1,367 +1,124 @@
 "use client";
-
-import { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  BeakerIcon,
-  WrenchScrewdriverIcon,
-  CalendarIcon,
-  CheckCircleIcon,
-  ArrowRightIcon,
-} from "@heroicons/react/24/outline";
+import { BeakerIcon, WrenchScrewdriverIcon, CheckCircleIcon, ArrowRightIcon, CalendarIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { useState } from "react";
 
-interface IrrigationProduct {
-  id: string;
-  name: string;
-  brand: string;
-  category: string;
-  description: string;
-  image: string;
-  features: string[];
-  brandLink: string;
-}
-
-const products: IrrigationProduct[] = [
-  {
-    id: "matar-drip",
-    name: "Système Goutte-à-Goutte Premium",
-    brand: "Matar",
-    category: "Irrigation localisée",
-    description: "Solution d'irrigation de précision pour cultures maraîchères et arboricoles",
-    image: "/products/matar-drip.jpg",
-    features: [
-      "Économie d'eau jusqu'à 70%",
-      "Distribution uniforme des nutriments",
-      "Durabilité garantie 10 ans",
-      "Installation rapide et facile",
-    ],
-    brandLink: "/marques/matar",
-  },
-  {
-    id: "matar-sprinkler",
-    name: "Aspersion Intelligente",
-    brand: "Matar",
-    category: "Aspersion",
-    description: "Système d'aspersion haute performance pour grandes surfaces",
-    image: "/products/matar-sprinkler.jpg",
-    features: [
-      "Couverture optimale jusqu'à 50m",
-      "Réglage automatique de débit",
-      "Résistant aux intempéries",
-      "Maintenance minimale",
-    ],
-    brandLink: "/marques/matar",
-  },
-  {
-    id: "matar-subsurface",
-    name: "Irrigation Souterraine",
-    brand: "Matar",
-    category: "Irrigation enterrée",
-    description: "Technologie d'irrigation souterraine pour cultures intensives",
-    image: "/products/matar-subsurface.jpg",
-    features: [
-      "Invisible en surface",
-      "Réduction évaporation 95%",
-      "Optimal pour cultures pérennes",
-      "Technologie anti-colmatage",
-    ],
-    brandLink: "/marques/matar",
-  },
-];
+const FADE = (delay=0) => ({ initial:{opacity:0,y:24}, whileInView:{opacity:1,y:0}, viewport:{once:true}, transition:{duration:0.55,ease:[0.22,1,0.36,1],delay} });
 
 export default function IrrigationPage() {
   const t = useTranslations("activities.irrigation");
-  const [activeTab, setActiveTab] = useState<"products" | "bureau">("products");
+  const locale = useLocale();
+  const [tab, setTab] = useState<"products"|"bureau">("products");
+
+  const products = [
+    { icon:"💧", name:"Système Goutte-à-Goutte Premium", brand:"Matar", cat:"Irrigation localisée", desc:"Solution de précision pour cultures maraîchères et arboricoles", features:["Économie d'eau jusqu'à 70%","Distribution uniforme","Durabilité 10 ans","Installation rapide"] },
+    { icon:"🌀", name:"Aspersion Intelligente",           brand:"Matar", cat:"Aspersion",           desc:"Système haute performance pour grandes surfaces",               features:["Couverture jusqu'à 50m","Réglage automatique","Résistant aux intempéries","Maintenance minimale"] },
+    { icon:"🌱", name:"Irrigation Souterraine",           brand:"Matar", cat:"Irrigation enterrée", desc:"Technologie souterraine pour cultures intensives",              features:["Invisible en surface","Réduction évaporation 95%","Optimal cultures pérennes","Anti-colmatage"] },
+  ];
+
+  const bureauServices = [
+    { icon:"📐", title:"Étude hydraulique",    desc:"Calcul des besoins en eau, dimensionnement des réseaux et optimisation des débits pour chaque parcelle." },
+    { icon:"🗺️", title:"Plan d'irrigation",    desc:"Conception détaillée avec cartographie des zones, placement des équipements et schémas d'installation." },
+    { icon:"⚙️", title:"Installation & suivi", desc:"Équipe technique certifiée pour l'installation, la mise en route et la maintenance de vos systèmes." },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-700 via-blue-600 to-cyan-600 text-white">
-        <div className="absolute inset-0 opacity-10">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: "radial-gradient(circle, white 2px, transparent 2px)",
-              backgroundSize: "40px 40px",
-            }}
-          />
+    <div style={{background:"#fafaf8",minHeight:"100vh"}}>
+
+      {/* ── HERO ── */}
+      <section style={{background:"linear-gradient(135deg,#3B2870 0%,#5A3E98 50%,#6B4EA0 100%)",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle,rgba(255,255,255,0.06) 1px,transparent 1px)",backgroundSize:"28px 28px"}}/>
+        <div style={{position:"absolute",bottom:-1,left:0,right:0}}>
+          <svg viewBox="0 0 1440 60" style={{width:"100%",height:60,display:"block"}} preserveAspectRatio="none">
+            <path d="M0,60L1440,60L1440,20C1200,52,960,0,720,28C480,56,240,4,0,36Z" fill="#fafaf8"/>
+          </svg>
         </div>
-
-        <div className="relative max-w-screen-xl mx-auto px-8 py-20">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl"
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-bold mb-6">
-              💧 Nos Activités
-            </div>
-
-            <h1 className="text-6xl font-black mb-6 leading-tight">
-              Solutions d'Irrigation Professionnelle
-            </h1>
-
-            <p className="text-xl text-blue-50 mb-8 leading-relaxed">
-              Systèmes d'irrigation intelligents pour optimiser votre consommation d'eau
-              et maximiser vos rendements. De la conception à l'installation.
-            </p>
-
-            <div className="flex gap-6 mb-8">
-              <div>
-                <div className="text-4xl font-black mb-1">-70%</div>
-                <div className="text-blue-100 text-sm">Économie d'eau</div>
-              </div>
-              <div>
-                <div className="text-4xl font-black mb-1">+40%</div>
-                <div className="text-blue-100 text-sm">Rendement</div>
-              </div>
-              <div>
-                <div className="text-4xl font-black mb-1">24/7</div>
-                <div className="text-blue-100 text-sm">Support technique</div>
-              </div>
+        <div style={{maxWidth:1200,margin:"0 auto",padding:"6rem 2rem 7rem"}}>
+          <motion.div initial={{opacity:0,y:24}} animate={{opacity:1,y:0}} transition={{duration:0.6,ease:[0.22,1,0.36,1]}} style={{maxWidth:680}}>
+            <span style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(255,255,255,0.15)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,0.25)",color:"white",padding:"6px 16px",borderRadius:99,fontSize:13,fontWeight:600,marginBottom:24}}>
+              💧 {t("tag")}
+            </span>
+            <h1 style={{fontSize:"clamp(2.2rem,5vw,3.5rem)",fontWeight:900,color:"white",lineHeight:1.1,letterSpacing:"-0.025em",marginBottom:20}}>{t("pageTitle")}</h1>
+            <p style={{fontSize:"1.1rem",color:"rgba(255,255,255,0.75)",lineHeight:1.7,marginBottom:36,maxWidth:560}}>{t("pageSubtitle")}</p>
+            <div style={{display:"flex",flexWrap:"wrap",gap:12}}>
+              <Link href={`/${locale}/contact`} style={{display:"inline-flex",alignItems:"center",gap:8,padding:"13px 28px",background:"white",color:"#5A3E98",fontWeight:700,borderRadius:99,fontSize:"0.95rem",textDecoration:"none",boxShadow:"0 4px 16px rgba(0,0,0,0.15)"}}>
+                {t("ctaContact")} <ArrowRightIcon style={{width:16,height:16}}/>
+              </Link>
+              <Link href={`/${locale}/rendez-vous`} style={{display:"inline-flex",alignItems:"center",gap:8,padding:"13px 28px",background:"rgba(255,255,255,0.12)",color:"white",fontWeight:600,borderRadius:99,fontSize:"0.95rem",textDecoration:"none",border:"1.5px solid rgba(255,255,255,0.4)"}}>
+                <CalendarIcon style={{width:18,height:18}}/> {t("ctaAppointment")}
+              </Link>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Navigation Tabs */}
-      <div className="bg-white border-b border-gray-200 sticky top-[76px] z-40 shadow-sm">
-        <div className="max-w-screen-xl mx-auto px-8">
-          <div className="flex gap-1">
-            <button
-              onClick={() => setActiveTab("products")}
-              className={`px-6 py-4 font-bold transition-all relative ${
-                activeTab === "products"
-                  ? "text-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <WrenchScrewdriverIcon className="w-5 h-5" />
-                Produits d'Irrigation
-              </div>
-              {activeTab === "products" && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600"
-                />
-              )}
-            </button>
-
-            <button
-              onClick={() => setActiveTab("bureau")}
-              className={`px-6 py-4 font-bold transition-all relative ${
-                activeTab === "bureau"
-                  ? "text-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <BeakerIcon className="w-5 h-5" />
-                Bureau d'Étude & Installation
-              </div>
-              {activeTab === "bureau" && (
-                <motion.div
-                  layoutId="activeTab"
-                  className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600"
-                />
-              )}
-            </button>
+      {/* ── TABS ── */}
+      <section style={{padding:"4rem 2rem",background:"white"}}>
+        <div style={{maxWidth:1100,margin:"0 auto"}}>
+          <div style={{display:"flex",gap:8,background:"#f4f3f0",borderRadius:14,padding:6,width:"fit-content",margin:"0 auto 3rem",boxShadow:"inset 0 1px 3px rgba(0,0,0,0.06)"}}>
+            {[{key:"products",label:t("productsTab")},{key:"bureau",label:t("bureauTab")}].map(tb=>(
+              <button key={tb.key} onClick={()=>setTab(tb.key as any)}
+                style={{padding:"10px 28px",borderRadius:10,fontWeight:600,fontSize:"0.9rem",border:"none",cursor:"pointer",transition:"all .2s",background:tab===tb.key?"white":"transparent",color:tab===tb.key?"#1a4b8c":"#716e67",boxShadow:tab===tb.key?"0 2px 8px rgba(0,0,0,0.10)":""}}>
+                {tb.label}
+              </button>
+            ))}
           </div>
-        </div>
-      </div>
 
-      {/* Content Sections */}
-      <div className="max-w-screen-xl mx-auto px-8 py-12">
-        {/* ONGLET PRODUITS */}
-        {activeTab === "products" && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="mb-12">
-              <h2 className="text-4xl font-black text-gray-900 mb-4">
-                Notre Gamme de Produits
-              </h2>
-              <p className="text-lg text-gray-600 max-w-3xl">
-                Solutions d'irrigation Netafim, leader mondial de l'irrigation goutte-à-goutte
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {products.map((product, idx) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  className="bg-white rounded-2xl border-2 border-gray-100 hover:border-blue-200 hover:shadow-2xl transition-all duration-300 overflow-hidden group"
-                >
-                  {/* Image */}
-                  <div className="relative h-56 bg-gradient-to-br from-blue-100 to-cyan-100">
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                    <div className="absolute top-4 left-4 px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg">
-                      {product.brand}
-                    </div>
+          {tab==="products" && (
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:24}}>
+              {products.map((p,i)=>(
+                <motion.div key={i} {...FADE(i*0.1)} style={{background:"#F5F0FF",borderRadius:20,padding:"1.75rem",border:"1.5px solid #D4C8F0",transition:"box-shadow .2s,transform .2s"}} onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 8px 32px rgba(37,99,235,0.15)";e.currentTarget.style.transform="translateY(-4px)"}} onMouseLeave={e=>{e.currentTarget.style.boxShadow="";e.currentTarget.style.transform=""}}>
+                  <div style={{fontSize:"2.2rem",marginBottom:12}}>{p.icon}</div>
+                  <div style={{display:"inline-block",background:"#EDE9F6",color:"#5A3E98",padding:"3px 12px",borderRadius:99,fontSize:"0.78rem",fontWeight:700,marginBottom:12}}>{p.cat}</div>
+                  <h3 style={{fontWeight:800,color:"#0a2540",marginBottom:6,fontSize:"1.05rem",lineHeight:1.3}}>{p.name}</h3>
+                  <p style={{color:"#7060A0",fontSize:"0.88rem",lineHeight:1.6,marginBottom:16}}>{p.desc}</p>
+                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                    {p.features.map((f,j)=>(
+                      <div key={j} style={{display:"flex",alignItems:"center",gap:8}}>
+                        <CheckCircleIcon style={{width:15,height:15,color:"#6B4EA0",flexShrink:0}}/>
+                        <span style={{fontSize:"0.83rem",color:"#6B4EA0"}}>{f}</span>
+                      </div>
+                    ))}
                   </div>
-
-                  {/* Content */}
-                  <div className="p-6">
-                    <div className="text-xs font-bold text-blue-600 mb-2">
-                      {product.category}
-                    </div>
-                    <h3 className="text-xl font-black text-gray-900 mb-3">
-                      {product.name}
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                      {product.description}
-                    </p>
-
-                    {/* Features */}
-                    <div className="space-y-2 mb-6">
-                      {product.features.map((feature, idx) => (
-                        <div key={idx} className="flex items-start gap-2">
-                          <CheckCircleIcon className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                          <span className="text-xs text-gray-600">{feature}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* CTA */}
-                    <Link
-                      href={product.brandLink}
-                      className="flex items-center justify-center gap-2 w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all group-hover:scale-105"
-                    >
-                      En savoir plus <ArrowRightIcon className="w-4 h-4" />
+                  <div style={{marginTop:16,display:"flex",alignItems:"center",gap:6,color:"#6B4EA0",fontWeight:700,fontSize:"0.88rem"}}>
+                    <Link href={`/${locale}/marques/matar`} style={{color:"inherit",textDecoration:"none",display:"flex",alignItems:"center",gap:6}}>
+                      {p.brand} <ArrowRightIcon style={{width:14,height:14}}/>
                     </Link>
                   </div>
                 </motion.div>
               ))}
             </div>
+          )}
 
-            {/* CTA Marque */}
-            <div className="mt-12 text-center">
-              <Link
-                href="/fr/marques/matar"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-2xl hover:shadow-xl transition-all hover:scale-105"
-              >
-                Voir toute la gamme de marque Matar <ArrowRightIcon className="w-5 h-5" />
-              </Link>
+          {tab==="bureau" && (
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:24}}>
+              {bureauServices.map((s,i)=>(
+                <motion.div key={i} {...FADE(i*0.12)} style={{background:"white",borderRadius:20,padding:"2rem",border:"1.5px solid #e8e6e1",transition:"box-shadow .2s,transform .2s"}} onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 8px 32px rgba(0,0,0,0.10)";e.currentTarget.style.transform="translateY(-4px)"}} onMouseLeave={e=>{e.currentTarget.style.boxShadow="";e.currentTarget.style.transform=""}}>
+                  <div style={{fontSize:"2.5rem",marginBottom:16}}>{s.icon}</div>
+                  <h3 style={{fontWeight:800,color:"#0a2540",marginBottom:10,fontSize:"1.1rem"}}>{s.title}</h3>
+                  <p style={{color:"#716e67",lineHeight:1.65,fontSize:"0.92rem"}}>{s.desc}</p>
+                </motion.div>
+              ))}
             </div>
-          </motion.div>
-        )}
+          )}
+        </div>
+      </section>
 
-        {/* ONGLET BUREAU D'ÉTUDE */}
-        {activeTab === "bureau" && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <div className="max-w-5xl mx-auto">
-              <div className="text-center mb-12">
-                <h2 className="text-4xl font-black text-gray-900 mb-4">
-                  Bureau d'Étude & Installation
-                </h2>
-                <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                  Conception sur-mesure de votre système d'irrigation par nos ingénieurs agronomes
-                </p>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-8 mb-12">
-                {/* Services */}
-                <div className="bg-white rounded-2xl p-8 shadow-lg">
-                  <h3 className="text-2xl font-black text-gray-900 mb-6">
-                    Nos Services
-                  </h3>
-                  <div className="space-y-4">
-                    {[
-                      "Étude de faisabilité et dimensionnement",
-                      "Plans techniques détaillés",
-                      "Installation clé en main",
-                      "Formation à l'utilisation",
-                      "Maintenance et SAV",
-                      "Optimisation des systèmes existants",
-                    ].map((service, idx) => (
-                      <div key={idx} className="flex items-start gap-3">
-                        <CheckCircleIcon className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" />
-                        <span className="text-gray-700">{service}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Process */}
-                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-8">
-                  <h3 className="text-2xl font-black text-gray-900 mb-6">
-                    Notre Processus
-                  </h3>
-                  <div className="space-y-4">
-                    {[
-                      { step: "1", title: "Visite terrain", desc: "Analyse de vos besoins" },
-                      { step: "2", title: "Étude technique", desc: "Conception du système" },
-                      { step: "3", title: "Devis détaillé", desc: "Proposition personnalisée" },
-                      { step: "4", title: "Installation", desc: "Pose par nos experts" },
-                      { step: "5", title: "Formation", desc: "Prise en main complète" },
-                    ].map((item, idx) => (
-                      <div key={idx} className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-black flex-shrink-0">
-                          {item.step}
-                        </div>
-                        <div>
-                          <div className="font-bold text-gray-900">{item.title}</div>
-                          <div className="text-sm text-gray-600">{item.desc}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Bouton de prise de rendez-vous */}
-              <div className="bg-white rounded-2xl p-12 shadow-xl border-2 border-blue-100 flex justify-center items-center">
-                <Link
-                  href="/fr/rendez-vous"
-                  className="px-8 py-6 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold text-xl rounded-2xl hover:scale-105 hover:shadow-2xl transition-all duration-300 flex items-center gap-3"
-                >
-                  <CalendarIcon className="w-8 h-8" />
-                  Prendre Rendez-vous
-                </Link>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </div>
-
-      {/* CTA Final */}
-      <section className="py-16 bg-gradient-to-br from-blue-700 to-cyan-600 text-white">
-        <div className="max-w-4xl mx-auto px-8 text-center">
-          <h2 className="text-4xl font-black mb-4">Une question ? Besoin de conseils ?</h2>
-          <p className="text-xl text-blue-50 mb-8">
-            Nos experts en irrigation sont à votre écoute
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="tel:+21671333858"
-              className="px-8 py-4 bg-white text-blue-700 font-bold rounded-2xl hover:bg-blue-50 transition-all shadow-xl"
-            >
-              📞 (+216) 71 333 858
-            </a>
-            <Link
-              href="/fr/contact"
-              className="px-8 py-4 bg-white/10 backdrop-blur-sm border-2 border-white text-white font-bold rounded-2xl hover:bg-white/20 transition-all"
-            >
-              Nous contacter
+      {/* ── CTA ── */}
+      <section style={{padding:"5rem 2rem",background:"linear-gradient(135deg,#3B2870 0%,#6B4EA0 100%)",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle,rgba(255,255,255,0.05) 1px,transparent 1px)",backgroundSize:"32px 32px"}}/>
+        <motion.div {...FADE()} style={{maxWidth:580,margin:"0 auto",textAlign:"center",position:"relative"}}>
+          <h2 style={{fontSize:"clamp(1.6rem,3.5vw,2.2rem)",fontWeight:800,color:"white",marginBottom:12}}>{t("ctaTitle")}</h2>
+          <p style={{color:"rgba(255,255,255,0.72)",marginBottom:36,lineHeight:1.6}}>{t("ctaSubtitle")}</p>
+          <div style={{display:"flex",flexWrap:"wrap",gap:12,justifyContent:"center"}}>
+            <a href="tel:+21671333858" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"13px 28px",background:"white",color:"#5A3E98",fontWeight:700,borderRadius:99,textDecoration:"none"}}>📞 (+216) 71 333 858</a>
+            <Link href={`/${locale}/rendez-vous`} style={{display:"inline-flex",alignItems:"center",gap:8,padding:"13px 28px",background:"rgba(255,255,255,0.12)",color:"white",fontWeight:600,borderRadius:99,textDecoration:"none",border:"1.5px solid rgba(255,255,255,0.4)"}}>
+              <CalendarIcon style={{width:18,height:18}}/> {t("ctaAppointment")}
             </Link>
           </div>
-        </div>
+        </motion.div>
       </section>
     </div>
   );

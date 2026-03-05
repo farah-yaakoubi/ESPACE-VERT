@@ -1,72 +1,72 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Lora:ital,wght@0,500;0,600;1,400&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   PALETTE DE COULEURS — Espace Vert & Fertivert
-   Basée sur les logos fournis
-   ══════════════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   ESPACE VERT — Design System
+   Palette : blanc chaud + vert naturel (pas trop sombre)
+   ═══════════════════════════════════════════════════════════ */
 
 :root {
-  /* ─── ESPACE VERT (Logo principal) ─────────────────────────────────────── */
-  --ev-dark-forest: #1a5035;    /* Vert très foncé */
-  --ev-forest: #237547;          /* Vert forêt principal */
-  --ev-main: #2d8659;            /* Vert principal */
-  --ev-leaf: #8bc34a;            /* Vert clair des feuilles */
-  --ev-lime: #a3d977;            /* Vert citron clair */
-  --ev-pale: #e8f5e9;            /* Vert très pâle */
-  --ev-lightest: #f1f8f4;        /* Quasi-blanc verdâtre */
+  /* Vert principal Espace Vert */
+  --green-900: #0f2d12;
+  --green-800: #1a4520;
+  --green-700: #1f5226;
+  --green-600: #236b28;
+  --green-500: #2d8c35;
+  --green-400: #3cb648;
+  --green-300: #68cc74;
+  --green-200: #a8e4ad;
+  --green-100: #dcf0de;
+  --green-50:  #f2faf3;
 
-  /* ─── FERTIVERT (Logo produit) ─────────────────────────────────────────── */
-  --fv-primary: #37b648;         /* Vert principal Fertivert */
-  --fv-bright: #4caf50;          /* Vert vif */
-  --fv-light: #81c784;           /* Vert clair */
-  --fv-pale: #e8f5e9;            /* Vert pâle */
+  /* Blanc chaud / neutres */
+  --white:     #ffffff;
+  --gray-50:   #fafaf8;
+  --gray-100:  #f4f3f0;
+  --gray-200:  #e8e6e1;
+  --gray-300:  #d0cec8;
+  --gray-400:  #9e9b94;
+  --gray-500:  #716e67;
+  --gray-600:  #524f49;
+  --gray-700:  #3a3830;
+  --gray-800:  #262420;
+  --gray-900:  #16140f;
 
-  /* ─── NEUTRES ──────────────────────────────────────────────────────────── */
-  --white: #ffffff;
-  --gray-50: #f8faf9;
-  --gray-100: #f0f4f2;
-  --gray-200: #e5e9e7;
-  --gray-300: #d1d5d3;
-  --gray-400: #9ca3a0;
-  --gray-500: #6b716e;
-  --gray-600: #4a4f4d;
-  --gray-700: #374139;
-  --gray-800: #2d322f;
-  --gray-900: #1a1d1b;
-  --black: #000000;
+  /* Fertivert — vert + blanc */
+  --fv-bg:    #f8fdf8;
+  --fv-green: #3cb648;
+  --fv-dark:  #1f5226;
 
-  /* ─── ACCENTS ──────────────────────────────────────────────────────────── */
-  --accent-success: #4caf50;
-  --accent-warning: #ff9800;
-  --accent-error: #f44336;
-  --accent-info: #2196f3;
+  /* Pulvert — vert foncé + jaune-orange */
+  --pv-bg:     #fafdf4;
+  --pv-green:  #134e4a;
+  --pv-yellow: #eab308;
+  --pv-orange: #f97316;
+  --pv-red:    #dc2626;
 
-  /* ─── OMBRES ───────────────────────────────────────────────────────────── */
-  --shadow-sm: 0 1px 2px rgba(26, 80, 53, 0.05);
-  --shadow-md: 0 4px 12px rgba(26, 80, 53, 0.08);
-  --shadow-lg: 0 8px 24px rgba(26, 80, 53, 0.12);
-  --shadow-xl: 0 16px 48px rgba(26, 80, 53, 0.15);
-  --shadow-glow: 0 0 40px rgba(139, 195, 74, 0.2);
+  /* Matar — bleu ciel + blanc + vert clair */
+  --mt-bg:    #f0f8ff;
+  --mt-blue:  #2563eb;
+  --mt-sky:   #0ea5e9;
+  --mt-light: #bae6fd;
 
-  /* ─── DÉGRADÉS ─────────────────────────────────────────────────────────── */
-  --gradient-primary: linear-gradient(135deg, var(--ev-forest), var(--ev-main));
-  --gradient-accent: linear-gradient(135deg, var(--ev-leaf), var(--ev-lime));
-  --gradient-fertivert: linear-gradient(135deg, var(--fv-primary), var(--fv-bright));
+  /* Machinisme Viking — rouge + gris acier */
+  --mc-bg:    #f8f8f7;
+  --mc-red:   #c0392b;
+  --mc-gray:  #4a4a4a;
+  --mc-steel: #64748b;
+
+  /* Ombres douces */
+  --shadow-sm:  0 1px 4px rgba(0,0,0,0.06);
+  --shadow-md:  0 4px 16px rgba(0,0,0,0.08);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,0.10);
+  --shadow-xl:  0 16px 48px rgba(0,0,0,0.12);
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   RESET & BASE
-   ══════════════════════════════════════════════════════════════════════════════ */
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 html {
   scroll-behavior: smooth;
@@ -74,245 +74,125 @@ html {
 }
 
 body {
-  @apply bg-white text-gray-800;
-  font-family: 'Plus Jakarta Sans', 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Outfit', system-ui, sans-serif;
+  background: var(--white);
+  color: var(--gray-800);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
-  letter-spacing: -0.01em;
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   SCROLLBAR PERSONNALISÉE
-   ══════════════════════════════════════════════════════════════════════════════ */
-
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--gray-100);
-  border-radius: 10px;
-}
-
+/* ─── Scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar { width: 7px; }
+::-webkit-scrollbar-track { background: var(--gray-100); }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, var(--ev-main), var(--ev-leaf));
-  border-radius: 10px;
-  border: 2px solid var(--gray-100);
+  background: var(--green-300);
+  border-radius: 4px;
+  border: 1px solid var(--gray-100);
 }
+::-webkit-scrollbar-thumb:hover { background: var(--green-400); }
+* { scrollbar-width: thin; scrollbar-color: var(--green-300) var(--gray-100); }
 
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, var(--ev-forest), var(--ev-main));
-}
-
-::-webkit-scrollbar-corner {
-  background: var(--gray-100);
-}
-
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--ev-main) var(--gray-100);
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   ANIMATIONS GLOBALES
-   ══════════════════════════════════════════════════════════════════════════════ */
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes fadeDown {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
+/* ─── Animations ────────────────────────────────────────── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
-@keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-40px); }
-  to { opacity: 1; transform: translateX(0); }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(40px); }
-  to { opacity: 1; transform: translateX(0); }
+@keyframes slideLeft {
+  from { opacity: 0; transform: translateX(-32px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
-
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(32px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
 }
-
-@keyframes pulse-glow {
-  0%, 100% { 
-    box-shadow: 0 0 0 0 rgba(139, 195, 74, 0.5);
-  }
-  50% { 
-    box-shadow: 0 0 0 20px rgba(139, 195, 74, 0);
-  }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
 }
-
 @keyframes shimmer {
-  0% { background-position: -1000px 0; }
-  100% { background-position: 1000px 0; }
+  0%   { background-position: -800px 0; }
+  100% { background-position: 800px 0; }
 }
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   CLASSES UTILITAIRES
-   ══════════════════════════════════════════════════════════════════════════════ */
-
-.animate-fade-in { animation: fadeIn 0.3s ease forwards; }
-.animate-fade-down { animation: fadeDown 0.4s ease forwards; }
-.animate-fade-up { animation: fadeUp 0.4s ease forwards; }
-.animate-slide-left { animation: slideInLeft 0.4s ease forwards; }
-.animate-slide-right { animation: slideInRight 0.4s ease forwards; }
-.animate-scale-in { animation: scaleIn 0.3s ease forwards; }
-.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
-
-/* ─── Skeleton Loading ────────────────────────────────────────────────────── */
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--gray-100) 25%,
-    var(--gray-200) 50%,
-    var(--gray-100) 75%
-  );
-  background-size: 2000px 100%;
-  animation: shimmer 2s infinite linear;
-  border-radius: 8px;
-}
-
-/* ─── Glass Effect ────────────────────────────────────────────────────────── */
-.glass {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-/* ─── Gradient Text ───────────────────────────────────────────────────────── */
-.gradient-text-primary {
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.gradient-text-accent {
-  background: var(--gradient-accent);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.gradient-text-fertivert {
-  background: var(--gradient-fertivert);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   FOCUS & ACCESSIBILITY
-   ══════════════════════════════════════════════════════════════════════════════ */
-
-:focus-visible {
-  outline: 3px solid var(--ev-leaf);
-  outline-offset: 2px;
-  border-radius: 6px;
-}
-
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: 3px solid var(--ev-leaf);
-  outline-offset: 2px;
-}
-
-/* ──────────────────────────────────────────────────────────────────────────── */
-/* Reduced motion pour l'accessibilité */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   RESPONSIVE UTILITIES
-   ══════════════════════════════════════════════════════════════════════════════ */
-
-/* Container avec padding responsive */
-.container-responsive {
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 1rem;
-}
-
-@media (min-width: 640px) {
-  .container-responsive {
-    padding: 0 1.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .container-responsive {
-    padding: 0 2rem;
-  }
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   DIRECTION RTL (Support arabe)
-   ══════════════════════════════════════════════════════════════════════════════ */
-
-[dir="rtl"] {
-  direction: rtl;
-}
-
-[dir="rtl"] .rtl\:mirror {
-  transform: scaleX(-1);
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   PRINT STYLES
-   ══════════════════════════════════════════════════════════════════════════════ */
-
-@media print {
-  body {
-    background: white;
-  }
-  
-  nav,
-  .no-print {
-    display: none;
-  }
-}
-/* ══════════════════════════════════════════════════════════════════════════════
-   PARTNERS MARQUEE ANIMATION
-   ══════════════════════════════════════════════════════════════════════════════ */
-
 @keyframes marquee {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
-
-.animate-marquee {
-  animation: marquee 22s linear infinite;
+@keyframes pulseRing {
+  0%   { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.8); opacity: 0; }
 }
 
-.animate-marquee:hover {
-  animation-play-state: paused;
+.animate-fade-up    { animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-fade-in    { animation: fadeIn 0.4s ease both; }
+.animate-slide-left { animation: slideLeft 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-slide-right{ animation: slideRight 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-scale-in   { animation: scaleIn 0.4s cubic-bezier(0.22,1,0.36,1) both; }
+.animate-float      { animation: float 4s ease-in-out infinite; }
+.animate-marquee    { animation: marquee 22s linear infinite; }
+.animate-marquee:hover { animation-play-state: paused; }
+
+.delay-100  { animation-delay: 0.1s; }
+.delay-200  { animation-delay: 0.2s; }
+.delay-300  { animation-delay: 0.3s; }
+.delay-400  { animation-delay: 0.4s; }
+.delay-500  { animation-delay: 0.5s; }
+
+/* ─── Utilitaires ────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-200) 50%, var(--gray-100) 75%);
+  background-size: 1600px 100%;
+  animation: shimmer 2s linear infinite;
+  border-radius: 6px;
+}
+
+.glass {
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.5);
+}
+
+.glass-dark {
+  background: rgba(15,45,18,0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* ─── Focus ──────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--green-400);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ─── RTL ────────────────────────────────────────────────── */
+[dir="rtl"] { direction: rtl; }
+
+/* ─── Motion réduit ──────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─── Variables legacy compatibilité ────────────────────────── */
+:root {
+  --primary-darkest: #2C1A0E;
+  --primary-dark:    #1D6B2A;
+  --primary:         #2d8c35;
+  --primary-light:   #3CB648;
+  --primary-soft:    #6AB73D;
+  --primary-ghost:   #F0F8E8;
+  --primary-pale:    #DFF0C8;
+  --neutral-50:      #FAFAF6;
 }

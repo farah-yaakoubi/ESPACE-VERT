@@ -33,14 +33,14 @@ import type { Gamme } from "./components/FertivertData";
 // Corps : blanc / gris léger / vert site
 const SITE = {
   // hero dark — basé sur vert foncé Espace Vert #006428
-  heroBg:     "#001a09",
+  heroBg:     "#0a2410",
   // verts exacts logos
-  green:      "#006428",   // Espace Vert foncé
-  greenMid:   "#28a03c",   // Fertivert mid
-  greenLeaf:  "#28b43c",   // Fertivert primary
-  greenAccent:"#8cb43c",   // Espace Vert lime
+  green:      "#1D6B2A",   // Espace Vert foncé
+  greenMid:   "#2d8c35",   // Fertivert mid
+  greenLeaf:  "#3CB648",   // Fertivert primary
+  greenAccent:"#68cc74",   // Espace Vert lime
   // corps — blanc cassé naturel site
-  bg:         "#f5f8f5",
+  bg:         "#f8fef8",
   surface:    "#ffffff",
   border:     "#e0e8e1",
   borderGreen:"rgba(40,180,60,0.18)",
@@ -52,8 +52,8 @@ const SITE = {
 };
 
 const FV = {
-  pro:    { dark: "#002810", mid: "#006428", light: "#28b43c", pale: "#e6f5e9", accent: "#28b43c" },
-  garden: { dark: "#002810", mid: "#28a03c", light: "#8cb43c", pale: "#edf7e8", accent: "#8cb43c" },
+  pro:    { dark: "#0a2410", mid: "#1D6B2A", light: "#3CB648", pale: "#dcf5de", accent: "#3CB648" },
+  garden: { dark: "#0a2410", mid: "#2d8c35", light: "#68cc74", pale: "#e8f8ea", accent: "#3CB648" },
 };
 
 // ─── buildTree ───────────────────────────────────────────────────────────────

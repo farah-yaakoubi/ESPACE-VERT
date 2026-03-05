@@ -1,13 +1,5 @@
 "use client";
 
-// ══════════════════════════════════════════════════════════════════════════════
-// SOCIAL SIDEBAR
-// • Pages autres que Home → fixe TOUJOURS visible (sauf au footer)
-// • Home page → apparaît après le carousel (scroll > 80vh)
-// • Disparaît dans TOUS les cas quand le footer entre dans le viewport
-// • Mobile → masqué (la version inline SocialIconsInline est utilisée)
-// ══════════════════════════════════════════════════════════════════════════════
-
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";

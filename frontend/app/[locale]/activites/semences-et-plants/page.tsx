@@ -8,20 +8,23 @@ import { useLocale } from "next-intl";
 
 // ─── Palette ─────────────────────────────────────────────────────────────────
 const C = {
-  dark:    "#002810",
-  green:   "#006428",
-  mid:     "#1a7a3c",
-  leaf:    "#28b43c",
-  lime:    "#8cb43c",
-  pale:    "#e8f5dc",
-  bg:      "#f5f9f0",
-  surface: "#ffffff",
-  border:  "#d4e8c0",
+  dark:    "#2C1A0E",      // brun terre foncé
+  green:   "#3D6B21",      // vert feuille semences
+  mid:     "#4E8A2A",      // vert moyen
+  leaf:    "#6AB73D",      // vert clair
+  lime:    "#8FCC55",      // lime
+  pale:    "#F0F8E8",      // vert très pâle
+  bg:      "#FAFAF6",      // blanc cassé chaud
+  surface: "#FFFFFF",
+  border:  "#DFF0C8",      // vert pâle border
+  wheat:   "#C8A84B",      // blé doré
+  earth:   "#8B6347",      // terre brune
+  sand:    "#F5EDD5",      // sable chaud
 };
 
 // ─── Logos partenaires (text fallback si pas d'image) ────────────────────────
 const BRAND_COLORS: Record<string, string> = {
-  "TERA SEEDS":              "#1a7a3c",
+  "TERA SEEDS":              "var(--primary)",
   "NEXEEDS":                 "#0e4a8a",
   "GRIFFATON":               "#8B1a1a",
   "SERVICE PLUS":            "#6b3fa0",
@@ -220,7 +223,7 @@ const SUBCATEGORIES: Record<string, string[]> = {
 
 // ─── BrandBadge ──────────────────────────────────────────────────────────────
 function BrandBadge({ brand }: { brand: string }) {
-  const color = BRAND_COLORS[brand] ?? "#4a7c2f";
+  const color = BRAND_COLORS[brand] ?? "var(--primary)";
   return (
     <span
       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wide text-white"
@@ -417,11 +420,11 @@ function IASimulator() {
               color: "white",
             }}
           >
-            <option value="" style={{ background: "#002810" }}>Sélectionner…</option>
-            <option value="rendement" style={{ background: "#002810" }}>Maximiser le rendement</option>
-            <option value="qualite" style={{ background: "#002810" }}>Qualité premium / export</option>
-            <option value="resistance" style={{ background: "#002810" }}>Résistance maladies</option>
-            <option value="precocite" style={{ background: "#002810" }}>Précocité</option>
+            <option value="" style={{ background: "var(--primary-darkest)" }}>Sélectionner…</option>
+            <option value="rendement" style={{ background: "var(--primary-darkest)" }}>Maximiser le rendement</option>
+            <option value="qualite" style={{ background: "var(--primary-darkest)" }}>Qualité premium / export</option>
+            <option value="resistance" style={{ background: "var(--primary-darkest)" }}>Résistance maladies</option>
+            <option value="precocite" style={{ background: "var(--primary-darkest)" }}>Précocité</option>
           </select>
         </div>
 
@@ -489,7 +492,7 @@ function Hero() {
       className="relative overflow-hidden flex flex-col items-center justify-center text-center"
       style={{
         minHeight: "58vh",
-        background: "linear-gradient(158deg, #001409 0%, #002810 30%, #004a20 65%, #006428 100%)",
+        background: "linear-gradient(158deg, #1A2C0A 0%, #2C4A14 30%, #3D6B21 65%, #4E8A2A 100%)",
       }}
     >
       {/* Grain */}
@@ -502,7 +505,7 @@ function Hero() {
         className="absolute inset-0 pointer-events-none"
         animate={{ opacity: [0.2, 0.45, 0.2] }}
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-        style={{ background: "radial-gradient(ellipse 80% 60% at 50% 50%, rgba(140,198,63,0.18) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(ellipse 80% 60% at 50% 50%, rgba(200,168,75,0.20) 0%, transparent 70%)" }}
       />
 
       <div className="relative z-10 max-w-4xl mx-auto px-6 py-20">
@@ -512,11 +515,11 @@ function Hero() {
           transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 text-[11px] font-black uppercase tracking-widest"
-            style={{ background: "rgba(140,198,63,0.18)", border: "1px solid rgba(140,198,63,0.35)", color: "#8cb43c" }}>
+            style={{ background: "rgba(140,198,63,0.18)", border: "1px solid rgba(140,198,63,0.35)", color: "var(--primary-soft)" }}>
             🌱 Activité Espace Vert
           </div>
           <h1 className="text-white font-black mb-4" style={{ fontSize: "clamp(32px, 5vw, 58px)", lineHeight: 1.1 }}>
-            Semences & <span style={{ color: "#8cb43c" }}>Plants</span>
+            Semences & <span style={{ color: "var(--primary-soft)" }}>Plants</span>
           </h1>
           <p className="text-white/60 text-lg max-w-2xl mx-auto mb-8" style={{ lineHeight: 1.6 }}>
             Sélection rigoureuse des meilleures variétés hybrides F1 pour maraîchers, céréaliers et arboriculteurs professionnels.
@@ -540,7 +543,7 @@ function Hero() {
       {/* Vague */}
       <div className="absolute bottom-0 inset-x-0">
         <svg viewBox="0 0 1440 52" preserveAspectRatio="none" style={{ width: "100%", height: 52, display: "block" }}>
-          <path d="M0,28 C240,52 480,4 720,24 C900,40 1100,6 1300,22 C1380,30 1420,14 1440,28 L1440,52 L0,52 Z" fill="#f5f9f0" />
+          <path d="M0,28 C240,52 480,4 720,24 C900,40 1100,6 1300,22 C1380,30 1420,14 1440,28 L1440,52 L0,52 Z" fill="#FAFAF6" />
         </svg>
       </div>
     </section>
@@ -638,7 +641,7 @@ export default function SemencesEtPlantsPage() {
             >
               <div
                 className="px-4 py-3"
-                style={{ background: "linear-gradient(135deg, #002810, #004a20)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+                style={{ background: "linear-gradient(135deg, #2C1A0E, #3D6B21)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}
               >
                 <p className="text-[11px] font-black uppercase tracking-widest text-white/60">Catégories</p>
               </div>
@@ -722,7 +725,7 @@ export default function SemencesEtPlantsPage() {
             >
               <div
                 className="px-4 py-3"
-                style={{ background: "linear-gradient(135deg, #002810, #004a20)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+                style={{ background: "linear-gradient(135deg, #2C1A0E, #3D6B21)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}
               >
                 <p className="text-[11px] font-black uppercase tracking-widest text-white/60">Marques Partenaires</p>
               </div>

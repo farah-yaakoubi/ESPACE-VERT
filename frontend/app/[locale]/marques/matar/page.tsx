@@ -20,9 +20,9 @@ const brandConfig = {
   subtitle: "Solutions d'Irrigation Professionnelles",
   description: "Leader tunisien en systèmes d'irrigation depuis 1985. Fabricant et distributeur de matériel d'irrigation de haute qualité.",
   color: {
-    primary: "#2563eb",
-    secondary: "#3b82f6",
-    light: "#dbeafe",
+    primary: "#1B6B7A",
+    secondary: "#2A8A9A",
+    light: "#E0F4F7",
   },
   logo: "/brands/matar-logo.svg",
   hero: "/brands/matar-hero.jpg",
@@ -208,11 +208,11 @@ export default function MatarPage() {
                 <h1 className="text-6xl font-black">{brandConfig.name}</h1>
               </div>
 
-              <p className="text-2xl font-bold text-blue-100 mb-4">
+              <p className="text-2xl font-bold text-teal-100 mb-4">
                 {brandConfig.subtitle}
               </p>
 
-              <p className="text-lg text-blue-50 mb-8 leading-relaxed max-w-xl">
+              <p className="text-lg text-teal-50 mb-8 leading-relaxed max-w-xl">
                 {brandConfig.description}
               </p>
 
@@ -220,15 +220,15 @@ export default function MatarPage() {
               <div className="flex gap-8 mb-8">
                 <div>
                   <div className="text-4xl font-black mb-1">{brandConfig.founded}</div>
-                  <div className="text-blue-100 text-sm">Année de création</div>
+                  <div className="text-teal-100 text-sm">Année de création</div>
                 </div>
                 <div>
                   <div className="text-4xl font-black mb-1">{products.length}</div>
-                  <div className="text-blue-100 text-sm">Gammes produits</div>
+                  <div className="text-teal-100 text-sm">Gammes produits</div>
                 </div>
                 <div>
                   <div className="text-4xl font-black mb-1">100%</div>
-                  <div className="text-blue-100 text-sm">Tunisien</div>
+                  <div className="text-teal-100 text-sm">Tunisien</div>
                 </div>
               </div>
 
@@ -333,10 +333,10 @@ export default function MatarPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.1 }}
-                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all border-2 border-gray-100 hover:border-blue-200"
+                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all border-2 border-gray-100 hover:border-teal-200"
                 >
                   {/* Image */}
-                  <div className="relative h-48 bg-gradient-to-br from-blue-100 to-cyan-100">
+                  <div className="relative h-48 bg-gradient-to-br from-teal-50 to-cyan-50">
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-6xl opacity-20">💧</span>
                     </div>
@@ -428,13 +428,13 @@ export default function MatarPage() {
           <h2 className="text-4xl font-black mb-4">
             Besoin d'un système d'irrigation sur-mesure ?
           </h2>
-          <p className="text-xl text-blue-50 mb-8">
+          <p className="text-xl text-teal-50 mb-8">
             Nos experts vous accompagnent dans votre projet
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="tel:+21671333858"
-              className="px-8 py-4 bg-white font-bold rounded-2xl hover:bg-blue-50 transition-all"
+              className="px-8 py-4 bg-white font-bold rounded-2xl hover:bg-teal-50 transition-all"
               style={{ color: brandConfig.color.primary }}
             >
               📞 (+216) 71 333 858

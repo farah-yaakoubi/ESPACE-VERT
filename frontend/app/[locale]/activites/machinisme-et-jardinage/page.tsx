@@ -1,256 +1,142 @@
 "use client";
-
-import {
-  ArrowRightIcon,
-  CheckCircleIcon,
-  CogIcon,
-  WrenchScrewdriverIcon,
-} from "@heroicons/react/24/outline";
 import { motion } from "framer-motion";
-import { useTranslations } from "next-intl";
+import { WrenchScrewdriverIcon, CogIcon, CheckCircleIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
+
+const FADE = (delay=0) => ({ initial:{opacity:0,y:24}, whileInView:{opacity:1,y:0}, viewport:{once:true}, transition:{duration:0.55,ease:[0.22,1,0.36,1],delay} });
+
+// Viking / Machinisme: rouge + gris acier + blanc
+const MC = { red:"#c0392b", darkRed:"#922b21", gray:"#4a4a4a", steel:"#64748b", lightGray:"#f1f5f9", bg:"#f8f8f7" };
 
 export default function MachinismePage() {
   const t = useTranslations("activities.machinisme");
+  const locale = useLocale();
 
   const categories = [
-    {
-      id: "tondeuses",
-      name: "Tondeuses à Gazon",
-      icon: "🚜",
-      description:
-        "Tondeuses thermiques et électriques pour tous types de terrains",
-      products: [
-        {
-          name: "Tondeuse autoportée",
-          model: "Viking MT 6127 ZL",
-          power: "27 HP",
-          width: "122 cm",
-        },
-        {
-          name: "Tondeuse thermique",
-          model: "Viking MB 650 T",
-          power: "2.9 kW",
-          width: "48 cm",
-        },
-        {
-          name: "Tondeuse électrique",
-          model: "Viking ME 339",
-          power: "1400 W",
-          width: "37 cm",
-        },
-        {
-          name: "Tondeuse robot",
-          model: "Viking iMow",
-          power: "Auto",
-          width: "20 cm",
-        },
-      ],
-    }
+    { icon:"🚜", name:"Tondeuses à Gazon", desc:"Tondeuses thermiques, électriques et robots pour tous terrains", products:[
+      {name:"Autoportée", model:"Viking MT 6127 ZL", power:"27 HP", width:"122 cm"},
+      {name:"Thermique",  model:"Viking MB 650 T",   power:"2.9 kW", width:"48 cm"},
+      {name:"Électrique", model:"Viking ME 339",      power:"1400 W", width:"37 cm"},
+      {name:"Robot",      model:"Viking iMow",        power:"Auto",   width:"20 cm"},
+    ]},
+    { icon:"✂️", name:"Taille-Haies & Tronçonneuses", desc:"Outillage de précision pour l'entretien de vos espaces verts", products:[
+      {name:"Taille-haie thermique", model:"Viking HT 5050", power:"0.9 kW", width:"50 cm"},
+      {name:"Taille-haie électrique",model:"Viking HE 610",  power:"600 W",  width:"60 cm"},
+      {name:"Tronçonneuse",         model:"Viking MT 6000",  power:"2.0 kW", width:"37 cm"},
+    ]},
+    { icon:"💨", name:"Souffleurs & Aspirateurs", desc:"Collecte et évacuation rapide des feuilles mortes et déchets", products:[
+      {name:"Souffleur thermique",  model:"Viking LB 700",  power:"0.9 kW", width:"—"},
+      {name:"Souffleur électrique", model:"Viking EB 235 E",power:"2300 W", width:"—"},
+    ]},
   ];
 
   const services = [
-    {
-      icon: WrenchScrewdriverIcon,
-      title: "Service Après-Vente",
-      description:
-        "Réparation et entretien de tous vos équipements par nos techniciens certifiés",
-    },
-    {
-      icon: CogIcon,
-      title: "Pièces Détachées",
-      description: "Large stock de pièces d'origine pour toutes les marques",
-    },
-    {
-      icon: CheckCircleIcon,
-      title: "Garantie",
-      description: "Tous nos équipements neufs sont garantis constructeur",
-    },
+    { icon: WrenchScrewdriverIcon, title:"Service Après-Vente",   desc:"Réparation et entretien par nos techniciens certifiés Viking." },
+    { icon: CogIcon,               title:"Pièces Détachées",       desc:"Large stock de pièces d'origine pour toutes les marques." },
+    { icon: CheckCircleIcon,       title:"Garantie Constructeur",  desc:"Tous nos équipements neufs sont garantis par le fabricant." },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-gray-800 via-gray-700 to-gray-600 text-white">
-        <div className="absolute inset-0 opacity-10">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle, white 2px, transparent 2px)",
-              backgroundSize: "40px 40px",
-            }}
-          />
+    <div style={{background:MC.bg,minHeight:"100vh"}}>
+
+      {/* ── HERO — rouge + gris acier ── */}
+      <section style={{background:`linear-gradient(135deg,${MC.darkRed} 0%,${MC.red} 50%,#e74c3c 100%)`,position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px)",backgroundSize:"28px 28px"}}/>
+        {/* Accent gris acier */}
+        <div style={{position:"absolute",top:-80,right:-80,width:320,height:320,borderRadius:"50%",background:"radial-gradient(circle,rgba(100,116,139,0.3) 0%,transparent 70%)"}}/>
+        <div style={{position:"absolute",bottom:-1,left:0,right:0}}>
+          <svg viewBox="0 0 1440 60" style={{width:"100%",height:60,display:"block"}} preserveAspectRatio="none">
+            <path d="M0,60L1440,60L1440,20C1200,52,960,0,720,28C480,56,240,4,0,36Z" fill={MC.bg}/>
+          </svg>
         </div>
-
-        <div className="relative max-w-screen-xl mx-auto px-8 py-20">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl"
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-bold mb-6">
-              🔧 Nos Activités
+        <div style={{maxWidth:1200,margin:"0 auto",padding:"6rem 2rem 7rem"}}>
+          <motion.div initial={{opacity:0,y:24}} animate={{opacity:1,y:0}} transition={{duration:0.6,ease:[0.22,1,0.36,1]}} style={{maxWidth:680}}>
+            <span style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(255,255,255,0.15)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,0.25)",color:"white",padding:"6px 16px",borderRadius:99,fontSize:13,fontWeight:600,marginBottom:24}}>
+              🔧 {t("tag")}
+            </span>
+            <h1 style={{fontSize:"clamp(2.2rem,5vw,3.5rem)",fontWeight:900,color:"white",lineHeight:1.1,letterSpacing:"-0.025em",marginBottom:20}}>{t("pageTitle")}</h1>
+            <p style={{fontSize:"1.1rem",color:"rgba(255,255,255,0.78)",lineHeight:1.7,marginBottom:36,maxWidth:560}}>{t("pageSubtitle")}</p>
+            <div style={{display:"flex",flexWrap:"wrap",gap:12}}>
+              <Link href={`/${locale}/contact`} style={{display:"inline-flex",alignItems:"center",gap:8,padding:"13px 28px",background:"white",color:MC.darkRed,fontWeight:700,borderRadius:99,textDecoration:"none",boxShadow:"0 4px 16px rgba(0,0,0,0.15)"}}>
+                {t("ctaContact")} <ArrowRightIcon style={{width:16,height:16}}/>
+              </Link>
+              <Link href={`/${locale}/rendez-vous`} style={{display:"inline-flex",alignItems:"center",gap:8,padding:"13px 28px",background:"rgba(255,255,255,0.12)",color:"white",fontWeight:600,borderRadius:99,textDecoration:"none",border:"1.5px solid rgba(255,255,255,0.4)"}}>
+                {t("ctaAppointment")}
+              </Link>
             </div>
-
-            <h1 className="text-6xl font-black mb-6 leading-tight">
-              Machinisme et Jardinage
-            </h1>
-
-            <p className="text-xl text-gray-50 mb-8 leading-relaxed">
-              Équipements professionnels Viking pour l'entretien de vos espaces
-              verts. Vente, service après-vente et pièces détachées.
-            </p>
           </motion.div>
         </div>
       </section>
 
-      {/* Catégories d'équipements */}
-      <section className="py-20">
-        <div className="max-w-screen-xl mx-auto px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-black text-gray-900 mb-4">
-              Notre Gamme d'Équipements
-            </h2>
-            <p className="text-lg text-gray-600">
-              Matériel professionnel Viking pour tous vos besoins
-            </p>
-          </div>
-
-          <div className="space-y-12">
-            {categories.map((category, catIdx) => (
-              <motion.div
-                key={category.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: catIdx * 0.1 }}
-                className="bg-white rounded-2xl p-8 shadow-lg"
-              >
-                <div className="flex items-start gap-4 mb-6">
-                  <div className="text-5xl">{category.icon}</div>
-                  <div className="flex-1">
-                    <h3 className="text-3xl font-black text-gray-900 mb-2">
-                      {category.name}
-                    </h3>
-                    <p className="text-gray-600">{category.description}</p>
+      {/* ── CATÉGORIES ── */}
+      <section style={{padding:"5rem 2rem",background:"white"}}>
+        <div style={{maxWidth:1200,margin:"0 auto"}}>
+          <motion.div {...FADE()} style={{textAlign:"center",marginBottom:"3.5rem"}}>
+            <h2 style={{fontSize:"clamp(1.6rem,3.5vw,2.4rem)",fontWeight:800,color:"#1a1a1a",marginBottom:12}}>{t("categoriesTitle")}</h2>
+          </motion.div>
+          <div style={{display:"flex",flexDirection:"column",gap:32}}>
+            {categories.map((cat,i)=>(
+              <motion.div key={i} {...FADE(i*0.1)} style={{borderRadius:20,overflow:"hidden",border:"1.5px solid #e8e6e1"}}>
+                {/* En-tête catégorie */}
+                <div style={{background:`linear-gradient(90deg,${MC.gray} 0%,${MC.steel} 100%)`,padding:"1.25rem 1.75rem",display:"flex",alignItems:"center",gap:14}}>
+                  <span style={{fontSize:"1.8rem"}}>{cat.icon}</span>
+                  <div>
+                    <h3 style={{fontWeight:800,color:"white",fontSize:"1.1rem"}}>{cat.name}</h3>
+                    <p style={{color:"rgba(255,255,255,0.7)",fontSize:"0.83rem"}}>{cat.desc}</p>
                   </div>
                 </div>
-
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {category.products.map((product, idx) => (
-                    <div
-                      key={idx}
-                      className="p-5 border-2 border-gray-100 rounded-xl hover:border-gray-300 hover:shadow-md transition-all"
-                    >
-                      <h4 className="font-bold text-gray-900 mb-2 text-sm">
-                        {product.name}
-                      </h4>
-                      <div className="text-xs text-gray-500 mb-3">
-                        {product.model}
-                      </div>
-                      <div className="space-y-1">
-                        {Object.entries(product)
-                          .filter(([key]) => !["name", "model"].includes(key))
-                          .map(([key, value], i) => (
-                            <div
-                              key={i}
-                              className="flex items-center gap-2 text-xs"
-                            >
-                              <CheckCircleIcon className="w-3 h-3 text-gray-400" />
-                              <span className="text-gray-600">
-                                {key === "power" && "Puissance: "}
-                                {key === "width" && "Largeur: "}
-                                {key === "guide" && "Guide: "}
-                                {key === "coupe" && "Largeur coupe: "}
-                                {key === "vitesse" && "Vitesse: "}
-                                {key === "fil" && "Fil: "}
-                                {key === "pression" && "Pression: "}
-                                {key === "diamètre" && "Ø max: "}
-                                {key === "lame" && "Lame: "}
-                                {value}
-                              </span>
-                            </div>
-                          ))}
+                {/* Grille produits */}
+                <div style={{background:"white",padding:"1.5rem",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(200px,1fr))",gap:12}}>
+                  {cat.products.map((p,j)=>(
+                    <div key={j} style={{background:MC.lightGray,borderRadius:12,padding:"1rem",border:`2px solid ${MC.red}15`}}>
+                      <div style={{fontWeight:700,color:"#1a1a1a",fontSize:"0.9rem",marginBottom:4}}>{p.name}</div>
+                      <div style={{fontSize:"0.78rem",color:MC.steel,fontFamily:"monospace",marginBottom:8}}>{p.model}</div>
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                        <span style={{background:`${MC.red}18`,color:MC.red,padding:"2px 8px",borderRadius:99,fontSize:"0.75rem",fontWeight:700}}>{p.power}</span>
+                        {p.width!=="—" && <span style={{background:"#f1f5f9",color:MC.steel,padding:"2px 8px",borderRadius:99,fontSize:"0.75rem",fontWeight:600}}>{p.width}</span>}
                       </div>
                     </div>
                   ))}
                 </div>
-
-                <div className="mt-6 text-right">
-                  <Link
-                    href={`/fr/marques/viking?category=${category.id}`}
-                    className="inline-flex items-center gap-2 text-gray-700 font-bold hover:text-gray-900 hover:gap-3 transition-all"
-                  >
-                    Voir tous les {category.name.toLowerCase()}{" "}
-                    <ArrowRightIcon className="w-4 h-4" />
-                  </Link>
-                </div>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Services */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-screen-xl mx-auto px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-black text-gray-900 mb-4">
-              Nos Services
-            </h2>
-            <p className="text-lg text-gray-600">
-              Un accompagnement complet pour vos équipements
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {services.map((service, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.2 }}
-                className="bg-white rounded-2xl p-8 shadow-lg"
-              >
-                <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mb-6">
-                  <service.icon className="w-7 h-7 text-gray-700" />
+      {/* ── SERVICES ── */}
+      <section style={{padding:"5rem 2rem",background:MC.bg}}>
+        <div style={{maxWidth:1000,margin:"0 auto"}}>
+          <motion.div {...FADE()} style={{textAlign:"center",marginBottom:"3.5rem"}}>
+            <h2 style={{fontSize:"clamp(1.6rem,3.5vw,2.4rem)",fontWeight:800,color:"#1a1a1a",marginBottom:12}}>{t("servicesTitle")}</h2>
+          </motion.div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:20}}>
+            {services.map((s,i)=>(
+              <motion.div key={i} {...FADE(i*0.12)} style={{background:"white",borderRadius:18,padding:"2rem",border:`1.5px solid ${MC.red}20`,transition:"box-shadow .2s,transform .2s"}} onMouseEnter={e=>{e.currentTarget.style.boxShadow=`0 8px 24px ${MC.red}18`;e.currentTarget.style.transform="translateY(-4px)"}} onMouseLeave={e=>{e.currentTarget.style.boxShadow="";e.currentTarget.style.transform=""}}>
+                <div style={{width:48,height:48,background:`linear-gradient(135deg,${MC.red},${MC.darkRed})`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:16}}>
+                  <s.icon style={{width:22,height:22,color:"white"}}/>
                 </div>
-                <h3 className="text-xl font-black text-gray-900 mb-3">
-                  {service.title}
-                </h3>
-                <p className="text-gray-600">{service.description}</p>
+                <h3 style={{fontWeight:700,color:"#1a1a1a",marginBottom:8}}>{s.title}</h3>
+                <p style={{color:MC.steel,fontSize:"0.9rem",lineHeight:1.65}}>{s.desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-20 bg-gradient-to-br from-gray-800 to-gray-600 text-white">
-        <div className="max-w-4xl mx-auto px-8 text-center">
-          <h2 className="text-4xl font-black mb-6">
-            Besoin d'un conseil pour votre équipement ?
-          </h2>
-          <p className="text-xl text-gray-50 mb-8">
-            Notre équipe technique est à votre disposition
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="tel:+21671333858"
-              className="px-8 py-4 bg-white text-gray-800 font-bold rounded-2xl hover:bg-gray-50 transition-all shadow-xl"
-            >
-              📞 (+216) 71 333 858
-            </a>
-            <Link
-              href="/fr/contact"
-              className="px-8 py-4 bg-white/10 backdrop-blur-sm border-2 border-white text-white font-bold rounded-2xl hover:bg-white/20 transition-all"
-            >
-              Demander un devis
+      {/* ── CTA ── */}
+      <section style={{padding:"5rem 2rem",background:`linear-gradient(135deg,${MC.darkRed} 0%,${MC.gray} 100%)`,position:"relative",overflow:"hidden"}}>
+        <motion.div {...FADE()} style={{maxWidth:580,margin:"0 auto",textAlign:"center",position:"relative"}}>
+          <h2 style={{fontSize:"clamp(1.6rem,3.5vw,2.2rem)",fontWeight:800,color:"white",marginBottom:12}}>{t("ctaTitle")}</h2>
+          <p style={{color:"rgba(255,255,255,0.72)",marginBottom:36}}>{t("ctaSubtitle")}</p>
+          <div style={{display:"flex",flexWrap:"wrap",gap:12,justifyContent:"center"}}>
+            <a href="tel:+21671333858" style={{display:"inline-flex",alignItems:"center",gap:8,padding:"13px 28px",background:"white",color:MC.darkRed,fontWeight:700,borderRadius:99,textDecoration:"none"}}>📞 (+216) 71 333 858</a>
+            <Link href={`/${locale}/contact`} style={{display:"inline-flex",alignItems:"center",gap:8,padding:"13px 28px",background:"rgba(255,255,255,0.12)",color:"white",fontWeight:600,borderRadius:99,textDecoration:"none",border:"1.5px solid rgba(255,255,255,0.4)"}}>
+              {t("ctaContact")}
             </Link>
           </div>
-        </div>
+        </motion.div>
       </section>
     </div>
   );
