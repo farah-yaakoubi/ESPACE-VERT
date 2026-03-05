@@ -1,27 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 
 export function useLocale() {
-  const router = useRouter();
-  const [locale, setLocaleState] = useState('fr');
+  const params   = useParams();
+  const router   = useRouter();
+  const pathname = usePathname();
 
-  useEffect(() => {
-    const storedLocale = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('NEXT_LOCALE='))
-      ?.split('=')[1] || 'fr';
-    
-    setLocaleState(storedLocale);
-  }, []);
+  // Locale vient toujours du segment URL : /ar/marques → "ar"
+  // Synchronisé avec next-intl qui charge les messages depuis la même URL
+  const locale = (params?.locale as string) || 'fr';
 
   const setLocale = (newLocale: string) => {
-    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`;
-    document.documentElement.dir = newLocale === 'ar' ? 'rtl' : 'ltr';
-    document.documentElement.lang = newLocale;
-    setLocaleState(newLocale);
-    router.refresh();
+    // Remplace /locale_actuelle/ par /nouvelle_locale/ dans le chemin
+    const newPath = pathname.replace(/^\/[a-z]{2}(\/|$)/, `/${newLocale}$1`);
+    router.push(newPath || `/${newLocale}`);
   };
 
   return { locale, setLocale };

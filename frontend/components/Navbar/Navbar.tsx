@@ -254,85 +254,19 @@ const Ico = {
 };
 
 // ─── DATA NAVIGATION ──────────────────────────────────────────────────────────
-const ACTIVITIES = [
-  {
-    key: "seeds",
-    href: "/activites/semences-et-plants",
-    Icon: Ico.Seed,
-    label: "Semences & Plants",
-    desc: "Variétés maraîchères, fourragères, gazon",
-    badge: "Calculateur IA",
-    subs: [
-      "Légumes & Maraîchage",
-      "Arbres Fruitiers",
-      "Semences Fourragères",
-      "Gazon & Pelouse",
-      "Plants de Pomme de Terre",
-    ],
-  },
-  {
-    key: "irrigation",
-    href: "/activites/irrigation",
-    Icon: Ico.Drop,
-    label: "Irrigation",
-    desc: "Goutte-à-goutte, aspersion, pompage",
-    badge: "Bureau d'Étude",
-    subs: [
-      "Goutte-à-goutte",
-      "Aspersion",
-      "Pompes & Filtration",
-      "Tuyaux & Raccords",
-      "Fertirrigation",
-    ],
-  },
-  {
-    key: "fertilization",
-    href: "/activites/fertilisation",
-    Icon: Ico.Leaf,
-    label: "Fertilisation",
-    desc: "Engrais, biostimulants, correcteurs",
-    subs: [
-      "Engrais de Fond NPK",
-      "Engrais Organiques",
-      "Biostimulants",
-      "Correcteurs de Carences",
-    ],
-  },
-  {
-    key: "machinery",
-    href: "/activites/machinisme-et-jardinage",
-    Icon: Ico.Tractor,
-    label: "Machinisme",
-    desc: "Matériel agricole et espaces verts",
-    subs: [
-      "Machinisme Agricole",
-      "Matériel de Jardinage",
-      "Équipements Espaces Verts",
-      "Matériel de Récolte",
-    ],
-  },
-  {
-    key: "spraying",
-    href: "/activites/pulverisation",
-    Icon: Ico.Wind,
-    label: "Pulvérisation",
-    desc: "Pulvérisateurs, EPI, produits phyto",
-    badge: "Gamme Bio",
-    subs: [
-      "Pulvérisateurs à Dos",
-      "Pulvérisateurs Tracteur",
-      "Buses & Accessoires",
-      "EPI & Sécurité",
-      "Produits Phytosanitaires",
-    ],
-  },
+const ACTIVITIES_CONFIG = [
+  { key: "seeds",         href: "/activites/semences-et-plants",      Icon: Ico.Seed,    navKey: "semences",      descKey: "seeds_desc",  badgeKey: "seeds_badge",  subs: ["seeds_sub1","seeds_sub2","seeds_sub3","seeds_sub4","seeds_sub5"] },
+  { key: "irrigation",    href: "/activites/irrigation",              Icon: Ico.Drop,    navKey: "irrigation",    descKey: "irr_desc",    badgeKey: "irr_badge",    subs: ["irr_sub1","irr_sub2","irr_sub3","irr_sub4","irr_sub5"] },
+  { key: "fertilization", href: "/activites/fertilisation",           Icon: Ico.Leaf,    navKey: "fertilisation", descKey: "fert_desc",   badgeKey: null,           subs: ["fert_sub1","fert_sub2","fert_sub3","fert_sub4"] },
+  { key: "machinery",     href: "/activites/machinisme-et-jardinage", Icon: Ico.Tractor, navKey: "machinisme",    descKey: "mach_desc",   badgeKey: null,           subs: ["mach_sub1","mach_sub2","mach_sub3","mach_sub4"] },
+  { key: "spraying",      href: "/activites/pulverisation",           Icon: Ico.Wind,    navKey: "pulverisation", descKey: "spray_desc",  badgeKey: "spray_badge",  subs: ["spray_sub1","spray_sub2","spray_sub3","spray_sub4","spray_sub5"] },
 ];
 
 const FERTIVERT = [
   {
     id: "pro",
     label: "Fertivert Pro",
-    subtitle: "Agriculture Professionnelle",
+    subKey: "fv_pro_sub",
     href: "/marques/fertivert?division=pro",
     color: "#1a3d0a",
     accent: "#2d5a1b",
@@ -392,7 +326,7 @@ const FERTIVERT = [
   {
     id: "garden",
     label: "Fertivert Garden",
-    subtitle: "Jardin & Gazon",
+    subKey: "fv_garden_sub",
     href: "/marques/fertivert?division=garden",
     color: "#2d5a1b",
     accent: "#4a7c2f",
@@ -471,33 +405,17 @@ const FERTIVERT = [
   },
 ];
 
-const OTHER_BRANDS = [
-  {
-    key: "pulvert",
-    href: "/marques/pulvert",
-    color: "#134e4a",
-    Icon: Ico.Pump,
-    name: "Pulvert",
-    sub: "Pulvérisateurs & Accessoires",
-    tags: ["Agricole", "Garden", "SAV"],
-  },
-  {
-    key: "matar",
-    href: "/marques/matar",
-    color: "#0e3a5f",
-    Icon: Ico.Pipe,
-    name: "Matar",
-    sub: "Irrigation & Arrosage",
-    tags: ["Drip", "Smart", "Filtration"],
-  },
+const OTHER_BRANDS_CONFIG = [
+  { key: "pulvert", href: "/marques/pulvert", color: "#1D6B2A", Icon: Ico.Pump, name: "Pulvert", subKey: "pulvert_sub", tags: ["Agricole", "Garden", "SAV"] },
+  { key: "matar",   href: "/marques/matar",   color: "#1B6B7A", Icon: Ico.Pipe, name: "Matar",   subKey: "matar_sub",   tags: ["Drip", "Smart", "Filtration"] },
 ];
 
 const LANGS = [
-  { code: "fr", short: "FR", full: "Français", flag: "🇫🇷" },
-  { code: "ar", short: "ع", full: "العربية", flag: "🇹🇳" },
-  { code: "en", short: "EN", full: "English", flag: "🇬🇧" },
-  { code: "it", short: "IT", full: "Italiano", flag: "🇮🇹" },
-  { code: "es", short: "ES", full: "Español", flag: "🇪🇸" },
+  { code: "fr", short: "FR", full: "Français",  flag: "🇫🇷" },
+  { code: "ar", short: "ع",  full: "العربية",   flag: "🇹🇳" },
+  { code: "en", short: "EN", full: "English",   flag: "🇬🇧" },
+  { code: "it", short: "IT", full: "Italiano",  flag: "🇮🇹" },
+  { code: "es", short: "ES", full: "Español",   flag: "🇪🇸" },
 ];
 
 // ─── HOOK HOVER AVEC DÉLAI ────────────────────────────────────────────────────
@@ -525,28 +443,29 @@ function useHover(delay = 180) {
 
 // ─── SEARCH OVERLAY ───────────────────────────────────────────────────────────
 const SEARCH_IDX = [
-  { label: "Fertivert Pro", href: "/marques/fertivert?division=pro", cat: "Marque" },
-  { label: "Fertivert Garden", href: "/marques/fertivert?division=garden", cat: "Marque" },
-  { label: "Pulvert", href: "/marques/pulvert", cat: "Marque" },
-  { label: "Matar", href: "/marques/matar", cat: "Marque" },
-  { label: "Nos Marques", href: "/marques", cat: "Page" },
-  { label: "Contact", href: "/contact", cat: "Page" },
-  { label: "Rendez-vous", href: "/rendez-vous", cat: "Page" },
-  { label: "Qui Sommes-Nous", href: "/qui-sommes-nous", cat: "Page" },
-  { label: "Irrigation", href: "/activites/irrigation", cat: "Activité" },
-  { label: "Fertilisation", href: "/activites/fertilisation", cat: "Activité" },
-  { label: "Semences & Plants", href: "/activites/semences-et-plants", cat: "Activité" },
-  { label: "Pulvérisation", href: "/activites/pulverisation", cat: "Activité" },
-  { label: "Machinisme", href: "/activites/machinisme-et-jardinage", cat: "Activité" },
+  { label: "Fertivert Pro",     href: "/marques/fertivert?division=pro",    cat: "Marque" },
+  { label: "Fertivert Garden",  href: "/marques/fertivert?division=garden", cat: "Marque" },
+  { label: "Pulvert",           href: "/marques/pulvert",                   cat: "Marque" },
+  { label: "Matar",             href: "/marques/matar",                     cat: "Marque" },
+  { label: "Nos Marques",       href: "/marques",                           cat: "Page" },
+  { label: "Contact",           href: "/contact",                           cat: "Page" },
+  { label: "Rendez-vous",       href: "/rendez-vous",                       cat: "Page" },
+  { label: "Qui Sommes-Nous",   href: "/qui-sommes-nous",                   cat: "Page" },
+  { label: "Irrigation",        href: "/activites/irrigation",              cat: "Activité" },
+  { label: "Fertilisation",     href: "/activites/fertilisation",           cat: "Activité" },
+  { label: "Semences & Plants", href: "/activites/semences-et-plants",      cat: "Activité" },
+  { label: "Pulvérisation",     href: "/activites/pulverisation",           cat: "Activité" },
+  { label: "Machinisme",        href: "/activites/machinisme-et-jardinage", cat: "Activité" },
 ];
 
 const BADGE_COLORS: Record<string, string> = {
-  Page: "bg-[#1a3d0a] text-white",
+  Page:     "bg-[#1a3d0a] text-white",
   Activité: "bg-[#2d5a1b] text-white",
-  Marque: "bg-[#4a7c2f] text-white",
+  Marque:   "bg-[#4a7c2f] text-white",
 };
 
 function SearchOverlay({ open, onClose, locale }: { open: boolean; onClose: () => void; locale: string }) {
+  const t = useTranslations("nav"); // ← FIX: added missing hook
   const [q, setQ] = useState("");
   const [pages, setPages] = useState(SEARCH_IDX);
   const [editing, setEditing] = useState<string | null>(null);
@@ -611,7 +530,7 @@ function SearchOverlay({ open, onClose, locale }: { open: boolean; onClose: () =
               ref={inputRef}
               value={q}
               onChange={e => setQ(e.target.value)}
-              placeholder="Rechercher un produit, une page, une activité…"
+              placeholder={t("searchPlaceholder")}
               className="flex-1 bg-transparent outline-none text-white text-base font-medium placeholder-white/30"
             />
             {q && (
@@ -710,6 +629,7 @@ function SearchOverlay({ open, onClose, locale }: { open: boolean; onClose: () =
 
 // ─── SEARCH BAR ───────────────────────────────────────────────────────────────
 function SearchBar({ dark, locale }: { dark: boolean; locale: string }) {
+  const t = useTranslations("nav"); // ← FIX: added missing hook
   const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
@@ -733,7 +653,7 @@ function SearchBar({ dark, locale }: { dark: boolean; locale: string }) {
       >
         <Ico.Search className="w-[17px] h-[17px] text-gray-500 group-hover:text-[#10693B] transition-colors" />
         <span className="text-[13px] font-medium text-gray-400 group-hover:text-[#10693B] transition-colors hidden xl:block">
-          Rechercher…
+          {t("search")}
         </span>
         <kbd className="hidden xl:flex items-center gap-0.5 text-[10px] font-mono border border-gray-200 rounded px-1.5 py-0.5 text-gray-300 bg-gray-50">
           ⌘K
@@ -751,6 +671,14 @@ function ActivitesDropdown({
   locale: string;
   onClose: () => void;
 }) {
+  const t = useTranslations("nav");
+  const ACTIVITIES = ACTIVITIES_CONFIG.map(a => ({
+    ...a,
+    label: t(a.navKey as any),
+    desc:  t(a.descKey as any),
+    badge: a.badgeKey ? t(a.badgeKey as any) : undefined,
+    subs:  a.subs.map(s => t(s as any)),
+  }));
   const [hoveredAct, setHoveredAct] = useState<string | null>(null);
   const act = ACTIVITIES.find((a) => a.key === hoveredAct);
 
@@ -880,7 +808,7 @@ function ActivitesDropdown({
                 className="mt-4 flex items-center gap-1.5 text-xs font-black transition-colors hover:opacity-70"
                 style={{ color: "#1a3d0a" }}
               >
-                Voir tout {act.label} <ChevronRightIcon className="w-3 h-3" />
+                {t("viewAll_act")} {act.label} <ChevronRightIcon className="w-3 h-3" />
               </Link>
             </motion.div>
           ) : (
@@ -897,7 +825,7 @@ function ActivitesDropdown({
                 >
                   <span className="text-2xl">🌾</span>
                 </div>
-                <p className="text-sm font-bold" style={{ color: "#2d5a1b" }}>Survolez une activité</p>
+                <p className="text-sm font-bold" style={{ color: "#2d5a1b" }}>{t("hoverActivity")}</p>
                 <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>pour voir ses sous-catégories</p>
               </div>
             </motion.div>
@@ -908,56 +836,37 @@ function ActivitesDropdown({
   );
 }
 
-// ─── DROPDOWN MARQUES ────────────────────────────────────────────────────────
-const BRANDS_NAV = [
+// ─── DROPDOWN MARQUES ─────────────────────────────────────────────────────────
+const BRANDS_NAV_CONFIG = [
   {
     key: "fertivert",
     href: "/marques/fertivert",
     Icon: Ico.Leaf,
     name: "Fertivert",
-    sub: "Fertilisation & Nutrition",
+    subKey: "fertivert_sub",
     color: "#1a3d0a",
-    accent: "#2d5a1b",
-    cats: [
-      "Support de Culture",
-      "Engrais de Fond",
-      "Engrais Organique",
-      "Fertilisant Spécialisé",
-      "Gazon & Garden",
-      "Soluble & Liquide",
-    ],
+    accent: "#3CB648",
+    catKeys: ["brands_fv_cat1","brands_fv_cat2","brands_fv_cat3","brands_fv_cat4","brands_fv_cat5","brands_fv_cat6"],
   },
   {
     key: "pulvert",
     href: "/marques/pulvert",
     Icon: Ico.Pump,
     name: "Pulvert",
-    sub: "Pulvérisateurs & Accessoires",
-    color: "#134e4a",
-    accent: "#1a6b65",
-    cats: [
-      "Pulvérisateurs à Dos",
-      "Pulvérisateurs Tracteur",
-      "Pulvérisateurs Jardin",
-      "Buses & Accessoires",
-      "EPI & Sécurité",
-    ],
+    subKey: "pulvert_sub",
+    color: "#1D6B2A",
+    accent: "#F2C200",
+    catKeys: ["brands_pv_cat1","brands_pv_cat2","brands_pv_cat3","brands_pv_cat4","brands_pv_cat5"],
   },
   {
     key: "matar",
     href: "/marques/matar",
     Icon: Ico.Pipe,
     name: "Matar",
-    sub: "Irrigation & Arrosage",
-    color: "#0e3a5f",
-    accent: "#1a5a8a",
-    cats: [
-      "Goutte-à-goutte",
-      "Aspersion",
-      "Pompes & Filtration",
-      "Tuyaux & Raccords",
-      "Matar Smart",
-    ],
+    subKey: "matar_sub",
+    color: "#1B6B7A",
+    accent: "#4BA8D8",
+    catKeys: ["brands_mt_cat1","brands_mt_cat2","brands_mt_cat3","brands_mt_cat4","brands_mt_cat5"],
   },
 ];
 
@@ -968,6 +877,12 @@ function MarquesDropdown({
   locale: string;
   onClose: () => void;
 }) {
+  const t = useTranslations("nav");
+  const BRANDS_NAV = BRANDS_NAV_CONFIG.map(b => ({
+    ...b,
+    sub:  t(b.subKey as any),
+    cats: (b as any).catKeys.map((k: string) => t(k as any)),
+  }));
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
   const brand = BRANDS_NAV.find((b) => b.key === hoveredKey);
 
@@ -980,7 +895,7 @@ function MarquesDropdown({
       >
         <div className="px-4 pb-2">
           <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#8cc63f" }}>
-            Nos Marques
+            {t("ourBrands")}
           </p>
         </div>
         {BRANDS_NAV.map((b) => (
@@ -1012,7 +927,7 @@ function MarquesDropdown({
               >
                 {b.name}
               </p>
-              <p className="text-[11px] truncate" style={{ color: "rgba(255,255,255,0.4)" }}>{b.sub}</p>
+              <p className="text-[11px] truncate" style={{ color: "rgba(255,255,255,0.4)" }}>{(b as any).sub}</p>
             </div>
             <ChevronRightIcon
               className="w-4 h-4 flex-shrink-0 transition-all"
@@ -1045,7 +960,7 @@ function MarquesDropdown({
                 </div>
                 <div>
                   <p className="text-sm font-black text-white">{brand.name}</p>
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>{brand.sub}</p>
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>{t((brand as any).subKey as any)}</p>
                 </div>
               </div>
               <p className="text-[10px] font-black uppercase tracking-widest mb-2 px-1" style={{ color: "#4a7c2f" }}>
@@ -1078,7 +993,7 @@ function MarquesDropdown({
                 className="mt-4 flex items-center gap-1.5 text-xs font-black transition-opacity hover:opacity-70"
                 style={{ color: "#1a3d0a" }}
               >
-                Voir tout {brand.name} <ChevronRightIcon className="w-3 h-3" />
+                {t("viewAll_brand")} {brand.name} <ChevronRightIcon className="w-3 h-3" />
               </Link>
             </motion.div>
           ) : (
@@ -1095,7 +1010,7 @@ function MarquesDropdown({
                 >
                   <span className="text-2xl">🌿</span>
                 </div>
-                <p className="text-sm font-bold" style={{ color: "#2d5a1b" }}>Survolez une marque</p>
+                <p className="text-sm font-bold" style={{ color: "#2d5a1b" }}>{t("hoverBrand")}</p>
                 <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>pour voir ses catégories</p>
               </div>
             </motion.div>
@@ -1109,6 +1024,17 @@ function MarquesDropdown({
 // ─── NAVBAR PRINCIPALE ────────────────────────────────────────────────────────
 export default function Navbar() {
   const t = useTranslations("nav");
+  const ACTIVITIES = ACTIVITIES_CONFIG.map(a => ({
+    ...a,
+    label: t(a.navKey as any),
+    desc:  t(a.descKey as any),
+    badge: a.badgeKey ? t(a.badgeKey as any) : undefined,
+    subs:  a.subs.map(s => t(s as any)),
+  }));
+  const OTHER_BRANDS = OTHER_BRANDS_CONFIG.map(b => ({
+    ...b,
+    sub: t(b.subKey as any),
+  }));
   const params = useParams();
   const locale = (params?.locale as string) || "fr";
   const router = useRouter();
@@ -1139,7 +1065,6 @@ export default function Navbar() {
     router.push(`/${code}${pathname.replace(`/${locale}`, "")}`);
   const curLang = LANGS.find((l) => l.code === locale) ?? LANGS[0];
 
-  // Scroll to section on homepage, or navigate to homepage first
   const scrollToSection = (sectionId: string) => {
     const isHome = pathname === `/${locale}` || pathname === `/${locale}/`;
     if (isHome) {
@@ -1183,7 +1108,7 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
           <div className="flex items-center h-[90px]">
 
-            {/* ── LOGO — responsive ─────────────────────────────────── */}
+            {/* ── LOGO ─────────────────────────────────────────────── */}
             <Link
               href={`/${locale}`}
               className="flex items-center gap-3 flex-shrink-0 mr-3 lg:mr-6"
@@ -1193,7 +1118,6 @@ export default function Navbar() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
                 whileHover={{ scale: 1.025 }}
-                /* Logo bien visible — hauteur augmentée */
                 className="flex items-center h-[64px] sm:h-[70px] lg:h-[78px]"
               >
                 <Image
@@ -1202,15 +1126,11 @@ export default function Navbar() {
                   width={400}
                   height={172}
                   className="h-full w-auto max-w-[260px] sm:max-w-[320px] lg:max-w-[400px] object-contain"
-                  style={{
-                    filter:
-                      "drop-shadow(0 2px 6px rgba(0,100,40,0.22))",
-                  }}
+                  style={{ filter: "drop-shadow(0 2px 6px rgba(0,100,40,0.22))" }}
                   priority
                 />
               </motion.div>
             </Link>
-            {/* ──────────────────────────────────────────────────────── */}
 
             {/* MENU CENTRAL */}
             <div className="hidden lg:flex flex-1 items-center justify-center gap-0.5">
@@ -1299,7 +1219,6 @@ export default function Navbar() {
                 </AnimatePresence>
               </div>
 
-
               <Link
                 href={`/${locale}/contact`}
                 className={isActive("/contact") ? lnkActive : lnk}
@@ -1343,41 +1262,30 @@ export default function Navbar() {
                       onMouseLeave={lang.hide}
                       className="absolute top-full right-0 mt-2 w-44 bg-white rounded-xl overflow-hidden z-[60]"
                       style={{
-                        boxShadow:
-                          "0 16px 48px rgba(16,105,59,0.12), 0 0 0 1px rgba(16,105,59,0.07)",
+                        boxShadow: "0 16px 48px rgba(16,105,59,0.12), 0 0 0 1px rgba(16,105,59,0.07)",
                       }}
                     >
                       <div
                         className="h-[3px]"
-                        style={{
-                          background:
-                            "linear-gradient(90deg, #10693B, #8CC542)",
-                        }}
+                        style={{ background: "linear-gradient(90deg, #10693B, #8CC542)" }}
                       />
                       {LANGS.map((l) => (
                         <button
                           key={l.code}
                           onClick={() => changeLocale(l.code)}
                           className={`w-full flex items-center gap-3 px-4 py-2.5 border-b border-gray-50 last:border-0 transition-colors ${
-                            locale === l.code
-                              ? "bg-[#f0f7f2]"
-                              : "hover:bg-[#f0f7f2]"
+                            locale === l.code ? "bg-[#f0f7f2]" : "hover:bg-[#f0f7f2]"
                           }`}
                         >
                           <div
                             className="w-7 h-5 rounded text-[9px] font-black flex items-center justify-center text-white flex-shrink-0"
-                            style={{
-                              background:
-                                locale === l.code ? "#10693B" : "#9ca3af",
-                            }}
+                            style={{ background: locale === l.code ? "#10693B" : "#9ca3af" }}
                           >
                             {l.short}
                           </div>
                           <span
                             className={`text-[13px] flex-1 text-left ${
-                              locale === l.code
-                                ? "font-bold text-[#10693B]"
-                                : "font-normal text-gray-600"
+                              locale === l.code ? "font-bold text-[#10693B]" : "font-normal text-gray-600"
                             }`}
                           >
                             {l.full}
@@ -1442,9 +1350,7 @@ export default function Navbar() {
               {/* Activités mobile */}
               <div>
                 <button
-                  onClick={() =>
-                    setMobileSection(mobileSection === "acts" ? null : "acts")
-                  }
+                  onClick={() => setMobileSection(mobileSection === "acts" ? null : "acts")}
                   className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-[15px] font-bold text-[#1a3d0a] hover:bg-[#f0f9eb]"
                 >
                   {t("activities")}
@@ -1470,17 +1376,10 @@ export default function Navbar() {
                               <a.Icon className="w-4 h-4" />
                             </div>
                             <div>
-                              <p className="text-[14px] font-black text-gray-800">
-                                {a.label}
-                              </p>
+                              <p className="text-[14px] font-black text-gray-800">{a.label}</p>
                               <div className="flex flex-wrap gap-1 mt-0.5">
                                 {a.subs.slice(0, 3).map((s) => (
-                                  <span
-                                    key={s}
-                                    className="text-[10px] text-gray-400"
-                                  >
-                                    {s}
-                                  </span>
+                                  <span key={s} className="text-[10px] text-gray-400">{s}</span>
                                 ))}
                               </div>
                             </div>
@@ -1504,11 +1403,7 @@ export default function Navbar() {
                     {t("brands")}
                   </Link>
                   <button
-                    onClick={() =>
-                      setMobileSection(
-                        mobileSection === "brands" ? null : "brands",
-                      )
-                    }
+                    onClick={() => setMobileSection(mobileSection === "brands" ? null : "brands")}
                     className="px-4 py-3 rounded-r-xl text-[#1a3d0a] hover:bg-[#f0f9eb] border-l border-gray-100"
                   >
                     <ChevronDownIcon
@@ -1524,10 +1419,7 @@ export default function Navbar() {
                       exit={{ opacity: 0, height: 0 }}
                     >
                       {FERTIVERT.map((d) => (
-                        <div
-                          key={d.id}
-                          className="ml-4 mb-2 rounded-xl border border-gray-100 overflow-hidden"
-                        >
+                        <div key={d.id} className="ml-4 mb-2 rounded-xl border border-gray-100 overflow-hidden">
                           <Link
                             href={`/${locale}${d.href}`}
                             onClick={() => setMobileOpen(false)}
@@ -1541,15 +1433,8 @@ export default function Navbar() {
                               <d.Icon className="w-5 h-5" />
                             </div>
                             <div>
-                              <p
-                                className="text-sm font-black"
-                                style={{ color: d.color }}
-                              >
-                                {d.label}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {d.subtitle}
-                              </p>
+                              <p className="text-sm font-black" style={{ color: d.color }}>{d.label}</p>
+                              <p className="text-xs text-gray-500">{t(d.subKey as any)}</p>
                             </div>
                             <ChevronRightIcon className="w-4 h-4 ml-auto text-gray-300" />
                           </Link>
@@ -1562,24 +1447,14 @@ export default function Navbar() {
                             >
                               <div
                                 className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
-                                style={{
-                                  background: `${d.accent}20`,
-                                  color: d.accent,
-                                }}
+                                style={{ background: `${d.accent}20`, color: d.accent }}
                               >
                                 <c.Icon className="w-3.5 h-3.5" />
                               </div>
-                              <p className="text-[13px] font-semibold text-gray-700 group-hover:text-[#1a3d0a]">
-                                {c.label}
-                              </p>
+                              <p className="text-[13px] font-semibold text-gray-700 group-hover:text-[#1a3d0a]">{c.label}</p>
                               <div className="ml-auto flex gap-1 flex-wrap">
                                 {c.subs.slice(0, 2).map((s) => (
-                                  <span
-                                    key={s}
-                                    className="text-[9px] px-1.5 py-0.5 bg-gray-100 text-gray-400 rounded"
-                                  >
-                                    {s}
-                                  </span>
+                                  <span key={s} className="text-[9px] px-1.5 py-0.5 bg-gray-100 text-gray-400 rounded">{s}</span>
                                 ))}
                               </div>
                             </Link>
@@ -1600,9 +1475,7 @@ export default function Navbar() {
                             <b.Icon className="w-5 h-5" />
                           </div>
                           <div>
-                            <p className="text-sm font-black text-gray-800">
-                              {b.name}
-                            </p>
+                            <p className="text-sm font-black text-gray-800">{b.name}</p>
                             <p className="text-xs text-gray-400">{b.sub}</p>
                           </div>
                           <ChevronRightIcon className="w-4 h-4 ml-auto text-gray-300" />
@@ -1618,7 +1491,7 @@ export default function Navbar() {
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#1a3d0a] text-white font-bold text-[15px]"
               >
-                <Ico.Cal className="w-4 h-4" /> Prendre RDV
+                <Ico.Cal className="w-4 h-4" /> {t("bookRdv")}
               </Link>
               <Link
                 href={`/${locale}/contact`}
@@ -1633,10 +1506,7 @@ export default function Navbar() {
                 {LANGS.map((l) => (
                   <button
                     key={l.code}
-                    onClick={() => {
-                      changeLocale(l.code);
-                      setMobileOpen(false);
-                    }}
+                    onClick={() => { changeLocale(l.code); setMobileOpen(false); }}
                     className={`py-2 rounded-xl text-[12px] font-black transition-all flex flex-col items-center gap-0.5 ${
                       locale === l.code
                         ? "bg-[#1a3d0a] text-white"
