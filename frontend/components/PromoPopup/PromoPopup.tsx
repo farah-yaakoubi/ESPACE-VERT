@@ -50,7 +50,7 @@ export default function PromoPopup() {
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[101] w-[90%] max-w-2xl"
           >
-            <div className="relative bg-gradient-to-br from-white via-[#f0f9e8] to-white rounded-3xl shadow-2xl overflow-hidden border-4 border-[#8cc63f]">
+            <div className="relative bg-gradient-to-br from-white via-[#f0f9e8] to-white rounded-3xl shadow-2xl overflow-hidden border-4 border-[#0a6030]">
               {/* Close Button */}
               <button
                 onClick={handleClose}
@@ -60,7 +60,7 @@ export default function PromoPopup() {
               </button>
 
               {/* Decorative Elements */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-[#8cc63f]/20 rounded-full blur-3xl" />
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[#0a6030]/20 rounded-full blur-3xl" />
               <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#6b9e3e]/20 rounded-full blur-3xl" />
 
               {/* Content */}
@@ -70,7 +70,7 @@ export default function PromoPopup() {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ delay: 0.2, type: "spring" }}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#8cc63f] to-[#6b9e3e] text-white rounded-full text-sm font-bold mb-6"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#0a6030] to-[#6b9e3e] text-white rounded-full text-sm font-bold mb-6"
                 >
                   <SparklesIcon className="w-5 h-5" />
                   <span>Offre Limitée</span>
@@ -101,11 +101,11 @@ export default function PromoPopup() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
-                  className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-[#8cc63f]/30"
+                  className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-[#0a6030]/30"
                 >
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="text-center">
-                      <div className="text-5xl font-black text-[#8cc63f] mb-2">-25%</div>
+                      <div className="text-5xl font-black text-[#0a6030] mb-2">-25%</div>
                       <div className="text-sm font-semibold text-gray-700">
                         Sur tous les produits Fertivert
                       </div>
@@ -136,13 +136,13 @@ export default function PromoPopup() {
                 >
                   <button
                     onClick={handleClose}
-                    className="flex-1 px-8 py-4 bg-gradient-to-r from-[#8cc63f] to-[#6b9e3e] text-white rounded-xl font-bold hover:shadow-2xl hover:scale-105 transition-all"
+                    className="flex-1 px-8 py-4 bg-gradient-to-r from-[#0a6030] to-[#6b9e3e] text-white rounded-xl font-bold hover:shadow-2xl hover:scale-105 transition-all"
                   >
                     Découvrir les offres
                   </button>
                   <button
                     onClick={handleClose}
-                    className="px-8 py-4 bg-white/50 hover:bg-white text-gray-700 rounded-xl font-bold border-2 border-[#8cc63f]/30 hover:border-[#8cc63f] transition-all"
+                    className="px-8 py-4 bg-white/50 hover:bg-white text-gray-700 rounded-xl font-bold border-2 border-[#0a6030]/30 hover:border-[#0a6030] transition-all"
                   >
                     Plus tard
                   </button>
@@ -163,7 +163,7 @@ export default function PromoPopup() {
               <motion.div
                 className="absolute inset-0 rounded-3xl"
                 style={{
-                  background: "linear-gradient(45deg, transparent 30%, #8cc63f 50%, transparent 70%)",
+                  background: "linear-gradient(45deg, transparent 30%, #0a6030 50%, transparent 70%)",
                   backgroundSize: "200% 200%",
                 }}
                 animate={{

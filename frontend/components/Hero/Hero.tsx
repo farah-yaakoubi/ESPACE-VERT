@@ -10,11 +10,11 @@ import {
 } from "@heroicons/react/24/outline";
 
 const SLIDE_CONFIGS = [
-  { id:1, href:"/marques/fertivert?division=pro",    bg:"from-[#0f2a07] via-[#1a3d0a] to-[#2d5a1b]", accent:"#8cc63f",  emoji:"🌱", ctaKey:"s1_cta", badgeKey:"s1_badge", titleKey:"s1_title", subtitleKey:"s1_subtitle", tagKey:"s1_tag" },
-  { id:2, href:"/contact",                           bg:"from-[#0d2744] via-[#0d3b6e] to-[#1a5fa8]", accent:"#60a5fa",  emoji:"🏢", ctaKey:"s2_cta", badgeKey:"s2_badge", titleKey:"s2_title", subtitleKey:"s2_subtitle", tagKey:"s2_tag" },
-  { id:3, href:"/marques/fertivert?division=garden", bg:"from-[#3b1a04] via-[#7c2d12] to-[#c2410c]", accent:"#fb923c",  emoji:"🎉", ctaKey:"s3_cta", badgeKey:"s3_badge", titleKey:"s3_title", subtitleKey:"s3_subtitle", tagKey:"s3_tag" },
-  { id:4, href:"/marques/matar",                     bg:"from-[#042f2e] via-[#134e4a] to-[#0f766e]", accent:"#34d399",  emoji:"💧", ctaKey:"s4_cta", badgeKey:"s4_badge", titleKey:"s4_title", subtitleKey:"s4_subtitle", tagKey:"s4_tag" },
-  { id:5, href:"/contact",                           bg:"from-[#1e0a3c] via-[#2d1b69] to-[#4c1d95]", accent:"#a78bfa",  emoji:"🎓", ctaKey:"s5_cta", badgeKey:"s5_badge", titleKey:"s5_title", subtitleKey:"s5_subtitle", tagKey:"s5_tag" },
+  { id:1, href:"/marques/fertivert?division=pro",    bg:"from-[#edfbee] via-[#d0f0d4] to-[#b8e8c0]", accent:"#0a6030", textDark:true, emoji:"🌱", ctaKey:"s1_cta", badgeKey:"s1_badge", titleKey:"s1_title", subtitleKey:"s1_subtitle", tagKey:"s1_tag" },
+  { id:2, href:"/contact",                           bg:"from-[#eff8ff] via-[#d4eeff] to-[#b8dfff]", accent:"#1558c0", textDark:true, emoji:"🏢", ctaKey:"s2_cta", badgeKey:"s2_badge", titleKey:"s2_title", subtitleKey:"s2_subtitle", tagKey:"s2_tag" },
+  { id:3, href:"/marques/fertivert?division=garden", bg:"from-[#fff8ee] via-[#fde8c4] to-[#f8c890]", accent:"#b04010", textDark:true, emoji:"🎉", ctaKey:"s3_cta", badgeKey:"s3_badge", titleKey:"s3_title", subtitleKey:"s3_subtitle", tagKey:"s3_tag" },
+  { id:4, href:"/marques/matar",                     bg:"from-[#e0f8f6] via-[#b8ede8] to-[#90ddd6]", accent:"#1b6b7a", textDark:true, emoji:"💧", ctaKey:"s4_cta", badgeKey:"s4_badge", titleKey:"s4_title", subtitleKey:"s4_subtitle", tagKey:"s4_tag" },
+  { id:5, href:"/contact",                           bg:"from-[#f0ecff] via-[#ddd4ff] to-[#c4b4ff]", accent:"#5020a0", textDark:true, emoji:"🎓", ctaKey:"s5_cta", badgeKey:"s5_badge", titleKey:"s5_title", subtitleKey:"s5_subtitle", tagKey:"s5_tag" },
 ];
 
 export default function Hero() {
@@ -58,7 +58,7 @@ export default function Hero() {
       </AnimatePresence>
 
       <div className="absolute inset-0 pointer-events-none"
-        style={{ backgroundImage:"radial-gradient(circle,rgba(255,255,255,0.04) 1px,transparent 1px)", backgroundSize:"32px 32px" }} />
+        style={{ backgroundImage:"radial-gradient(circle,rgba(10,96,48,0.06) 1px,transparent 1px)", backgroundSize:"32px 32px" }} />
 
       <motion.div animate={{ scale:[1,1.2,1], opacity:[0.15,0.3,0.15] }} transition={{ duration:8, repeat:Infinity }}
         className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-3xl pointer-events-none -translate-y-1/3 translate-x-1/4"
@@ -79,16 +79,16 @@ export default function Hero() {
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-7 backdrop-blur-sm border border-white/20"
                   style={{ backgroundColor: cfg.accent + "25" }}>
                   <SparklesIcon className="w-4 h-4" style={{ color: cfg.accent }} />
-                  <span className="text-sm font-bold text-white/90">{ts(cfg.badgeKey as any)}</span>
+                  <span className="text-sm font-bold" style={{ color: cfg.accent }}>{ts(cfg.badgeKey as any)}</span>
                   <span className="text-[10px] font-black px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: cfg.accent }}>
                     {ts(cfg.tagKey as any)}
                   </span>
                 </div>
 
-                <h1 className="text-5xl lg:text-6xl xl:text-7xl font-black text-white mb-5 leading-tight whitespace-pre-line">
+                <h1 className="text-5xl lg:text-6xl xl:text-7xl font-black mb-5 leading-tight whitespace-pre-line" style={{ color: cfg.accent }}>
                   {ts(cfg.titleKey as any)}
                 </h1>
-                <p className="text-lg text-white/75 mb-9 leading-relaxed max-w-lg">{ts(cfg.subtitleKey as any)}</p>
+                <p className="text-lg mb-9 leading-relaxed max-w-lg" style={{ color: cfg.accent + "cc" }}>{ts(cfg.subtitleKey as any)}</p>
 
                 <div className="flex flex-col sm:flex-row gap-3 mb-14">
                   <Link href={`/${locale}${cfg.href}`}
@@ -98,7 +98,7 @@ export default function Hero() {
                     <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </Link>
                   <Link href={`/${locale}/contact`}
-                    className="group px-7 py-3.5 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/25 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2">
+                    className="group px-7 py-3.5 bg-white/70 hover:bg-white backdrop-blur-sm border font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm">
                     <EnvelopeIcon className="w-4 h-4" />
                     {t("requestQuote")}
                   </Link>
@@ -106,9 +106,9 @@ export default function Hero() {
 
                 <div className="grid grid-cols-3 gap-4">
                   {([["30+","yearsExp"],["5000+","happyClients"],["100+","productsAvail"]] as const).map(([val,key],i) => (
-                    <div key={i} className="bg-white/8 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                    <div key={i} className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border" style={{ borderColor: cfg.accent + "30" }}>
                       <div className="text-2xl font-black" style={{ color: cfg.accent }}>{val}</div>
-                      <div className="text-xs text-white/60 font-medium mt-0.5">{t(key)}</div>
+                      <div className="text-xs font-medium mt-0.5 opacity-70" style={{ color: cfg.accent }}>{t(key)}</div>
                     </div>
                   ))}
                 </div>
@@ -120,7 +120,7 @@ export default function Hero() {
                   className="absolute w-80 h-80 rounded-full border" style={{ borderColor: cfg.accent + "30" }} />
                 <motion.div animate={{ rotate:-360 }} transition={{ duration:20, repeat:Infinity, ease:"linear" }}
                   className="absolute w-56 h-56 rounded-full border-2" style={{ borderColor: cfg.accent + "20" }} />
-                <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl p-12 border border-white/20 shadow-2xl text-center">
+                <div className="relative bg-white/90 backdrop-blur-xl rounded-3xl p-12 border shadow-xl text-center">
                   <motion.div animate={{ scale:[1,1.05,1] }} transition={{ duration:3.5, repeat:Infinity }} className="mb-4 flex items-center justify-center">
                     <div className="w-24 h-24 rounded-3xl flex items-center justify-center"
                       style={{ background: cfg.accent + "25", border:"2px solid " + cfg.accent + "40" }}>
@@ -130,12 +130,12 @@ export default function Hero() {
                       </svg>
                     </div>
                   </motion.div>
-                  <p className="text-white font-black text-xl">{ts(cfg.badgeKey as any)}</p>
-                  <p className="text-white/60 text-sm mt-1">Espace Vert — الفضاء الأخضر</p>
+                  <p className="font-black text-xl" style={{ color: cfg.accent }}>{ts(cfg.badgeKey as any)}</p>
+                  <p className="text-sm mt-1 opacity-60" style={{ color: cfg.accent }}>Espace Vert — الفضاء الأخضر</p>
                   <div className="flex justify-center gap-1.5 mt-6">
                     {SLIDE_CONFIGS.map((_, i) => (
                       <button key={i} onClick={() => goTo(i)} className="rounded-full transition-all duration-500"
-                        style={{ width: i===current ? 24 : 8, height:8, backgroundColor: i===current ? cfg.accent : "rgba(255,255,255,0.3)" }} />
+                        style={{ width: i===current ? 24 : 8, height:8, backgroundColor: i===current ? cfg.accent : cfg.accent + "44" }} />
                     ))}
                   </div>
                 </div>
@@ -146,10 +146,10 @@ export default function Hero() {
       </div>
 
       {/* Flèches nav */}
-      <button onClick={prev} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white transition-all hover:scale-110">
+      <button onClick={prev} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/80 hover:bg-white backdrop-blur-sm border flex items-center justify-center transition-all hover:scale-110 shadow-sm">
         <ChevronLeftIcon className="w-5 h-5" />
       </button>
-      <button onClick={next} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white transition-all hover:scale-110">
+      <button onClick={next} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/80 hover:bg-white backdrop-blur-sm border flex items-center justify-center transition-all hover:scale-110 shadow-sm">
         <ChevronRightIcon className="w-5 h-5" />
       </button>
 

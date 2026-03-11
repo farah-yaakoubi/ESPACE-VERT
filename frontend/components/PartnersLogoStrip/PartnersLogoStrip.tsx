@@ -9,8 +9,8 @@ const PARTNERS = [
   { name: "", src: "/logosPartenaires/logo mendial irrigation.png", href: "#" },
 ];
 
-const GREEN_DARK = "#006428";
-const GREEN_LIME = "#8cb43c";
+const GREEN_DARK = "#0F692D";
+const GREEN_LIME = "#8CC542";
 
 export default function PartnersLogoStrip() {
   return (
@@ -21,7 +21,7 @@ export default function PartnersLogoStrip() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <h2 className="text-3xl font-black" style={{ color: "#0d1a0d" }}>
+          <h2 className="text-3xl font-black" style={{ color: "#162E1E" }}>
             Nos <span style={{ color: GREEN_DARK }}>Partenaires</span>
           </h2>
         </motion.div>
@@ -45,7 +45,7 @@ export default function PartnersLogoStrip() {
               style={{
                 height: 130,
                 borderRadius: 18,
-                background: "#f8faf5",
+                background: "#F5F9F6",
                 border: "1.5px solid #e2edd8",
                 boxShadow: "0 2px 14px rgba(0,100,40,0.07)",
                 cursor: "pointer",

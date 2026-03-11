@@ -13,8 +13,8 @@ import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 
 const EV = {
-  dark:    "#1a3d0a",
-  primary: "#2d5a1b",
+  dark:    "#0a6030",
+  primary: "#4a9060",
   mid:     "#3d7228",
   lime:    "#8cc83f",
   tint:    "#f0f9eb",
@@ -255,10 +255,10 @@ export default function FloatingCallButton() {
               initial={{ opacity: 0, x: 8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 1.4 }}
-              className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-[#1a3d0a] text-white text-xs font-black px-3 py-1.5 rounded-xl whitespace-nowrap shadow-lg pointer-events-none"
+              className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-[#0a6030] text-white text-xs font-black px-3 py-1.5 rounded-xl whitespace-nowrap shadow-lg pointer-events-none"
             >
               {t("call")}
-              <span className="absolute left-full top-1/2 -translate-y-1/2 border-[5px] border-transparent border-l-[#1a3d0a]" />
+              <span className="absolute left-full top-1/2 -translate-y-1/2 border-[5px] border-transparent border-l-[#0a6030]" />
             </motion.span>
           )}
         </motion.div>

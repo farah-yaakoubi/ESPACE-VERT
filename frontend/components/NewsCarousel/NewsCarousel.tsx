@@ -7,12 +7,12 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 
 const NEWS_CONFIGS = [
-  { id:1, date:"2026-02-10", bg:"linear-gradient(135deg,#1a3d0a,#4a7c2f)",  emoji:"🌱", titleKey:"n1_title", excerptKey:"n1_excerpt", catKey:"n1_cat" },
-  { id:2, date:"2026-02-05", bg:"linear-gradient(135deg,#0d3b6e,#2980d4)",  emoji:"🏢", titleKey:"n2_title", excerptKey:"n2_excerpt", catKey:"n2_cat" },
-  { id:3, date:"2026-01-28", bg:"linear-gradient(135deg,#2d1b69,#7c5cbf)",  emoji:"🎓", titleKey:"n3_title", excerptKey:"n3_excerpt", catKey:"n3_cat" },
-  { id:4, date:"2026-01-20", bg:"linear-gradient(135deg,#7c2d12,#ea580c)",  emoji:"🎉", titleKey:"n4_title", excerptKey:"n4_excerpt", catKey:"n4_cat" },
-  { id:5, date:"2026-01-15", bg:"linear-gradient(135deg,#134e4a,#14b8a6)",  emoji:"💧", titleKey:"n5_title", excerptKey:"n5_excerpt", catKey:"n5_cat" },
-  { id:6, date:"2026-01-08", bg:"linear-gradient(135deg,#1a3d0a,#6b9e3e)",  emoji:"⚡", titleKey:"n6_title", excerptKey:"n6_excerpt", catKey:"n6_cat" },
+  { id:1, date:"2026-02-10", bg:"linear-gradient(135deg,#0a6030,#4a7c2f)",  emoji:"🌱", titleKey:"n1_title", excerptKey:"n1_excerpt", catKey:"n1_cat" },
+  { id:2, date:"2026-02-05", bg:"linear-gradient(135deg,#c8e4ff,#90c8ff)",  emoji:"🏢", titleKey:"n2_title", excerptKey:"n2_excerpt", catKey:"n2_cat" },
+  { id:3, date:"2026-01-28", bg:"linear-gradient(135deg,#e0d8ff,#c4b0ff)",  emoji:"🎓", titleKey:"n3_title", excerptKey:"n3_excerpt", catKey:"n3_cat" },
+  { id:4, date:"2026-01-20", bg:"linear-gradient(135deg,#fde8c4,#f8b860)",  emoji:"🎉", titleKey:"n4_title", excerptKey:"n4_excerpt", catKey:"n4_cat" },
+  { id:5, date:"2026-01-15", bg:"linear-gradient(135deg,#c0f0ec,#80dcd4)",  emoji:"💧", titleKey:"n5_title", excerptKey:"n5_excerpt", catKey:"n5_cat" },
+  { id:6, date:"2026-01-08", bg:"linear-gradient(135deg,#0a6030,#6b9e3e)",  emoji:"⚡", titleKey:"n6_title", excerptKey:"n6_excerpt", catKey:"n6_cat" },
 ];
 
 export default function NewsCarousel() {
@@ -62,7 +62,7 @@ export default function NewsCarousel() {
             <h2 className="text-4xl font-black text-gray-900">{t("heading")}</h2>
           </div>
           <Link href={`/${locale}/actualites`}
-            className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 bg-[#1a3d0a] text-white text-sm font-bold rounded-xl hover:bg-[#2d5a1b] transition-colors">
+            className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 bg-[#0a6030] text-white text-sm font-bold rounded-xl hover:bg-[#2d5a1b] transition-colors">
             {t("viewAll")}
             <ArrowRightIcon className="w-4 h-4" />
           </Link>
@@ -87,26 +87,26 @@ export default function NewsCarousel() {
                 style={{ background:item.bg }}>
                 <div className="absolute inset-0 pointer-events-none"
                   style={{ backgroundImage:"radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px)", backgroundSize:"24px 24px" }} />
-                <div className="absolute -right-6 -bottom-6 w-28 h-28 bg-white/10 rounded-full pointer-events-none" />
+                <div className="absolute -right-6 -bottom-6 w-28 h-28 bg-white/40 rounded-full pointer-events-none" />
                 <div className="relative z-10 h-full flex flex-col justify-between p-6">
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-[11px] font-black text-white/80 uppercase tracking-wider bg-white/15 px-2.5 py-1 rounded-full">
+                      <span className="text-[11px] font-black text-white/80 uppercase tracking-wider bg-white/50 px-2.5 py-1 rounded-full">
                         {item.category}
                       </span>
-                      <div className="flex items-center gap-1.5 text-white/60 text-[11px]">
+                      <div className="flex items-center gap-1.5 text-[#0a6030]/60 text-[11px]">
                         <CalendarIcon className="w-3.5 h-3.5" />
                         {new Date(item.date).toLocaleDateString(locale === "ar" ? "ar-TN" : locale === "en" ? "en-GB" : "fr-FR", { day:"numeric", month:"short" })}
                       </div>
                     </div>
                     <h3 className="text-white font-black text-[17px] leading-snug line-clamp-2 mb-2">{item.title}</h3>
-                    <p className="text-white/70 text-[13px] leading-relaxed line-clamp-2">{item.excerpt}</p>
+                    <p className="text-[#0a6030]/70 text-[13px] leading-relaxed line-clamp-2">{item.excerpt}</p>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-[13px] font-bold text-white/80 group-hover:text-white transition-colors">
                       {t("readMore")}
                     </span>
-                    <div className="w-8 h-8 rounded-full bg-white/20 group-hover:bg-white/30 flex items-center justify-center transition-all">
+                    <div className="w-8 h-8 rounded-full bg-white/60 group-hover:bg-white/30 flex items-center justify-center transition-all">
                       <ArrowRightIcon className="w-4 h-4 text-white" />
                     </div>
                   </div>

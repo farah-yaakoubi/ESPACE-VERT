@@ -37,7 +37,7 @@ export default function FertivertHero({
       className="relative flex items-center justify-center overflow-hidden"
       style={{
         minHeight: "75vh",
-        background: "linear-gradient(160deg, #0a2410 0%, #0f3518 25%, #1D6B2A 55%, #3CB648 100%)",
+        background: "linear-gradient(160deg, #e6f7e8 0%, #edfbee 25%, #1D6B2A 55%, #3CB648 100%)",
       }}
     >
       {/* ── Grain organique ── */}

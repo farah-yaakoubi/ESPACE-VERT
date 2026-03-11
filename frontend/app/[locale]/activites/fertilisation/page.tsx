@@ -63,7 +63,7 @@ export default function FertilisationPage() {
       <section style={{padding:"5rem 2rem",background:"white"}}>
         <div style={{maxWidth:1100,margin:"0 auto"}}>
           <motion.div {...FADE()} style={{textAlign:"center",marginBottom:"3.5rem"}}>
-            <h2 style={{fontSize:"clamp(1.6rem,3.5vw,2.4rem)",fontWeight:800,color:"#1a4520",marginBottom:12,letterSpacing:"-0.02em"}}>{t("whyTitle")}</h2>
+            <h2 style={{fontSize:"clamp(1.6rem,3.5vw,2.4rem)",fontWeight:800,color:"#2d6e45",marginBottom:12,letterSpacing:"-0.02em"}}>{t("whyTitle")}</h2>
             <p style={{color:"#716e67",maxWidth:520,margin:"0 auto",lineHeight:1.65}}>{t("whySubtitle")}</p>
           </motion.div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:24}}>
@@ -73,7 +73,7 @@ export default function FertilisationPage() {
                   <b.icon style={{width:26,height:26,color:"white"}}/>
                 </div>
                 <div style={{fontSize:"2.5rem",fontWeight:900,color:"#2d8c35",marginBottom:6}}>{b.value}</div>
-                <h3 style={{fontWeight:700,color:"#1a4520",marginBottom:8,fontSize:"1.05rem"}}>{b.title}</h3>
+                <h3 style={{fontWeight:700,color:"#2d6e45",marginBottom:8,fontSize:"1.05rem"}}>{b.title}</h3>
                 <p style={{color:"#716e67",fontSize:"0.9rem",lineHeight:1.6}}>{b.desc}</p>
               </motion.div>
             ))}
@@ -85,7 +85,7 @@ export default function FertilisationPage() {
       <section style={{padding:"5rem 2rem",background:"#f4f3f0"}}>
         <div style={{maxWidth:1100,margin:"0 auto"}}>
           <motion.div {...FADE()} style={{textAlign:"center",marginBottom:"3.5rem"}}>
-            <h2 style={{fontSize:"clamp(1.6rem,3.5vw,2.4rem)",fontWeight:800,color:"#1a4520",marginBottom:12}}>{t("servicesTitle")}</h2>
+            <h2 style={{fontSize:"clamp(1.6rem,3.5vw,2.4rem)",fontWeight:800,color:"#2d6e45",marginBottom:12}}>{t("servicesTitle")}</h2>
             <p style={{color:"#716e67",maxWidth:480,margin:"0 auto"}}>{t("servicesSubtitle")}</p>
           </motion.div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:20}}>
@@ -106,7 +106,7 @@ export default function FertilisationPage() {
       <section id="marques" style={{padding:"5rem 2rem",background:"white"}}>
         <div style={{maxWidth:1000,margin:"0 auto"}}>
           <motion.div {...FADE()} style={{textAlign:"center",marginBottom:"3.5rem"}}>
-            <h2 style={{fontSize:"clamp(1.6rem,3.5vw,2.4rem)",fontWeight:800,color:"#1a4520",marginBottom:12}}>{t("brandsTitle")}</h2>
+            <h2 style={{fontSize:"clamp(1.6rem,3.5vw,2.4rem)",fontWeight:800,color:"#2d6e45",marginBottom:12}}>{t("brandsTitle")}</h2>
             <p style={{color:"#716e67",maxWidth:480,margin:"0 auto"}}>{t("brandsSubtitle")}</p>
           </motion.div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:24}}>
@@ -142,7 +142,7 @@ export default function FertilisationPage() {
       </section>
 
       {/* ── CTA ── */}
-      <section style={{padding:"5rem 2rem",background:"linear-gradient(135deg,#1a4520 0%,#2d8c35 100%)",position:"relative",overflow:"hidden"}}>
+      <section style={{padding:"5rem 2rem",background:"linear-gradient(135deg,#2d6e45 0%,#2d8c35 100%)",position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle,rgba(255,255,255,0.06) 1px,transparent 1px)",backgroundSize:"32px 32px"}}/>
         <motion.div {...FADE()} style={{maxWidth:640,margin:"0 auto",textAlign:"center",position:"relative"}}>
           <h2 style={{fontSize:"clamp(1.6rem,3.5vw,2.2rem)",fontWeight:800,color:"white",marginBottom:12}}>{t("ctaTitle")}</h2>

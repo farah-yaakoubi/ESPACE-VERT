@@ -121,7 +121,7 @@ export function ProductCardPremium({ product, accentColor, locale }: ProductCard
             <div className="absolute bottom-3 right-3">
               <span className="text-[11px] font-black px-2.5 py-1 rounded-lg" style={{
                 background: accentColor,
-                color: "#071209",
+                color: "#f2faf3",
                 boxShadow: `0 2px 10px ${hexToRgba(accentColor, 0.4)}`,
               }}>
                 {format}
@@ -185,7 +185,7 @@ export function ProductCardPremium({ product, accentColor, locale }: ProductCard
                 onMouseEnter={(e) => {
                   const el = e.currentTarget as HTMLElement;
                   el.style.background = accentColor;
-                  el.style.color = "#071209";
+                  el.style.color = "#f2faf3";
                   el.style.borderColor = accentColor;
                 }}
                 onMouseLeave={(e) => {
@@ -235,7 +235,7 @@ export function ProductCardPremium({ product, accentColor, locale }: ProductCard
               {modalStep === "contact" ? (
                 <>
                   <div className="relative px-7 py-7 overflow-hidden" style={{
-                    background: "linear-gradient(135deg, #040a05 0%, #0c1f0e 50%, #1a5c2e 100%)",
+                    background: "linear-gradient(135deg, #f5fdf5 0%, #edfbee 50%, #0a6030 100%)",
                   }}>
                     {/* Coin déco */}
                     <div className="absolute bottom-0 right-0 w-32 h-32 opacity-10" style={{
@@ -255,7 +255,7 @@ export function ProductCardPremium({ product, accentColor, locale }: ProductCard
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style={{
                       background: accentColor,
                     }}>
-                      <DocumentArrowDownIcon className="w-5 h-5" style={{ color: "#040a05" }} />
+                      <DocumentArrowDownIcon className="w-5 h-5" style={{ color: "#f5fdf5" }} />
                     </div>
                     <h3 className="text-xl font-black text-white mb-1">Fiche Technique</h3>
                     <p className="text-[13px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
@@ -307,7 +307,7 @@ export function ProductCardPremium({ product, accentColor, locale }: ProductCard
                       type="submit"
                       className="w-full py-3.5 rounded-xl text-[13px] font-black text-white mt-1 transition-all hover:opacity-90"
                       style={{
-                        background: "linear-gradient(135deg, #0c1f0e, #1a5c2e)",
+                        background: "linear-gradient(135deg, #edfbee, #0a6030)",
                         boxShadow: `0 4px 16px rgba(26,92,46,0.3)`,
                       }}
                     >

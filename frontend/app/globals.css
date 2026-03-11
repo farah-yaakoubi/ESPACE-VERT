@@ -5,65 +5,102 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════
-   ESPACE VERT — Design System
-   Palette : blanc chaud + vert naturel (pas trop sombre)
+   ESPACE VERT — Palette Pastel
+   Inspirée du logo : vert forêt #0a6030 + lime #7dc040
+   Zéro fond sombre — ambiance lumineuse, pro, naturelle
    ═══════════════════════════════════════════════════════════ */
 
 :root {
-  /* Vert principal Espace Vert */
-  --green-900: #0f2d12;
-  --green-800: #1a4520;
-  --green-700: #1f5226;
-  --green-600: #236b28;
-  --green-500: #2d8c35;
-  --green-400: #3cb648;
-  --green-300: #68cc74;
-  --green-200: #a8e4ad;
-  --green-100: #dcf0de;
+  /* ─── Verts logo ─────────────────────────────────────────── */
+  --ev-forest:   #0a6030;   /* vert foncé du logo — textes, accents forts  */
+  --ev-leaf:     #7dc040;   /* vert clair du logo — CTA, badges, highlights */
+  --ev-sage:     #4a9060;   /* vert intermédiaire — icônes, tags            */
+  --ev-moss:     #2d6e45;   /* vert moyen — hover states                    */
+
+  /* ─── Pastels verts ──────────────────────────────────────── */
+  --ev-mint:     #c8eccc;   /* pastel vert moyen — tags, pills              */
+  --ev-foam:     #e6f7e8;   /* fond section alternée                        */
+  --ev-cream:    #f2faf3;   /* fond principal — très clair                  */
+  --ev-mist:     #daf0dc;   /* bordures, séparateurs                        */
+  --ev-white:    #fafffe;   /* blanc légèrement verdâtre                    */
+
+  /* ─── Textes ─────────────────────────────────────────────── */
+  --ev-text-dark:  #112812;   /* quasi-noir verdâtre — titres               */
+  --ev-text-mid:   #2d5c35;   /* vert moyen — corps de texte                */
+  --ev-text-soft:  #5a8060;   /* texte secondaire                           */
+  --ev-text-muted: #8aac8c;   /* placeholders, meta                         */
+
+  /* ─── Fertivert ──────────────────────────────────────────── */
+  --fv-bg:      #edfbee;
+  --fv-border:  #b8e8c0;
+  --fv-green:   #0a6030;
+  --fv-leaf:    #7dc040;
+  --fv-pale:    #f5fdf5;
+
+  /* ─── Pulvert (jaune-vert pastel) ────────────────────────── */
+  --pv-bg:      #fdfbea;
+  --pv-border:  #f0e080;
+  --pv-gold:    #a08000;
+  --pv-yellow:  #d4b800;
+  --pv-pale:    #fffef5;
+
+  /* ─── Matar (bleu-ciel pastel) ───────────────────────────── */
+  --mt-bg:      #eff8ff;
+  --mt-border:  #bae6fd;
+  --mt-teal:    #1b6b7a;
+  --mt-sky:     #4ba8d8;
+  --mt-pale:    #f5fbff;
+
+  /* ─── Machinisme (orange très doux) ─────────────────────── */
+  --mc-bg:      #fff8f2;
+  --mc-border:  #fcd9b4;
+  --mc-orange:  #c05a20;
+  --mc-pale:    #fffcf8;
+
+  /* ─── Ombres très douces ─────────────────────────────────── */
+  --shadow-xs:  0 1px 3px rgba(10,96,48,0.06);
+  --shadow-sm:  0 2px 8px rgba(10,96,48,0.08);
+  --shadow-md:  0 4px 16px rgba(10,96,48,0.10);
+  --shadow-lg:  0 8px 32px rgba(10,96,48,0.12);
+  --shadow-xl:  0 16px 48px rgba(10,96,48,0.14);
+
+  /* ─── Legacy compat ─────────────────────────────────────── */
+  --green-900: #0a3d1c;
+  --green-800: #0a6030;
+  --green-700: #2d6e45;
+  --green-600: #4a9060;
+  --green-500: #7dc040;
+  --green-400: #9ed060;
+  --green-300: #c8eccc;
+  --green-200: #daf0dc;
+  --green-100: #e6f7e8;
   --green-50:  #f2faf3;
 
-  /* Blanc chaud / neutres */
+  --primary-darkest: #0a3d1c;
+  --primary-dark:    #0a6030;
+  --primary:         #4a9060;
+  --primary-light:   #7dc040;
+  --primary-soft:    #9ed060;
+  --primary-ghost:   #e6f7e8;
+  --primary-pale:    #daf0dc;
+  --neutral-50:      #fafffe;
+
   --white:     #ffffff;
-  --gray-50:   #fafaf8;
-  --gray-100:  #f4f3f0;
-  --gray-200:  #e8e6e1;
-  --gray-300:  #d0cec8;
-  --gray-400:  #9e9b94;
-  --gray-500:  #716e67;
-  --gray-600:  #524f49;
-  --gray-700:  #3a3830;
-  --gray-800:  #262420;
-  --gray-900:  #16140f;
+  --gray-50:   #f9faf8;
+  --gray-100:  #f2f4f0;
+  --gray-200:  #e4e8e2;
+  --gray-300:  #cdd3cb;
+  --gray-400:  #9aa89a;
+  --gray-500:  #6e7c6e;
+  --gray-600:  #4e5c4e;
+  --gray-700:  #384038;
+  --gray-800:  #252a24;
+  --gray-900:  #141814;
 
-  /* Fertivert — vert + blanc */
-  --fv-bg:    #f8fdf8;
-  --fv-green: #3cb648;
-  --fv-dark:  #1f5226;
-
-  /* Pulvert — vert foncé + jaune-orange */
-  --pv-bg:     #fafdf4;
-  --pv-green:  #134e4a;
-  --pv-yellow: #eab308;
-  --pv-orange: #f97316;
-  --pv-red:    #dc2626;
-
-  /* Matar — bleu ciel + blanc + vert clair */
-  --mt-bg:    #f0f8ff;
-  --mt-blue:  #2563eb;
-  --mt-sky:   #0ea5e9;
-  --mt-light: #bae6fd;
-
-  /* Machinisme Viking — rouge + gris acier */
-  --mc-bg:    #f8f8f7;
-  --mc-red:   #c0392b;
-  --mc-gray:  #4a4a4a;
-  --mc-steel: #64748b;
-
-  /* Ombres douces */
-  --shadow-sm:  0 1px 4px rgba(0,0,0,0.06);
-  --shadow-md:  0 4px 16px rgba(0,0,0,0.08);
-  --shadow-lg:  0 8px 32px rgba(0,0,0,0.10);
-  --shadow-xl:  0 16px 48px rgba(0,0,0,0.12);
+  /* Brand specific */
+  --fv-dark:  #0a6030;
+  --pv-green: #2d6e45;
+  --mt-blue:  #1b6b7a;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -75,22 +112,22 @@ html {
 
 body {
   font-family: 'Outfit', system-ui, sans-serif;
-  background: var(--white);
-  color: var(--gray-800);
+  background: var(--ev-white);
+  color: var(--ev-text-dark);
   -webkit-font-smoothing: antialiased;
   line-height: 1.6;
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 7px; }
-::-webkit-scrollbar-track { background: var(--gray-100); }
+::-webkit-scrollbar-track { background: var(--ev-cream); }
 ::-webkit-scrollbar-thumb {
-  background: var(--green-300);
+  background: var(--ev-mint);
   border-radius: 4px;
-  border: 1px solid var(--gray-100);
+  border: 1px solid var(--ev-cream);
 }
-::-webkit-scrollbar-thumb:hover { background: var(--green-400); }
-* { scrollbar-width: thin; scrollbar-color: var(--green-300) var(--gray-100); }
+::-webkit-scrollbar-thumb:hover { background: var(--ev-leaf); }
+* { scrollbar-width: thin; scrollbar-color: var(--ev-mint) var(--ev-cream); }
 
 /* ─── Animations ────────────────────────────────────────── */
 @keyframes fadeUp {
@@ -126,7 +163,7 @@ body {
   100% { transform: translateX(-50%); }
 }
 @keyframes pulseRing {
-  0%   { transform: scale(1); opacity: 0.6; }
+  0%   { transform: scale(1); opacity: 0.5; }
   100% { transform: scale(1.8); opacity: 0; }
 }
 
@@ -147,29 +184,29 @@ body {
 
 /* ─── Utilitaires ────────────────────────────────────────── */
 .skeleton {
-  background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-200) 50%, var(--gray-100) 75%);
+  background: linear-gradient(90deg, var(--ev-cream) 25%, var(--ev-mist) 50%, var(--ev-cream) 75%);
   background-size: 1600px 100%;
   animation: shimmer 2s linear infinite;
   border-radius: 6px;
 }
 
 .glass {
-  background: rgba(255,255,255,0.88);
+  background: rgba(255,255,255,0.92);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255,255,255,0.5);
+  border: 1px solid rgba(125,192,64,0.18);
 }
 
-.glass-dark {
-  background: rgba(15,45,18,0.82);
+.glass-light {
+  background: rgba(242,250,243,0.90);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid rgba(10,96,48,0.12);
 }
 
 /* ─── Focus ──────────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid var(--green-400);
+  outline: 2px solid var(--ev-leaf);
   outline-offset: 3px;
   border-radius: 6px;
 }
@@ -183,16 +220,4 @@ body {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
-}
-
-/* ─── Variables legacy compatibilité ────────────────────────── */
-:root {
-  --primary-darkest: #2C1A0E;
-  --primary-dark:    #1D6B2A;
-  --primary:         #2d8c35;
-  --primary-light:   #3CB648;
-  --primary-soft:    #6AB73D;
-  --primary-ghost:   #F0F8E8;
-  --primary-pale:    #DFF0C8;
-  --neutral-50:      #FAFAF6;
 }

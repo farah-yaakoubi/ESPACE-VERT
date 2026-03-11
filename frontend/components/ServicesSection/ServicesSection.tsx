@@ -12,7 +12,7 @@ const IcoTractor = (p: any) => <svg {...p} viewBox="0 0 24 24" fill="none" strok
 const IcoWind    = (p: any) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><path d="M3 8h13a4 4 0 1 0-4-4"/><path d="M3 12h10a3 3 0 1 1-3 3"/></svg>;
 
 const SERVICE_CONFIGS = [
-  { id:"seeds",        href:"/activites/semences-et-plants",      Icon:IcoSeed,    labelKey:"seeds_label", descKey:"seeds_desc", color:"#1a3d0a", bg:"#f0f9eb", border:"#c6e6a0" },
+  { id:"seeds",        href:"/activites/semences-et-plants",      Icon:IcoSeed,    labelKey:"seeds_label", descKey:"seeds_desc", color:"#0a6030", bg:"#f0f9eb", border:"#c6e6a0" },
   { id:"irrigation",   href:"/activites/irrigation",              Icon:IcoPipe,    labelKey:"irr_label",   descKey:"irr_desc",   color:"#0d3b6e", bg:"#eff6ff", border:"#bfdbfe" },
   { id:"fertilization",href:"/activites/fertilisation",           Icon:IcoLeaf,    labelKey:"fert_label",  descKey:"fert_desc",  color:"#2d5a1b", bg:"#f0fdf4", border:"#a7f3d0" },
   { id:"machinery",    href:"/activites/machinisme-et-jardinage", Icon:IcoTractor, labelKey:"mach_label",  descKey:"mach_desc",  color:"#7c2d12", bg:"#fff7ed", border:"#fed7aa" },
@@ -56,7 +56,7 @@ export default function ServicesSection() {
                   <s.Icon className="w-7 h-7" />
                 </motion.div>
                 <h3 className="text-[17px] font-black text-gray-900 mb-2">
-                  <span className="group-hover:text-[#1a3d0a]">{t(s.labelKey)}</span>
+                  <span className="group-hover:text-[#0a6030]">{t(s.labelKey)}</span>
                 </h3>
                 <p className="text-sm text-gray-500 leading-relaxed flex-1">{t(s.descKey)}</p>
                 <div className="mt-5 flex items-center gap-2 text-sm font-bold" style={{ color:s.color }}>
@@ -72,7 +72,7 @@ export default function ServicesSection() {
 
         <motion.div initial={{ opacity:0, y:20 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
           className="rounded-3xl overflow-hidden"
-          style={{ background:"linear-gradient(135deg, #1a3d0a 0%, #2d5a1b 60%, #4a7c2f 100%)" }}>
+          style={{ background:"linear-gradient(135deg, #0a6030 0%, #2d5a1b 60%, #4a7c2f 100%)" }}>
           <div className="relative p-8 lg:p-12">
             <div className="absolute inset-0 opacity-5 pointer-events-none"
               style={{ backgroundImage:"radial-gradient(circle, white 1px, transparent 1px)", backgroundSize:"28px 28px" }} />
@@ -95,7 +95,7 @@ export default function ServicesSection() {
 
         <motion.div initial={{ opacity:0 }} whileInView={{ opacity:1 }} viewport={{ once:true }} transition={{ delay:0.3 }} className="text-center mt-12">
           <Link href={`/${locale}/contact`}
-            className="inline-flex items-center gap-3 px-8 py-4 bg-[#1a3d0a] hover:bg-[#2d5a1b] text-white rounded-2xl font-bold text-[15px] transition-all shadow-lg hover:-translate-y-0.5">
+            className="inline-flex items-center gap-3 px-8 py-4 bg-[#0a6030] hover:bg-[#2d5a1b] text-white rounded-2xl font-bold text-[15px] transition-all shadow-lg hover:-translate-y-0.5">
             {t("cta")}
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6"/>

@@ -34,7 +34,7 @@ const agences = [
     lng: 10.1761,
     mapsUrl: "https://www.google.com/maps/search/?api=1&query=69+rue+Abderrazak+Chraibi+Tunis",
     iframeSrc: "https://maps.google.com/maps?q=36.8095,10.1761&z=16&output=embed",
-    color: "#1a3d0a",
+    color: "#0a6030",
   },
   {
     id: "soliman",
@@ -120,7 +120,7 @@ function Field({ label, error, children }: { label: string; error?: string; chil
   );
 }
 
-const inputCls = "w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#2d5a1b] transition-colors bg-white";
+const inputCls = "w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#4a9060] transition-colors bg-white";
 
 // ─── PAGE ─────────────────────────────────────────────────────────────────────
 
@@ -189,7 +189,7 @@ export default function ContactPage() {
     <div className="min-h-screen bg-gradient-to-br from-white via-[#f7faf5] to-white">
 
       {/* ── HERO ─────────────────────────────────────────────────────────── */}
-      <div className="bg-gradient-to-br from-[#1a3d0a] via-[#2d5a1b] to-[#4a7c2f] text-white">
+      <div className="bg-gradient-to-br from-[#0a6030] via-[#4a9060] to-[#4a7c2f] text-white">
         <div className="max-w-7xl mx-auto px-6 py-16">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <p className="text-white/40 text-[11px] font-black uppercase tracking-widest mb-3">Contact</p>
@@ -208,7 +208,7 @@ export default function ContactPage() {
             {/* Sélecteur d'agence */}
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-1 h-6 bg-[#2d5a1b] rounded-full" />
+                <div className="w-1 h-6 bg-[#4a9060] rounded-full" />
                 <h2 className="text-lg font-black text-gray-900">Nos Agences</h2>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -354,7 +354,7 @@ export default function ContactPage() {
               <button
                 onClick={() => { setActiveTab("contact"); setErrors({}); }}
                 className={`flex-1 py-3 rounded-lg font-black text-sm transition-all ${
-                  activeTab === "contact" ? "bg-white text-[#1a3d0a] shadow-md" : "text-gray-500 hover:text-gray-700"
+                  activeTab === "contact" ? "bg-white text-[#0a6030] shadow-md" : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 ✉️ Message
@@ -362,7 +362,7 @@ export default function ContactPage() {
               <button
                 onClick={() => { setActiveTab("devis"); setErrors({}); }}
                 className={`flex-1 py-3 rounded-lg font-black text-sm transition-all ${
-                  activeTab === "devis" ? "bg-white text-[#1a3d0a] shadow-md" : "text-gray-500 hover:text-gray-700"
+                  activeTab === "devis" ? "bg-white text-[#0a6030] shadow-md" : "text-gray-500 hover:text-gray-700"
                 }`}
               >
                 📋 Demande de Devis
@@ -463,7 +463,7 @@ export default function ContactPage() {
                   <button
                     onClick={() => handleSubmit("contact")}
                     disabled={loading}
-                    className="w-full py-4 bg-gradient-to-r from-[#1a3d0a] to-[#2d5a1b] text-white rounded-xl font-black hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                    className="w-full py-4 bg-gradient-to-r from-[#0a6030] to-[#a0d8a8] text-white rounded-xl font-black hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
                   >
                     {loading ? (
                       <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" /> Envoi en cours...</>
@@ -569,7 +569,7 @@ export default function ContactPage() {
                   <button
                     onClick={() => handleSubmit("devis")}
                     disabled={loading}
-                    className="w-full py-4 bg-gradient-to-r from-[#1a3d0a] to-[#2d5a1b] text-white rounded-xl font-black hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                    className="w-full py-4 bg-gradient-to-r from-[#0a6030] to-[#a0d8a8] text-white rounded-xl font-black hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
                   >
                     {loading ? (
                       <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" /> Envoi...</>
@@ -585,7 +585,7 @@ export default function ContactPage() {
             <div className="mt-5 grid grid-cols-3 gap-3">
               <a href="tel:+21671333858" className="flex flex-col items-center gap-1.5 p-4 bg-white rounded-2xl border border-gray-100 hover:shadow-md hover:border-green-200 transition-all text-center group">
                 <div className="w-10 h-10 bg-[#f0f9eb] rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <PhoneIcon className="w-5 h-5 text-[#2d5a1b]" />
+                  <PhoneIcon className="w-5 h-5 text-[#4a9060]" />
                 </div>
                 <span className="text-xs font-black text-gray-800">Appeler</span>
                 <span className="text-[10px] text-gray-400">71 333 858</span>

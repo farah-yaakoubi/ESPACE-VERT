@@ -268,7 +268,7 @@ const FERTIVERT = [
     label: "Fertivert Pro",
     subKey: "fv_pro_sub",
     href: "/marques/fertivert?division=pro",
-    color: "#1a3d0a",
+    color: "#0a6030",
     accent: "#2d5a1b",
     light: "#f0f9eb",
     Icon: Ico.Leaf,
@@ -788,7 +788,7 @@ function SearchOverlay({ open, onClose, locale }: { open: boolean; onClose: () =
 
 // ─── SEARCH BAR ───────────────────────────────────────────────────────────────
 function SearchBar({ dark, locale }: { dark: boolean; locale: string }) {
-  const t = useTranslations("nav"); // ← FIX: added missing hook
+  const t = useTranslations("nav"); 
   const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
@@ -846,10 +846,10 @@ function ActivitesDropdown({
       {/* COL 1 — fond vert sombre */}
       <div
         className="w-64 py-3 border-r flex-shrink-0"
-        style={{ background: "linear-gradient(180deg, #0d2106 0%, #1a3d0a 100%)", borderColor: "rgba(255,255,255,0.06)" }}
+        style={{ background: "linear-gradient(180deg, #e6f7e8 0%, #0a6030 100%)", borderColor: "rgba(10,96,48,0.12)" }}
       >
         <div className="px-4 pb-2">
-          <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#8cc63f" }}>
+          <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#0a6030" }}>
             Nos Activités
           </p>
         </div>
@@ -867,14 +867,14 @@ function ActivitesDropdown({
               className="flex items-center gap-3 px-4 py-3 transition-all group"
               style={{
                 backgroundColor: hoveredAct === a.key ? "rgba(140,198,63,0.15)" : "transparent",
-                borderLeft: hoveredAct === a.key ? "3px solid #8cc63f" : "3px solid transparent",
+                borderLeft: hoveredAct === a.key ? "3px solid #0a6030" : "3px solid transparent",
               }}
             >
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
                 style={{
-                  background: hoveredAct === a.key ? "#8cc63f" : "rgba(255,255,255,0.08)",
-                  color: hoveredAct === a.key ? "#0d2106" : "rgba(255,255,255,0.7)",
+                  background: hoveredAct === a.key ? "#0a6030" : "rgba(255,255,255,0.08)",
+                  color: hoveredAct === a.key ? "#e6f7e8" : "rgba(255,255,255,0.7)",
                   transform: hoveredAct === a.key ? "scale(1.05)" : "scale(1)",
                 }}
               >
@@ -889,7 +889,7 @@ function ActivitesDropdown({
                     {a.label}
                   </span>
                   {a.badge && (
-                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full" style={{ background: "#8cc63f", color: "#0d2106" }}>
+                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full" style={{ background: "#0a6030", color: "#e6f7e8" }}>
                       {a.badge}
                     </span>
                   )}
@@ -899,7 +899,7 @@ function ActivitesDropdown({
               <ChevronRightIcon
                 className="w-4 h-4 flex-shrink-0 transition-all"
                 style={{
-                  color: hoveredAct === a.key ? "#8cc63f" : "rgba(255,255,255,0.2)",
+                  color: hoveredAct === a.key ? "#0a6030" : "rgba(255,255,255,0.2)",
                   transform: hoveredAct === a.key ? "translateX(2px)" : "translateX(0)",
                 }}
               />
@@ -921,7 +921,7 @@ function ActivitesDropdown({
             >
               <div
                 className="flex items-center gap-3 mb-4 pb-3 rounded-xl px-3 py-2.5 mb-3"
-                style={{ background: "linear-gradient(135deg, #1a3d0a, #2d5a1b)" }}
+                style={{ background: "linear-gradient(135deg, #0a6030, #2d5a1b)" }}
               >
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.15)" }}>
                   <act.Icon className="w-5 h-5 text-white" />
@@ -965,7 +965,7 @@ function ActivitesDropdown({
                 href={`/${locale}${act.href}`}
                 onClick={onClose}
                 className="mt-4 flex items-center gap-1.5 text-xs font-black transition-colors hover:opacity-70"
-                style={{ color: "#1a3d0a" }}
+                style={{ color: "#0a6030" }}
               >
                 {t("viewAll_act")} {act.label} <ChevronRightIcon className="w-3 h-3" />
               </Link>
@@ -980,7 +980,7 @@ function ActivitesDropdown({
               <div>
                 <div
                   className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                  style={{ background: "linear-gradient(135deg, #1a3d0a, #8cc63f)" }}
+                  style={{ background: "linear-gradient(135deg, #0a6030, #0a6030)" }}
                 >
                   <span className="text-2xl">🌾</span>
                 </div>
@@ -1003,7 +1003,7 @@ const BRANDS_NAV_CONFIG = [
     Icon: Ico.Leaf,
     name: "Fertivert",
     subKey: "fertivert_sub",
-    color: "#1a3d0a",
+    color: "#0a6030",
     accent: "#3CB648",
     catKeys: ["brands_fv_cat1","brands_fv_cat2","brands_fv_cat3","brands_fv_cat4","brands_fv_cat5","brands_fv_cat6"],
   },
@@ -1050,10 +1050,10 @@ function MarquesDropdown({
       {/* COL 1 — fond vert sombre */}
       <div
         className="w-60 py-3 border-r flex-shrink-0"
-        style={{ background: "linear-gradient(180deg, #0d2106 0%, #1a3d0a 100%)", borderColor: "rgba(255,255,255,0.06)" }}
+        style={{ background: "linear-gradient(180deg, #e6f7e8 0%, #0a6030 100%)", borderColor: "rgba(10,96,48,0.12)" }}
       >
         <div className="px-4 pb-2">
-          <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#8cc63f" }}>
+          <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#0a6030" }}>
             {t("ourBrands")}
           </p>
         </div>
@@ -1066,14 +1066,14 @@ function MarquesDropdown({
             className="flex items-center gap-3 px-4 py-3 transition-all"
             style={{
               backgroundColor: hoveredKey === b.key ? "rgba(140,198,63,0.15)" : "transparent",
-              borderLeft: hoveredKey === b.key ? "3px solid #8cc63f" : "3px solid transparent",
+              borderLeft: hoveredKey === b.key ? "3px solid #0a6030" : "3px solid transparent",
             }}
           >
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
               style={{
-                background: hoveredKey === b.key ? "#8cc63f" : "rgba(255,255,255,0.08)",
-                color: hoveredKey === b.key ? "#0d2106" : "rgba(255,255,255,0.7)",
+                background: hoveredKey === b.key ? "#0a6030" : "rgba(255,255,255,0.08)",
+                color: hoveredKey === b.key ? "#e6f7e8" : "rgba(255,255,255,0.7)",
                 transform: hoveredKey === b.key ? "scale(1.05)" : "scale(1)",
               }}
             >
@@ -1091,7 +1091,7 @@ function MarquesDropdown({
             <ChevronRightIcon
               className="w-4 h-4 flex-shrink-0 transition-all"
               style={{
-                color: hoveredKey === b.key ? "#8cc63f" : "rgba(255,255,255,0.2)",
+                color: hoveredKey === b.key ? "#0a6030" : "rgba(255,255,255,0.2)",
                 transform: hoveredKey === b.key ? "translateX(2px)" : "translateX(0)",
               }}
             />
@@ -1112,7 +1112,7 @@ function MarquesDropdown({
             >
               <div
                 className="flex items-center gap-3 mb-3 rounded-xl px-3 py-2.5"
-                style={{ background: "linear-gradient(135deg, #1a3d0a, #2d5a1b)" }}
+                style={{ background: "linear-gradient(135deg, #0a6030, #2d5a1b)" }}
               >
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.15)" }}>
                   <brand.Icon className="w-5 h-5 text-white" />
@@ -1150,7 +1150,7 @@ function MarquesDropdown({
                 href={`/${locale}${brand.href}`}
                 onClick={onClose}
                 className="mt-4 flex items-center gap-1.5 text-xs font-black transition-opacity hover:opacity-70"
-                style={{ color: "#1a3d0a" }}
+                style={{ color: "#0a6030" }}
               >
                 {t("viewAll_brand")} {brand.name} <ChevronRightIcon className="w-3 h-3" />
               </Link>
@@ -1165,7 +1165,7 @@ function MarquesDropdown({
               <div>
                 <div
                   className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                  style={{ background: "linear-gradient(135deg, #1a3d0a, #8cc63f)" }}
+                  style={{ background: "linear-gradient(135deg, #0a6030, #0a6030)" }}
                 >
                   <span className="text-2xl">🌿</span>
                 </div>
@@ -1238,7 +1238,7 @@ export default function Navbar() {
   const dark = false;
 
   const lnk =
-    "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[14px] font-semibold tracking-tight transition-all duration-150 text-[#1a3d0a] hover:text-[#006428] hover:bg-[#e8f5dc]";
+    "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[14px] font-semibold tracking-tight transition-all duration-150 text-[#0a6030] hover:text-[#006428] hover:bg-[#e8f5dc]";
   const lnkOn =
     "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[14px] font-bold tracking-tight text-[#006428] bg-[#d4edba]";
   const lnkActive =
@@ -1334,7 +1334,7 @@ export default function Navbar() {
                         boxShadow: "0 24px 64px rgba(13,33,6,0.25), 0 0 0 1px rgba(26,61,10,0.15)",
                       }}
                     >
-                      <div className="h-[3px]" style={{ background: "linear-gradient(90deg, #8cc63f, #1a3d0a, #8cc63f)" }} />
+                      <div className="h-[3px]" style={{ background: "linear-gradient(90deg, #0a6030, #0a6030, #0a6030)" }} />
                       <ActivitesDropdown locale={locale} onClose={acts.hide} />
                     </motion.div>
                   )}
@@ -1373,7 +1373,7 @@ export default function Navbar() {
                         boxShadow: "0 24px 64px rgba(13,33,6,0.25), 0 0 0 1px rgba(26,61,10,0.15)",
                       }}
                     >
-                      <div className="h-[3px]" style={{ background: "linear-gradient(90deg, #8cc63f, #1a3d0a, #8cc63f)" }} />
+                      <div className="h-[3px]" style={{ background: "linear-gradient(90deg, #0a6030, #0a6030, #0a6030)" }} />
                       <MarquesDropdown locale={locale} onClose={marques.hide} />
                     </motion.div>
                   )}
@@ -1428,7 +1428,7 @@ export default function Navbar() {
                     >
                       <div
                         className="h-[3px]"
-                        style={{ background: "linear-gradient(90deg, #10693B, #8CC542)" }}
+                        style={{ background: "linear-gradient(90deg, #0a6030, #7dc040)" }}
                       />
                       {LANGS.map((l) => (
                         <button
@@ -1496,14 +1496,14 @@ export default function Navbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.22 }}
-            className="fixed inset-x-0 z-40 bg-white border-t-2 border-[#1a3d0a] overflow-hidden"
+            className="fixed inset-x-0 z-40 bg-white border-t-2 border-[#0a6030] overflow-hidden"
             style={{ top: NAV_H, boxShadow: "0 20px 40px rgba(0,0,0,.12)" }}
           >
             <div className="p-4 max-h-[80vh] overflow-y-auto space-y-1">
               <Link
                 href={`/${locale}/qui-sommes-nous`}
                 onClick={() => setMobileOpen(false)}
-                className="block px-4 py-3 rounded-xl text-[15px] font-bold text-[#1a3d0a] hover:bg-[#f0f9eb]"
+                className="block px-4 py-3 rounded-xl text-[15px] font-bold text-[#0a6030] hover:bg-[#f0f9eb]"
               >
                 {t("about")}
               </Link>
@@ -1512,7 +1512,7 @@ export default function Navbar() {
               <div>
                 <button
                   onClick={() => setMobileSection(mobileSection === "acts" ? null : "acts")}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-[15px] font-bold text-[#1a3d0a] hover:bg-[#f0f9eb]"
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-[15px] font-bold text-[#0a6030] hover:bg-[#f0f9eb]"
                 >
                   {t("activities")}
                   <ChevronDownIcon
@@ -1559,13 +1559,13 @@ export default function Navbar() {
                   <Link
                     href={`/${locale}/marques`}
                     onClick={() => setMobileOpen(false)}
-                    className="flex-1 px-4 py-3 rounded-l-xl text-[15px] font-bold text-[#1a3d0a] hover:bg-[#f0f9eb]"
+                    className="flex-1 px-4 py-3 rounded-l-xl text-[15px] font-bold text-[#0a6030] hover:bg-[#f0f9eb]"
                   >
                     {t("brands")}
                   </Link>
                   <button
                     onClick={() => setMobileSection(mobileSection === "brands" ? null : "brands")}
-                    className="px-4 py-3 rounded-r-xl text-[#1a3d0a] hover:bg-[#f0f9eb] border-l border-gray-100"
+                    className="px-4 py-3 rounded-r-xl text-[#0a6030] hover:bg-[#f0f9eb] border-l border-gray-100"
                   >
                     <ChevronDownIcon
                       className={`w-4 h-4 transition-transform ${mobileSection === "brands" ? "rotate-180" : ""}`}
@@ -1612,7 +1612,7 @@ export default function Navbar() {
                               >
                                 <c.Icon className="w-3.5 h-3.5" />
                               </div>
-                              <p className="text-[13px] font-semibold text-gray-700 group-hover:text-[#1a3d0a]">{c.label}</p>
+                              <p className="text-[13px] font-semibold text-gray-700 group-hover:text-[#0a6030]">{c.label}</p>
                               <div className="ml-auto flex gap-1 flex-wrap">
                                 {c.subs.slice(0, 2).map((s) => (
                                   <span key={s} className="text-[9px] px-1.5 py-0.5 bg-gray-100 text-gray-400 rounded">{s}</span>
@@ -1650,14 +1650,14 @@ export default function Navbar() {
               <Link
                 href={`/${locale}/rendez-vous`}
                 onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#1a3d0a] text-white font-bold text-[15px]"
+                className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#0a6030] text-white font-bold text-[15px]"
               >
                 <Ico.Cal className="w-4 h-4" /> {t("bookRdv")}
               </Link>
               <Link
                 href={`/${locale}/contact`}
                 onClick={() => setMobileOpen(false)}
-                className="block px-4 py-3 rounded-xl text-[15px] font-bold text-[#1a3d0a] hover:bg-[#f0f9eb]"
+                className="block px-4 py-3 rounded-xl text-[15px] font-bold text-[#0a6030] hover:bg-[#f0f9eb]"
               >
                 {t("contact")}
               </Link>
@@ -1670,8 +1670,8 @@ export default function Navbar() {
                     onClick={() => { changeLocale(l.code); setMobileOpen(false); }}
                     className={`py-2 rounded-xl text-[12px] font-black transition-all flex flex-col items-center gap-0.5 ${
                       locale === l.code
-                        ? "bg-[#1a3d0a] text-white"
-                        : "bg-gray-100 text-gray-500 hover:bg-[#e0f5d0] hover:text-[#1a3d0a]"
+                        ? "bg-[#0a6030] text-white"
+                        : "bg-gray-100 text-gray-500 hover:bg-[#e0f5d0] hover:text-[#0a6030]"
                     }`}
                   >
                     <span>{l.flag}</span>

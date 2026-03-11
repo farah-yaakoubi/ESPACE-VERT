@@ -8,10 +8,10 @@ export default function AboutPage() {
   const t = useTranslations("about");
 
   const values = [
-    { icon:"⭐", title:t("quality"),      text:t("qualityText"),      accent:"#d97706", bg:"#fffbeb", border:"#fde68a" },
-    { icon:"💡", title:t("innovation"),   text:t("innovationText"),   accent:"#2563eb", bg:"#eff6ff", border:"#bfdbfe" },
-    { icon:"🤝", title:t("service"),      text:t("serviceText"),      accent:"#16a34a", bg:"#f0fdf4", border:"#bbf7d0" },
-    { icon:"🌍", title:t("sustainability"),text:t("sustainabilityText"),accent:"#0d9488",bg:"#f0fdfa", border:"#99f6e4" },
+    { icon:"", title:t("quality"),      text:t("qualityText"),      accent:"#d97706", bg:"#fffbeb", border:"#fde68a" },
+    { icon:"", title:t("innovation"),   text:t("innovationText"),   accent:"#2563eb", bg:"#eff6ff", border:"#bfdbfe" },
+    { icon:"", title:t("service"),      text:t("serviceText"),      accent:"#16a34a", bg:"#f0fdf4", border:"#bbf7d0" },
+    { icon:"", title:t("sustainability"),text:t("sustainabilityText"),accent:"#0d9488",bg:"#f0fdfa", border:"#99f6e4" },
   ];
 
   return (
@@ -30,7 +30,7 @@ export default function AboutPage() {
         <div style={{maxWidth:900,margin:"0 auto",textAlign:"center",position:"relative"}}>
           <motion.div initial={{opacity:0,y:28}} animate={{opacity:1,y:0}} transition={{duration:0.7,ease:[0.22,1,0.36,1]}}>
             <span style={{display:"inline-block",background:"rgba(255,255,255,0.15)",backdropFilter:"blur(8px)",border:"1px solid rgba(255,255,255,0.3)",color:"rgba(255,255,255,0.9)",padding:"6px 18px",borderRadius:99,fontSize:13,fontWeight:600,letterSpacing:"0.05em",marginBottom:24}}>
-              🌿 ESPACE VERT
+               ESPACE VERT
             </span>
             <h1 style={{fontSize:"clamp(2.5rem,6vw,4rem)",fontWeight:900,color:"white",lineHeight:1.05,letterSpacing:"-0.03em",marginBottom:20}}>
               {t("title")}
@@ -49,8 +49,8 @@ export default function AboutPage() {
             <div style={{height:6,background:"linear-gradient(90deg,#1f5226,#3cb648)"}}/>
             <div style={{padding:"2rem"}}>
               <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:20}}>
-                <div style={{width:52,height:52,background:"linear-gradient(135deg,#1f5226,#3cb648)",borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:"1.6rem"}}>📜</div>
-                <h2 style={{fontSize:"1.35rem",fontWeight:800,color:"#1a4520"}}>{t("history")}</h2>
+                <div style={{width:52,height:52,background:"linear-gradient(135deg,#1f5226,#3cb648)",borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:"1.6rem"}}></div>
+                <h2 style={{fontSize:"1.35rem",fontWeight:800,color:"#2d6e45"}}>{t("history")}</h2>
               </div>
               <p style={{color:"#524f49",lineHeight:1.75,fontSize:"0.97rem"}}>{t("historyText")}</p>
             </div>
@@ -60,7 +60,7 @@ export default function AboutPage() {
             <div style={{height:6,background:"linear-gradient(90deg,#d97706,#eab308)"}}/>
             <div style={{padding:"2rem"}}>
               <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:20}}>
-                <div style={{width:52,height:52,background:"linear-gradient(135deg,#d97706,#eab308)",borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:"1.6rem"}}>🚀</div>
+                <div style={{width:52,height:52,background:"linear-gradient(135deg,#d97706,#eab308)",borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:"1.6rem"}}></div>
                 <h2 style={{fontSize:"1.35rem",fontWeight:800,color:"#92400e"}}>{t("evolution")}</h2>
               </div>
               <p style={{color:"#524f49",lineHeight:1.75,fontSize:"0.97rem"}}>{t("evolutionText")}</p>
@@ -72,11 +72,11 @@ export default function AboutPage() {
       {/* ── MISSION ── */}
       <section style={{padding:"4rem 2rem",background:"#f4f3f0"}}>
         <div style={{maxWidth:900,margin:"0 auto"}}>
-          <motion.div {...FADE()} style={{background:"linear-gradient(135deg,#1a4520 0%,#2d8c35 100%)",borderRadius:24,padding:"3rem",color:"white",position:"relative",overflow:"hidden"}}>
+          <motion.div {...FADE()} style={{background:"linear-gradient(135deg,#2d6e45 0%,#2d8c35 100%)",borderRadius:24,padding:"3rem",color:"white",position:"relative",overflow:"hidden"}}>
             <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle,rgba(255,255,255,0.05) 1px,transparent 1px)",backgroundSize:"24px 24px"}}/>
             <div style={{position:"absolute",right:-40,top:-40,width:180,height:180,borderRadius:"50%",background:"radial-gradient(circle,rgba(60,182,72,0.2) 0%,transparent 70%)"}}/>
             <div style={{position:"relative",display:"flex",alignItems:"flex-start",gap:20}}>
-              <div style={{fontSize:"2.5rem",flexShrink:0}}>🎯</div>
+              <div style={{fontSize:"2.5rem",flexShrink:0}}></div>
               <div>
                 <h2 style={{fontSize:"1.6rem",fontWeight:800,marginBottom:14,lineHeight:1.2}}>{t("mission")}</h2>
                 <p style={{fontSize:"1.05rem",color:"rgba(255,255,255,0.85)",lineHeight:1.75}}>{t("missionText")}</p>
@@ -90,7 +90,7 @@ export default function AboutPage() {
       <section style={{padding:"5rem 2rem",background:"white"}}>
         <div style={{maxWidth:1100,margin:"0 auto"}}>
           <motion.div {...FADE()} style={{textAlign:"center",marginBottom:"3.5rem"}}>
-            <h2 style={{fontSize:"clamp(1.6rem,3.5vw,2.4rem)",fontWeight:800,color:"#1a4520",marginBottom:8}}>{t("values")}</h2>
+            <h2 style={{fontSize:"clamp(1.6rem,3.5vw,2.4rem)",fontWeight:800,color:"#2d6e45",marginBottom:8}}>{t("values")}</h2>
             <div style={{width:60,height:4,background:"linear-gradient(90deg,#1f5226,#3cb648)",borderRadius:2,margin:"0 auto"}}/>
           </motion.div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:20}}>

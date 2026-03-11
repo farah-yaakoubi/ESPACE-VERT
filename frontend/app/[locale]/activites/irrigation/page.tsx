@@ -28,7 +28,7 @@ export default function IrrigationPage() {
     <div style={{background:"#fafaf8",minHeight:"100vh"}}>
 
       {/* ── HERO ── */}
-      <section style={{background:"linear-gradient(135deg,#3B2870 0%,#5A3E98 50%,#6B4EA0 100%)",position:"relative",overflow:"hidden"}}>
+      <section style={{background:"linear-gradient(135deg,#e8e4ff 0%,#5A3E98 50%,#6B4EA0 100%)",position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle,rgba(255,255,255,0.06) 1px,transparent 1px)",backgroundSize:"28px 28px"}}/>
         <div style={{position:"absolute",bottom:-1,left:0,right:0}}>
           <svg viewBox="0 0 1440 60" style={{width:"100%",height:60,display:"block"}} preserveAspectRatio="none">
@@ -60,7 +60,7 @@ export default function IrrigationPage() {
           <div style={{display:"flex",gap:8,background:"#f4f3f0",borderRadius:14,padding:6,width:"fit-content",margin:"0 auto 3rem",boxShadow:"inset 0 1px 3px rgba(0,0,0,0.06)"}}>
             {[{key:"products",label:t("productsTab")},{key:"bureau",label:t("bureauTab")}].map(tb=>(
               <button key={tb.key} onClick={()=>setTab(tb.key as any)}
-                style={{padding:"10px 28px",borderRadius:10,fontWeight:600,fontSize:"0.9rem",border:"none",cursor:"pointer",transition:"all .2s",background:tab===tb.key?"white":"transparent",color:tab===tb.key?"#1a4b8c":"#716e67",boxShadow:tab===tb.key?"0 2px 8px rgba(0,0,0,0.10)":""}}>
+                style={{padding:"10px 28px",borderRadius:10,fontWeight:600,fontSize:"0.9rem",border:"none",cursor:"pointer",transition:"all .2s",background:tab===tb.key?"white":"transparent",color:tab===tb.key?"#4a7ab8":"#716e67",boxShadow:tab===tb.key?"0 2px 8px rgba(0,0,0,0.10)":""}}>
                 {tb.label}
               </button>
             ))}
@@ -72,7 +72,7 @@ export default function IrrigationPage() {
                 <motion.div key={i} {...FADE(i*0.1)} style={{background:"#F5F0FF",borderRadius:20,padding:"1.75rem",border:"1.5px solid #D4C8F0",transition:"box-shadow .2s,transform .2s"}} onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 8px 32px rgba(37,99,235,0.15)";e.currentTarget.style.transform="translateY(-4px)"}} onMouseLeave={e=>{e.currentTarget.style.boxShadow="";e.currentTarget.style.transform=""}}>
                   <div style={{fontSize:"2.2rem",marginBottom:12}}>{p.icon}</div>
                   <div style={{display:"inline-block",background:"#EDE9F6",color:"#5A3E98",padding:"3px 12px",borderRadius:99,fontSize:"0.78rem",fontWeight:700,marginBottom:12}}>{p.cat}</div>
-                  <h3 style={{fontWeight:800,color:"#0a2540",marginBottom:6,fontSize:"1.05rem",lineHeight:1.3}}>{p.name}</h3>
+                  <h3 style={{fontWeight:800,color:"#eff8ff",marginBottom:6,fontSize:"1.05rem",lineHeight:1.3}}>{p.name}</h3>
                   <p style={{color:"#7060A0",fontSize:"0.88rem",lineHeight:1.6,marginBottom:16}}>{p.desc}</p>
                   <div style={{display:"flex",flexDirection:"column",gap:6}}>
                     {p.features.map((f,j)=>(
@@ -97,7 +97,7 @@ export default function IrrigationPage() {
               {bureauServices.map((s,i)=>(
                 <motion.div key={i} {...FADE(i*0.12)} style={{background:"white",borderRadius:20,padding:"2rem",border:"1.5px solid #e8e6e1",transition:"box-shadow .2s,transform .2s"}} onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 8px 32px rgba(0,0,0,0.10)";e.currentTarget.style.transform="translateY(-4px)"}} onMouseLeave={e=>{e.currentTarget.style.boxShadow="";e.currentTarget.style.transform=""}}>
                   <div style={{fontSize:"2.5rem",marginBottom:16}}>{s.icon}</div>
-                  <h3 style={{fontWeight:800,color:"#0a2540",marginBottom:10,fontSize:"1.1rem"}}>{s.title}</h3>
+                  <h3 style={{fontWeight:800,color:"#eff8ff",marginBottom:10,fontSize:"1.1rem"}}>{s.title}</h3>
                   <p style={{color:"#716e67",lineHeight:1.65,fontSize:"0.92rem"}}>{s.desc}</p>
                 </motion.div>
               ))}
@@ -107,7 +107,7 @@ export default function IrrigationPage() {
       </section>
 
       {/* ── CTA ── */}
-      <section style={{padding:"5rem 2rem",background:"linear-gradient(135deg,#3B2870 0%,#6B4EA0 100%)",position:"relative",overflow:"hidden"}}>
+      <section style={{padding:"5rem 2rem",background:"linear-gradient(135deg,#e8e4ff 0%,#6B4EA0 100%)",position:"relative",overflow:"hidden"}}>
         <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(circle,rgba(255,255,255,0.05) 1px,transparent 1px)",backgroundSize:"32px 32px"}}/>
         <motion.div {...FADE()} style={{maxWidth:580,margin:"0 auto",textAlign:"center",position:"relative"}}>
           <h2 style={{fontSize:"clamp(1.6rem,3.5vw,2.2rem)",fontWeight:800,color:"white",marginBottom:12}}>{t("ctaTitle")}</h2>
