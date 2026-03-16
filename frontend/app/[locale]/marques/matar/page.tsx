@@ -1,452 +1,193 @@
 "use client";
+/**
+ * app/[locale]/marques/matar/page.tsx
+ * Thème : bleu-ciel pastel #1b6b7a / #eff8ff — palette Matar
+ * Restructuré d'après la présentation (slides 7 & 13)
+ */
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  XMarkIcon,
-  PhoneIcon,
-  CheckCircleIcon,
-  ArrowRightIcon,
-} from "@heroicons/react/24/outline";
 import Link from "next/link";
-import Image from "next/image";
 
-const brandConfig = {
-  id: "matar",
-  name: "Matar",
-  fullName: "Matar Irrigation",
-  subtitle: "Solutions d'Irrigation Professionnelles",
-  description: "Leader tunisien en systèmes d'irrigation depuis 1985. Fabricant et distributeur de matériel d'irrigation de haute qualité.",
-  color: {
-    primary: "#1B6B7A",
-    secondary: "#2A8A9A",
-    light: "#E0F4F7",
-  },
-  logo: "/brands/matar-logo.svg",
-  hero: "/brands/matar-hero.jpg",
-  founded: "1985",
-  expertise: "40+ ans d'expérience",
-};
+const FADE = (d=0) => ({ initial:{opacity:0,y:22}, whileInView:{opacity:1,y:0}, viewport:{once:true}, transition:{duration:0.55,ease:[0.22,1,0.36,1] as const,delay:d} });
 
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  description: string;
-  image: string;
-  features: string[];
-  specs?: Record<string, string>;
-}
+const MT = { primary:"#1b6b7a", acc:"#4ba8d8", light:"#0369a1", bg:"#eff8ff", foam:"#e0f4f8", border:"#bae6fd", text:"#0c2a32", mid:"#1e5566", soft:"#4a7a8a" };
 
-const products: Product[] = [
+const CATEGORIES = [
   {
-    id: "gaine-pe",
-    name: "Gaine PE Ø16-Ø63mm",
-    category: "Tuyauterie",
-    description: "Gaine polyéthylène haute densité pour réseau d'irrigation",
-    image: "/products/matar-gaine.jpg",
-    features: [
-      "Résistance UV et intempéries",
-      "Flexible et facile à installer",
-      "Durée de vie 20+ ans",
-      "Normes ISO certifiées",
+    id:"fabrication", label:"Fabrication Tuyaux", icon:"pipe",
+    desc:"Fabrication de tuyaux rigides et tubes lisses pour l'irrigation agricole, parcs et jardins",
+    products:[
+      {name:"Tube PEHD",      specs:"Ø 25 à 110 mm — différents diamètres",    badge:""},
+      {name:"Tube à Goutteur",specs:"Goutteur intégré — espacement configurable",badge:"Pro"},
+      {name:"Tube Lisse 16/20mm",specs:"Pour irrigation fine en rangée",         badge:""},
+      {name:"Tube Parcs & Jardins",specs:"Tube lisse spécial espaces verts",      badge:""},
     ],
-    specs: {
-      "Diamètres": "16, 20, 25, 32, 40, 50, 63 mm",
-      "Pression": "4-16 bars selon Ø",
-      "Longueur": "Rouleaux 100-200m",
-    },
   },
   {
-    id: "goutteurs",
-    name: "Goutteurs Intégrés",
-    category: "Goutte-à-goutte",
-    description: "Goutteurs auto-régulants pour irrigation de précision",
-    image: "/products/matar-goutteurs.jpg",
-    features: [
-      "Débit constant régulé",
-      "Anti-colmatage",
-      "Espacement ajustable",
-      "Compatible fertilisation",
+    id:"filtres", label:"Filtres & Stations", icon:"filter",
+    desc:"Systèmes de filtration et stations de tête pour installations d'irrigation professionnelles",
+    products:[
+      {name:"Filtres Automatiques",  specs:"Auto-nettoyants — haute capacité",         badge:"Pro"},
+      {name:"Filtres Galvanisés",    specs:"Structure acier galvanisé — longue durée",  badge:""},
+      {name:"Stations de Tête",      specs:"Complètes avec pompe, compteur et vanne",   badge:""},
+      {name:"Vannes Hydrauliques",   specs:"Ouverture/fermeture automatique",           badge:""},
     ],
-    specs: {
-      "Débit": "2, 4, 8 L/h",
-      "Espacement": "20, 30, 40, 50 cm",
-      "Pression": "0.5-4 bars",
-    },
   },
   {
-    id: "asperseurs",
-    name: "Asperseurs Rotatifs",
-    category: "Aspersion",
-    description: "Asperseurs professionnels pour irrigation de surface",
-    image: "/products/matar-asperseurs.jpg",
-    features: [
-      "Rotation complète 360°",
-      "Réglage portée et secteur",
-      "Construction robuste",
-      "Maintenance facile",
+    id:"raccordement", label:"Raccordement", icon:"connector",
+    desc:"Accessoires et raccords pour tous types de réseaux d'irrigation agricole",
+    products:[
+      {name:"Accessoires Raccordement", specs:"Pour irrigation agricole — gamme complète",   badge:""},
+      {name:"Flexible Sheath",          specs:"Gaine souple pour irrigation localisée",      badge:""},
+      {name:"Tés & Coudes PEHD",        specs:"Résistance pression 6 bar",                  badge:""},
+      {name:"Bouchons & Embouts",       specs:"Toutes dimensions compatibles",               badge:""},
     ],
-    specs: {
-      "Portée": "5-25 mètres",
-      "Débit": "0.5-5 m³/h",
-      "Raccords": "1/2\" - 1\"",
-    },
-  },
-  {
-    id: "vannes",
-    name: "Vannes et Raccords",
-    category: "Accessoires",
-    description: "Vannes manuelles et automatiques, raccords divers",
-    image: "/products/matar-vannes.jpg",
-    features: [
-      "Étanchéité garantie",
-      "Résistance corrosion",
-      "Installation rapide",
-      "Large gamme diamètres",
-    ],
-    specs: {
-      "Types": "Manuel, électrovanne, anti-bélier",
-      "Matériaux": "PVC, PP, laiton",
-      "Diamètres": "1/2\" à 4\"",
-    },
-  },
-  {
-    id: "filtres",
-    name: "Filtres à Sable et Tamis",
-    category: "Filtration",
-    description: "Systèmes de filtration pour eau d'irrigation",
-    image: "/products/matar-filtres.jpg",
-    features: [
-      "Filtration efficace",
-      "Nettoyage automatique",
-      "Grande capacité",
-      "Longue durée de vie",
-    ],
-    specs: {
-      "Types": "Sable, tamis, disques",
-      "Débit": "5-100 m³/h",
-      "Finesse": "120-200 mesh",
-    },
-  },
-  {
-    id: "programmateurs",
-    name: "Programmateurs Automatiques",
-    category: "Automatisation",
-    description: "Contrôleurs d'irrigation programmables",
-    image: "/products/matar-programmateurs.jpg",
-    features: [
-      "Programmation flexible",
-      "Détection pluie",
-      "Gestion multi-zones",
-      "Interface intuitive",
-    ],
-    specs: {
-      "Stations": "4-24 stations",
-      "Alimentation": "Pile 9V ou secteur",
-      "Programmes": "Jusqu'à 8",
-    },
   },
 ];
 
-const categories = [
-  "Tous",
-  "Tuyauterie",
-  "Goutte-à-goutte",
-  "Aspersion",
-  "Accessoires",
-  "Filtration",
-  "Automatisation",
+const BRANDS = ["Matar","Rivulis","Idroland","FiTSA","ADRITEC","GREEN TAPE"];
+
+const STATS = [
+  {value:"1985", label:"Fondation"},
+  {value:"40+",  label:"Ans d'expertise"},
+  {value:"PEHD", label:"Matériau principal"},
+  {value:"Ø110", label:"Diamètre max"},
 ];
+
+// SVG Icons inline
+const IcoFilter  = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>;
+const IcoPipe    = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h20M2 6h6v12H2zM16 6h6v12h-6z"/></svg>;
+const IcoLink    = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>;
+const IcoArrow   = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>;
+const IcoPhone   = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.89 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.22 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16z"/></svg>;
+const ICONS: Record<string,JSX.Element> = { pipe:<IcoPipe/>, filter:<IcoFilter/>, connector:<IcoLink/> };
 
 export default function MatarPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Tous");
-
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch =
-      !searchQuery ||
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesCategory =
-      selectedCategory === "Tous" || product.category === selectedCategory;
-
-    return matchesSearch && matchesCategory;
-  });
+  const [activeTab, setActiveTab] = useState("fabrication");
+  const tab = CATEGORIES.find(c=>c.id===activeTab)!;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero */}
-      <section
-        className="relative overflow-hidden text-white"
-        style={{
-          background: `linear-gradient(135deg, ${brandConfig.color.primary} 0%, ${brandConfig.color.secondary} 100%)`,
-        }}
-      >
-        <div className="absolute inset-0 opacity-10">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: "radial-gradient(circle, white 2px, transparent 2px)",
-              backgroundSize: "30px 30px",
-            }}
-          />
+    <div style={{ background:"#fafffe", minHeight:"100vh" }}>
+
+      {/* HERO */}
+      <section style={{ background:`linear-gradient(135deg,${MT.foam} 0%,${MT.bg} 60%,#cce4f0 100%)`, position:"relative", overflow:"hidden", padding:"6rem 2rem 5.5rem", borderBottom:`1.5px solid ${MT.border}` }}>
+        <div style={{ position:"absolute", inset:0, backgroundImage:`radial-gradient(rgba(27,107,122,0.055) 1px,transparent 1px)`, backgroundSize:"28px 28px", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", bottom:-1, left:0, right:0 }}>
+          <svg viewBox="0 0 1440 48" style={{ width:"100%", height:48, display:"block" }} preserveAspectRatio="none">
+            <path d="M0,48L1440,48L1440,14C1080,44,720,2,360,26C180,38,90,12,0,22Z" fill="#fafffe"/>
+          </svg>
         </div>
-
-        <div className="relative max-w-screen-xl mx-auto px-8 py-16">
-          <div className="flex flex-col lg:flex-row items-center gap-12">
-            {/* Left */}
-            <div className="flex-1">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-bold mb-6">
-                Nos Marques
-              </div>
-
-              <div className="mb-6 bg-white/10 backdrop-blur-sm rounded-2xl p-6 inline-block">
-                <h1 className="text-6xl font-black">{brandConfig.name}</h1>
-              </div>
-
-              <p className="text-2xl font-bold text-teal-100 mb-4">
-                {brandConfig.subtitle}
-              </p>
-
-              <p className="text-lg text-teal-50 mb-8 leading-relaxed max-w-xl">
-                {brandConfig.description}
-              </p>
-
-              {/* Stats */}
-              <div className="flex gap-8 mb-8">
-                <div>
-                  <div className="text-4xl font-black mb-1">{brandConfig.founded}</div>
-                  <div className="text-teal-100 text-sm">Année de création</div>
-                </div>
-                <div>
-                  <div className="text-4xl font-black mb-1">{products.length}</div>
-                  <div className="text-teal-100 text-sm">Gammes produits</div>
-                </div>
-                <div>
-                  <div className="text-4xl font-black mb-1">100%</div>
-                  <div className="text-teal-100 text-sm">Tunisien</div>
-                </div>
-              </div>
-
-              <Link
-                href="/fr/activites/irrigation"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-sm border-2 border-white text-white font-bold rounded-xl hover:bg-white/30 transition-all"
-              >
-                <ArrowRightIcon className="w-5 h-5 rotate-180" />
-                Retour à Irrigation
+        <div style={{ maxWidth:1100, margin:"0 auto" }}>
+          <motion.div initial={{ opacity:0, y:26 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.65 }} style={{ maxWidth:680 }}>
+            <span style={{ display:"inline-flex", alignItems:"center", gap:7, background:MT.primary, color:"white", padding:"5px 16px", borderRadius:99, fontSize:11, fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:22 }}>
+              <IcoPipe/> Matar Irrigation
+            </span>
+            <h1 style={{ fontSize:"clamp(2.2rem,5vw,3.6rem)", fontWeight:900, color:MT.text, lineHeight:1.08, letterSpacing:"-0.025em", marginBottom:18 }}>
+              Solutions d'Irrigation<br/><span style={{ color:MT.primary }}>Professionnelles</span>
+            </h1>
+            <p style={{ fontSize:"1.02rem", color:MT.mid, lineHeight:1.76, marginBottom:32, maxWidth:560 }}>
+              Fabricant et distributeur de matériel d'irrigation de haute qualité. Tuyaux PEHD, tubes à goutteur, filtres et stations de tête pour l'agriculture tunisienne.
+            </p>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:12 }}>
+              <Link href="/contact" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 24px", background:MT.primary, color:"white", fontWeight:700, borderRadius:11, textDecoration:"none" }}>
+                Demander un devis <IcoArrow/>
+              </Link>
+              <Link href="/activites/irrigation" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 24px", background:"white", color:MT.primary, fontWeight:600, borderRadius:11, textDecoration:"none", border:`1.5px solid ${MT.border}` }}>
+                Voir nos solutions
               </Link>
             </div>
-
-            {/* Right */}
-            <div className="flex-1">
-              <div className="relative h-96 rounded-3xl overflow-hidden shadow-2xl">
-                <Image
-                  src={brandConfig.hero}
-                  alt={brandConfig.fullName}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Search & Filter */}
-      <div className="bg-white border-b border-gray-200 sticky top-[76px] z-40 shadow-sm">
-        <div className="max-w-screen-xl mx-auto px-8 py-4">
-          <div className="flex items-center gap-4">
-            {/* Categories */}
-            <div className="flex items-center gap-2 flex-1 overflow-x-auto">
-              <FunnelIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-5 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
-                    selectedCategory === category
-                      ? "text-white shadow-lg"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                  style={
-                    selectedCategory === category
-                      ? { background: brandConfig.color.primary }
-                      : {}
-                  }
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-
-            {/* Search */}
-            <div className="relative flex-shrink-0">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Rechercher…"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-8 py-2.5 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm w-56 outline-none transition-all focus:w-72"
-                onFocus={(e) => (e.target.style.borderColor = brandConfig.color.primary)}
-                onBlur={(e) => (e.target.style.borderColor = "")}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2"
-                >
-                  <XMarkIcon className="w-4 h-4 text-gray-400 hover:text-gray-600" />
-                </button>
-              )}
-            </div>
-          </div>
+      {/* STATS */}
+      <section style={{ padding:"2.5rem 2rem", background:"white", borderBottom:`1.5px solid ${MT.border}` }}>
+        <div style={{ maxWidth:900, margin:"0 auto", display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:14 }}>
+          {STATS.map((s,i)=>(
+            <motion.div key={i} {...FADE(i*0.06)} style={{ textAlign:"center", padding:"1rem", background:MT.bg, borderRadius:14, border:`1.5px solid ${MT.border}` }}>
+              <div style={{ fontSize:"1.8rem", fontWeight:900, color:MT.primary, lineHeight:1 }}>{s.value}</div>
+              <div style={{ fontSize:"0.7rem", color:MT.soft, fontWeight:700, marginTop:5, textTransform:"uppercase", letterSpacing:"0.06em" }}>{s.label}</div>
+            </motion.div>
+          ))}
         </div>
-      </div>
+      </section>
 
-      {/* Products */}
-      <section className="py-12">
-        <div className="max-w-screen-xl mx-auto px-8">
-          <div className="mb-8">
-            <h2 className="text-3xl font-black text-gray-900 mb-2">
-              Notre Catalogue de Produits
-            </h2>
-            <p className="text-gray-600">
-              {filteredProducts.length} produit{filteredProducts.length > 1 ? "s" : ""}
-              {selectedCategory !== "Tous" && (
-                <span style={{ color: brandConfig.color.primary }}>
-                  {" "}· {selectedCategory}
-                </span>
-              )}
-            </p>
+      {/* CATALOGUE */}
+      <section style={{ padding:"5rem 2rem", background:"white" }}>
+        <div style={{ maxWidth:1100, margin:"0 auto" }}>
+          <motion.div {...FADE()} style={{ textAlign:"center", marginBottom:"3rem" }}>
+            <h2 style={{ fontSize:"clamp(1.5rem,3.5vw,2.2rem)", fontWeight:900, color:MT.text }}>Catalogue Produits</h2>
+          </motion.div>
+
+          {/* Tabs */}
+          <div style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:4, marginBottom:28 }}>
+            {CATEGORIES.map(cat=>(
+              <button key={cat.id} onClick={()=>setActiveTab(cat.id)}
+                style={{ display:"flex", alignItems:"center", gap:7, padding:"8px 18px", borderRadius:11, fontWeight:700, fontSize:"0.84rem", border:"none", cursor:"pointer", whiteSpace:"nowrap", transition:"all .2s",
+                  background:activeTab===cat.id ? MT.primary : MT.bg,
+                  color:activeTab===cat.id ? "white" : MT.mid,
+                  boxShadow:activeTab===cat.id?`0 2px 10px ${MT.primary}28`:"",
+                  borderWidth:1.5, borderStyle:"solid", borderColor:activeTab===cat.id?MT.primary:MT.border,
+                }}>
+                <span style={{ opacity:activeTab===cat.id?1:0.7 }}>{ICONS[cat.icon]}</span>
+                {cat.label}
+              </button>
+            ))}
           </div>
 
-          {filteredProducts.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProducts.map((product, idx) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all border-2 border-gray-100 hover:border-teal-200"
+          {/* Contenu tab */}
+          <motion.div key={activeTab} initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.3 }}>
+            <p style={{ color:MT.soft, fontSize:"0.9rem", marginBottom:22, maxWidth:600 }}>{tab.desc}</p>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))", gap:14 }}>
+              {tab.products.map((p,i)=>(
+                <motion.div key={i} {...FADE(i*0.07)}
+                  style={{ background:MT.bg, borderRadius:16, padding:"1.25rem", border:`1.5px solid ${MT.border}`, transition:"transform .2s,box-shadow .2s" }}
+                  onMouseEnter={e=>{const el=e.currentTarget as HTMLElement;el.style.transform="translateY(-4px)";el.style.boxShadow=`0 8px 24px ${MT.primary}16`;}}
+                  onMouseLeave={e=>{const el=e.currentTarget as HTMLElement;el.style.transform="";el.style.boxShadow="";}}
                 >
-                  {/* Image */}
-                  <div className="relative h-48 bg-gradient-to-br from-teal-50 to-cyan-50">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-6xl opacity-20">💧</span>
-                    </div>
-                    <div
-                      className="absolute top-4 right-4 px-3 py-1.5 rounded-lg text-xs font-bold text-white"
-                      style={{ background: brandConfig.color.primary }}
-                    >
-                      {product.category}
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-6">
-                    <h3 className="text-xl font-black text-gray-900 mb-2">
-                      {product.name}
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                      {product.description}
-                    </p>
-
-                    {/* Features */}
-                    <div className="space-y-2 mb-4">
-                      {product.features.slice(0, 3).map((feature, i) => (
-                        <div key={i} className="flex items-start gap-2">
-                          <CheckCircleIcon
-                            className="w-4 h-4 flex-shrink-0 mt-0.5"
-                            style={{ color: brandConfig.color.primary }}
-                          />
-                          <span className="text-xs text-gray-600">{feature}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Specs */}
-                    {product.specs && (
-                      <div className="border-t border-gray-100 pt-4 mb-4">
-                        {Object.entries(product.specs)
-                          .slice(0, 2)
-                          .map(([key, value], i) => (
-                            <div key={i} className="text-xs mb-1">
-                              <span className="font-bold text-gray-700">{key}:</span>{" "}
-                              <span className="text-gray-600">{value}</span>
-                            </div>
-                          ))}
-                      </div>
-                    )}
-
-                    {/* CTA */}
-                    <a
-                      href="tel:+21671333858"
-                      className="flex items-center justify-center gap-2 w-full py-3 text-sm font-bold text-white rounded-xl transition-all hover:opacity-90"
-                      style={{ background: brandConfig.color.primary }}
-                    >
-                      <PhoneIcon className="w-4 h-4" /> Demander un devis
-                    </a>
-                  </div>
+                  {p.badge && (
+                    <span style={{ display:"inline-block",background:`${MT.primary}14`,color:MT.primary,padding:"2px 9px",borderRadius:99,fontSize:"0.65rem",fontWeight:800,marginBottom:8,border:`1px solid ${MT.border}`,textTransform:"uppercase",letterSpacing:"0.07em" }}>
+                      {p.badge}
+                    </span>
+                  )}
+                  <h3 style={{ fontWeight:800, color:MT.text, fontSize:"0.92rem", marginBottom:6, lineHeight:1.3 }}>{p.name}</h3>
+                  <p style={{ color:MT.soft, fontSize:"0.76rem", lineHeight:1.6 }}>{p.specs}</p>
                 </motion.div>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-20 bg-white rounded-2xl">
-              <div className="text-6xl mb-4">🔍</div>
-              <h3 className="text-2xl font-black text-gray-800 mb-2">
-                Aucun produit trouvé
-              </h3>
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedCategory("Tous");
-                }}
-                className="mt-4 px-6 py-3 font-bold text-white rounded-xl"
-                style={{ background: brandConfig.color.primary }}
-              >
-                Réinitialiser
-              </button>
-            </div>
-          )}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* MARQUES */}
+      <section style={{ padding:"3rem 2rem", background:MT.foam, borderTop:`1.5px solid ${MT.border}`, borderBottom:`1.5px solid ${MT.border}` }}>
+        <div style={{ maxWidth:1100, margin:"0 auto", textAlign:"center" }}>
+          <p style={{ fontSize:"0.72rem", fontWeight:700, color:MT.soft, textTransform:"uppercase", letterSpacing:"0.14em", marginBottom:18 }}>Marques partenaires</p>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:10, justifyContent:"center" }}>
+            {BRANDS.map((b,i)=>(
+              <span key={i} style={{ background:"white", border:`1.5px solid ${MT.border}`, borderRadius:99, padding:"6px 18px", fontSize:"0.82rem", fontWeight:800, color:MT.primary }}>
+                {b}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section
-        className="py-16 text-white"
-        style={{
-          background: `linear-gradient(135deg, ${brandConfig.color.primary} 0%, ${brandConfig.color.secondary} 100%)`,
-        }}
-      >
-        <div className="max-w-4xl mx-auto px-8 text-center">
-          <h2 className="text-4xl font-black mb-4">
-            Besoin d'un système d'irrigation sur-mesure ?
-          </h2>
-          <p className="text-xl text-teal-50 mb-8">
-            Nos experts vous accompagnent dans votre projet
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="tel:+21671333858"
-              className="px-8 py-4 bg-white font-bold rounded-2xl hover:bg-teal-50 transition-all"
-              style={{ color: brandConfig.color.primary }}
-            >
-              📞 (+216) 71 333 858
+      <section style={{ padding:"4rem 2rem", background:"white" }}>
+        <motion.div {...FADE()} style={{ maxWidth:540, margin:"0 auto", textAlign:"center" }}>
+          <h2 style={{ fontSize:"clamp(1.4rem,3vw,2rem)", fontWeight:900, color:MT.text, marginBottom:10 }}>Besoin d'un système d'irrigation ?</h2>
+          <p style={{ color:MT.soft, marginBottom:28, lineHeight:1.65 }}>Nos ingénieurs réalisent l'étude, la fourniture et l'installation de A à Z.</p>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:12, justifyContent:"center" }}>
+            <a href="tel:+21671333858" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 24px", background:MT.primary, color:"white", fontWeight:700, borderRadius:11, textDecoration:"none" }}>
+              <IcoPhone/> (+216) 71 333 858
             </a>
-            <Link
-              href="/fr/rendez-vous"
-              className="px-8 py-4 bg-white/10 backdrop-blur-sm border-2 border-white text-white font-bold rounded-2xl hover:bg-white/20 transition-all"
-            >
+            <Link href="/rendez-vous" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 24px", background:MT.bg, color:MT.primary, fontWeight:600, borderRadius:11, textDecoration:"none", border:`1.5px solid ${MT.border}` }}>
               Prendre rendez-vous
             </Link>
           </div>
-        </div>
+        </motion.div>
       </section>
     </div>
   );

@@ -106,10 +106,6 @@ export const Icons = {
   ),
 };
 
-// ══════════════════════════════════════════════════════════════════════════════
-// COULEURS FERTIVERT (cohérentes logo vert vif)
-// Vert logo Fertivert ≈ #37b648 (vert vif/lime)
-// ══════════════════════════════════════════════════════════════════════════════
 export const FV_COLORS = {
   // Pro - vert forêt professionnel
   proDark:    "#1B4D2E",

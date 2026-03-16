@@ -252,42 +252,7 @@ export default function Footer() {
           </motion.div>
         </div>
 
-        {/* PARTENAIRES */}
-        <motion.div {...fadeUp(0.22)} className="mb-10">
-          <div className="flex items-center gap-3 mb-6 justify-center">
-            <div className="h-px w-12 bg-gradient-to-r from-transparent to-white/15" />
-            <span className="text-[10px] font-black tracking-[0.18em] uppercase text-white/30">{tf("partners")}</span>
-            <div className="h-px w-12 bg-gradient-to-l from-transparent to-white/15" />
-          </div>
-          <div className="flex justify-center gap-6 flex-wrap">
-            {[
-              { name:"Baddar Agricole",    src:"/logosPartenaires/logo baddar agricole.png" },
-              { name:"Mondial Irrigation", src:"/logosPartenaires/logo mendial irrigation.png" },
-              { name:"Stajap",             src:"/logosPartenaires/logo stajap.png" },
-            ].map((p, i) => (
-              <motion.div key={p.src}
-                initial={{ opacity:0, y:14 }} animate={isInView ? { opacity:1, y:0 } : { opacity:0, y:14 }}
-                transition={{ delay:0.28+i*0.09, duration:0.5, ease:[0.22,1,0.36,1] }}
-                whileHover={{ y:-5, scale:1.07 }}
-                className="group relative flex items-center justify-center overflow-hidden cursor-pointer"
-                style={{ width:164, height:84, borderRadius:14, background:"#ffffff", border:"1.5px solid rgba(255,255,255,0.15)", boxShadow:"0 2px 12px rgba(0,0,0,0.25)", transition:"border-color 0.3s, box-shadow 0.3s" }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor="rgba(60,182,72,0.6)"; (e.currentTarget as HTMLElement).style.boxShadow="0 6px 24px rgba(0,0,0,0.4), 0 0 16px rgba(60,182,72,0.15)"; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor="rgba(255,255,255,0.15)"; (e.currentTarget as HTMLElement).style.boxShadow="0 2px 12px rgba(0,0,0,0.25)"; }}>
-                <motion.div className="relative" style={{ width:"76%", height:"60%" }}
-                  animate={{ y:[0,-5,0] }}
-                  transition={{ repeat:Infinity, duration:3.6+i*0.7, ease:"easeInOut", delay:i*1.1 }}>
-                  <img src={p.src} alt={p.name}
-                    style={{ width:"100%", height:"100%", objectFit:"contain", filter:"drop-shadow(0 2px 8px rgba(0,0,0,0.15))", transition:"filter 0.3s, opacity 0.3s", opacity:0.92 }}
-                    onError={e => {
-                      const img = e.target as HTMLImageElement;
-                      const parent = img.parentElement?.parentElement;
-                      if (parent) { img.style.display="none"; const span=document.createElement("span"); span.style.cssText="font-size:11px;font-weight:700;color:#333;text-align:center;padding:0 8px"; span.textContent=p.name; parent.appendChild(span); }
-                    }} />
-                </motion.div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+      
 
         {/* COPYRIGHT */}
         <motion.div {...fadeUp(0.26)}>

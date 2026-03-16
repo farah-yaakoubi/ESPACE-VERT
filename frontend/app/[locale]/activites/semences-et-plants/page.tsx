@@ -335,155 +335,6 @@ function ProductCard({ product }: { product: Product }) {
   );
 }
 
-// ─── IA Simulator ────────────────────────────────────────────────────────────
-function IASimulator() {
-  const [form, setForm] = useState({ surface: "", culture: "", sol: "", region: "", objectif: "" });
-  const [result, setResult] = useState<null | { recommendations: string[]; advice: string }>(null);
-  const [loading, setLoading] = useState(false);
-
-  const handle = async () => {
-    if (!form.surface || !form.culture) return;
-    setLoading(true);
-    // Simulation IA — à connecter à l'API Claude par la suite
-    await new Promise(r => setTimeout(r, 1500));
-    const recommendations = PRODUCTS
-      .filter(p => p.subcategory.toLowerCase().includes(form.culture.toLowerCase()) ||
-                   p.category.toLowerCase().includes(form.culture.toLowerCase()))
-      .slice(0, 3);
-
-    setResult({
-      recommendations: recommendations.map(r => `${r.name} (${r.brand}) — ${r.description}`),
-      advice: `Pour une surface de ${form.surface} ha en région ${form.region || "Tunisie"}, nous recommandons des variétés adaptées à vos conditions. Contactez notre équipe pour un devis personnalisé.`,
-    });
-    setLoading(false);
-  };
-
-  return (
-    <div
-      className="rounded-3xl overflow-hidden"
-      style={{ background: "linear-gradient(135deg, #001a09 0%, #002e12 100%)", boxShadow: "0 8px 40px rgba(0,40,16,0.4)" }}
-    >
-      <div className="px-6 pt-6 pb-4 border-b border-white/8">
-        <div className="flex items-center gap-3 mb-1">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-            style={{ background: "rgba(140,198,63,0.2)", border: "1px solid rgba(140,198,63,0.3)" }}
-          >
-            🤖
-          </div>
-          <div>
-            <h3 className="text-white font-black text-lg">Simulateur IA</h3>
-            <p className="text-[12px]" style={{ color: "rgba(255,255,255,0.45)" }}>Recommandations personnalisées par intelligence artificielle</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-6 space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {[
-            { key: "surface", label: "Surface (ha)", placeholder: "Ex: 2.5", type: "number" },
-            { key: "culture", label: "Culture souhaitée", placeholder: "Ex: Tomate, Blé…" },
-            { key: "sol", label: "Type de sol", placeholder: "Argileux, sableux, limoneux…" },
-            { key: "region", label: "Région", placeholder: "Sfax, Tunis, Béja…" },
-          ].map(f => (
-            <div key={f.key}>
-              <label className="text-[11px] font-bold mb-1 block" style={{ color: "rgba(255,255,255,0.55)" }}>
-                {f.label}
-              </label>
-              <input
-                type={f.type || "text"}
-                placeholder={f.placeholder}
-                value={(form as any)[f.key]}
-                onChange={e => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                className="w-full px-3 py-2.5 rounded-xl text-[13px] font-medium outline-none"
-                style={{
-                  background: "rgba(255,255,255,0.07)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  color: "white",
-                }}
-              />
-            </div>
-          ))}
-        </div>
-
-        <div>
-          <label className="text-[11px] font-bold mb-1 block" style={{ color: "rgba(255,255,255,0.55)" }}>
-            Objectif principal
-          </label>
-          <select
-            value={form.objectif}
-            onChange={e => setForm(prev => ({ ...prev, objectif: e.target.value }))}
-            className="w-full px-3 py-2.5 rounded-xl text-[13px] font-medium outline-none"
-            style={{
-              background: "rgba(255,255,255,0.07)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              color: "white",
-            }}
-          >
-            <option value="" style={{ background: "var(--primary-darkest)" }}>Sélectionner…</option>
-            <option value="rendement" style={{ background: "var(--primary-darkest)" }}>Maximiser le rendement</option>
-            <option value="qualite" style={{ background: "var(--primary-darkest)" }}>Qualité premium / export</option>
-            <option value="resistance" style={{ background: "var(--primary-darkest)" }}>Résistance maladies</option>
-            <option value="precocite" style={{ background: "var(--primary-darkest)" }}>Précocité</option>
-          </select>
-        </div>
-
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={handle}
-          disabled={loading || !form.surface || !form.culture}
-          className="w-full py-3 rounded-xl font-black text-sm transition-all flex items-center justify-center gap-2"
-          style={{
-            background: form.surface && form.culture ? C.leaf : "rgba(255,255,255,0.1)",
-            color: form.surface && form.culture ? C.dark : "rgba(255,255,255,0.3)",
-            cursor: form.surface && form.culture ? "pointer" : "not-allowed",
-          }}
-        >
-          {loading ? (
-            <>
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              >
-                ⚙️
-              </motion.div>
-              Analyse en cours…
-            </>
-          ) : (
-            <>🤖 Obtenir mes recommandations IA</>
-          )}
-        </motion.button>
-
-        <AnimatePresence>
-          {result && (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="rounded-2xl p-4"
-              style={{ background: "rgba(140,198,63,0.12)", border: "1px solid rgba(140,198,63,0.25)" }}
-            >
-              <p className="font-black text-sm mb-3" style={{ color: C.lime }}>✅ Recommandations IA</p>
-              {result.recommendations.length > 0 ? (
-                <ul className="space-y-2 mb-3">
-                  {result.recommendations.map((r, i) => (
-                    <li key={i} className="text-[12px] text-white/80 flex gap-2">
-                      <span style={{ color: C.lime }}>▸</span> {r}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-[12px] text-white/60 mb-3">Aucune variété spécifique trouvée — contactez-nous pour des recommandations personnalisées.</p>
-              )}
-              <p className="text-[11px] text-white/50 border-t border-white/10 pt-3">{result.advice}</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
-  );
-}
 
 // ─── HERO ────────────────────────────────────────────────────────────────────
 function Hero() {
@@ -528,7 +379,7 @@ function Hero() {
             {[
               { icon: "🏆", label: "Marques partenaires de référence" },
               { icon: "🧬", label: "Variétés hybrides F1 certifiées" },
-              { icon: "🤖", label: "Simulateur IA de recommandation" },
+              
             ].map(b => (
               <div key={b.label}
                 className="flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-semibold text-white/80"
@@ -757,8 +608,7 @@ export default function SemencesEtPlantsPage() {
               </div>
             </div>
 
-            {/* Simulateur IA */}
-            <IASimulator />
+           
           </aside>
 
           {/* ─── CONTENU PRINCIPAL ─── */}
