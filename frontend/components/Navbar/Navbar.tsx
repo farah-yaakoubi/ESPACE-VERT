@@ -13,771 +13,819 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const NAV_H = 90;
+// ─── CONSTANTES ───────────────────────────────────────────────────────────────
+const NAV_H    = 96;
+const MAX_HIST = 5;
+
+// ─── PALETTE VIVIFIÉE ─────────────────────────────────────────────────────────
+const C = {
+  sage    : "#2e7d4f",
+  sageDk  : "#1b5e38",
+  sageMd  : "#5bab79",
+  sageLt  : "#dff2e8",
+  sagePop : "#38a169",
+  stone   : "#f6f4f0",
+  stone2  : "#ede9e3",
+  line    : "rgba(46,125,79,0.12)",
+  ink     : "#111816",
+  ink2    : "#3d5248",
+  ink3    : "#8da898",
+  ink4    : "#bbd4c4",
+  border  : "#c9e0d3",
+  red     : "#d63031",
+  redLt   : "#ffe5e5",
+  markBg  : "#b5f0cc",
+  markFg  : "#145c30",
+  gold    : "#e8a020",
+  gradA   : "#1b5e38",
+  gradB   : "#38a169",
+  gradC   : "#6fcf97",
+};
+
+// ─── TYPO ─────────────────────────────────────────────────────────────────────
+const TY = {
+  navLink    : { fontSize: 15.5, fontWeight: 500,  letterSpacing: "-0.01em" } as React.CSSProperties,
+  navLinkOn  : { fontSize: 15.5, fontWeight: 700,  letterSpacing: "-0.01em" } as React.CSSProperties,
+  brand      : { fontSize: 18,   fontWeight: 900,  letterSpacing: "-0.04em"  } as React.CSSProperties,
+  eyebrow    : { fontSize: 9,    fontWeight: 700,  letterSpacing: "0.22em",  textTransform: "uppercase" as const } as React.CSSProperties,
+  secLabel   : { fontSize: 9.5,  fontWeight: 700,  letterSpacing: "0.16em",  textTransform: "uppercase" as const } as React.CSSProperties,
+  itemName   : { fontSize: 13.5, fontWeight: 600,  letterSpacing: "-0.018em" } as React.CSSProperties,
+  itemDesc   : { fontSize: 11.5, fontWeight: 400,  letterSpacing: "-0.01em"  } as React.CSSProperties,
+  ddItemName : { fontSize: 13.5, fontWeight: 600,  letterSpacing: "-0.018em" } as React.CSSProperties,
+  ddItemDesc : { fontSize: 11.5, fontWeight: 400,  letterSpacing: "-0.01em"  } as React.CSSProperties,
+  ddCatName  : { fontSize: 13.5, fontWeight: 600,  letterSpacing: "-0.018em" } as React.CSSProperties,
+  ddCatDesc  : { fontSize: 11,   fontWeight: 400,  letterSpacing: "-0.01em"  } as React.CSSProperties,
+  histTerm   : { fontSize: 13.5, fontWeight: 500,  letterSpacing: "-0.015em" } as React.CSSProperties,
+  badge      : { fontSize: 10.5, fontWeight: 700,  letterSpacing: "0.01em"   } as React.CSSProperties,
+  hint       : { fontSize: 11,   fontWeight: 400,  letterSpacing: "0"        } as React.CSSProperties,
+  mobileLink : { fontSize: 15,   fontWeight: 600,  letterSpacing: "-0.02em"  } as React.CSSProperties,
+  cta        : { fontSize: 14,   fontWeight: 700,  letterSpacing: "-0.01em"  } as React.CSSProperties,
+  langBtn    : { fontSize: 13.5, fontWeight: 500,  letterSpacing: "-0.01em"  } as React.CSSProperties,
+};
+
+// ─── SVG SILHOUETTES ARBRES ──────────────────────────────────────────────────
+/**
+ * Rangée de silhouettes d'arbres — utilisée comme fond décoratif dans les dropdowns.
+ * Chaque arbre est un pin stylisé (triangle + tronc) ou un chêne (ellipse + tronc).
+ */
+function TreeSilhouettes({
+  color = "rgba(46,125,79,0.07)",
+  height = 64,
+  variant = "pine",
+}: {
+  color?: string;
+  height?: number;
+  variant?: "pine" | "round";
+}) {
+  const pines = [
+    { x: 0,   w: 18, h: 48 },
+    { x: 14,  w: 22, h: 60 },
+    { x: 30,  w: 16, h: 42 },
+    { x: 44,  w: 24, h: 64 },
+    { x: 62,  w: 18, h: 50 },
+    { x: 76,  w: 20, h: 55 },
+    { x: 92,  w: 15, h: 38 },
+    { x: 104, w: 26, h: 68 },
+    { x: 124, w: 18, h: 46 },
+    { x: 138, w: 22, h: 58 },
+    { x: 154, w: 16, h: 40 },
+    { x: 166, w: 24, h: 62 },
+    { x: 184, w: 20, h: 52 },
+    { x: 200, w: 18, h: 44 },
+    { x: 214, w: 26, h: 70 },
+    { x: 234, w: 16, h: 36 },
+    { x: 246, w: 22, h: 56 },
+    { x: 262, w: 18, h: 48 },
+    { x: 276, w: 24, h: 64 },
+    { x: 294, w: 20, h: 50 },
+  ];
+
+  if (variant === "pine") {
+    return (
+      <svg
+        viewBox={`0 0 320 ${height}`}
+        preserveAspectRatio="xMidYMax meet"
+        style={{ width: "100%", height, display: "block" }}
+        aria-hidden="true"
+      >
+        {pines.map((p, i) => {
+          const trunk = { w: p.w * 0.22, h: p.h * 0.18 };
+          const tx = p.x + p.w / 2 - trunk.w / 2;
+          return (
+            <g key={i} fill={color}>
+              {/* cône */}
+              <polygon
+                points={`${p.x + p.w / 2},${height - p.h} ${p.x},${height - trunk.h} ${p.x + p.w},${height - trunk.h}`}
+              />
+              {/* tronc */}
+              <rect x={tx} y={height - trunk.h} width={trunk.w} height={trunk.h} />
+            </g>
+          );
+        })}
+      </svg>
+    );
+  }
+
+  // round trees
+  return (
+    <svg
+      viewBox={`0 0 320 ${height}`}
+      preserveAspectRatio="xMidYMax meet"
+      style={{ width: "100%", height, display: "block" }}
+      aria-hidden="true"
+    >
+      {pines.map((p, i) => {
+        const r = p.w * 0.52;
+        const cx = p.x + p.w / 2;
+        const cy = height - p.h * 0.55;
+        const trunkW = p.w * 0.18;
+        const trunkH = p.h * 0.2;
+        return (
+          <g key={i} fill={color}>
+            <ellipse cx={cx} cy={cy} rx={r} ry={r * 0.9} />
+            <rect x={cx - trunkW / 2} y={height - trunkH} width={trunkW} height={trunkH} />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
 
 // ─── ICÔNES SVG ───────────────────────────────────────────────────────────────
 const Ico = {
-  Search: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <circle cx="10" cy="10" r="7" />
-      <path d="M17 17l4 4" />
+  Search: (p: React.SVGProps<SVGSVGElement>) => (
+    <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+      <circle cx="10" cy="10" r="7"/><path d="M17 17l4 4"/>
     </svg>
   ),
-  Globe: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <path d="M2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z" />
+  Close: (p: React.SVGProps<SVGSVGElement>) => (
+    <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round">
+      <path d="M18 6L6 18M6 6l12 12"/>
     </svg>
   ),
-  Leaf: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <path d="M20 5c0 0-8 0-13 5C4 13 4 19 4 19s6 0 9-3c5-5 5-11 7-11z" />
-      <path d="M4 19l7-7" />
+  Clock: (p: React.SVGProps<SVGSVGElement>) => (
+    <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+      <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>
     </svg>
   ),
-  Seed: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <path d="M12 22V12M12 12C12 6 7 4 2 5c0 6 3 10 8 11 1 .3 2 0 2-4z" />
-      <path d="M12 12c0-6 5-8 10-7-1 6-4 10-8 11-1 .3-2 0-2-4z" />
+  Globe: (p: React.SVGProps<SVGSVGElement>) => (
+    <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/>
     </svg>
   ),
-  Drop: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <path d="M12 2L6 10a7 7 0 1 0 12 0L12 2z" />
+  Leaf: (p: React.SVGProps<SVGSVGElement>) => (
+    <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+      <path d="M20 5c0 0-8 0-13 5C4 13 4 19 4 19s6 0 9-3c5-5 5-11 7-11z"/><path d="M4 19l7-7"/>
     </svg>
   ),
-  Tractor: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <circle cx="6" cy="17" r="3" />
-      <circle cx="16" cy="18" r="2" />
-      <path d="M9 17h5V12L11 7H5v10M14 12h5l-2-5" />
+  Seed: (p: React.SVGProps<SVGSVGElement>) => (
+    <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+      <path d="M12 22V12M12 12C12 6 7 4 2 5c0 6 3 10 8 11 1 .3 2 0 2-4z"/>
+      <path d="M12 12c0-6 5-8 10-7-1 6-4 10-8 11-1 .3-2 0-2-4z"/>
     </svg>
   ),
-  Wind: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <path d="M3 8h13a4 4 0 1 0-4-4" />
-      <path d="M3 12h10a3 3 0 1 1-3 3" />
+  Drop: (p: React.SVGProps<SVGSVGElement>) => (
+    <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+      <path d="M12 2L6 10a7 7 0 1 0 12 0L12 2z"/>
     </svg>
   ),
-  Shovel: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <path d="M14 4l6 6-9 9H7v-4l9-9z" />
-      <path d="M4 20l4-4" />
+  Tractor: (p: React.SVGProps<SVGSVGElement>) => (
+    <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+      <circle cx="6" cy="17" r="3"/><circle cx="16" cy="18" r="2"/>
+      <path d="M9 17h5V12L11 7H5v10M14 12h5l-2-5"/>
     </svg>
   ),
-  Flask: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <path d="M9 3h6M10 3v6L5 17a2 2 0 0 0 1.7 3h10.6A2 2 0 0 0 19 17l-5-8V3" />
-      <path d="M7 16h10" />
+  Wind: (p: React.SVGProps<SVGSVGElement>) => (
+    <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+      <path d="M3 8h13a4 4 0 1 0-4-4"/><path d="M3 12h10a3 3 0 1 1-3 3"/>
     </svg>
   ),
-  Sun: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+  Pump: (p: React.SVGProps<SVGSVGElement>) => (
+    <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+      <rect x="4" y="7" width="8" height="12" rx="1"/>
+      <path d="M12 10h4a2 2 0 0 1 2 2v5M18 17h2M4 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
     </svg>
   ),
-  Grass: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <path d="M2 20h20M6 20V11c0-3 2-5 4-6M12 20V9c0-4 3-6 5-7M6 20V15" />
+  Pipe: (p: React.SVGProps<SVGSVGElement>) => (
+    <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+      <path d="M3 8h12a4 4 0 0 1 4 4v.5"/>
+      <path d="M3 8l3-3M3 8l3 3"/><circle cx="19" cy="14.5" r="1.5"/>
     </svg>
   ),
-  Pot: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <path d="M6 9h12l-2 9H8L6 9z" />
-      <path d="M4 9h16M9 9V6a3 3 0 0 1 6 0v3" />
-    </svg>
-  ),
-  Recycle: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <path d="M21 9l-3-6H6L3 9M3 9h18M8 9l-2 12h12L16 9" />
-    </svg>
-  ),
-  Pump: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <rect x="4" y="7" width="8" height="12" rx="1" />
-      <path d="M12 10h4a2 2 0 0 1 2 2v5M18 17h2M4 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-    </svg>
-  ),
-  Pipe: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <path d="M3 8h12a4 4 0 0 1 4 4v.5" />
-      <path d="M3 8l3-3M3 8l3 3" />
-      <circle cx="19" cy="14.5" r="1.5" />
-    </svg>
-  ),
-  X: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.5}
-      strokeLinecap="round"
-    >
-      <path d="M18 6L6 18M6 6l12 12" />
-    </svg>
-  ),
-  Cal: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <rect x="3" y="4" width="18" height="18" rx="2" />
-      <path d="M16 2v4M8 2v4M3 10h18" />
-    </svg>
-  ),
-  Grid: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <rect x="3" y="3" width="7" height="7" />
-      <rect x="14" y="3" width="7" height="7" />
-      <rect x="3" y="14" width="7" height="7" />
-      <rect x="14" y="14" width="7" height="7" />
+  Cal: (p: React.SVGProps<SVGSVGElement>) => (
+    <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+      <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
     </svg>
   ),
 };
 
-// ─── DATA NAVIGATION ──────────────────────────────────────────────────────────
-const ACTIVITIES_CONFIG = [
-  { key: "seeds",         href: "/activites/semences-et-plants",      Icon: Ico.Seed,    navKey: "semences",      descKey: "seeds_desc",  badgeKey: "seeds_badge",  subs: ["seeds_sub1","seeds_sub2","seeds_sub3","seeds_sub4","seeds_sub5"] },
-  { key: "irrigation",    href: "/activites/irrigation",              Icon: Ico.Drop,    navKey: "irrigation",    descKey: "irr_desc",    badgeKey: "irr_badge",    subs: ["irr_sub1","irr_sub2","irr_sub3","irr_sub4","irr_sub5"] },
-  { key: "fertilization", href: "/activites/fertilisation",           Icon: Ico.Leaf,    navKey: "fertilisation", descKey: "fert_desc",   badgeKey: null,           subs: ["fert_sub1","fert_sub2","fert_sub3","fert_sub4"] },
-  { key: "machinery",     href: "/activites/machinisme-et-jardinage", Icon: Ico.Tractor, navKey: "machinisme",    descKey: "mach_desc",   badgeKey: null,           subs: ["mach_sub1","mach_sub2","mach_sub3","mach_sub4"] },
-  { key: "spraying",      href: "/activites/pulverisation",           Icon: Ico.Wind,    navKey: "pulverisation", descKey: "spray_desc",  badgeKey: "spray_badge",  subs: ["spray_sub1","spray_sub2","spray_sub3","spray_sub4","spray_sub5"] },
+// ─── CONFIG NAVIGATION ────────────────────────────────────────────────────────
+const ACTIVITIES_CFG = [
+  { key:"seeds",   href:"/activites/semences-et-plants",      Icon:Ico.Seed,    navKey:"semences",      descKey:"seeds_desc",  badgeKey:"seeds_badge", subs:["seeds_sub1","seeds_sub2","seeds_sub3","seeds_sub4","seeds_sub5"] },
+  { key:"irr",     href:"/activites/irrigation",              Icon:Ico.Drop,    navKey:"irrigation",    descKey:"irr_desc",    badgeKey:"irr_badge",   subs:["irr_sub1","irr_sub2","irr_sub3","irr_sub4","irr_sub5"] },
+  { key:"fert",    href:"/activites/fertilisation",           Icon:Ico.Leaf,    navKey:"fertilisation", descKey:"fert_desc",   badgeKey:null,          subs:["fert_sub1","fert_sub2","fert_sub3","fert_sub4"] },
+  { key:"machine", href:"/activites/machinisme-et-jardinage", Icon:Ico.Tractor, navKey:"machinisme",    descKey:"mach_desc",   badgeKey:null,          subs:["mach_sub1","mach_sub2","mach_sub3","mach_sub4"] },
+  { key:"spray",   href:"/activites/pulverisation",           Icon:Ico.Wind,    navKey:"pulverisation", descKey:"spray_desc",  badgeKey:"spray_badge", subs:["spray_sub1","spray_sub2","spray_sub3","spray_sub4","spray_sub5"] },
 ];
 
-const FERTIVERT = [
+const BRANDS_CFG = [
+  { key:"fertivert", href:"/marques/fertivert", Icon:Ico.Leaf, name:"Fertivert", subKey:"fertivert_sub", catKeys:["brands_fv_cat1","brands_fv_cat2","brands_fv_cat3","brands_fv_cat4","brands_fv_cat5","brands_fv_cat6"] },
+  { key:"pulvert",   href:"/marques/pulvert",   Icon:Ico.Pump, name:"Pulvert",   subKey:"pulvert_sub",   catKeys:["brands_pv_cat1","brands_pv_cat2","brands_pv_cat3","brands_pv_cat4","brands_pv_cat5"] },
+  { key:"matar",     href:"/marques/matar",     Icon:Ico.Pipe, name:"Matar",     subKey:"matar_sub",     catKeys:["brands_mt_cat1","brands_mt_cat2","brands_mt_cat3","brands_mt_cat4","brands_mt_cat5"] },
+];
+
+const FERTIVERT_MOBILE = [
   {
-    id: "pro",
-    label: "Fertivert Pro",
-    subKey: "fv_pro_sub",
-    href: "/marques/fertivert?division=pro",
-    color: "#0a6030",
-    accent: "#2d5a1b",
-    light: "#f0f9eb",
-    Icon: Ico.Leaf,
-    cats: [
-      {
-        id: "support-culture-pro",
-        label: "Support de Culture",
-        Icon: Ico.Shovel,
-        desc: "Substrats et supports organiques",
-        subs: [
-          "Terreau Professionnel 50L",
-          "Fumier Composté 40kg",
-          "Compost Végétal 50L",
-        ],
-      },
-      {
-        id: "engrais-fond-pro",
-        label: "Engrais de Fond",
-        Icon: Ico.Drop,
-        desc: "Nutrition de base, démarrage optimal",
-        subs: ["Ferti Fond NPK", "Ferti Fumure Organique"],
-      },
-      {
-        id: "engrais-organique-pro",
-        label: "Engrais Organique",
-        Icon: Ico.Leaf,
-        desc: "Stimulants biologiques & biostimulants",
-        subs: [
-          "Ferti Micro Granulé",
-          "Ferti Micro Liquide",
-          "Ferti Actif",
-          "Ferti Fruit",
-          "Ferti Leaf",
-          "Ferti Go",
-        ],
-      },
-      {
-        id: "fertilisant-pro",
-        label: "Fertilisant Spécialisé",
-        Icon: Ico.Sun,
-        desc: "Formules avancées haute performance",
-        subs: [
-          "Pouss Roots+",
-          "Aminal+",
-          "Fort Start+",
-          "Oceano+",
-          "Fulvical+",
-          "Sweeter+",
-          "CalciMag+",
-          "Calcial+",
-        ],
-      },
+    id:"pro", label:"Fertivert Pro", subKey:"fv_pro_sub",
+    href:"/marques/fertivert?division=pro", color:"#2e7d4f", light:"#dff2e8", Icon:Ico.Leaf,
+    cats:[
+      { id:"support-culture-pro",   label:"Support de Culture",     subs:["Terreau Pro 50L","Fumier Composté 40kg","Compost Végétal 50L"] },
+      { id:"engrais-fond-pro",      label:"Engrais de Fond",        subs:["Ferti Fond NPK","Fumure Organique"] },
+      { id:"engrais-organique-pro", label:"Engrais Organique",      subs:["Ferti Micro Granulé","Ferti Actif","Ferti Fruit","Ferti Leaf"] },
+      { id:"fertilisant-pro",       label:"Fertilisant Spécialisé", subs:["Pouss Roots+","Aminal+","Fort Start+","Oceano+"] },
     ],
   },
   {
-    id: "garden",
-    label: "Fertivert Garden",
-    subKey: "fv_garden_sub",
-    href: "/marques/fertivert?division=garden",
-    color: "#2d5a1b",
-    accent: "#4a7c2f",
-    light: "#f5fdf0",
-    Icon: Ico.Grass,
-    cats: [
-      {
-        id: "gazon",
-        label: "Gazon",
-        Icon: Ico.Grass,
-        desc: "Solutions complètes pour pelouses",
-        subs: [
-          "Terreau Gazon",
-          "Fumier Gazon",
-          "Ferti Fond Gazon",
-          "Granulé Gazon",
-          "FertiActif",
-          "FertiGo",
-        ],
-      },
-      {
-        id: "support-culture-garden",
-        label: "Support de Culture",
-        Icon: Ico.Pot,
-        desc: "Substrats pour jardinage amateur",
-        subs: ["Terreau Universel", "Fumier Composté", "Compost Végétal"],
-      },
-      {
-        id: "engrais-chimiques",
-        label: "Engrais Chimiques",
-        Icon: Ico.Flask,
-        desc: "Granulés spécialisés par espèce",
-        subs: [
-          "Oliviers 2kg",
-          "Agrumes 2kg",
-          "Potager 2kg",
-          "Fleurs 2kg",
-          "Arbres 2kg",
-          "Gazon 2kg",
-        ],
-      },
-      {
-        id: "soluble-garden",
-        label: "Soluble",
-        Icon: Ico.Drop,
-        desc: "Hydrosoluble, dissolution instantanée",
-        subs: [
-          "Agrumes 750g",
-          "Légumes 750g",
-          "Fertivit 13.40.13",
-          "Fertivit 20.20.20",
-        ],
-      },
-      {
-        id: "liquide-garden",
-        label: "Liquide",
-        Icon: Ico.Drop,
-        desc: "Prêt à l'emploi, plantes d'intérieur",
-        subs: [
-          "Universel 1L",
-          "Plantes Vertes 1L",
-          "Palmiers 1L",
-          "Cactées 1L",
-          "Fleuries 1L",
-          "Agrumes 1L",
-        ],
-      },
-      {
-        id: "engrais-organique-garden",
-        label: "Engrais Organique",
-        Icon: Ico.Recycle,
-        desc: "Bio pour jardin naturel & écologique",
-        subs: ["Ferti Fort 250g", "Ferti Micro 500g", "Ferti Max 1kg"],
-      },
+    id:"garden", label:"Fertivert Garden", subKey:"fv_garden_sub",
+    href:"/marques/fertivert?division=garden", color:"#1b6b3a", light:"#e6f5ec", Icon:Ico.Leaf,
+    cats:[
+      { id:"gazon",             label:"Gazon",             subs:["Terreau Gazon","Fumier Gazon","Granulé Gazon"] },
+      { id:"engrais-chimiques", label:"Engrais Chimiques", subs:["Oliviers 2kg","Agrumes 2kg","Potager 2kg"] },
+      { id:"liquide-garden",    label:"Liquide",           subs:["Universel 1L","Plantes Vertes 1L","Cactées 1L"] },
     ],
   },
 ];
 
-const OTHER_BRANDS_CONFIG = [
-  { key: "pulvert", href: "/marques/pulvert", color: "#1D6B2A", Icon: Ico.Pump, name: "Pulvert", subKey: "pulvert_sub", tags: ["Agricole", "Garden", "SAV"] },
-  { key: "matar",   href: "/marques/matar",   color: "#1B6B7A", Icon: Ico.Pipe, name: "Matar",   subKey: "matar_sub",   tags: ["Drip", "Smart", "Filtration"] },
+const OTHER_BRANDS_CFG = [
+  { key:"pulvert", href:"/marques/pulvert", color:"#3d6b3a", Icon:Ico.Pump, name:"Pulvert", subKey:"pulvert_sub" },
+  { key:"matar",   href:"/marques/matar",   color:"#2a5f78", Icon:Ico.Pipe, name:"Matar",   subKey:"matar_sub"   },
 ];
 
 const LANGS = [
-  { code: "fr", short: "FR", full: "Français",  flag: "🇫🇷" },
-  { code: "ar", short: "ع",  full: "العربية",   flag: "🇹🇳" },
-  { code: "en", short: "EN", full: "English",   flag: "🇬🇧" },
-  { code: "it", short: "IT", full: "Italiano",  flag: "🇮🇹" },
-  { code: "es", short: "ES", full: "Español",   flag: "🇪🇸" },
+  { code:"fr", short:"FR", full:"Français", flag:"🇫🇷" },
+  { code:"ar", short:"ع",  full:"العربية",  flag:"🇹🇳" },
+  { code:"en", short:"EN", full:"English",  flag:"🇬🇧" },
+  { code:"it", short:"IT", full:"Italiano", flag:"🇮🇹" },
+  { code:"es", short:"ES", full:"Español",  flag:"🇪🇸" },
 ];
 
-// ─── HOOK HOVER AVEC DÉLAI ────────────────────────────────────────────────────
+// ─── INDEX PRODUITS ───────────────────────────────────────────────────────────
+export type Product = {
+  id:number; name:string; brand:string; cat:string;
+  marque:string; div:string|null; tags:string[];
+  desc:string; href:string; icon:string;
+};
+
+const PRODUCTS: Product[] = [
+  { id:1,  name:"Ferti Micro Granulé",    brand:"Fertivert Pro",    cat:"Engrais Organique",      marque:"fertivert", div:"pro",    tags:["micro","granulé","biostimulant","organique","racinaire"],    desc:"Biostimulant micro-granulé à libération lente",      href:"/marques/fertivert?division=pro&cat=engrais-organique-pro",      icon:"🌿" },
+  { id:2,  name:"Ferti Micro Liquide",    brand:"Fertivert Pro",    cat:"Engrais Organique",      marque:"fertivert", div:"pro",    tags:["micro","liquide","biostimulant","foliaire"],                 desc:"Stimulant racinaire à application foliaire",         href:"/marques/fertivert?division=pro&cat=engrais-organique-pro",      icon:"💧" },
+  { id:3,  name:"Ferti Actif",            brand:"Fertivert Pro",    cat:"Engrais Organique",      marque:"fertivert", div:"pro",    tags:["actif","activateur","sol","biologique"],                     desc:"Activateur de sol biologique",                       href:"/marques/fertivert?division=pro&cat=engrais-organique-pro",      icon:"⚡" },
+  { id:4,  name:"Ferti Fruit",            brand:"Fertivert Pro",    cat:"Engrais Organique",      marque:"fertivert", div:"pro",    tags:["fruit","floraison","fructification","potassium"],            desc:"Nutrition floraison & fructification",               href:"/marques/fertivert?division=pro&cat=engrais-organique-pro",      icon:"🍎" },
+  { id:5,  name:"Ferti Leaf",             brand:"Fertivert Pro",    cat:"Engrais Organique",      marque:"fertivert", div:"pro",    tags:["leaf","foliaire","microéléments","zinc"],                    desc:"Nutrition foliaire aux microéléments",               href:"/marques/fertivert?division=pro&cat=engrais-organique-pro",      icon:"🍃" },
+  { id:6,  name:"Ferti Go",               brand:"Fertivert Pro",    cat:"Engrais Organique",      marque:"fertivert", div:"pro",    tags:["go","démarrage","starter","germination"],                    desc:"Stimulant de démarrage rapide",                      href:"/marques/fertivert?division=pro&cat=engrais-organique-pro",      icon:"🚀" },
+  { id:7,  name:"Ferti Fond NPK",         brand:"Fertivert Pro",    cat:"Engrais de Fond",        marque:"fertivert", div:"pro",    tags:["npk","fond","minéral","engrais","sol"],                      desc:"Engrais de fond minéral NPK équilibré",              href:"/marques/fertivert?division=pro&cat=engrais-fond-pro",           icon:"🌾" },
+  { id:8,  name:"Ferti Fumure Organique", brand:"Fertivert Pro",    cat:"Engrais de Fond",        marque:"fertivert", div:"pro",    tags:["fumure","organique","fond","sol","amendement"],              desc:"Amendement organique de fond longue durée",          href:"/marques/fertivert?division=pro&cat=engrais-fond-pro",           icon:"♻️" },
+  { id:9,  name:"Pouss Roots+",           brand:"Fertivert Pro",    cat:"Fertilisant Spécialisé", marque:"fertivert", div:"pro",    tags:["roots","racines","enracinement","rhizosphère"],              desc:"Enracinement renforcé & développement racinaire",    href:"/marques/fertivert?division=pro&cat=fertilisant-pro",            icon:"🌱" },
+  { id:10, name:"Aminal+",               brand:"Fertivert Pro",    cat:"Fertilisant Spécialisé", marque:"fertivert", div:"pro",    tags:["aminal","acides aminés","peptides","stress"],                desc:"Acides aminés & peptides anti-stress",               href:"/marques/fertivert?division=pro&cat=fertilisant-pro",            icon:"🐾" },
+  { id:11, name:"Fort Start+",            brand:"Fertivert Pro",    cat:"Fertilisant Spécialisé", marque:"fertivert", div:"pro",    tags:["start","démarrage","npk","starter","phosphore"],             desc:"Starter NPK haute concentration",                    href:"/marques/fertivert?division=pro&cat=fertilisant-pro",            icon:"💪" },
+  { id:12, name:"Oceano+",               brand:"Fertivert Pro",    cat:"Fertilisant Spécialisé", marque:"fertivert", div:"pro",    tags:["algues","marines","biostimulant","stress"],                  desc:"Extrait d'algues marines biostimulant",              href:"/marques/fertivert?division=pro&cat=fertilisant-pro",            icon:"🌊" },
+  { id:13, name:"Fulvical+",             brand:"Fertivert Pro",    cat:"Fertilisant Spécialisé", marque:"fertivert", div:"pro",    tags:["fulvique","humique","calcium","correcteur"],                 desc:"Acides fulviques + humiques + calcium",              href:"/marques/fertivert?division=pro&cat=fertilisant-pro",            icon:"🟡" },
+  { id:14, name:"Sweeter+",              brand:"Fertivert Pro",    cat:"Fertilisant Spécialisé", marque:"fertivert", div:"pro",    tags:["sucre","couleur","qualité","fruits"],                        desc:"Qualité des fruits — sucre & couleur",               href:"/marques/fertivert?division=pro&cat=fertilisant-pro",            icon:"🍬" },
+  { id:15, name:"CalciMag+",             brand:"Fertivert Pro",    cat:"Fertilisant Spécialisé", marque:"fertivert", div:"pro",    tags:["calcium","magnésium","carence","correcteur"],                desc:"Calcium + Magnésium équilibrés",                     href:"/marques/fertivert?division=pro&cat=fertilisant-pro",            icon:"🦴" },
+  { id:16, name:"Calcial+",              brand:"Fertivert Pro",    cat:"Fertilisant Spécialisé", marque:"fertivert", div:"pro",    tags:["calcium","correcteur","carence","fermeté"],                  desc:"Calcium pur haute disponibilité",                    href:"/marques/fertivert?division=pro&cat=fertilisant-pro",            icon:"⬜" },
+  { id:17, name:"Terreau Professionnel", brand:"Fertivert Pro",    cat:"Support de Culture",     marque:"fertivert", div:"pro",    tags:["terreau","substrat","professionnel","culture"],              desc:"Substrat professionnel 50L",                         href:"/marques/fertivert?division=pro&cat=support-culture-pro",        icon:"🪴" },
+  { id:18, name:"Fumier Composté Pro",   brand:"Fertivert Pro",    cat:"Support de Culture",     marque:"fertivert", div:"pro",    tags:["fumier","compost","organique","amendement"],                 desc:"Amendement organique 40kg",                          href:"/marques/fertivert?division=pro&cat=support-culture-pro",        icon:"♻️" },
+  { id:19, name:"Compost Végétal Pro",   brand:"Fertivert Pro",    cat:"Support de Culture",     marque:"fertivert", div:"pro",    tags:["compost","végétal","organique","substrat"],                  desc:"Compost végétal 50L",                                href:"/marques/fertivert?division=pro&cat=support-culture-pro",        icon:"🌿" },
+  { id:20, name:"Terreau Gazon",         brand:"Fertivert Garden", cat:"Gazon",                  marque:"fertivert", div:"garden", tags:["gazon","pelouse","terreau","substrat"],                      desc:"Substrat spécial pelouse",                           href:"/marques/fertivert?division=garden&cat=gazon",                   icon:"🌿" },
+  { id:21, name:"Fumier Gazon",          brand:"Fertivert Garden", cat:"Gazon",                  marque:"fertivert", div:"garden", tags:["fumier","gazon","organique","pelouse"],                      desc:"Fumier organique pour gazon",                        href:"/marques/fertivert?division=garden&cat=gazon",                   icon:"♻️" },
+  { id:22, name:"Ferti Fond Gazon",      brand:"Fertivert Garden", cat:"Gazon",                  marque:"fertivert", div:"garden", tags:["fond","gazon","engrais","pelouse","npk"],                    desc:"Engrais de fond pour gazon",                         href:"/marques/fertivert?division=garden&cat=gazon",                   icon:"🌾" },
+  { id:23, name:"Granulé Gazon",         brand:"Fertivert Garden", cat:"Gazon",                  marque:"fertivert", div:"garden", tags:["granulé","gazon","longue durée","pelouse"],                  desc:"Engrais granulé longue durée gazon",                 href:"/marques/fertivert?division=garden&cat=gazon",                   icon:"🔵" },
+  { id:24, name:"Engrais Oliviers 2kg",  brand:"Fertivert Garden", cat:"Engrais Chimiques",      marque:"fertivert", div:"garden", tags:["oliviers","engrais","granulés","fruitiers"],                 desc:"Granulés spéciaux oliviers 2kg",                     href:"/marques/fertivert?division=garden&cat=engrais-chimiques",        icon:"🫒" },
+  { id:25, name:"Engrais Agrumes 2kg",   brand:"Fertivert Garden", cat:"Engrais Chimiques",      marque:"fertivert", div:"garden", tags:["agrumes","oranges","citrons","engrais"],                     desc:"Granulés spéciaux agrumes 2kg",                      href:"/marques/fertivert?division=garden&cat=engrais-chimiques",        icon:"🍊" },
+  { id:26, name:"Engrais Potager 2kg",   brand:"Fertivert Garden", cat:"Engrais Chimiques",      marque:"fertivert", div:"garden", tags:["potager","légumes","tomates","engrais"],                     desc:"Granulés légumes & potager 2kg",                     href:"/marques/fertivert?division=garden&cat=engrais-chimiques",        icon:"🥕" },
+  { id:27, name:"Engrais Fleurs 2kg",    brand:"Fertivert Garden", cat:"Engrais Chimiques",      marque:"fertivert", div:"garden", tags:["fleurs","floraison","engrais","jardin"],                     desc:"Granulés spéciaux fleurs 2kg",                       href:"/marques/fertivert?division=garden&cat=engrais-chimiques",        icon:"🌸" },
+  { id:28, name:"Engrais Arbres 2kg",    brand:"Fertivert Garden", cat:"Engrais Chimiques",      marque:"fertivert", div:"garden", tags:["arbres","engrais","granulés","fruitiers"],                   desc:"Granulés spéciaux arbres 2kg",                       href:"/marques/fertivert?division=garden&cat=engrais-chimiques",        icon:"🌳" },
+  { id:29, name:"Fertivit 20.20.20",     brand:"Fertivert Garden", cat:"Soluble",                marque:"fertivert", div:"garden", tags:["soluble","hydrosoluble","npk","fertivit"],                   desc:"Engrais hydrosoluble équilibré 20-20-20",            href:"/marques/fertivert?division=garden&cat=soluble-garden",           icon:"💊" },
+  { id:30, name:"Fertivit 13.40.13",     brand:"Fertivert Garden", cat:"Soluble",                marque:"fertivert", div:"garden", tags:["soluble","phosphore","floraison","fertivit"],                desc:"Hydrosoluble riche en phosphore",                    href:"/marques/fertivert?division=garden&cat=soluble-garden",           icon:"💊" },
+  { id:31, name:"Universel Liquide 1L",  brand:"Fertivert Garden", cat:"Liquide",                marque:"fertivert", div:"garden", tags:["liquide","universel","toutes plantes","jardin"],             desc:"Engrais liquide universel prêt à l'emploi",          href:"/marques/fertivert?division=garden&cat=liquide-garden",           icon:"🧴" },
+  { id:32, name:"Plantes Vertes 1L",     brand:"Fertivert Garden", cat:"Liquide",                marque:"fertivert", div:"garden", tags:["intérieur","plantes vertes","liquide","pot"],                desc:"Engrais liquide plantes d'intérieur",                href:"/marques/fertivert?division=garden&cat=liquide-garden",           icon:"🪴" },
+  { id:33, name:"Cactées Liquide 1L",    brand:"Fertivert Garden", cat:"Liquide",                marque:"fertivert", div:"garden", tags:["cactées","succulentes","liquide","intérieur"],               desc:"Engrais cactées & succulentes 1L",                   href:"/marques/fertivert?division=garden&cat=liquide-garden",           icon:"🌵" },
+  { id:34, name:"Fleuries Liquide 1L",   brand:"Fertivert Garden", cat:"Liquide",                marque:"fertivert", div:"garden", tags:["fleuries","floraison","liquide","jardin"],                   desc:"Engrais liquide plantes fleuries 1L",                href:"/marques/fertivert?division=garden&cat=liquide-garden",           icon:"🌺" },
+  { id:35, name:"Ferti Fort 250g",       brand:"Fertivert Garden", cat:"Engrais Organique",      marque:"fertivert", div:"garden", tags:["bio","organique","concentré","naturel"],                     desc:"Engrais organique concentré 250g",                   href:"/marques/fertivert?division=garden&cat=engrais-organique-garden", icon:"💪" },
+  { id:36, name:"Ferti Micro 500g",      brand:"Fertivert Garden", cat:"Engrais Organique",      marque:"fertivert", div:"garden", tags:["micro","organique","naturel","jardin"],                      desc:"Engrais organique micro-granulé 500g",               href:"/marques/fertivert?division=garden&cat=engrais-organique-garden", icon:"🌿" },
+  { id:37, name:"Ferti Max 1kg",         brand:"Fertivert Garden", cat:"Engrais Organique",      marque:"fertivert", div:"garden", tags:["max","organique","naturel","jardin"],                        desc:"Engrais organique grand format 1kg",                 href:"/marques/fertivert?division=garden&cat=engrais-organique-garden", icon:"🪴" },
+  { id:38, name:"Terreau Universel",     brand:"Fertivert Garden", cat:"Support de Culture",     marque:"fertivert", div:"garden", tags:["terreau","universel","rempotage","semis"],                   desc:"Terreau universel jardinage amateur",                href:"/marques/fertivert?division=garden&cat=support-culture-garden",  icon:"🪴" },
+  { id:39, name:"Fumier Composté Garden",brand:"Fertivert Garden", cat:"Support de Culture",     marque:"fertivert", div:"garden", tags:["fumier","compost","organique","jardin"],                     desc:"Fumier composté jardin",                             href:"/marques/fertivert?division=garden&cat=support-culture-garden",  icon:"♻️" },
+  { id:40, name:"Compost Végétal Garden",brand:"Fertivert Garden", cat:"Support de Culture",     marque:"fertivert", div:"garden", tags:["compost","végétal","organique","jardin"],                    desc:"Compost végétal pour jardin et potager",             href:"/marques/fertivert?division=garden&cat=support-culture-garden",  icon:"🌿" },
+  { id:41, name:"Pulvérisateur à dos",   brand:"Pulvert",          cat:"Pulvérisateur Manuel",   marque:"pulvert",   div:null,     tags:["dos","manuel","dorsal","traitement","16L"],                  desc:"Pulvérisateur dorsal 16L avec pompe à piston",       href:"/marques/pulvert",                                               icon:"🎒" },
+  { id:42, name:"Pulvérisateur tracteur",brand:"Pulvert",          cat:"Pulvérisateur Porté",    marque:"pulvert",   div:null,     tags:["tracteur","porté","grandes cultures","600L"],                desc:"Pulvérisateur porté 600L pour tracteur",             href:"/marques/pulvert",                                               icon:"🚜" },
+  { id:43, name:"Buses & Accessoires",   brand:"Pulvert",          cat:"Accessoires Pulvert",    marque:"pulvert",   div:null,     tags:["buse","jet","accessoire","pièce","rechange"],                desc:"Buses, jets et pièces de rechange",                  href:"/marques/pulvert",                                               icon:"🔩" },
+  { id:44, name:"Kit Irrigation Drip",   brand:"Matar",            cat:"Irrigation Drip",        marque:"matar",     div:null,     tags:["drip","goutte","tuyau","goutteur","kit"],                    desc:"Kit complet irrigation goutte-à-goutte",             href:"/marques/matar",                                                 icon:"💧" },
+  { id:45, name:"Matar Smart Control",   brand:"Matar",            cat:"Smart Irrigation",       marque:"matar",     div:null,     tags:["smart","connecté","automatique","iot","app"],                desc:"Contrôleur irrigation connecté & automatisé",        href:"/marques/matar",                                                 icon:"📱" },
+  { id:46, name:"Pompe Centrifuge",       brand:"Matar",            cat:"Pompes & Filtration",    marque:"matar",     div:null,     tags:["pompe","centrifuge","pression","débit","eau"],               desc:"Pompe centrifuge agricole haute pression",            href:"/marques/matar",                                                 icon:"⚙️" },
+  { id:47, name:"Filtre à Sable",         brand:"Matar",            cat:"Pompes & Filtration",    marque:"matar",     div:null,     tags:["filtre","sable","eau","qualité","irrigation"],               desc:"Filtre à sable pour réseau d'irrigation",            href:"/marques/matar",                                                 icon:"🔘" },
+  { id:48, name:"Tuyau PEHD Ø32mm",      brand:"Matar",            cat:"Tuyaux PEHD",            marque:"matar",     div:null,     tags:["tuyau","pehd","32mm","conduite","eau"],                      desc:"Tuyau PEHD PN16 diamètre 32mm",                      href:"/marques/matar",                                                 icon:"🟤" },
+  { id:49, name:"Tuyau PEHD Ø63mm",      brand:"Matar",            cat:"Tuyaux PEHD",            marque:"matar",     div:null,     tags:["tuyau","pehd","63mm","conduite","réseau"],                   desc:"Tuyau PEHD PN16 diamètre 63mm",                      href:"/marques/matar",                                                 icon:"🟤" },
+  { id:50, name:"Palmiers Liquide 1L",   brand:"Fertivert Garden", cat:"Liquide",                marque:"fertivert", div:"garden", tags:["palmiers","liquide","tropical","jardin"],                    desc:"Engrais liquide spécial palmiers 1L",                href:"/marques/fertivert?division=garden&cat=liquide-garden",           icon:"🌴" },
+  { id:51, name:"Agrumes Liquide 1L",    brand:"Fertivert Garden", cat:"Liquide",                marque:"fertivert", div:"garden", tags:["agrumes","liquide","citrus","jardin"],                       desc:"Engrais liquide agrumes 1L",                         href:"/marques/fertivert?division=garden&cat=liquide-garden",           icon:"🍋" },
+  { id:52, name:"Agrumes Soluble 750g",  brand:"Fertivert Garden", cat:"Soluble",                marque:"fertivert", div:"garden", tags:["agrumes","soluble","750g","citrus"],                         desc:"Engrais hydrosoluble spécial agrumes 750g",          href:"/marques/fertivert?division=garden&cat=soluble-garden",           icon:"🍋" },
+  { id:53, name:"Légumes Soluble 750g",  brand:"Fertivert Garden", cat:"Soluble",                marque:"fertivert", div:"garden", tags:["légumes","soluble","potager","tomates"],                     desc:"Engrais hydrosoluble spécial légumes 750g",          href:"/marques/fertivert?division=garden&cat=soluble-garden",           icon:"🥦" },
+  { id:54, name:"Tuyau PEHD Ø110mm",     brand:"Matar",            cat:"Tuyaux PEHD",            marque:"matar",     div:null,     tags:["tuyau","pehd","110mm","conduite","eau"],                     desc:"Tuyau PEHD PN16 diamètre 110mm",                     href:"/marques/matar",                                                 icon:"🟤" },
+];
+
+const BRAND_META: Record<string, { color:string; bg:string; border:string }> = {
+  fertivert: { color:"#1b5e38", bg:"#d4edde", border:"#86c9a0" },
+  pulvert:   { color:"#3a5e1f", bg:"#deecd4", border:"#9ec986" },
+  matar:     { color:"#1a4f78", bg:"#d4e8f5", border:"#86b8d9" },
+};
+const DIV_META: Record<string, { color:string; bg:string }> = {
+  pro:    { color:"#1b5e38", bg:"#c8ebd8" },
+  garden: { color:"#4a2d9c", bg:"#e0d8f8" },
+};
+
+// ─── SCORING ──────────────────────────────────────────────────────────────────
+function score(p: Product, q: string): number {
+  const lq = q.toLowerCase().trim();
+  if (!lq) return 1;
+  let s = 0;
+  if (p.name.toLowerCase().startsWith(lq))  s += 20;
+  if (p.name.toLowerCase().includes(lq))    s += 10;
+  if (p.cat.toLowerCase().includes(lq))     s += 6;
+  if (p.brand.toLowerCase().includes(lq))   s += 5;
+  if (p.desc.toLowerCase().includes(lq))    s += 4;
+  p.tags.forEach(t => { if (t.includes(lq)) s += 3; });
+  lq.split(" ").forEach(w => {
+    if (w.length < 2) return;
+    if (p.name.toLowerCase().includes(w)) s += 2;
+    p.tags.forEach(t => { if (t.includes(w)) s += 1; });
+  });
+  return s;
+}
+
+function hl(text: string, q: string): React.ReactNode {
+  if (!q || q.trim().length < 1) return <>{text}</>;
+  const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+  return (
+    <>
+      {text.split(re).map((p, i) =>
+        re.test(p)
+          ? <mark key={i} style={{ background: C.markBg, color: C.markFg, borderRadius: 3, padding: "0 2px" }}>{p}</mark>
+          : p
+      )}
+    </>
+  );
+}
+
+// ─── HOOK HOVER ───────────────────────────────────────────────────────────────
 function useHover(delay = 180) {
   const [open, setOpen] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const show = useCallback(() => {
-    timer.current && clearTimeout(timer.current);
-    setOpen(true);
-  }, []);
-  const hide = useCallback(() => {
-    timer.current = setTimeout(() => setOpen(false), delay);
-  }, [delay]);
-  const keep = useCallback(() => {
-    timer.current && clearTimeout(timer.current);
-  }, []);
-  useEffect(
-    () => () => {
-      timer.current && clearTimeout(timer.current);
-    },
-    [],
-  );
+  const t = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const show = useCallback(() => { t.current && clearTimeout(t.current); setOpen(true); }, []);
+  const hide = useCallback(() => { t.current = setTimeout(() => setOpen(false), delay); }, [delay]);
+  const keep = useCallback(() => { t.current && clearTimeout(t.current); }, []);
+  useEffect(() => () => { t.current && clearTimeout(t.current); }, []);
   return { open, show, hide, keep };
 }
 
-// ─── SEARCH INDEX — swap data source here when moving to DB ──────────────────
-// Shape: { label, href, cat, desc, icon, tags[] }
-// When using a DB: fetch this array from /api/search-index and pass it in.
-export type SearchItem = {
-  label: string;
-  href: string;
-  cat: string;
-  desc: string;
-  icon: string;
-  tags: string[];
-};
+// ─── SEARCH ICON BUTTON ───────────────────────────────────────────────────────
+function SearchIconBtn({ isOpen, onClick }: { isOpen: boolean; onClick: () => void }) {
+  return (
+    <motion.button
+      onClick={onClick}
+      title="Rechercher ⌘K"
+      whileTap={{ scale: 0.88 }}
+      style={{
+        width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+        border: `2px solid ${isOpen ? C.sageMd : C.border}`,
+        background: isOpen ? `linear-gradient(135deg, ${C.sageLt}, #c8f0d8)` : "#fff",
+        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+        position: "relative", overflow: "hidden",
+        transition: "background 0.2s, border-color 0.2s",
+        boxShadow: isOpen ? `0 0 0 3px rgba(46,125,79,0.15)` : "none",
+      }}
+    >
+      <motion.span
+        animate={{ opacity: isOpen ? 0 : 1, rotate: isOpen ? 45 : 0, scale: isOpen ? 0.5 : 1 }}
+        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+        style={{ position: "absolute", display: "flex" }}
+      >
+        <Ico.Search style={{ width: 16, height: 16, color: C.ink2 }} />
+      </motion.span>
+      <motion.span
+        animate={{ opacity: isOpen ? 1 : 0, rotate: isOpen ? 0 : -45, scale: isOpen ? 1 : 0.5 }}
+        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+        style={{ position: "absolute", display: "flex" }}
+      >
+        <Ico.Close style={{ width: 16, height: 16, color: C.sage }} />
+      </motion.span>
+    </motion.button>
+  );
+}
 
-const SEARCH_IDX: SearchItem[] = [
-  // ── Pages
-  { label: "Accueil",           href: "/",                  cat: "Page",     icon: "🏠", desc: "Page principale",                          tags: ["home","accueil","principal"] },
-  { label: "Qui Sommes-Nous",   href: "/qui-sommes-nous",   cat: "Page",     icon: "🏢", desc: "Notre histoire, valeurs et équipe",         tags: ["about","histoire","équipe","mission","valeurs"] },
-  { label: "Nos Marques",       href: "/marques",           cat: "Page",     icon: "🏷️", desc: "Toutes nos marques partenaires",            tags: ["marques","brands","fertivert","pulvert","matar"] },
-  { label: "Contact",           href: "/contact",           cat: "Page",     icon: "✉️", desc: "Formulaire de contact et agences",          tags: ["contact","email","téléphone","agence","adresse"] },
-  { label: "Rendez-vous",       href: "/rendez-vous",       cat: "Page",     icon: "📅", desc: "Prendre un rendez-vous avec un expert",     tags: ["rdv","rendez-vous","appointment","expert","visite"] },
+// ─── LOGO ESPACE VERT ─────────────────────────────────────────────────────────
+function EspaceVertLogo() {
+  const [imgError, setImgError] = useState(false);
 
-  // ── Activités
-  { label: "Irrigation",            href: "/activites/irrigation",              cat: "Activité", icon: "💦", desc: "Goutte-à-goutte, aspersion, pompage",          tags: ["irrigation","eau","tuyau","drip","aspersion","pompe","filtre","fertigation"] },
-  { label: "Fertilisation",         href: "/activites/fertilisation",           cat: "Activité", icon: "🌾", desc: "Engrais organiques, NPK, biostimulants",        tags: ["fertilisation","engrais","npk","organique","biostimulant","sol","nutrition","ferti"] },
-  { label: "Semences & Plants",     href: "/activites/semences-et-plants",      cat: "Activité", icon: "🌰", desc: "Graines, plants maraîchers, gazon, fourrages",  tags: ["semences","plants","graines","maraîcher","gazon","fourrage","pomme de terre","arbres"] },
-  { label: "Pulvérisation",         href: "/activites/pulverisation",           cat: "Activité", icon: "🔬", desc: "Pulvérisateurs, buses, protection des cultures", tags: ["pulvérisation","pulvérisateur","traitement","buse","protection","phytosanitaire","pesticide"] },
-  { label: "Machinisme & Jardinage",href: "/activites/machinisme-et-jardinage", cat: "Activité", icon: "🚜", desc: "Matériel agricole et espaces verts",             tags: ["machinisme","jardinage","tracteur","outillage","matériel","espaces verts","récolte","tondeuse"] },
+  if (!imgError) {
+    return (
+      <Image
+        src="/logos/LOGO ESPACE VERT.png"
+        alt="Espace Vert"
+        width={280}
+        height={80}
+        style={{
+          objectFit: "contain",
+          height: 80,
+          width: "auto",
+          maxWidth: 280,
+          display: "block",
+        }}
+        onError={() => setImgError(true)}
+        priority
+      />
+    );
+  }
 
-  // ── Marques
-  { label: "Fertivert",         href: "/marques/fertivert",                   cat: "Marque", icon: "🌿", desc: "Fertilisation Pro & Garden",                   tags: ["fertivert","engrais","fertilisant","biostimulant","terreau","fumier","compost","ferti"] },
-  { label: "Fertivert Pro",     href: "/marques/fertivert?division=pro",      cat: "Marque", icon: "🌿", desc: "Solutions de fertilisation professionnelle",    tags: ["fertivert pro","professionnel","npk","organique","biostimulant","ferti roots","ferti micro"] },
-  { label: "Fertivert Garden",  href: "/marques/fertivert?division=garden",   cat: "Marque", icon: "🌱", desc: "Engrais et substrats pour jardin & gazon",      tags: ["garden","gazon","jardin","plantes","terreau","liquide","soluble","fleurs","agrumes","oliviers"] },
-  { label: "Pulvert",           href: "/marques/pulvert",                     cat: "Marque", icon: "💧", desc: "Pulvérisateurs agricoles et de jardin",         tags: ["pulvert","pulvérisateur","dos","tracteur","jardin","buses","protection","sav"] },
-  { label: "Matar",             href: "/marques/matar",                       cat: "Marque", icon: "🚿", desc: "Systèmes d'irrigation connectés",               tags: ["matar","irrigation","drip","smart","filtration","goutte-à-goutte","connecté","tuyau"] },
+  // Fallback icône uniquement
+  return (
+    <div style={{
+      width: 56, height: 56, borderRadius: 12,
+      background: `linear-gradient(140deg, ${C.gradA}, ${C.gradB})`,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      boxShadow: `0 3px 10px rgba(46,125,79,0.35)`,
+      flexShrink: 0,
+    }}>
+      <Ico.Leaf style={{ width: 28, height: 28, color: "rgba(255,255,255,0.95)" }} />
+    </div>
+  );
+}
 
-  // ── Produits Fertivert Pro
-  { label: "Terreau Professionnel",  href: "/marques/fertivert?division=pro&cat=support-culture-pro",  cat: "Produit", icon: "🪴", desc: "Substrat professionnel 50L",                    tags: ["terreau","substrat","professionnel","culture","sol"] },
-  { label: "Fumier Composté",        href: "/marques/fertivert?division=pro&cat=support-culture-pro",  cat: "Produit", icon: "♻️", desc: "Amendement organique 40kg",                     tags: ["fumier","compost","organique","amendement","sol"] },
-  { label: "Ferti Fond NPK",         href: "/marques/fertivert?division=pro&cat=engrais-fond-pro",     cat: "Produit", icon: "🌾", desc: "Engrais de fond minéral NPK",                   tags: ["npk","fond","minéral","engrais","nutrition"] },
-  { label: "Ferti Micro Granulé",    href: "/marques/fertivert?division=pro&cat=engrais-organique-pro",cat: "Produit", icon: "🔵", desc: "Biostimulant micro-granulé",                    tags: ["micro","granulé","biostimulant","organique","ferti"] },
-  { label: "Ferti Micro Liquide",    href: "/marques/fertivert?division=pro&cat=engrais-organique-pro",cat: "Produit", icon: "💧", desc: "Biostimulant liquide",                          tags: ["micro","liquide","biostimulant","organique","ferti"] },
-  { label: "Ferti Actif",            href: "/marques/fertivert?division=pro&cat=engrais-organique-pro",cat: "Produit", icon: "⚡", desc: "Activateur de sol biologique",                 tags: ["actif","activateur","sol","biologique","ferti"] },
-  { label: "Ferti Fruit",            href: "/marques/fertivert?division=pro&cat=engrais-organique-pro",cat: "Produit", icon: "🍎", desc: "Nutrition floraison & fructification",          tags: ["fruit","floraison","fructification","potassium","ferti"] },
-  { label: "Ferti Leaf",             href: "/marques/fertivert?division=pro&cat=engrais-organique-pro",cat: "Produit", icon: "🍃", desc: "Nutrition foliaire",                            tags: ["leaf","foliaire","feuilles","microéléments","ferti"] },
-  { label: "Ferti Go",               href: "/marques/fertivert?division=pro&cat=engrais-organique-pro",cat: "Produit", icon: "🚀", desc: "Stimulant de démarrage rapide",                 tags: ["go","démarrage","starter","germination","ferti"] },
-  { label: "Pouss Roots+",           href: "/marques/fertivert?division=pro&cat=fertilisant-pro",      cat: "Produit", icon: "🌱", desc: "Enracinement renforcé",                         tags: ["roots","racines","enracinement","rhizosphère","pouss"] },
-  { label: "Aminal+",                href: "/marques/fertivert?division=pro&cat=fertilisant-pro",      cat: "Produit", icon: "🐾", desc: "Acides aminés & peptides",                      tags: ["aminal","acides aminés","peptides","stress","nutrition"] },
-  { label: "Fort Start+",            href: "/marques/fertivert?division=pro&cat=fertilisant-pro",      cat: "Produit", icon: "💪", desc: "Starter NPK haute concentration",               tags: ["start","démarrage","npk","starter","fort"] },
-  { label: "Oceano+",                href: "/marques/fertivert?division=pro&cat=fertilisant-pro",      cat: "Produit", icon: "🌊", desc: "Extrait d'algues marines",                      tags: ["algues","marines","ocean","biostimulant","stress"] },
-  { label: "Fulvical+",              href: "/marques/fertivert?division=pro&cat=fertilisant-pro",      cat: "Produit", icon: "🟡", desc: "Acides fulviques & humiques + calcium",         tags: ["fulvique","humique","calcium","sol","correcteur"] },
-  { label: "Sweeter+",               href: "/marques/fertivert?division=pro&cat=fertilisant-pro",      cat: "Produit", icon: "🍬", desc: "Qualité des fruits — sucre & couleur",          tags: ["sucre","couleur","qualité","fruits","sweeter"] },
-  { label: "CalciMag+",              href: "/marques/fertivert?division=pro&cat=fertilisant-pro",      cat: "Produit", icon: "🦴", desc: "Calcium + Magnésium équilibrés",                tags: ["calcium","magnésium","carence","correcteur","calcimag"] },
-  { label: "Calcial+",               href: "/marques/fertivert?division=pro&cat=fertilisant-pro",      cat: "Produit", icon: "⬜", desc: "Calcium pur haute disponibilité",               tags: ["calcium","correcteur","carence","fermeté","calcial"] },
-
-  // ── Produits Fertivert Garden
-  { label: "Terreau Gazon",          href: "/marques/fertivert?division=garden&cat=gazon",             cat: "Produit", icon: "🌿", desc: "Substrat spécial pelouse",                      tags: ["gazon","pelouse","terreau","substrat","jardin"] },
-  { label: "Ferti Fond Gazon",       href: "/marques/fertivert?division=garden&cat=gazon",             cat: "Produit", icon: "🌾", desc: "Engrais de fond pour gazon",                    tags: ["gazon","fond","engrais","pelouse","ferti"] },
-  { label: "Granulé Gazon",          href: "/marques/fertivert?division=garden&cat=gazon",             cat: "Produit", icon: "🔵", desc: "Engrais granulé longue durée",                  tags: ["granulé","gazon","longue durée","pelouse","ferti"] },
-  { label: "Engrais Oliviers 2kg",   href: "/marques/fertivert?division=garden&cat=engrais-chimiques", cat: "Produit", icon: "🫒", desc: "Granulés spéciaux oliviers",                    tags: ["oliviers","engrais","granulés","jardin","fruitiers"] },
-  { label: "Engrais Agrumes 2kg",    href: "/marques/fertivert?division=garden&cat=engrais-chimiques", cat: "Produit", icon: "🍊", desc: "Granulés spéciaux agrumes",                     tags: ["agrumes","oranges","citrons","engrais","granulés"] },
-  { label: "Engrais Potager 2kg",    href: "/marques/fertivert?division=garden&cat=engrais-chimiques", cat: "Produit", icon: "🥕", desc: "Granulés légumes & potager",                    tags: ["potager","légumes","tomates","engrais","granulés"] },
-  { label: "Engrais Fleurs 2kg",     href: "/marques/fertivert?division=garden&cat=engrais-chimiques", cat: "Produit", icon: "🌸", desc: "Granulés spéciaux fleurs",                      tags: ["fleurs","floraison","engrais","granulés","jardin"] },
-  { label: "Fertivit 20.20.20",      href: "/marques/fertivert?division=garden&cat=soluble-garden",    cat: "Produit", icon: "💊", desc: "Engrais hydrosoluble équilibré",                tags: ["soluble","hydrosoluble","npk","20.20.20","fertivit"] },
-  { label: "Fertivit 13.40.13",      href: "/marques/fertivert?division=garden&cat=soluble-garden",    cat: "Produit", icon: "💊", desc: "Engrais hydrosoluble riche en phosphore",       tags: ["soluble","phosphore","floraison","fertivit","13.40.13"] },
-  { label: "Engrais Universel 1L",   href: "/marques/fertivert?division=garden&cat=liquide-garden",    cat: "Produit", icon: "🧴", desc: "Engrais liquide universel",                     tags: ["liquide","universel","toutes plantes","prêt emploi","jardin"] },
-  { label: "Engrais Plantes Vertes", href: "/marques/fertivert?division=garden&cat=liquide-garden",    cat: "Produit", icon: "🪴", desc: "Engrais liquide plantes d'intérieur",            tags: ["intérieur","plantes vertes","liquide","pot","appartement"] },
-  { label: "Engrais Cactées 1L",     href: "/marques/fertivert?division=garden&cat=liquide-garden",    cat: "Produit", icon: "🌵", desc: "Engrais liquide cactées & succulentes",         tags: ["cactées","succulentes","liquidie","intérieur","jardin"] },
-  { label: "Ferti Fort 250g",        href: "/marques/fertivert?division=garden&cat=engrais-organique-garden", cat: "Produit", icon: "💪", desc: "Engrais organique concentré",             tags: ["bio","organique","concentré","naturel","ferti"] },
-
-  // ── Pulvert produits
-  { label: "Pulvérisateur à dos",    href: "/marques/pulvert",  cat: "Produit", icon: "🎒", desc: "Pulvérisateur dorsal manuel",                   tags: ["dos","manuel","dorsal","traitement","pulvérisateur"] },
-  { label: "Pulvérisateur tracteur", href: "/marques/pulvert",  cat: "Produit", icon: "🚜", desc: "Pulvérisateur porté pour tracteur",              tags: ["tracteur","porté","grandes cultures","traitement","pulvert"] },
-  { label: "Buses & Accessoires",    href: "/marques/pulvert",  cat: "Produit", icon: "🔩", desc: "Buses, jets, pièces de rechange",               tags: ["buse","jet","accessoire","pièce","rechange","pulvert"] },
-
-  // ── Matar produits
-  { label: "Irrigation Goutte-à-goutte", href: "/marques/matar", cat: "Produit", icon: "💧", desc: "Systèmes drip professionnels",                 tags: ["drip","goutte","tuyau","goutteur","matar","irrigation"] },
-  { label: "Matar Smart",               href: "/marques/matar", cat: "Produit", icon: "📱", desc: "Irrigation connectée et automatisée",           tags: ["smart","connecté","automatique","iot","matar","application"] },
-  { label: "Pompes & Filtration",       href: "/marques/matar", cat: "Produit", icon: "⚙️", desc: "Pompes, filtres, régulateurs de pression",     tags: ["pompe","filtre","pression","débit","matar","irrigation"] },
-];
-
-function SearchOverlay({ open, onClose, locale }: { open: boolean; onClose: () => void; locale: string }) {
-  const t = useTranslations("nav");
-  const [q, setQ] = useState("");
-  const [activeIdx, setActiveIdx] = useState(0);
+// ─── SPOTLIGHT ────────────────────────────────────────────────────────────────
+function Spotlight({ open, onClose, locale }: { open: boolean; onClose: () => void; locale: string }) {
+  const [q, setQ]           = useState("");
+  const [active, setActive] = useState(-1);
+  const [hist, setHist]     = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const router = useRouter();
+  const listRef  = useRef<HTMLDivElement>(null);
+  const router   = useRouter();
 
-  // ── Fuse.js instance (lazy-loaded to avoid SSR issues)
-  const fuseRef = useRef<any>(null);
   useEffect(() => {
-    import("fuse.js").then(({ default: Fuse }) => {
-      fuseRef.current = new Fuse(SEARCH_IDX, {
-        keys: [
-          { name: "label", weight: 3 },
-          { name: "desc",  weight: 2 },
-          { name: "tags",  weight: 1.5 },
-          { name: "cat",   weight: 0.5 },
-        ],
-        threshold: 0.35,      // 0 = exact, 1 = match anything
-        includeScore: true,
-        minMatchCharLength: 2,
-        ignoreLocation: true,
-      });
-    });
+    try {
+      const s = JSON.parse(localStorage.getItem("ev_hist") || "[]");
+      if (Array.isArray(s)) setHist(s);
+    } catch {}
   }, []);
 
+  const saveHist = (term: string) => {
+    const next = [term, ...hist.filter(h => h.toLowerCase() !== term.toLowerCase())].slice(0, MAX_HIST);
+    setHist(next);
+    try { localStorage.setItem("ev_hist", JSON.stringify(next)); } catch {}
+  };
+
+  const removeHist = (term: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const next = hist.filter(h => h !== term);
+    setHist(next);
+    try { localStorage.setItem("ev_hist", JSON.stringify(next)); } catch {}
+  };
+
+  const clearHist = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setHist([]);
+    try { localStorage.removeItem("ev_hist"); } catch {}
+  };
+
   useEffect(() => {
-    if (open) { setQ(""); setActiveIdx(0); setTimeout(() => inputRef.current?.focus(), 60); }
+    if (open) { setQ(""); setActive(-1); setTimeout(() => inputRef.current?.focus(), 60); }
   }, [open]);
+  useEffect(() => { setActive(-1); }, [q]);
 
-  useEffect(() => { setActiveIdx(0); }, [q]);
+  const results: Product[] = q.trim().length >= 1
+    ? PRODUCTS.map(p => ({ p, s: score(p, q) })).filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 8).map(x => x.p)
+    : [];
 
-  // ── Compute results
-  const results: SearchItem[] = q.trim().length >= 2
-    ? (fuseRef.current
-        ? fuseRef.current.search(q).slice(0, 10).map((r: any) => r.item)
-        : SEARCH_IDX.filter(i =>
-            i.label.toLowerCase().includes(q.toLowerCase()) ||
-            i.tags.some(tag => tag.includes(q.toLowerCase()))
-          ).slice(0, 10)
-      )
-    : SEARCH_IDX.filter(i => ["Page","Activité","Marque"].includes(i.cat)).slice(0, 6);
+  const showResults = q.trim().length >= 1;
+  const showHist    = !showResults && hist.length > 0;
+  const itemCount   = showResults ? results.length : hist.length;
 
-  // ── Keyboard navigation
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
       if (!open) return;
-      if (e.key === "Escape")    { onClose(); return; }
-      if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, results.length - 1)); }
-      if (e.key === "ArrowUp")   { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, 0)); }
-      if (e.key === "Enter")     { e.preventDefault(); if (results[activeIdx]) go(results[activeIdx].href); }
+      if (e.key === "Escape") { onClose(); return; }
+      if (e.key === "ArrowDown") { e.preventDefault(); setActive(i => Math.min(i + 1, itemCount - 1)); }
+      if (e.key === "ArrowUp")   { e.preventDefault(); setActive(i => Math.max(i - 1, -1)); }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (showResults && results[active]) go(results[active].href, results[active].name);
+        else if (showHist && hist[active])  setQ(hist[active]);
+      }
     };
     window.addEventListener("keydown", fn);
     return () => window.removeEventListener("keydown", fn);
-  }, [open, activeIdx, results]);
+  }, [open, active, results, hist, showResults, showHist, itemCount]);
 
-  const go = (href: string) => { router.push(`/${locale}${href}`); onClose(); };
+  useEffect(() => {
+    if (!listRef.current || active < 0) return;
+    (listRef.current.querySelector(`[data-i="${active}"]`) as HTMLElement)
+      ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [active]);
 
-  // ── Group by category, preserving score order
-  const CAT_ORDER = ["Page", "Activité", "Marque", "Produit"];
-  const grouped = results.reduce<Record<string, SearchItem[]>>((acc, item) => {
-    (acc[item.cat] = acc[item.cat] || []).push(item);
-    return acc;
-  }, {});
-  const sortedCats = Object.keys(grouped).sort(
-    (a, b) => CAT_ORDER.indexOf(a) - CAT_ORDER.indexOf(b)
-  );
-
-  const CAT_META: Record<string, { color: string; bg: string; border: string; label: string }> = {
-    Page:     { color: "#1D4ED8", bg: "#EFF6FF", border: "#BFDBFE", label: "Pages" },
-    Activité: { color: "#065F46", bg: "#ECFDF5", border: "#A7F3D0", label: "Activités" },
-    Marque:   { color: "#92400E", bg: "#FFFBEB", border: "#FDE68A", label: "Marques" },
-    Produit:  { color: "#6B21A8", bg: "#FAF5FF", border: "#E9D5FF", label: "Produits" },
+  const go = (href: string, name: string) => {
+    saveHist(name); router.push(`/${locale}${href}`); onClose();
   };
 
-  // flat list for keyboard nav
-  const flatResults = sortedCats.flatMap(cat => grouped[cat]);
-
-  // highlight matched text
-  const highlight = (text: string) => {
-    if (!q || q.trim().length < 2) return text;
-    const regex = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
-    return text.split(regex).map((part, i) =>
-      regex.test(part)
-        ? <mark key={i} style={{ background: "#bbf7d0", color: "#14532d", borderRadius: 3, padding: "0 1px" }}>{part}</mark>
-        : part
-    );
+  const itemBase: React.CSSProperties = {
+    display: "flex", alignItems: "center", gap: 12,
+    padding: "9px 12px", margin: "1px 4px", borderRadius: 10,
+    cursor: "pointer", transition: "background 0.1s, border-color 0.1s",
   };
 
   return (
     <AnimatePresence>
       {open && (
         <>
-          {/* ── Backdrop ── */}
+          {/* Backdrop */}
           <motion.div
-            key="sb"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            key="bd"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
             className="fixed inset-0 z-[199]"
-            style={{ background: "rgba(0,0,0,0.40)", backdropFilter: "blur(8px)" }}
+            style={{ background: "rgba(10,28,18,0.65)", backdropFilter: "blur(10px)" }}
             onMouseDown={onClose}
           />
 
-          {/* ── Panel ── */}
+          {/* Modal */}
           <motion.div
-            key="sp"
-            initial={{ opacity: 0, scale: 0.97, y: -16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.97, y: -8 }}
-            transition={{ type: "spring", stiffness: 500, damping: 38 }}
-            className="fixed inset-x-0 z-[200] mx-auto px-4"
-            style={{ maxWidth: 600, top: "8vh" }}
+            key="modal"
+            initial={{ opacity: 0, y: -24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -24 }}
+            transition={{ type: "spring", stiffness: 520, damping: 40, mass: 0.55 }}
+            className="fixed inset-x-0 top-0 z-[200] mx-auto px-4"
+            style={{ maxWidth: 700 }}
             onMouseDown={e => e.stopPropagation()}
           >
-            <div
-              className="rounded-2xl overflow-hidden"
-              style={{
-                background: "#fff",
-                boxShadow: "0 0 0 1px rgba(0,0,0,0.07), 0 40px 100px rgba(0,0,0,0.25)",
-              }}
-            >
-              {/* ── Input ── */}
-              <div className="flex items-center gap-3 px-4 py-3.5" style={{ borderBottom: "1px solid #f1f5f9" }}>
-                <Ico.Search className="w-5 h-5 flex-shrink-0 text-gray-400" />
+            <div style={{
+              background: "#fff",
+              borderRadius: "0 0 20px 20px",
+              boxShadow: "0 28px 80px rgba(0,0,0,0.22), 0 0 0 1.5px rgba(46,125,79,0.18)",
+              overflow: "hidden",
+            }}>
+
+              {/* Barre verte supérieure */}
+              <div style={{ height: 3, background: `linear-gradient(90deg, ${C.gradA}, ${C.gradB}, ${C.gradC})` }} />
+
+              {/* Input bar */}
+              <div style={{
+                display: "flex", alignItems: "center", height: 64,
+                borderBottom: `1.5px solid ${C.stone2}`,
+                background: `linear-gradient(180deg, rgba(223,242,232,0.25), transparent)`,
+                position: "relative",
+              }}>
+                <div style={{ width: 56, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Ico.Search style={{ width: 18, height: 18, color: C.sageMd }} />
+                </div>
+
                 <input
                   ref={inputRef}
                   value={q}
                   onChange={e => setQ(e.target.value)}
-                  placeholder={t("searchPlaceholder")}
-                  style={{ background: "transparent", outline: "none", color: "#0f172a", width: "100%", fontSize: 15, fontWeight: 500 }}
-                  className="flex-1 placeholder-gray-400"
+                  placeholder="Rechercher un produit…"
+                  style={{
+                    flex: 1, border: "none", outline: "none", background: "transparent",
+                    fontSize: 15, fontWeight: 500, letterSpacing: "-0.018em",
+                    color: C.ink, caretColor: C.sage,
+                  }}
+                  className="placeholder:text-[#a8bfb0]"
                 />
-                <div className="flex items-center gap-1.5 flex-shrink-0">
+
+                {/* X effacer texte saisi — tourne à 90° au hover */}
+                <AnimatePresence>
                   {q && (
-                    <button
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.4, rotate: -90 }}
+                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                      exit={{ opacity: 0, scale: 0.4, rotate: 90 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 28 }}
                       onMouseDown={e => { e.stopPropagation(); setQ(""); inputRef.current?.focus(); }}
-                      className="w-5 h-5 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                      whileHover={{ scale: 1.12, background: "#f0f0f0", rotate: 90 }}
+                      whileTap={{ scale: 0.85 }}
+                      style={{
+                        width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
+                        background: "#e8e8e8", border: `1.5px solid #d0d0d0`,
+                        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                        transition: "background 0.15s",
+                      }}
                     >
-                      <Ico.X className="w-3 h-3 text-gray-400" />
-                    </button>
+                      <Ico.Close style={{ width: 11, height: 11, color: "#222" }} />
+                    </motion.button>
                   )}
-                  <kbd
-                    onMouseDown={e => { e.stopPropagation(); onClose(); }}
-                    className="cursor-pointer text-[11px] font-mono border border-gray-200 rounded-md px-1.5 py-0.5 text-gray-400 bg-gray-50 hover:bg-gray-100 transition-colors leading-tight"
-                  >ESC</kbd>
-                </div>
+                </AnimatePresence>
+
+                {/* ✕ Fermer la searchbar — noir, tourne à 90° au hover */}
+                <motion.button
+                  onMouseDown={e => { e.stopPropagation(); onClose(); }}
+                  whileHover={{ rotate: 90, scale: 1.1, background: "#e8e8e8" }}
+                  whileTap={{ scale: 0.85 }}
+                  title="Fermer"
+                  style={{
+                    width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                    background: "#f2f2f2", border: `1.5px solid #d8d8d8`,
+                    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                    margin: "0 12px 0 8px",
+                    transition: "background 0.15s",
+                  }}
+                >
+                  <Ico.Close style={{ width: 13, height: 13, color: "#111" }} />
+                </motion.button>
               </div>
 
-              {/* ── Results ── */}
-              <div className="overflow-y-auto" style={{ maxHeight: 440 }}>
-                {results.length === 0 && q.trim().length >= 2 ? (
-                  <div className="py-12 flex flex-col items-center gap-2">
-                    <span className="text-3xl">🌾</span>
-                    <p className="text-sm font-semibold text-gray-600">Aucun résultat pour « {q} »</p>
-                    <p className="text-xs text-gray-400">Essayez « engrais », « irrigation », « fertivert »…</p>
+              {/* Body — avec fond silhouettes si vide */}
+              <div
+                ref={listRef}
+                style={{
+                  maxHeight: 380, overflowY: "auto", padding: "6px 0 10px",
+                  position: "relative",
+                  background: !showResults && !showHist
+                    ? `linear-gradient(180deg, #fff 60%, ${C.sageLt} 100%)`
+                    : "#fff",
+                }}
+              >
+                {/* Silhouettes de fond quand vide */}
+                {!showResults && !showHist && (
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, opacity: 0.5, pointerEvents: "none" }}>
+                    <TreeSilhouettes color="rgba(46,125,79,0.12)" height={60} variant="pine" />
                   </div>
-                ) : (
-                  <div className="py-1.5">
-                    {/* Section label when no query */}
-                    {!q && (
-                      <p className="px-4 pt-2 pb-1 text-[10px] font-black uppercase tracking-widest text-gray-400">
-                        Navigation rapide
-                      </p>
-                    )}
-                    {sortedCats.map(cat => (
-                      <div key={cat}>
-                        {/* Category pill header */}
-                        {q && (
-                          <div className="flex items-center gap-2 px-4 pt-2.5 pb-1">
-                            <span
-                              className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
-                              style={{
-                                background: CAT_META[cat]?.bg,
-                                color: CAT_META[cat]?.color,
-                                border: `1px solid ${CAT_META[cat]?.border}`,
-                              }}
-                            >
-                              {CAT_META[cat]?.label ?? cat}
-                            </span>
-                            <div className="flex-1 h-px" style={{ background: CAT_META[cat]?.border }} />
+                )}
+
+                {/* Historique */}
+                {showHist && (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px 4px" }}>
+                      <span style={{ ...TY.secLabel, color: C.ink3 }}>Récent</span>
+                      <motion.button
+                        onClick={clearHist}
+                        whileHover={{ color: C.red }}
+                        style={{ ...TY.hint, fontSize: 12, fontWeight: 700, color: C.ink3, background: "none", border: "none", cursor: "pointer" }}
+                      >
+                        Tout effacer
+                      </motion.button>
+                    </div>
+                    {hist.map((term, i) => {
+                      const isOn = i === active;
+                      return (
+                        <motion.div
+                          key={term}
+                          data-i={i}
+                          layout
+                          initial={{ opacity: 0, x: -6 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 12, transition: { duration: 0.15 } }}
+                          transition={{ delay: i * 0.03 }}
+                          onMouseEnter={() => setActive(i)}
+                          onMouseDown={e => { e.stopPropagation(); setQ(term); inputRef.current?.focus(); }}
+                          style={{
+                            ...itemBase,
+                            background: isOn ? C.sageLt : "transparent",
+                            borderLeft: `2.5px solid ${isOn ? C.sage : "transparent"}`,
+                          }}
+                        >
+                          <div style={{
+                            width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                            background: isOn ? `linear-gradient(135deg, ${C.sageLt}, #c8f0d8)` : C.stone,
+                            border: `1.5px solid ${isOn ? C.sageMd : C.border}`,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            transition: "all 0.12s",
+                          }}>
+                            <Ico.Clock style={{ width: 14, height: 14, color: isOn ? C.sage : C.ink3 }} />
                           </div>
-                        )}
-                        {/* Items */}
-                        {grouped[cat].map(item => {
-                          const fi = flatResults.indexOf(item);
-                          const active = fi === activeIdx;
-                          return (
-                            <div
-                              key={item.href + item.label}
-                              onMouseEnter={() => setActiveIdx(fi)}
-                              onMouseDown={e => { e.stopPropagation(); go(item.href); }}
-                              className="flex items-center gap-3 mx-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all"
-                              style={{
-                                background: active ? "#f0fdf4" : "transparent",
-                                borderLeft: active ? "2px solid #10693B" : "2px solid transparent",
-                              }}
-                            >
-                              {/* Icon bubble */}
-                              <div
-                                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-base transition-all"
-                                style={{ background: active ? "#10693B" : CAT_META[cat]?.bg ?? "#f3f4f6" }}
-                              >
-                                <span style={{ fontSize: 16, filter: active ? "brightness(10)" : "none" }}>
-                                  {item.icon}
-                                </span>
-                              </div>
-                              {/* Text */}
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[13.5px] font-semibold text-gray-900 truncate leading-snug">
-                                  {highlight(item.label)}
-                                </p>
-                                <p className="text-[11px] text-gray-400 truncate mt-px">
-                                  {highlight(item.desc)}
-                                </p>
-                              </div>
-                              {/* Cat badge (only when no query grouping) */}
-                              {!q && (
-                                <span
-                                  className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
-                                  style={{ background: CAT_META[cat]?.bg, color: CAT_META[cat]?.color }}
-                                >
-                                  {cat}
-                                </span>
-                              )}
-                              <ChevronRightIcon
-                                className="w-3.5 h-3.5 flex-shrink-0 transition-all"
-                                style={{ color: active ? "#10693B" : "#cbd5e1", transform: active ? "translateX(1px)" : "none" }}
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </div>
+
+                          <span style={{ ...TY.histTerm, flex: 1, color: isOn ? C.ink : C.ink2 }}>{term}</span>
+
+                          {/* ✕ suppression individuelle — tourne à 90° au hover */}
+                          <motion.button
+                            onMouseDown={e => removeHist(term, e)}
+                            whileHover={{ rotate: 90, scale: 1.15, background: C.redLt }}
+                            whileTap={{ scale: 0.85 }}
+                            style={{
+                              width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+                              background: "transparent", border: "none", cursor: "pointer",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              transition: "background 0.12s",
+                            }}
+                          >
+                            <Ico.Close style={{ width: 10, height: 10, color: C.red }} />
+                          </motion.button>
+                        </motion.div>
+                      );
+                    })}
+                  </>
+                )}
+
+                {/* Résultats vides */}
+                {showResults && results.length === 0 && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    style={{ padding: "28px 20px", textAlign: "center" }}>
+                    <p style={{ ...TY.itemName, color: C.ink2, marginBottom: 5 }}>
+                      Aucun produit pour « {q} »
+                    </p>
+                    <p style={{ ...TY.itemDesc, color: C.ink3 }}>
+                      Essayez ferti, gazon, drip, npk, tuyau…
+                    </p>
+                  </motion.div>
+                )}
+
+                {/* Résultats */}
+                {showResults && results.length > 0 && (
+                  <>
+                    <div style={{ ...TY.secLabel, color: C.ink3, padding: "8px 16px 4px" }}>
+                      {results.length} produit{results.length > 1 ? "s" : ""} trouvé{results.length > 1 ? "s" : ""}
+                    </div>
+                    {results.map((p, i) => {
+                      const isOn = i === active;
+                      return (
+                        <motion.div
+                          key={p.id}
+                          data-i={i}
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.025, duration: 0.13 }}
+                          onMouseEnter={() => setActive(i)}
+                          onMouseDown={e => { e.stopPropagation(); go(p.href, p.name); }}
+                          style={{
+                            ...itemBase,
+                            background: isOn ? `linear-gradient(90deg, ${C.sageLt}, #e8f8ef)` : "transparent",
+                            borderLeft: `2.5px solid ${isOn ? C.sage : "transparent"}`,
+                          }}
+                        >
+                          <div style={{
+                            width: 42, height: 42, borderRadius: 11, flexShrink: 0,
+                            background: isOn ? `linear-gradient(135deg, ${C.sage}, ${C.sageMd})` : C.stone,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 19, transition: "background 0.15s",
+                            boxShadow: isOn ? `0 4px 12px rgba(46,125,79,0.28)` : "none",
+                          }}>
+                            <span style={{ filter: isOn ? "brightness(10)" : "none", transition: "filter 0.12s" }}>
+                              {p.icon}
+                            </span>
+                          </div>
+
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ ...TY.itemName, color: isOn ? C.sage : C.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", transition: "color 0.1s" }}>
+                              {hl(p.name, q)}
+                            </p>
+                            <p style={{ ...TY.itemDesc, color: C.ink3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>
+                              {p.desc}
+                            </p>
+                          </div>
+
+                          <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                            {p.div && (
+                              <span style={{ ...TY.badge, padding: "2px 8px", borderRadius: 5, background: DIV_META[p.div]?.bg, color: DIV_META[p.div]?.color }}>
+                                {p.div === "pro" ? "Pro" : "Garden"}
+                              </span>
+                            )}
+                            <span style={{ ...TY.badge, padding: "2px 8px", borderRadius: 5, background: BRAND_META[p.marque]?.bg, color: BRAND_META[p.marque]?.color, border: `1.5px solid ${BRAND_META[p.marque]?.border}` }}>
+                              {p.brand.split(" ")[0]}
+                            </span>
+                          </div>
+
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}
+                            style={{ width: 13, height: 13, flexShrink: 0, color: isOn ? C.sage : C.ink4, transition: "color 0.1s, transform 0.12s", transform: isOn ? "translateX(2px)" : "none" }}>
+                            <path d="M9 18l6-6-6-6"/>
+                          </svg>
+                        </motion.div>
+                      );
+                    })}
+                  </>
                 )}
               </div>
 
-              {/* ── Footer ── */}
-              <div
-                className="flex items-center justify-between px-4 py-2"
-                style={{ borderTop: "1px solid #f1f5f9", background: "#fafafa" }}
-              >
-                <div className="flex items-center gap-3">
-                  {[["↑↓","naviguer"],["↵","ouvrir"],["ESC","fermer"]].map(([k, l]) => (
-                    <span key={k} className="flex items-center gap-1 text-[11px] text-gray-400">
-                      <kbd className="border border-gray-200 rounded px-1.5 py-0.5 bg-white font-mono text-[10px] text-gray-500 shadow-sm leading-tight">{k}</kbd>
+              {/* Footer */}
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "8px 14px",
+                borderTop: `1.5px solid ${C.stone2}`,
+                background: `linear-gradient(180deg, ${C.stone} 0%, #edf8f2 100%)`,
+                position: "relative", overflow: "hidden",
+              }}>
+                {/* Arbres décoratifs dans le footer */}
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, opacity: 0.35, pointerEvents: "none" }}>
+                  <TreeSilhouettes color={C.sageMd} height={22} variant="pine" />
+                </div>
+                <div style={{ display: "flex", gap: 10, position: "relative", zIndex: 1 }}>
+                  {[["↑↓", "naviguer"], ["↵", "ouvrir"], ["esc", "fermer"]].map(([k, l]) => (
+                    <span key={k} style={{ ...TY.hint, color: C.ink3, display: "flex", alignItems: "center", gap: 3 }}>
+                      <kbd style={{ border: `1.5px solid ${C.border}`, borderRadius: 4, padding: "1px 5px", background: "#fff", fontFamily: "monospace", fontSize: 9.5, color: C.ink2, boxShadow: `0 1.5px 0 ${C.border}` }}>{k}</kbd>
                       {l}
                     </span>
                   ))}
                 </div>
-                <span className="text-[11px] text-gray-400 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-[#10693B] inline-block" />
-                  Espace Vert
+                <span style={{ ...TY.hint, color: C.ink3, position: "relative", zIndex: 1 }}>
+                  {PRODUCTS.length} produits indexés
                 </span>
               </div>
-
             </div>
           </motion.div>
         </>
@@ -786,206 +834,109 @@ function SearchOverlay({ open, onClose, locale }: { open: boolean; onClose: () =
   );
 }
 
-// ─── SEARCH BAR ───────────────────────────────────────────────────────────────
-function SearchBar({ dark, locale }: { dark: boolean; locale: string }) {
-  const t = useTranslations("nav"); 
-  const [searchOpen, setSearchOpen] = useState(false);
-
-  useEffect(() => {
-    const fn = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setSearchOpen(true); }
-    };
-    window.addEventListener("keydown", fn);
-    return () => window.removeEventListener("keydown", fn);
-  }, []);
-
-  return (
-    <>
-      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} locale={locale} />
-      <motion.button
-        onClick={() => setSearchOpen(true)}
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.92 }}
-        title="Rechercher (⌘K)"
-        className="relative flex items-center gap-2.5 rounded-xl px-4 py-2.5 transition-all group"
-        style={{ border: "1.5px solid rgba(16,105,59,0.22)", background: "rgba(16,105,59,0.04)" }}
-      >
-        <Ico.Search className="w-[17px] h-[17px] text-gray-500 group-hover:text-[#10693B] transition-colors" />
-        <span className="text-[13px] font-medium text-gray-400 group-hover:text-[#10693B] transition-colors hidden xl:block">
-          {t("search")}
-        </span>
-        <kbd className="hidden xl:flex items-center gap-0.5 text-[10px] font-mono border border-gray-200 rounded px-1.5 py-0.5 text-gray-300 bg-gray-50">
-          ⌘K
-        </kbd>
-      </motion.button>
-    </>
-  );
-}
-
 // ─── DROPDOWN ACTIVITÉS ───────────────────────────────────────────────────────
-function ActivitesDropdown({
-  locale,
-  onClose,
-}: {
-  locale: string;
-  onClose: () => void;
-}) {
+function ActivitesDropdown({ locale, onClose }: { locale: string; onClose: () => void }) {
   const t = useTranslations("nav");
-  const ACTIVITIES = ACTIVITIES_CONFIG.map(a => ({
+  const ACTIVITIES = ACTIVITIES_CFG.map(a => ({
     ...a,
     label: t(a.navKey as any),
     desc:  t(a.descKey as any),
     badge: a.badgeKey ? t(a.badgeKey as any) : undefined,
     subs:  a.subs.map(s => t(s as any)),
   }));
-  const [hoveredAct, setHoveredAct] = useState<string | null>(null);
-  const act = ACTIVITIES.find((a) => a.key === hoveredAct);
+  const [hov, setHov] = useState<string | null>(null);
+  const act = ACTIVITIES.find(a => a.key === hov);
+
+  const sideItem = (a: typeof ACTIVITIES[0]) => {
+    const on = hov === a.key;
+    return (
+      <motion.div key={a.key} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: ACTIVITIES.indexOf(a) * 0.04 }}>
+        <Link
+          href={`/${locale}${a.href}`} onClick={onClose} onMouseEnter={() => setHov(a.key)}
+          style={{
+            display: "flex", alignItems: "center", gap: 10, padding: "8px 14px",
+            borderLeft: `3px solid ${on ? C.sage : "transparent"}`,
+            background: on ? `linear-gradient(90deg, ${C.sageLt}, #e8f8ef)` : "transparent",
+            transition: "all 0.12s", textDecoration: "none",
+          }}
+        >
+          <div style={{
+            width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+            background: on ? `linear-gradient(135deg, ${C.sage}, ${C.sageMd})` : "#e2ede7",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            transition: "background 0.12s",
+            boxShadow: on ? `0 3px 8px rgba(46,125,79,0.3)` : "none",
+          }}>
+            <a.Icon style={{ width: 13, height: 13, color: on ? "#fff" : C.ink3 }} />
+          </div>
+          <div>
+            <p style={{ ...TY.ddItemName, color: on ? C.sage : C.ink }}>{a.label}</p>
+            <p style={{ ...TY.ddItemDesc, color: C.ink3 }}>{a.desc}</p>
+          </div>
+        </Link>
+      </motion.div>
+    );
+  };
 
   return (
-    <div className="flex" style={{ minWidth: 640 }}>
-      {/* COL 1 — fond vert sombre */}
-      <div
-        className="w-64 py-3 border-r flex-shrink-0"
-        style={{ background: "linear-gradient(180deg, #e6f7e8 0%, #0a6030 100%)", borderColor: "rgba(10,96,48,0.12)" }}
-      >
-        <div className="px-4 pb-2">
-          <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#0a6030" }}>
-            Nos Activités
-          </p>
+    <div style={{ display: "flex", minWidth: 620 }}>
+      {/* Sidebar avec fond dégradé + arbres */}
+      <div style={{
+        width: 206, flexShrink: 0, padding: "10px 0",
+        background: `linear-gradient(180deg, #f0faf4 0%, #dff2e8 60%, #c8ebd8 100%)`,
+        borderRight: `1.5px solid ${C.line}`,
+        position: "relative", overflow: "hidden",
+      }}>
+        {/* Arbres de fond dans sidebar */}
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, pointerEvents: "none" }}>
+          <TreeSilhouettes color="rgba(46,125,79,0.1)" height={70} variant="pine" />
         </div>
-        {ACTIVITIES.map((a, i) => (
-          <motion.div
-            key={a.key}
-            initial={{ opacity: 0, x: -6 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.04 }}
-          >
-            <Link
-              href={`/${locale}${a.href}`}
-              onClick={onClose}
-              onMouseEnter={() => setHoveredAct(a.key)}
-              className="flex items-center gap-3 px-4 py-3 transition-all group"
-              style={{
-                backgroundColor: hoveredAct === a.key ? "rgba(140,198,63,0.15)" : "transparent",
-                borderLeft: hoveredAct === a.key ? "3px solid #0a6030" : "3px solid transparent",
-              }}
-            >
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
-                style={{
-                  background: hoveredAct === a.key ? "#0a6030" : "rgba(255,255,255,0.08)",
-                  color: hoveredAct === a.key ? "#e6f7e8" : "rgba(255,255,255,0.7)",
-                  transform: hoveredAct === a.key ? "scale(1.05)" : "scale(1)",
-                }}
-              >
-                <a.Icon className="w-[18px] h-[18px]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="text-[13px] font-black transition-colors"
-                    style={{ color: hoveredAct === a.key ? "#fff" : "rgba(255,255,255,0.85)" }}
-                  >
-                    {a.label}
-                  </span>
-                  {a.badge && (
-                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full" style={{ background: "#0a6030", color: "#e6f7e8" }}>
-                      {a.badge}
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] truncate" style={{ color: "rgba(255,255,255,0.4)" }}>{a.desc}</p>
-              </div>
-              <ChevronRightIcon
-                className="w-4 h-4 flex-shrink-0 transition-all"
-                style={{
-                  color: hoveredAct === a.key ? "#0a6030" : "rgba(255,255,255,0.2)",
-                  transform: hoveredAct === a.key ? "translateX(2px)" : "translateX(0)",
-                }}
-              />
-            </Link>
-          </motion.div>
-        ))}
+        <p style={{ ...TY.secLabel, color: C.sage, padding: "4px 16px 10px", position: "relative", zIndex: 1 }}>Activités</p>
+        <div style={{ position: "relative", zIndex: 1 }}>
+          {ACTIVITIES.map(sideItem)}
+        </div>
       </div>
 
-      {/* COL 2 — fond blanc cassé avec accent */}
-      <div className="flex-1 py-3 px-4" style={{ background: "#fafdf7" }}>
+      {/* Corps */}
+      <div style={{ flex: 1, padding: "16px 20px", background: "#fff", position: "relative", overflow: "hidden" }}>
+        {/* Silhouettes rondes dans coin */}
+        <div style={{ position: "absolute", bottom: 0, right: 0, left: 0, opacity: 0.06, pointerEvents: "none" }}>
+          <TreeSilhouettes color={C.sage} height={80} variant="round" />
+        </div>
+
         <AnimatePresence mode="wait">
           {act ? (
-            <motion.div
-              key={act.key}
-              initial={{ opacity: 0, x: 12 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.14 }}
-            >
-              <div
-                className="flex items-center gap-3 mb-4 pb-3 rounded-xl px-3 py-2.5 mb-3"
-                style={{ background: "linear-gradient(135deg, #0a6030, #2d5a1b)" }}
-              >
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.15)" }}>
-                  <act.Icon className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-black text-white">{act.label}</p>
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>{act.desc}</p>
-                </div>
-              </div>
-              <p className="text-[10px] font-black uppercase tracking-widest mb-2 px-1" style={{ color: "#4a7c2f" }}>
-                Sous-catégories
-              </p>
-              <div className="space-y-0.5">
+            <motion.div key={act.key} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.13 }} style={{ position: "relative", zIndex: 1 }}>
+              <p style={{ ...TY.secLabel, color: C.ink3, marginBottom: 12 }}>Sous-catégories · {act.label}</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {act.subs.map((sub, i) => (
-                  <motion.div
-                    key={sub}
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.04 }}
-                  >
-                    <Link
-                      href={`/${locale}${act.href}`}
-                      onClick={onClose}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl group transition-all"
-                      style={{ color: "#2d4a1a" }}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.backgroundColor = "#e8f5d8"}
-                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"}
+                  <motion.div key={sub} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+                    <Link href={`/${locale}${act.href}`} onClick={onClose}
+                      style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 9px", borderRadius: 8, textDecoration: "none", transition: "background 0.1s" }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.sageLt; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                     >
-                      <div
-                        className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"
-                        style={{ background: "#daf0c0" }}
-                      >
-                        <ChevronRightIcon className="w-3 h-3" style={{ color: "#2d5a1b" }} />
-                      </div>
-                      <span className="text-[13px] font-semibold">{sub}</span>
+                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: `linear-gradient(135deg, ${C.sage}, ${C.sageMd})`, flexShrink: 0 }} />
+                      <span style={{ ...TY.ddCatName, color: C.ink }}>{sub}</span>
                     </Link>
                   </motion.div>
                 ))}
               </div>
-              <Link
-                href={`/${locale}${act.href}`}
-                onClick={onClose}
-                className="mt-4 flex items-center gap-1.5 text-xs font-black transition-colors hover:opacity-70"
-                style={{ color: "#0a6030" }}
-              >
-                {t("viewAll_act")} {act.label} <ChevronRightIcon className="w-3 h-3" />
+              <Link href={`/${locale}${act.href}`} onClick={onClose}
+                style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 14, paddingTop: 12, borderTop: `1.5px solid ${C.line}`, ...TY.cta, color: C.sage, textDecoration: "none" }}>
+                Voir tout · {act.label}
+                <svg viewBox="0 0 24 24" width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M9 18l6-6-6-6"/></svg>
               </Link>
             </motion.div>
           ) : (
-            <motion.div
-              key="idle"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="h-full flex items-center justify-center text-center py-8"
-            >
+            <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", paddingBlock: 32, position: "relative", zIndex: 1 }}>
               <div>
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                  style={{ background: "linear-gradient(135deg, #0a6030, #0a6030)" }}
-                >
-                  <span className="text-2xl">🌾</span>
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: `linear-gradient(135deg, ${C.sageLt}, #c8f0d8)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px", boxShadow: `0 4px 12px rgba(46,125,79,0.2)` }}>
+                  <Ico.Leaf style={{ width: 22, height: 22, color: C.sage }} />
                 </div>
-                <p className="text-sm font-bold" style={{ color: "#2d5a1b" }}>{t("hoverActivity")}</p>
-                <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>pour voir ses sous-catégories</p>
+                <p style={{ ...TY.ddItemName, color: C.ink2 }}>{t("hoverActivity")}</p>
+                <p style={{ ...TY.ddItemDesc, color: C.ink3, marginTop: 3 }}>pour voir les sous-catégories</p>
               </div>
             </motion.div>
           )}
@@ -996,181 +947,84 @@ function ActivitesDropdown({
 }
 
 // ─── DROPDOWN MARQUES ─────────────────────────────────────────────────────────
-const BRANDS_NAV_CONFIG = [
-  {
-    key: "fertivert",
-    href: "/marques/fertivert",
-    Icon: Ico.Leaf,
-    name: "Fertivert",
-    subKey: "fertivert_sub",
-    color: "#0a6030",
-    accent: "#3CB648",
-    catKeys: ["brands_fv_cat1","brands_fv_cat2","brands_fv_cat3","brands_fv_cat4","brands_fv_cat5","brands_fv_cat6"],
-  },
-  {
-    key: "pulvert",
-    href: "/marques/pulvert",
-    Icon: Ico.Pump,
-    name: "Pulvert",
-    subKey: "pulvert_sub",
-    color: "#1D6B2A",
-    accent: "#F2C200",
-    catKeys: ["brands_pv_cat1","brands_pv_cat2","brands_pv_cat3","brands_pv_cat4","brands_pv_cat5"],
-  },
-  {
-    key: "matar",
-    href: "/marques/matar",
-    Icon: Ico.Pipe,
-    name: "Matar",
-    subKey: "matar_sub",
-    color: "#1B6B7A",
-    accent: "#4BA8D8",
-    catKeys: ["brands_mt_cat1","brands_mt_cat2","brands_mt_cat3","brands_mt_cat4","brands_mt_cat5"],
-  },
-];
-
-function MarquesDropdown({
-  locale,
-  onClose,
-}: {
-  locale: string;
-  onClose: () => void;
-}) {
+function MarquesDropdown({ locale, onClose }: { locale: string; onClose: () => void }) {
   const t = useTranslations("nav");
-  const BRANDS_NAV = BRANDS_NAV_CONFIG.map(b => ({
+  const BRANDS = BRANDS_CFG.map(b => ({
     ...b,
     sub:  t(b.subKey as any),
     cats: (b as any).catKeys.map((k: string) => t(k as any)),
   }));
-  const [hoveredKey, setHoveredKey] = useState<string | null>(null);
-  const brand = BRANDS_NAV.find((b) => b.key === hoveredKey);
+  const [hov, setHov] = useState<string | null>(null);
+  const brand = BRANDS.find(b => b.key === hov);
 
   return (
-    <div className="flex" style={{ minWidth: 560 }}>
-      {/* COL 1 — fond vert sombre */}
-      <div
-        className="w-60 py-3 border-r flex-shrink-0"
-        style={{ background: "linear-gradient(180deg, #e6f7e8 0%, #0a6030 100%)", borderColor: "rgba(10,96,48,0.12)" }}
-      >
-        <div className="px-4 pb-2">
-          <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: "#0a6030" }}>
-            {t("ourBrands")}
-          </p>
+    <div style={{ display: "flex", minWidth: 580 }}>
+      {/* Sidebar */}
+      <div style={{
+        width: 196, flexShrink: 0, padding: "10px 0",
+        background: `linear-gradient(180deg, #edf9f3 0%, #d8f0e4 60%, #bfe6d1 100%)`,
+        borderRight: `1.5px solid ${C.line}`,
+        position: "relative", overflow: "hidden",
+      }}>
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, pointerEvents: "none" }}>
+          <TreeSilhouettes color="rgba(46,125,79,0.12)" height={65} variant="round" />
         </div>
-        {BRANDS_NAV.map((b) => (
-          <Link
-            key={b.key}
-            href={`/${locale}${b.href}`}
-            onClick={onClose}
-            onMouseEnter={() => setHoveredKey(b.key)}
-            className="flex items-center gap-3 px-4 py-3 transition-all"
-            style={{
-              backgroundColor: hoveredKey === b.key ? "rgba(140,198,63,0.15)" : "transparent",
-              borderLeft: hoveredKey === b.key ? "3px solid #0a6030" : "3px solid transparent",
-            }}
-          >
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
-              style={{
-                background: hoveredKey === b.key ? "#0a6030" : "rgba(255,255,255,0.08)",
-                color: hoveredKey === b.key ? "#e6f7e8" : "rgba(255,255,255,0.7)",
-                transform: hoveredKey === b.key ? "scale(1.05)" : "scale(1)",
-              }}
-            >
-              <b.Icon className="w-[18px] h-[18px]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p
-                className="text-[13px] font-black transition-colors"
-                style={{ color: hoveredKey === b.key ? "#fff" : "rgba(255,255,255,0.85)" }}
-              >
-                {b.name}
-              </p>
-              <p className="text-[11px] truncate" style={{ color: "rgba(255,255,255,0.4)" }}>{(b as any).sub}</p>
-            </div>
-            <ChevronRightIcon
-              className="w-4 h-4 flex-shrink-0 transition-all"
-              style={{
-                color: hoveredKey === b.key ? "#0a6030" : "rgba(255,255,255,0.2)",
-                transform: hoveredKey === b.key ? "translateX(2px)" : "translateX(0)",
-              }}
-            />
-          </Link>
-        ))}
-      </div>
-
-      {/* COL 2 — fond clair teinté vert */}
-      <div className="flex-1 py-3 px-4" style={{ background: "#fafdf7" }}>
-        <AnimatePresence mode="wait">
-          {brand ? (
-            <motion.div
-              key={brand.key}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.13 }}
-            >
-              <div
-                className="flex items-center gap-3 mb-3 rounded-xl px-3 py-2.5"
-                style={{ background: "linear-gradient(135deg, #0a6030, #2d5a1b)" }}
-              >
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.15)" }}>
-                  <brand.Icon className="w-5 h-5 text-white" />
+        <p style={{ ...TY.secLabel, color: C.sage, padding: "4px 16px 10px", position: "relative", zIndex: 1 }}>{t("ourBrands")}</p>
+        <div style={{ position: "relative", zIndex: 1 }}>
+          {BRANDS.map(b => {
+            const on = hov === b.key;
+            return (
+              <Link key={b.key} href={`/${locale}${b.href}`} onClick={onClose} onMouseEnter={() => setHov(b.key)}
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 14px", borderLeft: `3px solid ${on ? C.sage : "transparent"}`, background: on ? `linear-gradient(90deg, ${C.sageLt}, #e8f8ef)` : "transparent", transition: "all 0.12s", textDecoration: "none" }}>
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: on ? `linear-gradient(135deg, ${C.sage}, ${C.sageMd})` : "#e2ede7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.12s", boxShadow: on ? `0 3px 8px rgba(46,125,79,0.3)` : "none" }}>
+                  <b.Icon style={{ width: 13, height: 13, color: on ? "#fff" : C.ink3 }} />
                 </div>
                 <div>
-                  <p className="text-sm font-black text-white">{brand.name}</p>
-                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.55)" }}>{t((brand as any).subKey as any)}</p>
+                  <p style={{ ...TY.ddItemName, color: on ? C.sage : C.ink }}>{b.name}</p>
+                  <p style={{ ...TY.ddItemDesc, color: C.ink3 }}>{(b as any).sub}</p>
                 </div>
-              </div>
-              <p className="text-[10px] font-black uppercase tracking-widest mb-2 px-1" style={{ color: "#4a7c2f" }}>
-                Catégories
-              </p>
-              <div className="space-y-0.5">
-                {brand.cats.map((cat:string) => (
-                  <Link
-                    key={cat}
-                    href={`/${locale}${brand.href}`}
-                    onClick={onClose}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all"
-                    style={{ color: "#2d4a1a" }}
-                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.backgroundColor = "#e8f5d8"}
-                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Corps */}
+      <div style={{ flex: 1, padding: "16px 20px", background: "#fff", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", bottom: 0, right: 0, left: 0, opacity: 0.06, pointerEvents: "none" }}>
+          <TreeSilhouettes color={C.sage} height={80} variant="pine" />
+        </div>
+        <AnimatePresence mode="wait">
+          {brand ? (
+            <motion.div key={brand.key} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.13 }} style={{ position: "relative", zIndex: 1 }}>
+              <p style={{ ...TY.secLabel, color: C.ink3, marginBottom: 12 }}>Catégories · {brand.name}</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {brand.cats.map((cat: string) => (
+                  <Link key={cat} href={`/${locale}${brand.href}`} onClick={onClose}
+                    style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 9px", borderRadius: 8, textDecoration: "none", transition: "background 0.1s" }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.sageLt; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                   >
-                    <div
-                      className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
-                      style={{ background: "#daf0c0" }}
-                    >
-                      <ChevronRightIcon className="w-3 h-3" style={{ color: "#2d5a1b" }} />
-                    </div>
-                    <span className="text-[13px] font-semibold">{cat}</span>
+                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: `linear-gradient(135deg, ${C.sage}, ${C.sageMd})`, flexShrink: 0 }} />
+                    <span style={{ ...TY.ddCatName, color: C.ink }}>{cat}</span>
                   </Link>
                 ))}
               </div>
-              <Link
-                href={`/${locale}${brand.href}`}
-                onClick={onClose}
-                className="mt-4 flex items-center gap-1.5 text-xs font-black transition-opacity hover:opacity-70"
-                style={{ color: "#0a6030" }}
-              >
-                {t("viewAll_brand")} {brand.name} <ChevronRightIcon className="w-3 h-3" />
+              <Link href={`/${locale}${brand.href}`} onClick={onClose}
+                style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 14, paddingTop: 12, borderTop: `1.5px solid ${C.line}`, ...TY.cta, color: C.sage, textDecoration: "none" }}>
+                Voir tout · {brand.name}
+                <svg viewBox="0 0 24 24" width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M9 18l6-6-6-6"/></svg>
               </Link>
             </motion.div>
           ) : (
-            <motion.div
-              key="idle"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="h-full flex items-center justify-center text-center py-10"
-            >
+            <motion.div key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", paddingBlock: 32, position: "relative", zIndex: 1 }}>
               <div>
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                  style={{ background: "linear-gradient(135deg, #0a6030, #0a6030)" }}
-                >
-                  <span className="text-2xl">🌿</span>
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: `linear-gradient(135deg, ${C.sageLt}, #c8f0d8)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px", boxShadow: `0 4px 12px rgba(46,125,79,0.2)` }}>
+                  <Ico.Leaf style={{ width: 22, height: 22, color: C.sage }} />
                 </div>
-                <p className="text-sm font-bold" style={{ color: "#2d5a1b" }}>{t("hoverBrand")}</p>
-                <p className="text-xs mt-1" style={{ color: "#9ca3af" }}>pour voir ses catégories</p>
+                <p style={{ ...TY.ddItemName, color: C.ink2 }}>{t("hoverBrand")}</p>
+                <p style={{ ...TY.ddItemDesc, color: C.ink3, marginTop: 3 }}>pour voir les catégories</p>
               </div>
             </motion.div>
           )}
@@ -1182,305 +1036,251 @@ function MarquesDropdown({
 
 // ─── NAVBAR PRINCIPALE ────────────────────────────────────────────────────────
 export default function Navbar() {
-  const t = useTranslations("nav");
-  const ACTIVITIES = ACTIVITIES_CONFIG.map(a => ({
-    ...a,
-    label: t(a.navKey as any),
-    desc:  t(a.descKey as any),
-    badge: a.badgeKey ? t(a.badgeKey as any) : undefined,
-    subs:  a.subs.map(s => t(s as any)),
-  }));
-  const OTHER_BRANDS = OTHER_BRANDS_CONFIG.map(b => ({
-    ...b,
-    sub: t(b.subKey as any),
-  }));
-  const locale = useLocale();
-  const router = useRouter();
+  const t        = useTranslations("nav");
+  const locale   = useLocale();
+  const router   = useRouter();
   const pathname = usePathname();
 
-  const [scrolled, setScrolled] = useState(false);
+  const ACTIVITIES = ACTIVITIES_CFG.map(a => ({
+    ...a, label: t(a.navKey as any), desc: t(a.descKey as any),
+    badge: a.badgeKey ? t(a.badgeKey as any) : undefined,
+    subs: a.subs.map(s => t(s as any)),
+  }));
+  const OTHER_BRANDS = OTHER_BRANDS_CFG.map(b => ({ ...b, sub: t(b.subKey as any) }));
+
+  const [scrolled,   setScrolled]   = useState(false);
+  const [spOpen,     setSpOpen]     = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [mobileSection, setMobileSection] = useState<string | null>(null);
+  const [mobileSec,  setMobileSec]  = useState<string | null>(null);
 
+  const acts    = useHover(150);
   const marques = useHover(220);
-  const acts = useHover(150);
-  const lang = useHover(150);
+  const lang    = useHover(150);
 
-  const isActive = (path: string) => pathname.includes(path);
+  const isActive = (p: string) => pathname.includes(p);
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 10);
-    fn();
-    window.addEventListener("scroll", fn, { passive: true });
+    fn(); window.addEventListener("scroll", fn, { passive: true });
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
+  useEffect(() => { setMobileOpen(false); setSpOpen(false); }, [pathname]);
+
   useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
+    const fn = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") { e.preventDefault(); setSpOpen(v => !v); }
+    };
+    window.addEventListener("keydown", fn);
+    return () => window.removeEventListener("keydown", fn);
+  }, []);
 
   const changeLocale = (code: string) => {
-    const segments = pathname.split("/");
-    segments[1] = code;
-    window.location.href = segments.join("/") || `/${code}`;
+    const segs = pathname.split("/"); segs[1] = code;
+    window.location.href = segs.join("/") || `/${code}`;
   };
-  const curLang = LANGS.find((l) => l.code === locale) ?? LANGS[0];
+  const curLang = LANGS.find(l => l.code === locale) ?? LANGS[0];
 
-  const scrollToSection = (sectionId: string) => {
+  const scrollTo = (id: string) => {
     const isHome = pathname === `/${locale}` || pathname === `/${locale}/`;
-    if (isHome) {
-      const el = document.getElementById(sectionId);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    } else {
-      router.push(`/${locale}/#${sectionId}`);
-    }
+    if (isHome) document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    else router.push(`/${locale}/#${id}`);
   };
-  const dark = false;
 
-  const lnk =
-    "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[14px] font-semibold tracking-tight transition-all duration-150 text-[#0a6030] hover:text-[#006428] hover:bg-[#e8f5dc]";
-  const lnkOn =
-    "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[14px] font-bold tracking-tight text-[#006428] bg-[#d4edba]";
-  const lnkActive =
-    "flex items-center gap-2 px-4 py-2.5 rounded-xl text-[14px] font-black tracking-tight text-[#006428] bg-[#c8e8a8]";
+  const nlBase: React.CSSProperties = {
+    ...TY.navLink,
+    color: C.ink,
+    padding: "8px 16px",
+    borderRadius: 0,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: 5,
+    textDecoration: "none",
+    transition: "color 0.15s",
+    border: "none",
+    background: "transparent",
+    borderBottom: "2.5px solid transparent",
+    position: "relative" as const,
+  };
+  const nlOn: React.CSSProperties = {
+    ...nlBase,
+    ...TY.navLinkOn,
+    color: C.sage,
+    borderBottom: `2.5px solid ${C.sage}`,
+  };
+  const nlBtn: React.CSSProperties = { ...nlBase, fontFamily: "inherit" };
+
+  const dropShadow = "0 20px 60px rgba(0,0,0,0.13), 0 0 0 1.5px rgba(46,125,79,0.14)";
 
   return (
     <>
-      {/* ── NAVBAR ─────────────────────────────────────────────────── */}
+      <Spotlight open={spOpen} onClose={() => setSpOpen(false)} locale={locale} />
+
       <nav
-        className="fixed inset-x-0 top-0 z-50 transition-all duration-300"
+        className="fixed inset-x-0 top-0 z-50"
         style={{
-          background: "rgba(255,255,255,0.97)",
-          backdropFilter: "blur(20px)",
-          boxShadow: scrolled
-            ? "0 2px 24px rgba(16,105,59,0.10), 0 1px 0 rgba(16,105,59,0.08)"
-            : "0 1px 0 rgba(16,105,59,0.07)",
+          background: scrolled ? "rgba(255,255,255,0.97)" : "rgba(255,255,255,0.93)",
+          backdropFilter: "blur(28px)",
+          borderBottom: `1.5px solid ${scrolled ? "rgba(46,125,79,0.15)" : C.line}`,
+          boxShadow: scrolled ? `0 2px 24px rgba(46,125,79,0.1)` : "none",
+          transition: "box-shadow 0.3s, border-color 0.3s, background 0.3s",
         }}
       >
-        <div
-          className="absolute bottom-0 left-0 right-0 h-[2.5px]"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent 0%, #10693B 25%, #8CC542 50%, #10693B 75%, transparent 100%)",
-            opacity: scrolled ? 0.4 : 0.2,
-          }}
-        />
+        {/* Ligne de couleur supérieure */}
+        <div style={{ height: 2.5, background: `linear-gradient(90deg, ${C.gradA} 0%, ${C.gradB} 50%, ${C.gradC} 100%)` }} />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
-          <div className="flex items-center h-[90px]">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          <div style={{ display: "flex", alignItems: "center", height: NAV_H }}>
 
-            {/* ── LOGO ─────────────────────────────────────────────── */}
+            {/* ── Logo ── */}
             <Link
               href={`/${locale}`}
-              className="flex items-center gap-3 flex-shrink-0 mr-3 lg:mr-6"
+              style={{ display: "flex", alignItems: "center", marginRight: 48, flexShrink: 0, textDecoration: "none", lineHeight: 0 }}
             >
               <motion.div
-                initial={{ opacity: 0, x: -16 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-                whileHover={{ scale: 1.025 }}
-                className="flex items-center h-[64px] sm:h-[70px] lg:h-[78px]"
+                initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                whileHover={{ scale: 1.02 }}
+                style={{ lineHeight: 0 }}
               >
-                <Image
-                  src="/logos/LOGO ESPACE VERT.png"
-                  alt="Espace Vert — الفضاء الأخضر"
-                  width={400}
-                  height={172}
-                  className="h-full w-auto max-w-[260px] sm:max-w-[320px] lg:max-w-[400px] object-contain"
-                  style={{ filter: "drop-shadow(0 2px 6px rgba(0,100,40,0.22))" }}
-                  priority
-                />
+                <EspaceVertLogo />
               </motion.div>
             </Link>
 
-            {/* MENU CENTRAL */}
-            <div className="hidden lg:flex flex-1 items-center justify-center gap-0.5">
-              <Link
-                href={`/${locale}/qui-sommes-nous`}
-                className={isActive("/qui-sommes-nous") ? lnkActive : lnk}
-              >
+            {/* ── Liens centraux ── */}
+            <div className="hidden lg:flex" style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 4, height: "100%" }}>
+
+              <Link href={`/${locale}/qui-sommes-nous`}
+                style={isActive("/qui-sommes-nous") ? nlOn : nlBase}
+                className="hover:text-[#2e7d4f]">
                 {t("about")}
               </Link>
 
-              {/* ACTIVITÉS */}
-              <div
-                className="relative"
-                onMouseEnter={acts.show}
-                onMouseLeave={acts.hide}
-              >
-                <button
-                  className={acts.open || isActive("/activites") ? lnkOn : lnk}
-                  onClick={() => scrollToSection("nos-activites")}
-                >
+              {/* Activités */}
+              <div style={{ position: "relative" }} onMouseEnter={acts.show} onMouseLeave={acts.hide}>
+                <button style={acts.open || isActive("/activites") ? nlOn : nlBtn}
+                  className="hover:text-[#2e7d4f]"
+                  onClick={() => scrollTo("nos-activites")}>
                   {t("activities")}
-                  <motion.div
-                    animate={{ rotate: acts.open ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <ChevronDownIcon className="w-4 h-4" />
-                  </motion.div>
+                  <motion.span animate={{ rotate: acts.open ? 180 : 0 }} transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                    style={{ display: "flex", alignItems: "center" }}>
+                    <ChevronDownIcon style={{ width: 12, height: 12, opacity: 0.5 }} />
+                  </motion.span>
                 </button>
                 <AnimatePresence>
                   {acts.open && (
                     <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 6, scale: 0.97 }}
-                      transition={{ duration: 0.14 }}
-                      onMouseEnter={acts.keep}
-                      onMouseLeave={acts.hide}
-                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 rounded-2xl overflow-hidden z-[60]"
-                      style={{
-                        boxShadow: "0 24px 64px rgba(13,33,6,0.25), 0 0 0 1px rgba(26,61,10,0.15)",
-                      }}
+                      initial={{ opacity: 0, y: 10, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.96 }} transition={{ duration: 0.15 }}
+                      onMouseEnter={acts.keep} onMouseLeave={acts.hide}
+                      style={{ position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", marginTop: 8, borderRadius: 18, overflow: "hidden", zIndex: 60, boxShadow: dropShadow }}
                     >
-                      <div className="h-[3px]" style={{ background: "linear-gradient(90deg, #0a6030, #0a6030, #0a6030)" }} />
                       <ActivitesDropdown locale={locale} onClose={acts.hide} />
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
 
-              {/* MARQUES */}
-              <div
-                className="relative"
-                onMouseEnter={marques.show}
-                onMouseLeave={marques.hide}
-              >
-                <button
-                  className={marques.open || isActive("/marques") ? lnkOn : lnk}
-                  onClick={() => scrollToSection("nos-marques")}
-                >
+              {/* Marques */}
+              <div style={{ position: "relative" }} onMouseEnter={marques.show} onMouseLeave={marques.hide}>
+                <button style={marques.open || isActive("/marques") ? nlOn : nlBtn}
+                  className="hover:text-[#2e7d4f]"
+                  onClick={() => scrollTo("nos-marques")}>
                   {t("brands")}
-                  <motion.div
-                    animate={{ rotate: marques.open ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <ChevronDownIcon className="w-4 h-4" />
-                  </motion.div>
+                  <motion.span animate={{ rotate: marques.open ? 180 : 0 }} transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                    style={{ display: "flex", alignItems: "center" }}>
+                    <ChevronDownIcon style={{ width: 12, height: 12, opacity: 0.5 }} />
+                  </motion.span>
                 </button>
                 <AnimatePresence>
                   {marques.open && (
                     <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 6, scale: 0.97 }}
-                      transition={{ duration: 0.14 }}
-                      onMouseEnter={marques.keep}
-                      onMouseLeave={marques.hide}
-                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 rounded-2xl overflow-hidden z-[60]"
-                      style={{
-                        boxShadow: "0 24px 64px rgba(13,33,6,0.25), 0 0 0 1px rgba(26,61,10,0.15)",
-                      }}
+                      initial={{ opacity: 0, y: 10, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.96 }} transition={{ duration: 0.15 }}
+                      onMouseEnter={marques.keep} onMouseLeave={marques.hide}
+                      style={{ position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)", marginTop: 8, borderRadius: 18, overflow: "hidden", zIndex: 60, boxShadow: dropShadow }}
                     >
-                      <div className="h-[3px]" style={{ background: "linear-gradient(90deg, #0a6030, #0a6030, #0a6030)" }} />
                       <MarquesDropdown locale={locale} onClose={marques.hide} />
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
 
-              <Link
-                href={`/${locale}/contact`}
-                className={isActive("/contact") ? lnkActive : lnk}
-              >
+              <Link href={`/${locale}/contact`}
+                style={isActive("/contact") ? nlOn : nlBase}
+                className="hover:text-[#2e7d4f]">
                 {t("contact")}
               </Link>
             </div>
 
-            {/* DROITE */}
-            <div className="hidden lg:flex items-center gap-3 ml-auto">
-              <SearchBar dark={dark} locale={locale} />
-              <div className="w-px h-6 bg-gray-200" />
+            {/* ── Droite ── */}
+            <div className="hidden lg:flex" style={{ alignItems: "center", gap: 9, marginLeft: "auto" }}>
+
+              <SearchIconBtn isOpen={spOpen} onClick={() => setSpOpen(v => !v)} />
+
+              <div style={{ width: 1, height: 22, background: C.border }} />
 
               {/* Langue */}
-              <div
-                className="relative"
-                onMouseEnter={lang.show}
-                onMouseLeave={lang.hide}
-              >
-                <button
-                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl font-medium text-[14px] transition-all text-gray-600 hover:text-[#10693B] hover:bg-[#f0f7f2]"
-                  style={{ border: "1px solid rgba(16,105,59,0.18)" }}
-                >
-                  <Ico.Globe className="w-[17px] h-[17px]" />
+              <div style={{ position: "relative" }} onMouseEnter={lang.show} onMouseLeave={lang.hide}>
+                <button style={{ ...nlBtn, ...TY.langBtn, color: C.ink2, border: `1.5px solid ${C.border}`, padding: "6px 11px", borderRadius: 9 }}
+                  className="hover:border-[#5bab79] hover:text-[#2e7d4f]">
+                  <Ico.Globe style={{ width: 13, height: 13 }} />
                   {curLang.short}
-                  <motion.div
-                    animate={{ rotate: lang.open ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <ChevronDownIcon className="w-3.5 h-3.5" />
-                  </motion.div>
+                  <motion.span animate={{ rotate: lang.open ? 180 : 0 }} transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                    style={{ display: "flex", alignItems: "center", opacity: 0.45 }}>
+                    <ChevronDownIcon style={{ width: 11, height: 11 }} />
+                  </motion.span>
                 </button>
                 <AnimatePresence>
                   {lang.open && (
                     <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 6 }}
-                      transition={{ duration: 0.14 }}
-                      onMouseEnter={lang.keep}
-                      onMouseLeave={lang.hide}
-                      className="absolute top-full right-0 mt-2 w-44 bg-white rounded-xl overflow-hidden z-[60]"
-                      style={{
-                        boxShadow: "0 16px 48px rgba(16,105,59,0.12), 0 0 0 1px rgba(16,105,59,0.07)",
-                      }}
+                      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }} transition={{ duration: 0.13 }}
+                      onMouseEnter={lang.keep} onMouseLeave={lang.hide}
+                      style={{ position: "absolute", top: "100%", right: 0, marginTop: 8, width: 175, background: "#fff", borderRadius: 14, overflow: "hidden", zIndex: 60, boxShadow: dropShadow }}
                     >
-                      <div
-                        className="h-[3px]"
-                        style={{ background: "linear-gradient(90deg, #0a6030, #7dc040)" }}
-                      />
-                      {LANGS.map((l) => (
-                        <button
-                          key={l.code}
-                          onClick={() => changeLocale(l.code)}
-                          className={`w-full flex items-center gap-3 px-4 py-2.5 border-b border-gray-50 last:border-0 transition-colors ${
-                            locale === l.code ? "bg-[#f0f7f2]" : "hover:bg-[#f0f7f2]"
-                          }`}
-                        >
-                          <div
-                            className="w-7 h-5 rounded text-[9px] font-black flex items-center justify-center text-white flex-shrink-0"
-                            style={{ background: locale === l.code ? "#10693B" : "#9ca3af" }}
-                          >
-                            {l.short}
+                      <div style={{ height: 3, background: `linear-gradient(90deg, ${C.gradA}, ${C.gradB}, ${C.gradC})` }} />
+                      {LANGS.map(l => (
+                        <button key={l.code} onClick={() => changeLocale(l.code)}
+                          style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 14px", borderBottom: `1px solid ${C.stone}`, transition: "background 0.12s", background: locale === l.code ? C.sageLt : "#fff", border: "none", cursor: "pointer" }}
+                          className="last:border-0 hover:bg-[#edf8f3]">
+                          <div style={{ width: 28, height: 19, borderRadius: 4, background: locale === l.code ? `linear-gradient(135deg, ${C.sage}, ${C.sageMd})` : "#d0d0d0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <span style={{ fontSize: 9, fontWeight: 800, color: "#fff" }}>{l.short}</span>
                           </div>
-                          <span
-                            className={`text-[13px] flex-1 text-left ${
-                              locale === l.code ? "font-bold text-[#10693B]" : "font-normal text-gray-600"
-                            }`}
-                          >
-                            {l.full}
-                          </span>
-                          {locale === l.code && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-[#8CC542]" />
-                          )}
+                          <span style={{ ...TY.ddItemName, fontSize: 13, color: locale === l.code ? C.sage : C.ink2, flex: 1, textAlign: "left" }}>{l.full}</span>
+                          {locale === l.code && <div style={{ width: 7, height: 7, borderRadius: "50%", background: C.sageMd }} />}
                         </button>
                       ))}
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* CTA */}
+              <motion.button
+                whileHover={{ scale: 1.03, boxShadow: `0 6px 20px rgba(46,125,79,0.4)` }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => router.push(`/${locale}/rendez-vous`)}
+                style={{
+                  ...TY.cta, color: "#fff",
+                  background: `linear-gradient(135deg, ${C.gradA}, ${C.gradB})`,
+                  padding: "9px 18px", borderRadius: 9, border: "none", cursor: "pointer",
+                  boxShadow: `0 3px 10px rgba(46,125,79,0.3)`,
+                  display: "flex", alignItems: "center", gap: 6,
+                }}>
+                <Ico.Cal style={{ width: 14, height: 14 }} />
+                {t("bookRdv")}
+              </motion.button>
             </div>
 
-            {/* BURGER MOBILE */}
+            {/* ── Burger mobile ── */}
             <button
-              onClick={() => setMobileOpen((v) => !v)}
-              className="lg:hidden ml-auto p-2.5 rounded-xl transition-all"
-              style={{ background: "#f0f7f2", color: "#10693B" }}
-            >
+              onClick={() => setMobileOpen(v => !v)}
+              className="lg:hidden ml-auto p-2.5 rounded-xl"
+              style={{ background: C.sageLt, color: C.sage, border: `1.5px solid ${C.border}`, cursor: "pointer" }}>
               <AnimatePresence mode="wait">
-                <motion.div
-                  key={mobileOpen ? "x" : "bars"}
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: 90, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {mobileOpen ? (
-                    <XMarkIcon className="w-6 h-6" />
-                  ) : (
-                    <Bars3Icon className="w-6 h-6" />
-                  )}
+                <motion.div key={mobileOpen ? "x" : "bars"} initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.18 }}>
+                  {mobileOpen ? <XMarkIcon style={{ width: 22, height: 22 }} /> : <Bars3Icon style={{ width: 22, height: 22 }} />}
                 </motion.div>
               </AnimatePresence>
             </button>
@@ -1488,65 +1288,48 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* ── MOBILE ──────────────────────────────────────────────────── */}
+      {/* ── MOBILE MENU ── */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.22 }}
-            className="fixed inset-x-0 z-40 bg-white border-t-2 border-[#0a6030] overflow-hidden"
-            style={{ top: NAV_H, boxShadow: "0 20px 40px rgba(0,0,0,.12)" }}
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.22 }}
+            className="fixed inset-x-0 z-40 bg-white overflow-hidden"
+            style={{ top: NAV_H + 2.5, borderTop: `1.5px solid ${C.line}`, boxShadow: "0 24px 48px rgba(0,0,0,0.12)" }}
           >
-            <div className="p-4 max-h-[80vh] overflow-y-auto space-y-1">
-              <Link
-                href={`/${locale}/qui-sommes-nous`}
-                onClick={() => setMobileOpen(false)}
-                className="block px-4 py-3 rounded-xl text-[15px] font-bold text-[#0a6030] hover:bg-[#f0f9eb]"
-              >
+            <div className="p-4 max-h-[80vh] overflow-y-auto" style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+
+              <Link href={`/${locale}/qui-sommes-nous`} onClick={() => setMobileOpen(false)}
+                style={{ ...TY.mobileLink, color: C.ink, padding: "11px 16px", borderRadius: 10, display: "block", textDecoration: "none", transition: "background 0.12s" }}
+                className="hover:bg-[#edf8f3] hover:text-[#2e7d4f]">
                 {t("about")}
               </Link>
 
               {/* Activités mobile */}
               <div>
-                <button
-                  onClick={() => setMobileSection(mobileSection === "acts" ? null : "acts")}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-[15px] font-bold text-[#0a6030] hover:bg-[#f0f9eb]"
-                >
+                <button onClick={() => setMobileSec(mobileSec === "acts" ? null : "acts")}
+                  style={{ ...TY.mobileLink, color: C.ink, padding: "11px 16px", borderRadius: 10, width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", background: "transparent", border: "none", cursor: "pointer" }}
+                  className="hover:bg-[#edf8f3]">
                   {t("activities")}
-                  <ChevronDownIcon
-                    className={`w-4 h-4 transition-transform ${mobileSection === "acts" ? "rotate-180" : ""}`}
-                  />
+                  <ChevronDownIcon style={{ width: 16, height: 16, transition: "transform 0.2s", transform: mobileSec === "acts" ? "rotate(180deg)" : "none", color: C.ink3 }} />
                 </button>
                 <AnimatePresence>
-                  {mobileSection === "acts" && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                    >
-                      {ACTIVITIES.map((a) => (
-                        <div key={a.key}>
-                          <Link
-                            href={`/${locale}${a.href}`}
-                            onClick={() => setMobileOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 ml-4 rounded-xl hover:bg-[#f0f9eb] group transition-colors border-l-2 border-[#e8f5e0]"
-                          >
-                            <div className="w-8 h-8 rounded-lg bg-[#f0f9eb] flex items-center justify-center text-[#2d5a1b] flex-shrink-0">
-                              <a.Icon className="w-4 h-4" />
+                  {mobileSec === "acts" && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
+                      {ACTIVITIES.map(a => (
+                        <Link key={a.key} href={`/${locale}${a.href}`} onClick={() => setMobileOpen(false)}
+                          style={{ display: "flex", alignItems: "center", gap: 11, padding: "9px 16px 9px 28px", borderRadius: 9, textDecoration: "none", transition: "background 0.11s" }}
+                          className="hover:bg-[#dff2e8]">
+                          <div style={{ width: 32, height: 32, borderRadius: 9, background: `linear-gradient(135deg, ${C.sageLt}, #c8f0d8)`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1.5px solid ${C.border}` }}>
+                            <a.Icon style={{ width: 14, height: 14, color: C.sage }} />
+                          </div>
+                          <div>
+                            <p style={{ ...TY.mobileLink, fontSize: 14, color: C.ink }}>{a.label}</p>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginTop: 2 }}>
+                              {a.subs.slice(0, 3).map(s => <span key={s} style={{ fontSize: 11, color: C.ink3 }}>{s}</span>)}
                             </div>
-                            <div>
-                              <p className="text-[14px] font-black text-gray-800">{a.label}</p>
-                              <div className="flex flex-wrap gap-1 mt-0.5">
-                                {a.subs.slice(0, 3).map((s) => (
-                                  <span key={s} className="text-[10px] text-gray-400">{s}</span>
-                                ))}
-                              </div>
-                            </div>
-                            <ChevronRightIcon className="w-4 h-4 ml-auto text-gray-300" />
-                          </Link>
-                        </div>
+                          </div>
+                          <ChevronRightIcon style={{ width: 14, height: 14, color: C.ink4, marginLeft: "auto", flexShrink: 0 }} />
+                        </Link>
                       ))}
                     </motion.div>
                   )}
@@ -1555,91 +1338,59 @@ export default function Navbar() {
 
               {/* Marques mobile */}
               <div>
-                <div className="flex items-center">
-                  <Link
-                    href={`/${locale}/marques`}
-                    onClick={() => setMobileOpen(false)}
-                    className="flex-1 px-4 py-3 rounded-l-xl text-[15px] font-bold text-[#0a6030] hover:bg-[#f0f9eb]"
-                  >
+                <div style={{ display: "flex" }}>
+                  <Link href={`/${locale}/marques`} onClick={() => setMobileOpen(false)}
+                    style={{ ...TY.mobileLink, color: C.ink, padding: "11px 16px", borderRadius: "10px 0 0 10px", flex: 1, textDecoration: "none", display: "block", transition: "background 0.12s" }}
+                    className="hover:bg-[#edf8f3]">
                     {t("brands")}
                   </Link>
-                  <button
-                    onClick={() => setMobileSection(mobileSection === "brands" ? null : "brands")}
-                    className="px-4 py-3 rounded-r-xl text-[#0a6030] hover:bg-[#f0f9eb] border-l border-gray-100"
-                  >
-                    <ChevronDownIcon
-                      className={`w-4 h-4 transition-transform ${mobileSection === "brands" ? "rotate-180" : ""}`}
-                    />
+                  <button onClick={() => setMobileSec(mobileSec === "brands" ? null : "brands")}
+                    style={{ padding: "11px 14px", borderRadius: "0 10px 10px 0", background: "transparent", border: "none", borderLeft: `1.5px solid ${C.line}`, cursor: "pointer", color: C.ink3 }}
+                    className="hover:bg-[#edf8f3]">
+                    <ChevronDownIcon style={{ width: 16, height: 16, transition: "transform 0.2s", transform: mobileSec === "brands" ? "rotate(180deg)" : "none" }} />
                   </button>
                 </div>
                 <AnimatePresence>
-                  {mobileSection === "brands" && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                    >
-                      {FERTIVERT.map((d) => (
-                        <div key={d.id} className="ml-4 mb-2 rounded-xl border border-gray-100 overflow-hidden">
-                          <Link
-                            href={`/${locale}${d.href}`}
-                            onClick={() => setMobileOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3"
-                            style={{ background: d.light }}
-                          >
-                            <div
-                              className="w-9 h-9 rounded-xl flex items-center justify-center text-white"
-                              style={{ background: d.color }}
-                            >
-                              <d.Icon className="w-5 h-5" />
+                  {mobileSec === "brands" && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} style={{ overflow: "hidden" }}>
+                      {FERTIVERT_MOBILE.map(d => (
+                        <div key={d.id} style={{ marginLeft: 12, marginBottom: 8, borderRadius: 12, border: `1.5px solid ${C.line}`, overflow: "hidden" }}>
+                          <Link href={`/${locale}${d.href}`} onClick={() => setMobileOpen(false)}
+                            style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 14px", background: d.light, textDecoration: "none" }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 9, background: `linear-gradient(135deg, ${d.color}, ${C.sageMd})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 3px 8px rgba(46,125,79,0.25)` }}>
+                              <d.Icon style={{ width: 16, height: 16, color: "rgba(255,255,255,0.95)" }} />
                             </div>
                             <div>
-                              <p className="text-sm font-black" style={{ color: d.color }}>{d.label}</p>
-                              <p className="text-xs text-gray-500">{t(d.subKey as any)}</p>
+                              <p style={{ ...TY.mobileLink, fontSize: 14, color: d.color }}>{d.label}</p>
+                              <p style={{ fontSize: 11.5, color: C.ink3 }}>{t(d.subKey as any)}</p>
                             </div>
-                            <ChevronRightIcon className="w-4 h-4 ml-auto text-gray-300" />
+                            <ChevronRightIcon style={{ width: 14, height: 14, color: C.ink4, marginLeft: "auto" }} />
                           </Link>
-                          {d.cats.map((c) => (
-                            <Link
-                              key={c.id}
-                              href={`/${locale}/marques/fertivert?division=${d.id}&category=${c.id}`}
-                              onClick={() => setMobileOpen(false)}
-                              className="flex items-center gap-3 px-5 py-2.5 border-t border-gray-50 hover:bg-[#f0f9eb] group transition-colors"
-                            >
-                              <div
-                                className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
-                                style={{ background: `${d.accent}20`, color: d.accent }}
-                              >
-                                <c.Icon className="w-3.5 h-3.5" />
-                              </div>
-                              <p className="text-[13px] font-semibold text-gray-700 group-hover:text-[#0a6030]">{c.label}</p>
-                              <div className="ml-auto flex gap-1 flex-wrap">
-                                {c.subs.slice(0, 2).map((s) => (
-                                  <span key={s} className="text-[9px] px-1.5 py-0.5 bg-gray-100 text-gray-400 rounded">{s}</span>
-                                ))}
+                          {d.cats.map(c => (
+                            <Link key={c.id} href={`/${locale}/marques/fertivert?division=${d.id}&category=${c.id}`} onClick={() => setMobileOpen(false)}
+                              style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 14px 8px 18px", borderTop: `1px solid ${C.stone}`, textDecoration: "none", transition: "background 0.1s" }}
+                              className="hover:bg-[#edf8f3]">
+                              <div style={{ width: 6, height: 6, borderRadius: "50%", background: `linear-gradient(135deg, ${C.sage}, ${C.sageMd})`, flexShrink: 0 }} />
+                              <p style={{ ...TY.ddCatName, color: C.ink, flex: 1 }}>{c.label}</p>
+                              <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                                {c.subs.slice(0, 2).map(s => <span key={s} style={{ fontSize: 10, padding: "1px 6px", background: C.sageLt, color: C.sage, borderRadius: 4, fontWeight: 600 }}>{s}</span>)}
                               </div>
                             </Link>
                           ))}
                         </div>
                       ))}
-                      {OTHER_BRANDS.map((b) => (
-                        <Link
-                          key={b.key}
-                          href={`/${locale}${b.href}`}
-                          onClick={() => setMobileOpen(false)}
-                          className="flex items-center gap-3 ml-4 px-4 py-3 rounded-xl border border-gray-100 hover:bg-[#f0f9eb] mb-2"
-                        >
-                          <div
-                            className="w-9 h-9 rounded-xl flex items-center justify-center text-white"
-                            style={{ background: b.color }}
-                          >
-                            <b.Icon className="w-5 h-5" />
+                      {OTHER_BRANDS.map(b => (
+                        <Link key={b.key} href={`/${locale}${b.href}`} onClick={() => setMobileOpen(false)}
+                          style={{ display: "flex", alignItems: "center", gap: 11, marginLeft: 12, padding: "10px 14px", borderRadius: 12, border: `1.5px solid ${C.line}`, marginBottom: 8, textDecoration: "none", background: "#fff", transition: "background 0.11s" }}
+                          className="hover:bg-[#edf8f3]">
+                          <div style={{ width: 36, height: 36, borderRadius: 9, background: `linear-gradient(135deg, ${b.color}, ${C.sageMd})`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 3px 8px rgba(0,0,0,0.15)` }}>
+                            <b.Icon style={{ width: 16, height: 16, color: "rgba(255,255,255,0.92)" }} />
                           </div>
                           <div>
-                            <p className="text-sm font-black text-gray-800">{b.name}</p>
-                            <p className="text-xs text-gray-400">{b.sub}</p>
+                            <p style={{ ...TY.mobileLink, fontSize: 14, color: C.ink }}>{b.name}</p>
+                            <p style={{ fontSize: 11.5, color: C.ink3 }}>{b.sub}</p>
                           </div>
-                          <ChevronRightIcon className="w-4 h-4 ml-auto text-gray-300" />
+                          <ChevronRightIcon style={{ width: 14, height: 14, color: C.ink4, marginLeft: "auto" }} />
                         </Link>
                       ))}
                     </motion.div>
@@ -1647,34 +1398,36 @@ export default function Navbar() {
                 </AnimatePresence>
               </div>
 
-              <Link
-                href={`/${locale}/rendez-vous`}
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#0a6030] text-white font-bold text-[15px]"
-              >
-                <Ico.Cal className="w-4 h-4" /> {t("bookRdv")}
-              </Link>
-              <Link
-                href={`/${locale}/contact`}
-                onClick={() => setMobileOpen(false)}
-                className="block px-4 py-3 rounded-xl text-[15px] font-bold text-[#0a6030] hover:bg-[#f0f9eb]"
-              >
+              <Link href={`/${locale}/contact`} onClick={() => setMobileOpen(false)}
+                style={{ ...TY.mobileLink, color: C.ink, padding: "11px 16px", borderRadius: 10, display: "block", textDecoration: "none" }}
+                className="hover:bg-[#edf8f3] hover:text-[#2e7d4f]">
                 {t("contact")}
               </Link>
 
+              <button onClick={() => { setSpOpen(true); setMobileOpen(false); }}
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", borderRadius: 10, background: C.stone, border: `1.5px solid ${C.border}`, cursor: "pointer", width: "100%", marginTop: 4 }}>
+                <Ico.Search style={{ width: 15, height: 15, color: C.sageMd }} />
+                <span style={{ ...TY.mobileLink, fontSize: 14, color: C.ink3, fontWeight: 400 }}>Rechercher un produit…</span>
+              </button>
+
+              <Link href={`/${locale}/rendez-vous`} onClick={() => setMobileOpen(false)}
+                style={{ ...TY.cta, color: "#fff", background: `linear-gradient(135deg, ${C.gradA}, ${C.gradB})`, padding: "12px 16px", borderRadius: 10, display: "flex", alignItems: "center", gap: 8, marginTop: 4, textDecoration: "none", boxShadow: `0 4px 14px rgba(46,125,79,0.3)` }}>
+                <Ico.Cal style={{ width: 16, height: 16 }} /> {t("bookRdv")}
+              </Link>
+
               {/* Langues */}
-              <div className="grid grid-cols-5 gap-2 pt-4 border-t border-gray-100">
-                {LANGS.map((l) => (
-                  <button
-                    key={l.code}
-                    onClick={() => { changeLocale(l.code); setMobileOpen(false); }}
-                    className={`py-2 rounded-xl text-[12px] font-black transition-all flex flex-col items-center gap-0.5 ${
-                      locale === l.code
-                        ? "bg-[#0a6030] text-white"
-                        : "bg-gray-100 text-gray-500 hover:bg-[#e0f5d0] hover:text-[#0a6030]"
-                    }`}
-                  >
-                    <span>{l.flag}</span>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 6, paddingTop: 14, borderTop: `1.5px solid ${C.line}`, marginTop: 6 }}>
+                {LANGS.map(l => (
+                  <button key={l.code} onClick={() => { changeLocale(l.code); setMobileOpen(false); }}
+                    style={{
+                      padding: "8px 0", borderRadius: 9, border: "none", cursor: "pointer",
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                      transition: "all 0.12s", fontSize: 11.5, fontWeight: 700,
+                      background: locale === l.code ? `linear-gradient(135deg, ${C.sage}, ${C.sageMd})` : C.stone,
+                      color: locale === l.code ? "#fff" : C.ink2,
+                      boxShadow: locale === l.code ? `0 3px 8px rgba(46,125,79,0.3)` : "none",
+                    }}>
+                    <span style={{ fontSize: 16 }}>{l.flag}</span>
                     <span>{l.short}</span>
                   </button>
                 ))}
