@@ -5,7 +5,6 @@ export const metadata = {
   description: "Site officiel Espace Vert — Solutions agricoles en Tunisie",
 };
 
-// ✅ Layout racine : PAS de <html>/<body> ici car [locale]/layout.tsx les gère
 export default function RootLayout({
   children,
 }: {
