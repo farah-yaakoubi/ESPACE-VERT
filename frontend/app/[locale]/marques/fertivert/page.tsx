@@ -1,6 +1,5 @@
 "use client";
-
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLocale } from "next-intl";
@@ -15,40 +14,30 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   PhoneIcon,
+  EnvelopeIcon,
+  DocumentArrowDownIcon,
   AdjustmentsHorizontalIcon,
+  CheckCircleIcon,
 } from "@heroicons/react/24/outline";
-
-import { ProductCardPremium } from "./components/ProductCard";
 import { hexToRgba } from "@/lib/colors";
-import {
-  getGamme,
-  flattenAll,
-  countCategoryProducts,
-  GAMMES,
-} from "./components/FertivertData";
-import type { Gamme } from "./components/FertivertData";
 
-// ─── Palette site (depuis globals.css) ──────────────────────────────────────
-// Hero : sombre vert forêt (comme le logo blanc)
-// Corps : blanc / gris léger / vert site
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+
+// ─── Palette originale ────────────────────────────────────────────────────────
 const SITE = {
-  // hero dark — basé sur vert foncé Espace Vert #006428
-  heroBg:     "#0a2410",
-  // verts exacts logos
-  green:      "#1D6B2A",   // Espace Vert foncé
-  greenMid:   "#2d8c35",   // Fertivert mid
-  greenLeaf:  "#3CB648",   // Fertivert primary
-  greenAccent:"#68cc74",   // Espace Vert lime
-  // corps — blanc cassé naturel site
-  bg:         "#f8fef8",
-  surface:    "#ffffff",
-  border:     "#e0e8e1",
-  borderGreen:"rgba(40,180,60,0.18)",
-  // textes
-  textDark:   "#002810",   // vert très foncé
-  textMid:    "#1a3d1e",
-  textLight:  "#4a6b4e",
-  textMuted:  "#8aa08c",
+  heroBg:      "#0a2410",
+  green:       "#1D6B2A",
+  greenMid:    "#2d8c35",
+  greenLeaf:   "#3CB648",
+  greenAccent: "#68cc74",
+  bg:          "#f8fef8",
+  surface:     "#ffffff",
+  border:      "#e0e8e1",
+  borderGreen: "rgba(40,180,60,0.18)",
+  textDark:    "#002810",
+  textMid:     "#1a3d1e",
+  textLight:   "#4a6b4e",
+  textMuted:   "#8aa08c",
 };
 
 const FV = {
@@ -56,54 +45,291 @@ const FV = {
   garden: { dark: "#0a2410", mid: "#2d8c35", light: "#68cc74", pale: "#e8f8ea", accent: "#3CB648" },
 };
 
-// ─── buildTree ───────────────────────────────────────────────────────────────
-function buildTree(gamme: Gamme) {
-  if (gamme.id === "pro" && gamme.divisions) {
-    return gamme.divisions.map((div) => ({
-      id: div.id, label: div.name, subtitle: div.subtitle,
-      cats: div.categories.map((cat) => ({
-        id: `${div.id}__${cat.id}`, rawCatId: cat.id,
-        label: cat.name, color: cat.color, Icon: cat.Icon,
-        count: countCategoryProducts(cat),
-        subs: (cat.subcategories ?? []).map((sub) => ({
-          id: sub.id, label: sub.name, count: sub.products?.length ?? 0,
-        })),
-      })),
-    }));
-  }
-  if (gamme.categories) {
-    return [{
-      id: "__root__", label: "", subtitle: "",
-      cats: gamme.categories.map((cat) => ({
-        id: cat.id, rawCatId: cat.id,
-        label: cat.name, color: cat.color, Icon: cat.Icon,
-        count: countCategoryProducts(cat),
-        subs: (cat.subcategories ?? []).map((sub) => ({
-          id: sub.id, label: sub.name, count: sub.products?.length ?? 0,
-        })),
-      })),
-    }];
-  }
-  return [];
+// ─── Types backend ────────────────────────────────────────────────────────────
+interface ProduitImg { id_imgp: number; url: string; alt: string | null; is_principale: boolean; }
+interface CategorieMini { id_categorie: number; nom: string; slug: string; parent_id: number | null; _count?: { produits: number }; }
+interface ProduitAPI {
+  id_produit:      number;
+  nom:             string;
+  slug:            string;
+  description:     string | null;
+  fiche_technique: string | null;
+  division:        string;
+  tags:            string[];
+  ordre:           number;
+  categorie:       { id_categorie: number; nom: string; slug: string; parent?: { nom: string; slug: string } | null };
+  marque:          { nom: string; slug: string };
+  images:          ProduitImg[];
 }
 
-// ─── Facebook icon ───────────────────────────────────────────────────────────
+// Produit normalisé pour les composants UI (compatible avec l'ancien format)
+interface ProductFlat {
+  id:          string;
+  name:        string;
+  description: string;
+  code:        string;
+  image?:      string;
+  formats?:    string[];
+  catName:     string;
+  catColor?:   string;
+  subName?:    string;
+  divisionName?: string;
+  catId:       string;
+  subId?:      string;
+  divisionId:  string;
+  // données brutes pour le drawer
+  _raw:        ProduitAPI;
+}
+
+// ─── Convertisseur API → format UI ───────────────────────────────────────────
+function toFlat(p: ProduitAPI): ProductFlat {
+  const img = p.images.find(i => i.is_principale)?.url ?? p.images[0]?.url;
+  // Extraire le format du nom (ex: "1/5/20L", "750g", "2 KG"…)
+  const fmtMatch = p.nom.match(/\d+[\w\/\s]*(?:L|l|G|g|KG|kg|ml)[\w\s]*$/i);
+  const formats  = fmtMatch ? [fmtMatch[0].trim()] : undefined;
+
+  return {
+    id:          String(p.id_produit),
+    name:        p.nom,
+    description: p.description ?? "",
+    code:        p.slug.toUpperCase().replace(/-/g, " ").substring(0, 20),
+    image:       img,
+    formats,
+    catName:     p.categorie?.nom ?? "",
+    catColor:    p.division === "pro" ? FV.pro.mid : FV.garden.mid,
+    subName:     p.categorie?.parent?.nom ?? undefined,
+    divisionName: p.division === "pro" ? "Agriculture" : "Jardin",
+    catId:       p.categorie?.slug ?? "",
+    subId:       undefined,
+    divisionId:  p.division,
+    _raw:        p,
+  };
+}
+
+// ─── Facebook icon ────────────────────────────────────────────────────────────
 const FacebookIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
     <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047v-2.66c0-3.025 1.791-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.265h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" />
   </svg>
 );
 
+// ─── ProductCardPremium ───────────────────────────────────────────────────────
+function ProductCardPremium({
+  product, accentColor, locale,
+}: { product: ProductFlat; accentColor: string; locale: string }) {
+  const [showModal, setShowModal]   = useState(false);
+  const [modalStep, setModalStep]   = useState<"contact" | "success">("contact");
+  const [formData, setFormData]     = useState({ name: "", email: "", phone: "", company: "" });
+  const [submitting, setSubmitting] = useState(false);
+
+  const format   = product.formats?.[0] ?? "";
+  const tagColor = product.catColor ?? accentColor;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await fetch(`${API_BASE}/devis`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          nom:      formData.name,
+          email:    formData.email,
+          telephone: formData.phone,
+          message:  `Demande fiche technique — ${product.name} (société: ${formData.company})`,
+          id_produit: Number(product.id),
+        }),
+      });
+    } catch {}
+    setSubmitting(false);
+    setModalStep("success");
+    setTimeout(() => { setShowModal(false); setModalStep("contact"); setFormData({ name:"",email:"",phone:"",company:"" }); }, 3000);
+  };
+
+  return (
+    <>
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="group bg-white rounded-2xl overflow-hidden flex flex-col"
+        style={{
+          border: "1px solid rgba(0,0,0,0.07)",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04)",
+        }}
+        whileHover={{
+          boxShadow: `0 4px 8px rgba(0,0,0,0.06), 0 16px 48px ${hexToRgba(accentColor, 0.16)}, 0 0 0 1.5px ${hexToRgba(accentColor, 0.3)}`,
+          y: -3,
+        }}
+        transition={{ duration: 0.2 }}
+      >
+        {/* Image */}
+        <div className="relative overflow-hidden" style={{ height: 190 }}>
+          <div className="absolute inset-0" style={{ background: "linear-gradient(145deg, #f8faf7 0%, #edf2eb 100%)" }} />
+          <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: `linear-gradient(90deg, ${accentColor}, ${hexToRgba(accentColor, 0.2)})` }} />
+
+          {product.image ? (
+            <Image src={product.image} alt={product.name} fill
+              className="object-contain p-8 group-hover:scale-[1.06] transition-transform duration-500" />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div style={{ width:80, height:80, background:hexToRgba(accentColor,0.07), borderRadius:20, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={hexToRgba(accentColor,0.3)} strokeWidth="1.4" strokeLinecap="round">
+                  <path d="M20 5c0 0-8 0-13 5C4 13 4 19 4 19s6 0 9-3c5-5 5-11 7-11z"/>
+                  <path d="M4 19l7-7"/>
+                </svg>
+              </div>
+            </div>
+          )}
+
+          <div className="absolute top-3 left-3">
+            <span className="text-[10px] font-black px-2.5 py-1 rounded-lg"
+              style={{ background:"rgba(255,255,255,0.95)", color:tagColor, border:`1px solid ${hexToRgba(tagColor,0.18)}`, backdropFilter:"blur(8px)" }}>
+              {product.catName}
+            </span>
+          </div>
+          {format && (
+            <div className="absolute bottom-3 right-3">
+              <span className="text-[11px] font-black px-2.5 py-1 rounded-lg" style={{ background:accentColor, color:"#f2faf3", boxShadow:`0 2px 10px ${hexToRgba(accentColor,0.4)}` }}>
+                {format}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Contenu */}
+        <div className="flex flex-col flex-1 p-5">
+          <div className="mb-3.5">
+            <h3 className="text-[15px] font-black text-gray-900 leading-tight mb-1">{product.name}</h3>
+            <div className="flex items-center flex-wrap gap-x-2 gap-y-1">
+              <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">{product.code}</span>
+              {product.subName && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background:hexToRgba(accentColor,0.08), color:accentColor }}>
+                  {product.subName}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <p className="text-[12.5px] text-gray-500 leading-relaxed line-clamp-3 flex-1 mb-4">
+            {product.description || "Produit Fertivert — contactez-nous pour plus d'informations."}
+          </p>
+
+          <div className="h-px mb-4" style={{ background:"#f0f1f0" }} />
+
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <a href="tel:+21671333858"
+                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[12px] font-bold text-white transition-opacity hover:opacity-90"
+                style={{ background:accentColor }}>
+                <PhoneIcon className="w-3.5 h-3.5" /> Appeler
+              </a>
+              <button onClick={() => setShowModal(true)}
+                className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[12px] font-bold border transition-all"
+                style={{ borderColor:hexToRgba(accentColor,0.28), color:accentColor }}
+                onMouseEnter={e => { const el=e.currentTarget as HTMLElement; el.style.background=accentColor; el.style.color="#f2faf3"; el.style.borderColor=accentColor; }}
+                onMouseLeave={e => { const el=e.currentTarget as HTMLElement; el.style.background="transparent"; el.style.color=accentColor; el.style.borderColor=hexToRgba(accentColor,0.28); }}>
+                <DocumentArrowDownIcon className="w-3.5 h-3.5" /> Fiche tech.
+              </button>
+            </div>
+            <Link href={`/${locale}/contact?product=${encodeURIComponent(product.name)}`}
+              className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[12px] font-semibold w-full transition-all hover:opacity-80"
+              style={{ background:hexToRgba(accentColor,0.07), color:accentColor }}>
+              <EnvelopeIcon className="w-3.5 h-3.5" /> Demander un devis
+            </Link>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Modal fiche technique */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background:"rgba(4,10,5,0.75)", backdropFilter:"blur(6px)" }}
+            onClick={() => setShowModal(false)}>
+            <motion.div initial={{ scale:0.93,y:20 }} animate={{ scale:1,y:0 }} exit={{ scale:0.93,y:20 }}
+              transition={{ duration:0.22, ease:[0.22,1,0.36,1] }}
+              onClick={e => e.stopPropagation()}
+              className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden"
+              style={{ boxShadow:`0 32px 80px rgba(0,0,0,0.4), 0 0 0 1px ${hexToRgba(accentColor,0.15)}` }}>
+              {modalStep === "contact" ? (
+                <>
+                  <div className="relative px-7 py-7 overflow-hidden"
+                    style={{ background:"linear-gradient(135deg, #f5fdf5 0%, #edfbee 50%, #0a6030 100%)" }}>
+                    <div className="absolute bottom-0 right-0 w-32 h-32 opacity-10"
+                      style={{ background:`radial-gradient(circle, ${accentColor}, transparent 70%)` }} />
+                    <button onClick={() => setShowModal(false)}
+                      className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center"
+                      style={{ background:"rgba(255,255,255,0.1)" }}>
+                      <XMarkIcon className="w-4 h-4 text-white" />
+                    </button>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4" style={{ background:accentColor }}>
+                      <DocumentArrowDownIcon className="w-5 h-5" style={{ color:"#f5fdf5" }} />
+                    </div>
+                    <h3 className="text-xl font-black text-white mb-1">Fiche Technique</h3>
+                    <p className="text-[13px] font-medium" style={{ color:"rgba(255,255,255,0.5)" }}>{product.name}</p>
+                  </div>
+                  <form onSubmit={handleSubmit} className="p-6 space-y-3.5">
+                    <p className="text-[12.5px] text-gray-500 leading-relaxed">Remplissez vos coordonnées. Notre équipe vous recontactera sous 24h.</p>
+                    {[
+                      { key:"name",    label:"Nom complet",              type:"text",  required:true  },
+                      { key:"email",   label:"Email professionnel",      type:"email", required:true  },
+                      { key:"phone",   label:"Téléphone",                type:"tel",   required:true  },
+                      { key:"company", label:"Entreprise / Exploitation", type:"text", required:false },
+                    ].map(f => (
+                      <div key={f.key}>
+                        <label className="block text-[11px] font-black uppercase tracking-wider mb-1.5" style={{ color:"#6b7280" }}>
+                          {f.label}{f.required && <span style={{ color:accentColor }}> *</span>}
+                        </label>
+                        <input type={f.type} required={f.required}
+                          value={(formData as any)[f.key]}
+                          onChange={e => setFormData({ ...formData, [f.key]:e.target.value })}
+                          className="w-full px-4 py-3 rounded-xl text-[13px] outline-none transition-all"
+                          style={{ border:"1.5px solid #e8eae7", background:"#fafcf9", color:"#1f2937" }}
+                          onFocus={e => { e.target.style.borderColor=accentColor; e.target.style.boxShadow=`0 0 0 3px ${hexToRgba(accentColor,0.1)}`; e.target.style.background="white"; }}
+                          onBlur={e => { e.target.style.borderColor="#e8eae7"; e.target.style.boxShadow="none"; e.target.style.background="#fafcf9"; }} />
+                      </div>
+                    ))}
+                    <button type="submit" disabled={submitting}
+                      className="w-full py-3.5 rounded-xl text-[13px] font-black text-white mt-1 transition-all hover:opacity-90 disabled:opacity-60"
+                      style={{ background:"linear-gradient(135deg, #edfbee, #0a6030)", boxShadow:`0 4px 16px rgba(26,92,46,0.3)` }}>
+                      {submitting ? "Envoi…" : "Recevoir la fiche technique →"}
+                    </button>
+                    <p className="text-[10.5px] text-center" style={{ color:"#b0b8b2" }}>Vos données sont confidentielles.</p>
+                  </form>
+                </>
+              ) : (
+                <div className="p-10 text-center">
+                  <motion.div initial={{ scale:0,rotate:-20 }} animate={{ scale:1,rotate:0 }} transition={{ type:"spring",duration:0.6 }}
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
+                    style={{ background:hexToRgba(accentColor,0.1) }}>
+                    <CheckCircleIcon className="w-9 h-9" style={{ color:accentColor }} />
+                  </motion.div>
+                  <h3 className="text-xl font-black text-gray-900 mb-2">Demande envoyée !</h3>
+                  <p className="text-[13px] text-gray-500 leading-relaxed">
+                    Notre équipe vous contactera avec la fiche technique de <strong className="text-gray-700">{product.name}</strong>.
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
 // ─── HeroSection ─────────────────────────────────────────────────────────────
 function HeroSection({
-  locale, gammeId, onGammeSwitch, tree, onCatSelect, selectedId,
+  locale, gammeId, onGammeSwitch, categories, onCatSelect, selectedCatSlug,
 }: {
-  locale: string;
-  gammeId: "pro" | "garden";
-  onGammeSwitch: (g: "pro" | "garden") => void;
-  tree: ReturnType<typeof buildTree>;
-  onCatSelect: (id: string | null) => void;
-  selectedId: string | null;
+  locale:          string;
+  gammeId:         "pro" | "garden";
+  onGammeSwitch:   (g: "pro" | "garden") => void;
+  categories:      CategorieMini[];
+  onCatSelect:     (slug: string | null) => void;
+  selectedCatSlug: string | null;
 }) {
   type FbPhase = "hidden" | "in" | "open" | "closed";
   const [fbPhase, setFbPhase] = useState<FbPhase>("hidden");
@@ -123,19 +349,15 @@ function HeroSection({
   const onEnter = () => { if (t.current) clearTimeout(t.current); setFbPhase("open"); };
   const onLeave = () => { t.current = setTimeout(() => setFbPhase("closed"), 300); };
 
-  const allCats = tree.flatMap((div: ReturnType<typeof buildTree>[number]) => div.cats);
+  // Catégories racines pour les pills
+  const rootCats = categories.filter(c => !c.parent_id);
 
   return (
-    <section
-      className="relative overflow-hidden"
-      style={{
-        height: "100vh",
-        minHeight: 600,
-        background: "linear-gradient(158deg, #050e07 0%, #091808 22%, #0d2a10 52%, #122e14 78%, #081008 100%)",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <section className="relative overflow-hidden" style={{
+      height: "100vh", minHeight: 600,
+      background: "linear-gradient(158deg, #050e07 0%, #091808 22%, #0d2a10 52%, #122e14 78%, #081008 100%)",
+      display: "flex", flexDirection: "column",
+    }}>
       {/* Grain */}
       <div className="absolute inset-0 pointer-events-none" style={{
         opacity: 0.09,
@@ -143,83 +365,53 @@ function HeroSection({
         mixBlendMode: "overlay",
       }} />
 
-      {/* ── LOGO : positionné en absolu, couvre toute la zone haute ── */}
-      <div
-        className="absolute inset-x-0 top-0 flex items-center justify-center pointer-events-none"
-        style={{ bottom: 200 }}
-      >
-        {/* Halo pulsant */}
-        <motion.div
-          className="absolute pointer-events-none"
-          style={{
-            width: "min(1000px, 130vw)", height: "min(1000px, 130vw)",
-            borderRadius: "50%",
-            background: "radial-gradient(circle, rgba(40,180,60,0.20) 0%, rgba(14,48,20,0.06) 52%, transparent 70%)",
-            filter: "blur(70px)",
-          }}
-          animate={{ opacity: [0.45, 0.95, 0.45], scale: [0.93, 1.07, 0.93] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2.5 }}
-        />
+      {/* Logo centré */}
+      <div className="absolute inset-x-0 top-0 flex items-center justify-center pointer-events-none" style={{ bottom: 200 }}>
+        <motion.div className="absolute pointer-events-none" style={{
+          width:"min(1000px,130vw)", height:"min(1000px,130vw)", borderRadius:"50%",
+          background:"radial-gradient(circle, rgba(40,180,60,0.20) 0%, rgba(14,48,20,0.06) 52%, transparent 70%)",
+          filter:"blur(70px)",
+        }}
+          animate={{ opacity:[0.45,0.95,0.45], scale:[0.93,1.07,0.93] }}
+          transition={{ duration:6, repeat:Infinity, ease:"easeInOut", delay:2.5 }} />
 
-        {/* Logo */}
         <motion.div
-          initial={{ opacity: 0, scale: 1.16 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 2.4, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
-          style={{ position: "relative", width: "min(860px, 90vw)", height: "min(620px, 65vw)" }}
-        >
-          <motion.div
-            className="w-full h-full relative"
-            animate={{ y: [0, -16, 0] }}
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-          >
-            <Image
-              src="/logos/LOGO_FERTiVERT.webp"
-              alt="Fertivert"
-              fill priority
+          initial={{ opacity:0, scale:1.16 }} animate={{ opacity:1, scale:1 }}
+          transition={{ duration:2.4, ease:[0.16,1,0.3,1], delay:0.05 }}
+          style={{ position:"relative", width:"min(860px,90vw)", height:"min(620px,65vw)" }}>
+          <motion.div className="w-full h-full relative"
+            animate={{ y:[0,-16,0] }} transition={{ duration:10, repeat:Infinity, ease:"easeInOut", delay:3 }}>
+            <Image src="/logos/LOGO_FERTiVERT_white.png" alt="Fertivert" fill priority
               className="object-contain"
-              style={{
-                filter:
-                  "drop-shadow(0 0 80px rgba(40,180,60,0.75))" +
-                  " drop-shadow(0 0 160px rgba(40,180,60,0.30))" +
-                  " drop-shadow(0 32px 80px rgba(0,0,0,0.82))",
-              }}
-            />
+              style={{ filter:"drop-shadow(0 0 80px rgba(40,180,60,0.75)) drop-shadow(0 0 160px rgba(40,180,60,0.30)) drop-shadow(0 32px 80px rgba(0,0,0,0.82))" }}
+              onError={() => {}} />
           </motion.div>
         </motion.div>
       </div>
 
-      {/* ── FACEBOOK badge — ancré en bas à droite, au-dessus du switcher ── */}
+      {/* Facebook badge */}
       <div className="absolute z-20" style={{ bottom: 210, right: 32 }}>
         <AnimatePresence>
           {fbPhase !== "hidden" && (
-            <motion.a
-              href="https://www.facebook.com/profile.php?id=61566418239096&locale=fr_FR"
-              target="_blank" rel="noopener noreferrer" aria-label="Fertivert sur Facebook"
+            <motion.a href="https://www.facebook.com/profile.php?id=61566418239096&locale=fr_FR"
+              target="_blank" rel="noopener noreferrer" aria-label="Fertivert Facebook"
               className="flex items-center rounded-full cursor-pointer select-none"
               style={{
-                background: "rgba(9,28,12,0.90)",
-                backdropFilter: "blur(22px)", WebkitBackdropFilter: "blur(22px)",
-                border: "1px solid rgba(40,180,60,0.45)",
-                boxShadow: "0 6px 28px rgba(0,0,0,0.45), 0 0 18px rgba(40,180,60,0.14), inset 0 1px 0 rgba(255,255,255,0.06)",
-                color: "white", overflow: "hidden", textDecoration: "none",
+                background:"rgba(9,28,12,0.90)", backdropFilter:"blur(22px)",
+                border:"1px solid rgba(40,180,60,0.45)",
+                boxShadow:"0 6px 28px rgba(0,0,0,0.45), 0 0 18px rgba(40,180,60,0.14), inset 0 1px 0 rgba(255,255,255,0.06)",
+                color:"white", overflow:"hidden", textDecoration:"none",
               }}
-              initial={{ opacity: 0, x: 56 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 48 }}
-              transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-              onMouseEnter={onEnter}
-              onMouseLeave={onLeave}
-            >
-              <div style={{ width: 52, height: 52, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              initial={{ opacity:0, x:56 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:48 }}
+              transition={{ duration:0.65, ease:[0.16,1,0.3,1] }}
+              onMouseEnter={onEnter} onMouseLeave={onLeave}>
+              <div style={{ width:52, height:52, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
                 <FacebookIcon />
               </div>
-              <motion.div
-                style={{ overflow: "hidden" }}
-                animate={{ width: fbPhase === "open" ? 120 : 0, opacity: fbPhase === "open" ? 1 : 0 }}
-                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-              >
-                <span style={{ display: "block", whiteSpace: "nowrap", paddingRight: 18, fontSize: 13, fontWeight: 600, letterSpacing: "0.02em", color: "rgba(255,255,255,0.92)" }}>
+              <motion.div style={{ overflow:"hidden" }}
+                animate={{ width:fbPhase==="open"?120:0, opacity:fbPhase==="open"?1:0 }}
+                transition={{ duration:0.3, ease:[0.4,0,0.2,1] }}>
+                <span style={{ display:"block", whiteSpace:"nowrap", paddingRight:18, fontSize:13, fontWeight:600, color:"rgba(255,255,255,0.92)" }}>
                   Suivez-nous
                 </span>
               </motion.div>
@@ -228,51 +420,40 @@ function HeroSection({
         </AnimatePresence>
       </div>
 
-      {/* ── Contenu bas : pills catégories + switcher ── */}
-      <div className="absolute inset-x-0 bottom-0 z-10" style={{ background: "linear-gradient(to top, rgba(5,14,7,0.97) 0%, rgba(5,14,7,0.7) 60%, transparent 100%)" }}>
+      {/* Bas hero — pills + switcher */}
+      <div className="absolute inset-x-0 bottom-0 z-10"
+        style={{ background:"linear-gradient(to top, rgba(5,14,7,0.97) 0%, rgba(5,14,7,0.7) 60%, transparent 100%)" }}>
 
         {/* Pills catégories */}
         <div className="px-6 pt-6 pb-4">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.35 }}
-            className="flex flex-wrap gap-2 justify-center"
-          >
-            {allCats.map((cat, i) => {
-              const active = selectedId === cat.id;
+          <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}
+            transition={{ duration:0.7, ease:[0.22,1,0.36,1], delay:0.35 }}
+            className="flex flex-wrap gap-2 justify-center">
+            {rootCats.map((cat, i) => {
+              const active = selectedCatSlug === cat.slug;
               return (
-                <motion.button
-                  key={cat.id}
-                  onClick={() => onCatSelect(active ? null : cat.id)}
-                  initial={{ opacity: 0, scale: 0.82 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.45 + i * 0.045, duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-                  whileHover={{ scale: 1.06, y: -2 }}
-                  whileTap={{ scale: 0.96 }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all"
+                <motion.button key={cat.id_categorie}
+                  onClick={() => onCatSelect(active ? null : cat.slug)}
+                  initial={{ opacity:0, scale:0.82 }} animate={{ opacity:1, scale:1 }}
+                  transition={{ delay:0.45+i*0.045, duration:0.38, ease:[0.22,1,0.36,1] }}
+                  whileHover={{ scale:1.06, y:-2 }} whileTap={{ scale:0.96 }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer"
                   style={{
                     background: active ? SITE.greenLeaf : "rgba(40,180,60,0.12)",
                     border: `1px solid ${active ? SITE.greenLeaf : "rgba(40,180,60,0.28)"}`,
-                    backdropFilter: "blur(12px)",
-                    WebkitBackdropFilter: "blur(12px)",
-                    boxShadow: active ? `0 0 16px rgba(40,180,60,0.45)` : "none",
-                  }}
-                >
-                  <div
-                    className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
-                    style={{
-                      background: active ? "rgba(0,0,0,0.25)" : "rgba(40,180,60,0.25)",
-                      color: active ? "#fff" : SITE.greenLeaf,
-                    }}
-                  >
-                    <cat.Icon className="w-3 h-3" />
+                    backdropFilter:"blur(12px)",
+                    boxShadow: active ? "0 0 16px rgba(40,180,60,0.45)" : "none",
+                  }}>
+                  <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
+                    style={{ background: active ? "rgba(0,0,0,0.25)" : "rgba(40,180,60,0.25)", color: active ? "#fff" : SITE.greenLeaf }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                      <path d="M20 5c0 0-8 0-13 5C4 13 4 19 4 19s6 0 9-3c5-5 5-11 7-11z"/><path d="M4 19l7-7"/>
+                    </svg>
                   </div>
-                  <span
-                    className="text-xs font-semibold whitespace-nowrap"
-                    style={{ color: active ? "#fff" : "rgba(255,255,255,0.80)" }}
-                  >
-                    {cat.label}
+                  <span className="text-xs font-semibold whitespace-nowrap"
+                    style={{ color: active ? "#fff" : "rgba(255,255,255,0.80)" }}>
+                    {cat.nom}
+                    {cat._count && <span className="ml-1 opacity-60">({cat._count.produits})</span>}
                   </span>
                 </motion.button>
               );
@@ -281,33 +462,27 @@ function HeroSection({
         </div>
 
         {/* Switcher Pro / Garden */}
-        <div className="flex" style={{ borderTop: "1px solid rgba(40,180,60,0.12)" }}>
-          {(["pro", "garden"] as const).map((g) => {
+        <div className="flex" style={{ borderTop:"1px solid rgba(40,180,60,0.12)" }}>
+          {(["pro","garden"] as const).map(g => {
             const active = gammeId === g;
             return (
-              <motion.button
-                key={g}
-                onClick={() => onGammeSwitch(g)}
+              <motion.button key={g} onClick={() => onGammeSwitch(g)}
                 className="flex-1 flex items-center gap-4 px-8 py-5 text-left"
                 style={{
                   background: active ? "rgba(40,180,60,0.08)" : "transparent",
                   borderTop: active ? `2px solid ${SITE.greenLeaf}` : "2px solid transparent",
-                  borderRight: g === "pro" ? "1px solid rgba(40,180,60,0.08)" : "none",
-                  transition: "background 0.2s",
+                  borderRight: g==="pro" ? "1px solid rgba(40,180,60,0.08)" : "none",
                 }}
-                whileHover={{ background: active ? "rgba(40,180,60,0.11)" : "rgba(255,255,255,0.025)" }}
-              >
+                whileHover={{ background: active ? "rgba(40,180,60,0.11)" : "rgba(255,255,255,0.025)" }}>
                 <div style={{
-                  width: 40, height: 40, borderRadius: 10,
+                  width:40, height:40, borderRadius:10, flexShrink:0,
                   background: active ? SITE.greenLeaf : "rgba(255,255,255,0.06)",
-                  display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                  boxShadow: active ? `0 4px 18px rgba(40,180,60,0.4)` : "none",
-                  transition: "all 0.2s",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  boxShadow: active ? "0 4px 18px rgba(40,180,60,0.4)" : "none",
                 }}>
                   <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
                     stroke={active ? "#071a09" : "rgba(255,255,255,0.35)"}
-                    strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"
-                  >
+                    strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
                     {g === "pro"
                       ? <><path d="M20 5c0 0-8 0-13 5C4 13 4 19 4 19s6 0 9-3c5-5 5-11 7-11z"/><path d="M4 19l7-7"/></>
                       : <><path d="M2 20h20M6 20V11c0-3 2-5 4-6M12 20V9c0-4 3-6 5-7"/></>
@@ -315,17 +490,17 @@ function HeroSection({
                   </svg>
                 </div>
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 800, color: active ? "rgba(255,255,255,0.94)" : "rgba(255,255,255,0.3)", letterSpacing: "-0.01em" }}>
+                  <p style={{ fontSize:14, fontWeight:800, color: active ? "rgba(255,255,255,0.94)" : "rgba(255,255,255,0.3)", letterSpacing:"-0.01em" }}>
                     Fertivert {g === "pro" ? "Pro" : "Garden"}
                   </p>
-                  <p style={{ fontSize: 11, color: active ? "rgba(255,255,255,0.42)" : "rgba(255,255,255,0.18)" }}>
+                  <p style={{ fontSize:11, color: active ? "rgba(255,255,255,0.42)" : "rgba(255,255,255,0.18)" }}>
                     {g === "pro" ? "Agriculture professionnelle" : "Jardin & Gazon"}
                   </p>
                 </div>
                 {active && (
                   <div className="ml-auto flex items-center gap-2">
-                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: SITE.greenLeaf, boxShadow: `0 0 8px rgba(40,180,60,0.9)`, animation: "dotpulse 2s ease-in-out infinite" }} />
-                    <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.18em", color: SITE.greenLeaf, textTransform: "uppercase" }}>Actif</span>
+                    <div style={{ width:6, height:6, borderRadius:"50%", background:SITE.greenLeaf, boxShadow:"0 0 8px rgba(40,180,60,0.9)", animation:"dotpulse 2s ease-in-out infinite" }} />
+                    <span style={{ fontSize:9, fontWeight:800, letterSpacing:"0.18em", color:SITE.greenLeaf, textTransform:"uppercase" }}>Actif</span>
                   </div>
                 )}
               </motion.button>
@@ -334,62 +509,46 @@ function HeroSection({
         </div>
       </div>
 
-      <style>{`@keyframes dotpulse{0%,100%{opacity:1}50%{opacity:0.3}}`}</style>
-
-      {/* Vague de transition */}
-      <div className="absolute bottom-0 inset-x-0 z-0 pointer-events-none" style={{ transform: "translateY(1px)" }}>
-        <svg viewBox="0 0 1440 40" preserveAspectRatio="none" style={{ width: "100%", height: 40, display: "block" }}>
+      {/* Vague transition */}
+      <div className="absolute bottom-0 inset-x-0 z-0 pointer-events-none" style={{ transform:"translateY(1px)" }}>
+        <svg viewBox="0 0 1440 40" preserveAspectRatio="none" style={{ width:"100%", height:40, display:"block" }}>
           <path d="M0,20 C240,40 480,0 720,18 C900,32 1100,2 1300,16 C1380,22 1420,10 1440,20 L1440,40 L0,40 Z" fill={SITE.bg} />
         </svg>
       </div>
+
+      <style>{`@keyframes dotpulse{0%,100%{opacity:1}50%{opacity:0.3}}`}</style>
     </section>
   );
 }
-// ─── Sidebar ─────────────────────────────────────────────────────────────────
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
 function Sidebar({
-  gammeId, onGammeSwitch, tree, selectedId, onSelect, totalCount, filteredCount,
+  gammeId, onGammeSwitch, categories, selectedCatSlug, onSelect, totalCount, filteredCount,
 }: {
-  gammeId: "pro" | "garden";
-  onGammeSwitch: (g: "pro" | "garden") => void;
-  tree: ReturnType<typeof buildTree>;
-  selectedId: string | null;
-  onSelect: (id: string | null) => void;
-  totalCount: number;
-  filteredCount: number;
+  gammeId:         "pro" | "garden";
+  onGammeSwitch:   (g: "pro" | "garden") => void;
+  categories:      CategorieMini[];
+  selectedCatSlug: string | null;
+  onSelect:        (slug: string | null) => void;
+  totalCount:      number;
+  filteredCount:   number;
 }) {
   const fv = FV[gammeId];
-  const [openDivs, setOpenDivs] = useState<Record<string, boolean>>({});
   const [openCats, setOpenCats] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    const divs: Record<string, boolean> = {};
-    const cats: Record<string, boolean> = {};
-    tree.forEach((div) => {
-      divs[div.id] = true;
-      div.cats.forEach((cat) => { cats[cat.id] = false; });
-    });
-    setOpenDivs(divs);
-    setOpenCats(cats);
-  }, [gammeId]);
+  const roots    = categories.filter(c => !c.parent_id);
+  const childrenOf = (id: number) => categories.filter(c => c.parent_id === id);
 
   return (
     <aside className="w-64 flex-shrink-0 hidden lg:flex flex-col gap-3">
-
       {/* Switcher */}
-      <div className="rounded-2xl p-1.5 flex gap-1" style={{ background: SITE.textDark }}>
-        {(["pro", "garden"] as const).map((g) => {
+      <div className="rounded-2xl p-1.5 flex gap-1" style={{ background:SITE.textDark }}>
+        {(["pro","garden"] as const).map(g => {
           const active = gammeId === g;
           return (
-            <button
-              key={g}
-              onClick={() => onGammeSwitch(g)}
+            <button key={g} onClick={() => onGammeSwitch(g)}
               className="flex-1 py-2.5 rounded-xl text-[13px] font-black tracking-wide transition-all duration-200"
-              style={{
-                background: active ? fv.accent : "transparent",
-                color: active ? "#fff" : "rgba(255,255,255,0.4)",
-                boxShadow: active ? `0 2px 12px rgba(40,180,60,0.35)` : "none",
-              }}
-            >
+              style={{ background: active ? fv.accent : "transparent", color: active ? "#fff" : "rgba(255,255,255,0.4)", boxShadow: active ? "0 2px 12px rgba(40,180,60,0.35)" : "none" }}>
               {g === "pro" ? "Pro" : "Garden"}
             </button>
           );
@@ -397,214 +556,236 @@ function Sidebar({
       </div>
 
       {/* Compteur */}
-      <div className="rounded-xl px-4 py-2.5 flex items-center justify-between" style={{ background: SITE.surface, border: `1px solid ${SITE.border}`, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+      <div className="rounded-xl px-4 py-2.5 flex items-center justify-between"
+        style={{ background:SITE.surface, border:`1px solid ${SITE.border}`, boxShadow:"0 1px 4px rgba(0,0,0,0.04)" }}>
         <div className="flex items-center gap-2">
-          <AdjustmentsHorizontalIcon className="w-4 h-4" style={{ color: fv.mid }} />
-          <span className="text-[13px] font-semibold" style={{ color: SITE.textDark }}>
+          <AdjustmentsHorizontalIcon className="w-4 h-4" style={{ color:fv.mid }} />
+          <span className="text-[13px] font-semibold" style={{ color:SITE.textDark }}>
             {filteredCount === totalCount ? `${totalCount} produits` : `${filteredCount} / ${totalCount}`}
           </span>
         </div>
-        {selectedId && (
-          <button onClick={() => onSelect(null)} className="text-[11px] font-bold flex items-center gap-1 hover:opacity-70 transition-opacity" style={{ color: fv.mid }}>
+        {selectedCatSlug && (
+          <button onClick={() => onSelect(null)} className="text-[11px] font-bold flex items-center gap-1 hover:opacity-70" style={{ color:fv.mid }}>
             <XMarkIcon className="w-3.5 h-3.5" /> Tout
           </button>
         )}
       </div>
 
-      {/* Arbre filtres */}
-      <div className="rounded-2xl overflow-hidden flex-1" style={{ border: `1px solid ${SITE.border}`, background: SITE.surface, boxShadow: "0 1px 8px rgba(0,0,0,0.05)" }}>
-        {tree.map((div, di) => (
-          <div key={div.id}>
-            {div.id !== "__root__" && (
-              <button
-                onClick={() => setOpenDivs((p) => ({ ...p, [div.id]: !p[div.id] }))}
-                className="w-full flex items-center justify-between px-4 py-3 text-left"
-                style={{
-                  background: di === 0
-                    ? `linear-gradient(135deg, ${fv.dark}, ${fv.mid})`
-                    : `linear-gradient(135deg, #143320, #1e5232)`,
-                  borderTop: di > 0 ? "1px solid rgba(255,255,255,0.06)" : undefined,
-                }}
-              >
-                <div>
-                  <p className="text-[13px] font-black text-white">{div.label}</p>
-                  {div.subtitle && <p className="text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>{div.subtitle}</p>}
-                </div>
-                <ChevronDownIcon className="w-4 h-4 flex-shrink-0 transition-transform duration-200" style={{ color: "rgba(255,255,255,0.5)", transform: openDivs[div.id] ? "rotate(180deg)" : "rotate(0deg)" }} />
-              </button>
-            )}
+      {/* Arbre catégories */}
+      <div className="rounded-2xl overflow-hidden flex-1" style={{ border:`1px solid ${SITE.border}`, background:SITE.surface, boxShadow:"0 1px 8px rgba(0,0,0,0.05)" }}>
+        {/* Header */}
+        <div className="px-4 py-3 text-[13px] font-black text-white"
+          style={{ background:`linear-gradient(135deg, ${fv.dark}, ${fv.mid})` }}>
+          Catégories Fertivert {gammeId === "pro" ? "Pro" : "Garden"}
+        </div>
 
-            <AnimatePresence initial={false}>
-              {(div.id === "__root__" || openDivs[div.id]) && (
-                <motion.div
-                  initial={div.id === "__root__" ? false : { height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  {div.cats.map((cat, ci) => (
-                    <div key={cat.id} style={{ borderTop: ci > 0 || div.id !== "__root__" ? `1px solid ${SITE.border}` : undefined }}>
-                      <div className="flex items-center" style={{
-                        background: selectedId === cat.id ? hexToRgba(fv.pale, 0.9) : "transparent",
-                        borderLeft: selectedId === cat.id ? `3px solid ${fv.accent}` : "3px solid transparent",
-                      }}>
-                        <button
-                          onClick={() => {
-                            onSelect(selectedId === cat.id ? null : cat.id);
-                            if (cat.subs.length > 0) setOpenCats((p) => ({ ...p, [cat.id]: !p[cat.id] }));
-                          }}
-                          className="flex-1 flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-gray-50"
-                        >
-                          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{
-                            background: selectedId === cat.id ? fv.mid : hexToRgba(cat.color || fv.mid, 0.1),
-                            color: selectedId === cat.id ? "white" : cat.color || fv.mid,
-                          }}>
-                            <cat.Icon className="w-3.5 h-3.5" />
-                          </div>
-                          <span className="text-[12px] font-bold flex-1 leading-tight" style={{ color: selectedId === cat.id ? fv.dark : SITE.textMid }}>
-                            {cat.label}
-                          </span>
-                          <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md flex-shrink-0" style={{
-                            background: selectedId === cat.id ? hexToRgba(fv.mid, 0.12) : "#f3f4f6",
-                            color: selectedId === cat.id ? fv.dark : SITE.textMuted,
-                          }}>
-                            {cat.count}
-                          </span>
-                        </button>
-                        {cat.subs.length > 0 && (
-                          <button onClick={() => setOpenCats((p) => ({ ...p, [cat.id]: !p[cat.id] }))} className="px-2 py-2.5 hover:bg-gray-50 transition-colors">
-                            <ChevronRightIcon className="w-3.5 h-3.5 text-gray-300 transition-transform duration-200" style={{ transform: openCats[cat.id] ? "rotate(90deg)" : "rotate(0deg)" }} />
-                          </button>
-                        )}
-                      </div>
-
-                      <AnimatePresence initial={false}>
-                        {openCats[cat.id] && cat.subs.length > 0 && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }}
-                            className="overflow-hidden bg-gray-50/60"
-                          >
-                            {cat.subs.map((sub) => (
-                              <button
-                                key={sub.id}
-                                onClick={() => onSelect(selectedId === sub.id ? null : sub.id)}
-                                className="w-full flex items-center gap-2 pl-12 pr-4 py-2 text-left hover:bg-gray-50 transition-colors"
-                                style={{
-                                  background: selectedId === sub.id ? hexToRgba(fv.pale, 0.6) : undefined,
-                                  borderLeft: selectedId === sub.id ? `3px solid ${fv.light}` : "3px solid transparent",
-                                }}
-                              >
-                                <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: selectedId === sub.id ? fv.mid : "#d1d5db" }} />
-                                <span className="text-[11px] font-medium flex-1 truncate" style={{ color: selectedId === sub.id ? fv.dark : "#6b7280" }}>
-                                  {sub.label}
-                                </span>
-                                <span className="text-[10px] text-gray-400">{sub.count}</span>
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+        {/* Toutes */}
+        <button onClick={() => onSelect(null)}
+          className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-gray-50"
+          style={{
+            background: !selectedCatSlug ? hexToRgba(fv.pale,0.9) : "transparent",
+            borderLeft: `3px solid ${!selectedCatSlug ? fv.accent : "transparent"}`,
+          }}>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: !selectedCatSlug ? fv.mid : hexToRgba(fv.mid,0.1), color: !selectedCatSlug ? "white" : fv.mid }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+            </svg>
           </div>
-        ))}
-      </div>
+          <span className="text-[12px] font-bold flex-1" style={{ color: !selectedCatSlug ? fv.dark : SITE.textMid }}>
+            Tous les produits
+          </span>
+          <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md"
+            style={{ background: !selectedCatSlug ? hexToRgba(fv.mid,0.12) : "#f3f4f6", color: !selectedCatSlug ? fv.dark : SITE.textMuted }}>
+            {totalCount}
+          </span>
+        </button>
 
+        {roots.map((cat, ci) => {
+          const subs    = childrenOf(cat.id_categorie);
+          const isActive = selectedCatSlug === cat.slug;
+          return (
+            <div key={cat.id_categorie} style={{ borderTop: ci > 0 ? `1px solid ${SITE.border}` : undefined }}>
+              <div className="flex items-center"
+                style={{
+                  background: isActive ? hexToRgba(fv.pale,0.9) : "transparent",
+                  borderLeft: `3px solid ${isActive ? fv.accent : "transparent"}`,
+                }}>
+                <button onClick={() => { onSelect(isActive ? null : cat.slug); if (subs.length) setOpenCats(p => ({ ...p, [cat.id_categorie]: !p[cat.id_categorie] })); }}
+                  className="flex-1 flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-gray-50">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: isActive ? fv.mid : hexToRgba(fv.mid,0.1), color: isActive ? "white" : fv.mid }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                      <path d="M20 5c0 0-8 0-13 5C4 13 4 19 4 19s6 0 9-3c5-5 5-11 7-11z"/><path d="M4 19l7-7"/>
+                    </svg>
+                  </div>
+                  <span className="text-[12px] font-bold flex-1 leading-tight" style={{ color: isActive ? fv.dark : SITE.textMid }}>
+                    {cat.nom}
+                  </span>
+                  <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md"
+                    style={{ background: isActive ? hexToRgba(fv.mid,0.12) : "#f3f4f6", color: isActive ? fv.dark : SITE.textMuted }}>
+                    {cat._count?.produits ?? ""}
+                  </span>
+                </button>
+                {subs.length > 0 && (
+                  <button onClick={() => setOpenCats(p => ({ ...p, [cat.id_categorie]: !p[cat.id_categorie] }))} className="px-2 py-2.5 hover:bg-gray-50">
+                    <ChevronRightIcon className="w-3.5 h-3.5 text-gray-300 transition-transform duration-200"
+                      style={{ transform: openCats[cat.id_categorie] ? "rotate(90deg)" : "rotate(0deg)" }} />
+                  </button>
+                )}
+              </div>
+
+              <AnimatePresence initial={false}>
+                {openCats[cat.id_categorie] && subs.length > 0 && (
+                  <motion.div initial={{ height:0,opacity:0 }} animate={{ height:"auto",opacity:1 }}
+                    exit={{ height:0,opacity:0 }} transition={{ duration:0.18 }}
+                    className="overflow-hidden bg-gray-50/60">
+                    {subs.map(sub => (
+                      <button key={sub.id_categorie}
+                        onClick={() => onSelect(selectedCatSlug === sub.slug ? null : sub.slug)}
+                        className="w-full flex items-center gap-2 pl-12 pr-4 py-2 text-left hover:bg-gray-50 transition-colors"
+                        style={{
+                          background: selectedCatSlug === sub.slug ? hexToRgba(fv.pale,0.6) : undefined,
+                          borderLeft: `3px solid ${selectedCatSlug === sub.slug ? fv.light : "transparent"}`,
+                        }}>
+                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                          style={{ background: selectedCatSlug === sub.slug ? fv.mid : "#d1d5db" }} />
+                        <span className="text-[11px] font-medium flex-1 truncate"
+                          style={{ color: selectedCatSlug === sub.slug ? fv.dark : "#6b7280" }}>
+                          {sub.nom}
+                        </span>
+                        <span className="text-[10px] text-gray-400">{sub._count?.produits ?? ""}</span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
+      </div>
     </aside>
   );
 }
 
-// ─── Page ────────────────────────────────────────────────────────────────────
+// ─── PAGE PRINCIPALE ──────────────────────────────────────────────────────────
 export default function FertivertPage() {
-  const searchParams = useSearchParams();
-  const locale = useLocale();
+  const searchParams       = useSearchParams();
+  const locale             = useLocale();
 
-  const [gammeId, setGammeId] = useState<"pro" | "garden">("pro");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [gammeId, setGammeId]           = useState<"pro" | "garden">("pro");
+  const [selectedCatSlug, setSelectedCatSlug] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm]     = useState("");
+  const [viewMode, setViewMode]         = useState<"grid" | "list">("grid");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  const gamme = getGamme(gammeId);
-  const fv = FV[gammeId];
-  const tree = buildTree(gamme);
-  const allProducts = flattenAll(gammeId);
+  const [produits,    setProduits]    = useState<ProductFlat[]>([]);
+  const [categories,  setCategories]  = useState<CategorieMini[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [error,       setError]       = useState<string | null>(null);
 
-  const filtered = allProducts.filter((p) => {
-    if (searchTerm) {
-      const sl = searchTerm.toLowerCase();
-      if (!p.name.toLowerCase().includes(sl) && !p.description?.toLowerCase().includes(sl) && !(p.subName ?? "").toLowerCase().includes(sl) && !(p.catName ?? "").toLowerCase().includes(sl)) return false;
-    }
-    if (selectedId) {
-      const compositeId = `${p.divisionId}__${p.catId}`;
-      if (p.catId !== selectedId && p.subId !== selectedId && compositeId !== selectedId) return false;
-    }
-    return true;
-  });
-
-  const handleGammeSwitch = (g: "pro" | "garden") => {
-    setGammeId(g); setSelectedId(null); setSearchTerm("");
-  };
-
+  // ── Lecture URL params ────────────────────────────────────────────────────
   useEffect(() => {
     const g = searchParams.get("division");
     if (g === "pro" || g === "garden") setGammeId(g);
-    const c = searchParams.get("category");
-    if (c) setSelectedId(c);
+    const c = searchParams.get("cat") ?? searchParams.get("category");
+    if (c) setSelectedCatSlug(c);
   }, [searchParams]);
 
-  const selectedLabel = (() => {
-    if (!selectedId) return null;
-    for (const div of tree) {
-      for (const cat of div.cats) {
-        if (cat.id === selectedId) return cat.label;
-        for (const sub of cat.subs) { if (sub.id === selectedId) return sub.label; }
+  // ── Fetch données ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+
+    const prodUrl = new URL(`${API_BASE}/produits`);
+    prodUrl.searchParams.set("limit", "200");
+    prodUrl.searchParams.set("division", gammeId);
+
+    const catUrl = new URL(`${API_BASE}/admin/categories`);
+    catUrl.searchParams.set("limit", "100");
+
+    Promise.all([
+      fetch(prodUrl.toString()).then(r => r.json()),
+      fetch(catUrl.toString()).then(r => r.json()).catch(() => ({ success:false, data:[] })),
+    ]).then(([prodsRes, catsRes]) => {
+      if (prodsRes.success && prodsRes.data) {
+        const fertiProds = (prodsRes.data as ProduitAPI[]).filter(p => p.marque?.slug === "fertivert");
+        setProduits(fertiProds.map(toFlat));
+      } else {
+        setError(prodsRes.error ?? "Erreur chargement produits");
       }
-    }
-    return null;
-  })();
+      if (catsRes.success && catsRes.data) {
+        setCategories(catsRes.data as CategorieMini[]);
+      }
+    }).catch(() => setError("Impossible de joindre le serveur — vérifiez le backend"))
+      .finally(() => setLoading(false));
+  }, [gammeId]);
+
+  // ── Filtrage ──────────────────────────────────────────────────────────────
+  const filtered = useMemo(() => {
+    return produits.filter(p => {
+      if (searchTerm) {
+        const sl = searchTerm.toLowerCase();
+        if (!p.name.toLowerCase().includes(sl) && !p.description?.toLowerCase().includes(sl) && !(p.catName ?? "").toLowerCase().includes(sl)) return false;
+      }
+      if (selectedCatSlug) {
+        if (p.catId !== selectedCatSlug && p._raw.categorie?.parent?.slug !== selectedCatSlug) return false;
+      }
+      return true;
+    });
+  }, [produits, selectedCatSlug, searchTerm]);
+
+  const fv = FV[gammeId];
+
+  const handleGammeSwitch = (g: "pro" | "garden") => {
+    setGammeId(g); setSelectedCatSlug(null); setSearchTerm("");
+  };
+
+  const selectedLabel = useMemo(() => {
+    if (!selectedCatSlug) return null;
+    return categories.find(c => c.slug === selectedCatSlug)?.nom ?? null;
+  }, [selectedCatSlug, categories]);
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: SITE.bg }}>
+    <div className="min-h-screen" style={{ backgroundColor:SITE.bg }}>
 
-      <HeroSection locale={locale} gammeId={gammeId} onGammeSwitch={handleGammeSwitch} tree={tree} onCatSelect={setSelectedId} selectedId={selectedId} />
+      {/* ── Hero ── */}
+      <HeroSection
+        locale={locale} gammeId={gammeId} onGammeSwitch={handleGammeSwitch}
+        categories={categories} onCatSelect={setSelectedCatSlug} selectedCatSlug={selectedCatSlug}
+      />
 
+      {/* ── Corps ── */}
       <div className="max-w-7xl mx-auto px-4 lg:px-6 py-7">
         <div className="flex gap-6 items-start">
 
+          {/* Sidebar desktop */}
           <Sidebar
             gammeId={gammeId} onGammeSwitch={handleGammeSwitch}
-            tree={tree} selectedId={selectedId} onSelect={setSelectedId}
-            totalCount={allProducts.length} filteredCount={filtered.length}
+            categories={categories} selectedCatSlug={selectedCatSlug} onSelect={setSelectedCatSlug}
+            totalCount={produits.length} filteredCount={filtered.length}
           />
 
           <div className="flex-1 min-w-0">
+            {/* Barre contrôle */}
+            <div className="rounded-2xl px-4 py-3 mb-5 flex flex-wrap gap-3 items-center"
+              style={{ background:SITE.surface, boxShadow:"0 1px 8px rgba(0,0,0,0.06)", border:`1px solid ${SITE.border}` }}>
 
-            {/* Barre contrôle — blanc comme le reste du site */}
-            <div
-              className="rounded-2xl px-4 py-3 mb-5 flex flex-wrap gap-3 items-center"
-              style={{ background: SITE.surface, boxShadow: "0 1px 8px rgba(0,0,0,0.06)", border: `1px solid ${SITE.border}` }}
-            >
-              <button
-                onClick={() => setMobileSidebarOpen(true)}
-                className="lg:hidden flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-bold border transition-colors"
-                style={{ borderColor: hexToRgba(fv.mid, 0.25), color: fv.dark }}
-              >
-                <FunnelIcon className="w-4 h-4" />
-                Filtres
-                {selectedId && <span className="w-2 h-2 rounded-full" style={{ background: fv.accent }} />}
+              <button onClick={() => setMobileSidebarOpen(true)}
+                className="lg:hidden flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] font-bold border"
+                style={{ borderColor:hexToRgba(fv.mid,0.25), color:fv.dark }}>
+                <FunnelIcon className="w-4 h-4" /> Filtres
+                {selectedCatSlug && <span className="w-2 h-2 rounded-full" style={{ background:fv.accent }} />}
               </button>
 
               {selectedLabel && (
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm" style={{ background: hexToRgba(fv.accent, 0.1), color: fv.dark, border: `1px solid ${hexToRgba(fv.accent, 0.2)}` }}>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm"
+                  style={{ background:hexToRgba(fv.accent,0.1), color:fv.dark, border:`1px solid ${hexToRgba(fv.accent,0.2)}` }}>
                   <span className="font-bold">{selectedLabel}</span>
-                  <button onClick={() => setSelectedId(null)} className="ml-1 w-4 h-4 rounded-full flex items-center justify-center hover:opacity-70" style={{ background: hexToRgba(fv.mid, 0.2) }}>
-                    <XMarkIcon className="w-2.5 h-2.5" style={{ color: fv.dark }} />
+                  <button onClick={() => setSelectedCatSlug(null)} className="ml-1 w-4 h-4 rounded-full flex items-center justify-center hover:opacity-70"
+                    style={{ background:hexToRgba(fv.mid,0.2) }}>
+                    <XMarkIcon className="w-2.5 h-2.5" style={{ color:fv.dark }} />
                   </button>
                 </div>
               )}
@@ -613,12 +794,10 @@ export default function FertivertPage() {
 
               <div className="relative">
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
                   placeholder="Rechercher un produit…"
                   className="pl-9 pr-8 py-2 rounded-xl text-[13px] font-medium outline-none transition-all border"
-                  style={{ width: searchTerm ? 220 : 190, borderColor: searchTerm ? fv.mid : SITE.border, background: SITE.bg, color: SITE.textDark }}
-                />
+                  style={{ width:searchTerm?220:190, borderColor:searchTerm?fv.mid:SITE.border, background:SITE.bg, color:SITE.textDark }} />
                 {searchTerm && (
                   <button onClick={() => setSearchTerm("")} className="absolute right-2.5 top-1/2 -translate-y-1/2">
                     <XMarkIcon className="w-3.5 h-3.5 text-gray-400" />
@@ -626,53 +805,68 @@ export default function FertivertPage() {
                 )}
               </div>
 
-              <span className="text-[13px] font-bold px-3 py-2 rounded-xl" style={{ background: hexToRgba(fv.mid, 0.07), color: fv.dark }}>
-                {filtered.length} produit{filtered.length > 1 ? "s" : ""}
+              <span className="text-[13px] font-bold px-3 py-2 rounded-xl" style={{ background:hexToRgba(fv.mid,0.07), color:fv.dark }}>
+                {loading ? "…" : `${filtered.length} produit${filtered.length>1?"s":""}`}
               </span>
 
-              <div className="flex gap-0.5 p-1 rounded-xl" style={{ background: "#f3f4f6" }}>
-                {(["grid", "list"] as const).map((m) => (
-                  <button key={m} onClick={() => setViewMode(m)} className="p-1.5 rounded-lg transition-all" style={{ background: viewMode === m ? fv.mid : "transparent", color: viewMode === m ? "white" : "#9ca3af" }}>
-                    {m === "grid" ? <Squares2X2Icon className="w-4 h-4" /> : <ListBulletIcon className="w-4 h-4" />}
+              <div className="flex gap-0.5 p-1 rounded-xl" style={{ background:"#f3f4f6" }}>
+                {(["grid","list"] as const).map(m => (
+                  <button key={m} onClick={() => setViewMode(m)} className="p-1.5 rounded-lg transition-all"
+                    style={{ background:viewMode===m?fv.mid:"transparent", color:viewMode===m?"white":"#9ca3af" }}>
+                    {m==="grid" ? <Squares2X2Icon className="w-4 h-4" /> : <ListBulletIcon className="w-4 h-4" />}
                   </button>
                 ))}
               </div>
             </div>
 
+            {/* Loading */}
+            {loading && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="h-64 rounded-2xl bg-gray-100 animate-pulse" />
+                ))}
+              </div>
+            )}
+
+            {/* Erreur */}
+            {error && !loading && (
+              <div className="text-center py-20 rounded-2xl" style={{ background:SITE.surface, border:`1px solid ${SITE.border}` }}>
+                <p className="text-red-500 font-semibold mb-2">⚠️ {error}</p>
+                <p className="text-gray-400 text-sm">Vérifiez que le backend tourne sur le port 4000.</p>
+              </div>
+            )}
+
             {/* Produits */}
-            <AnimatePresence mode="wait">
-              {filtered.length > 0 ? (
-                <motion.div
-                  key={`${viewMode}-${gammeId}-${selectedId}`}
-                  initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                  transition={{ duration: 0.18 }}
-                  className={viewMode === "grid" ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4" : "flex flex-col gap-3"}
-                >
-                  {filtered.map((product) => (
-                    <ProductCardPremium key={product.id} product={product} accentColor={fv.mid} locale={locale} />
-                  ))}
-                </motion.div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                  className="text-center py-24 rounded-2xl"
-                  style={{ background: SITE.surface, border: `1px solid ${SITE.border}` }}
-                >
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: hexToRgba(fv.mid, 0.08) }}>
-                    <MagnifyingGlassIcon className="w-7 h-7" style={{ color: hexToRgba(fv.mid, 0.4) }} />
-                  </div>
-                  <h3 className="text-base font-bold mb-2" style={{ color: SITE.textDark }}>Aucun produit trouvé</h3>
-                  <p className="text-sm mb-5" style={{ color: SITE.textLight }}>Modifiez vos critères de recherche</p>
-                  <button
-                    onClick={() => { setSelectedId(null); setSearchTerm(""); }}
-                    className="px-6 py-2.5 rounded-xl text-sm font-bold text-white hover:opacity-90 transition-opacity"
-                    style={{ background: fv.mid }}
-                  >
-                    Réinitialiser
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {!loading && !error && (
+              <AnimatePresence mode="wait">
+                {filtered.length > 0 ? (
+                  <motion.div
+                    key={`${viewMode}-${gammeId}-${selectedCatSlug}`}
+                    initial={{ opacity:0, y:6 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}
+                    transition={{ duration:0.18 }}
+                    className={viewMode==="grid" ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4" : "flex flex-col gap-3"}>
+                    {filtered.map(product => (
+                      <ProductCardPremium key={product.id} product={product} accentColor={fv.mid} locale={locale} />
+                    ))}
+                  </motion.div>
+                ) : (
+                  <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
+                    className="text-center py-24 rounded-2xl"
+                    style={{ background:SITE.surface, border:`1px solid ${SITE.border}` }}>
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background:hexToRgba(fv.mid,0.08) }}>
+                      <MagnifyingGlassIcon className="w-7 h-7" style={{ color:hexToRgba(fv.mid,0.4) }} />
+                    </div>
+                    <h3 className="text-base font-bold mb-2" style={{ color:SITE.textDark }}>Aucun produit trouvé</h3>
+                    <p className="text-sm mb-5" style={{ color:SITE.textLight }}>Modifiez vos critères de recherche</p>
+                    <button onClick={() => { setSelectedCatSlug(null); setSearchTerm(""); }}
+                      className="px-6 py-2.5 rounded-xl text-sm font-bold text-white hover:opacity-90"
+                      style={{ background:fv.mid }}>
+                      Réinitialiser
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            )}
           </div>
         </div>
       </div>
@@ -681,30 +875,24 @@ export default function FertivertPage() {
       <AnimatePresence>
         {mobileSidebarOpen && (
           <>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
               onClick={() => setMobileSidebarOpen(false)}
-              className="fixed inset-0 z-40 lg:hidden"
-              style={{ background: "rgba(0,0,0,0.55)" }}
-            />
+              className="fixed inset-0 z-40 lg:hidden" style={{ background:"rgba(0,0,0,0.55)" }} />
             <motion.div
-              initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 28, stiffness: 260 }}
+              initial={{ x:"-100%" }} animate={{ x:0 }} exit={{ x:"-100%" }}
+              transition={{ type:"spring", damping:28, stiffness:260 }}
               className="fixed inset-y-0 left-0 z-50 w-72 overflow-y-auto lg:hidden p-4"
-              style={{ background: SITE.bg }}
-            >
+              style={{ background:SITE.bg }}>
               <div className="flex items-center justify-between mb-4 pt-2">
-                <span className="text-sm font-black" style={{ color: SITE.textDark }}>Filtres</span>
-                <button onClick={() => setMobileSidebarOpen(false)}>
-                  <XMarkIcon className="w-5 h-5 text-gray-500" />
-                </button>
+                <span className="text-sm font-black" style={{ color:SITE.textDark }}>Filtres</span>
+                <button onClick={() => setMobileSidebarOpen(false)}><XMarkIcon className="w-5 h-5 text-gray-500" /></button>
               </div>
               <Sidebar
                 gammeId={gammeId}
-                onGammeSwitch={(g) => { handleGammeSwitch(g); setMobileSidebarOpen(false); }}
-                tree={tree} selectedId={selectedId}
-                onSelect={(id) => { setSelectedId(id); setMobileSidebarOpen(false); }}
-                totalCount={allProducts.length} filteredCount={filtered.length}
+                onGammeSwitch={g => { handleGammeSwitch(g); setMobileSidebarOpen(false); }}
+                categories={categories} selectedCatSlug={selectedCatSlug}
+                onSelect={s => { setSelectedCatSlug(s); setMobileSidebarOpen(false); }}
+                totalCount={produits.length} filteredCount={filtered.length}
               />
             </motion.div>
           </>

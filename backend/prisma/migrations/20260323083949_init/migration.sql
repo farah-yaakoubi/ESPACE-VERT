@@ -140,7 +140,6 @@ CREATE TABLE `produits_images` (
 
     PRIMARY KEY (`id_imgp`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
 -- CreateTable
 CREATE TABLE `actualites` (
     `id_actualite` INTEGER NOT NULL AUTO_INCREMENT,

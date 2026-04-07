@@ -1,53 +1,25 @@
 "use client";
+/**
+ * app/[locale]/marques/pulvert/page.tsx
+ * Thème : vert + jaune accent — palette Pulvert
+ * VERSION DYNAMIQUE — charge les produits depuis /api/produits?marque=pulvert
+ */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { useLocale } from "next-intl";
 import { PhoneIcon, EnvelopeIcon, MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { getProduits, type ProduitPublic } from "@/lib/api";
 
-const divisions = [
+const DIVISIONS_STATIC = [
   {
     id: "agricole",
     name: "Pulvert Agricole",
     subtitle: "Professionnels de l'Agriculture",
     gradient: "from-[#1D6B2A] to-[#27932F]",
     accent: "#F2C200",
-    categories: [
-      {
-        id: "pulve-dos",
-        name: "Pulvérisateurs à Dos",
-        emoji: "🎒",
-        products: [
-          { id: "pd-12", name: "Pulvert Pro 12L", format: "12L", code: "PV-PD-12", description: "Pulvérisateur à pression constante" },
-          { id: "pd-16", name: "Pulvert Pro 16L", format: "16L", code: "PV-PD-16", description: "Grande capacité, sangle ergonomique" },
-          { id: "pd-20", name: "Pulvert Pro 20L", format: "20L", code: "PV-PD-20", description: "Format professionnel, robuste" },
-          { id: "pd-elec", name: "Pulvert Électrique 16L", format: "16L", code: "PV-PDE-16", description: "Batterie 12V, autonomie 4h" },
-        ],
-      },
-      {
-        id: "pulve-tracteur",
-        name: "Pulvérisateurs sur Tracteur",
-        emoji: "🚜",
-        products: [
-          { id: "pt-400", name: "Pulvert Agri 400L", format: "400L", code: "PV-PT-400", description: "Rampe 6m, pompe centrifuge" },
-          { id: "pt-800", name: "Pulvert Agri 800L", format: "800L", code: "PV-PT-800", description: "Rampe 12m, agitateur hydraulique" },
-          { id: "pt-1500", name: "Pulvert Agri 1500L", format: "1500L", code: "PV-PT-1500", description: "Rampe 18m, GPS ready" },
-          { id: "pt-3000", name: "Pulvert Agri 3000L", format: "3000L", code: "PV-PT-3000", description: "Rampe 24m, section control" },
-        ],
-      },
-      {
-        id: "buses",
-        name: "Buses & Accessoires",
-        emoji: "⚙️",
-        products: [
-          { id: "b-anti", name: "Buse Anti-dérive", format: "TF-VP", code: "PV-B-AD", description: "Réduction dérive 75%" },
-          { id: "b-plat", name: "Buse à Jet Plat", format: "Teejet", code: "PV-B-JP", description: "Répartition homogène" },
-          { id: "filtres", name: "Filtres Inox", format: "50/80 mesh", code: "PV-F-INX", description: "Filtration haute performance" },
-          { id: "manometre", name: "Manomètre Glycérine", format: "0-10 bar", code: "PV-M-GLY", description: "Précision 2.5%" },
-        ],
-      },
-    ],
   },
   {
     id: "garden",
@@ -55,140 +27,214 @@ const divisions = [
     subtitle: "Jardin & Maison",
     gradient: "from-[#1D6B2A] to-[#3CB648]",
     accent: "#F2C200",
-    categories: [
-      {
-        id: "pulve-jardin",
-        name: "Pulvérisateurs Jardin",
-        emoji: "🌿",
-        products: [
-          { id: "pj-1", name: "Garden Spray 1L", format: "1L", code: "PV-PJ-1", description: "Usage domestique, déclencheur confort" },
-          { id: "pj-2", name: "Garden Spray 2L", format: "2L", code: "PV-PJ-2", description: "Buse réglable multi-jets" },
-          { id: "pj-5", name: "Garden Pro 5L", format: "5L", code: "PV-PJ-5", description: "Semi-professionnel, pompe facile" },
-          { id: "pj-elec", name: "Garden Electric 8L", format: "8L", code: "PV-PJE-8", description: "Batterie Li-ion, 6h d'autonomie" },
-        ],
-      },
-      {
-        id: "accessoires-garden",
-        name: "Accessoires",
-        emoji: "🔧",
-        products: [
-          { id: "lance-tel", name: "Lance Télescopique", format: "80-140cm", code: "PV-LT-140", description: "Atteindre les parties hautes" },
-          { id: "kit-buse", name: "Kit 5 Buses", format: "Universel", code: "PV-KB-5", description: "5 jets différents inclus" },
-          { id: "courroie", name: "Sangle Confort", format: "Mousse", code: "PV-SC-M", description: "Anti-fatigue, réglable" },
-        ],
-      },
-    ],
   },
 ];
 
 export default function PulvertPage() {
   const locale = useLocale();
-  const [divKey, setDivKey] = useState<"agricole" | "garden">("agricole");
-  const [selCat, setSelCat] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
 
-  const div = divisions.find((d) => d.id === divKey)!;
-  const accent = div.accent;
+  const [produits,       setProduits]       = useState<ProduitPublic[]>([]);
+  const [activeDivision, setActiveDivision] = useState("agricole");
+  const [activeCategory, setActiveCategory] = useState<string>("");
+  const [search,         setSearch]         = useState("");
+  const [loading,        setLoading]        = useState(true);
 
-  const allProducts = div.categories.flatMap((cat) =>
-    cat.products.map((p) => ({ ...p, catName: cat.name, catEmoji: cat.emoji, catId: cat.id }))
+  useEffect(() => {
+    getProduits({ limit: 200, marque: "pulvert" } as any).then(res => {
+      if (res.success && res.data) setProduits(res.data);
+      setLoading(false);
+    });
+  }, []);
+
+  // Produits filtrés selon la division active
+  const divisionProduits = produits.filter(p =>
+    p.division === activeDivision || p.division === "standard"
   );
 
-  const filtered = allProducts.filter((p) => {
-    const q = search.toLowerCase();
-    const mQ = !q || p.name.toLowerCase().includes(q) || p.code.toLowerCase().includes(q);
-    const mC = !selCat || p.catId === selCat;
-    return mQ && mC;
+  // Catégories disponibles pour cette division
+  const catMap = new Map<string, string>();
+  for (const p of divisionProduits) catMap.set(p.categorie.slug, p.categorie.nom);
+  const categories = Array.from(catMap.entries()).map(([slug, nom]) => ({ slug, nom }));
+
+  const currentCat = activeCategory || categories[0]?.slug || "";
+
+  // Filtrage final
+  const filtered = divisionProduits.filter(p => {
+    const matchCat    = !currentCat || p.categorie.slug === currentCat;
+    const matchSearch = !search || p.nom.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
   });
 
-  return (
-    <div className="min-h-screen bg-[#fffef0]">
-      {/* HERO */}
-      <div className={`bg-gradient-to-br ${div.gradient} text-white`}>
-        <div className="max-w-screen-xl mx-auto px-8 py-12">
-          <p className="text-white/50 text-[11px] font-bold uppercase tracking-widest mb-2">Marque</p>
-          <h1 className="text-4xl font-black mb-1">{div.name}</h1>
-          <p className="text-white/70 mb-8">{div.subtitle} — Pulvérisateurs & Accessoires</p>
-        </div>
-      </div>
+  const currentDiv = DIVISIONS_STATIC.find(d => d.id === activeDivision)!;
 
-      {/* FILTRE */}
-      <div className="bg-white border-b border-gray-200 sticky top-20 z-[100]" style={{ boxShadow: "0 1px 8px rgba(0,0,0,0.06)" }}>
-        <div className="max-w-screen-xl mx-auto px-8">
-          <div className="flex items-center gap-2 py-3 flex-wrap">
-            <button onClick={() => setSelCat(null)}
-              className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${!selCat && !search ? "text-white shadow-md" : "text-gray-500 hover:bg-gray-100"}`}
-              style={!selCat && !search ? { backgroundColor: accent } : {}}>
-              Tous <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ml-1 ${!selCat && !search ? "bg-white/25 text-white" : "bg-gray-100 text-gray-400"}`}>{allProducts.length}</span>
-            </button>
-            <div className="w-px h-5 bg-gray-200 mx-1" />
-            {div.categories.map((cat) => (
-              <button key={cat.id} onClick={() => setSelCat(cat.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${selCat === cat.id ? "text-white shadow-md" : "text-gray-600 hover:bg-gray-100"}`}
-                style={selCat === cat.id ? { backgroundColor: accent } : {}}>
-                <span>{cat.emoji}</span> {cat.name}
-                <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold ${selCat === cat.id ? "bg-white/25 text-white" : "bg-gray-100 text-gray-400"}`}>{cat.products.length}</span>
+  return (
+    <div style={{ background: "#fafffe", minHeight: "100vh" }}>
+
+      {/* HERO */}
+      <section className={`bg-gradient-to-br ${currentDiv?.gradient ?? "from-[#1D6B2A] to-[#3CB648]"}`}
+        style={{ position: "relative", overflow: "hidden", padding: "6rem 2rem 5.5rem" }}>
+        <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(rgba(255,255,255,0.07) 1px,transparent 1px)", backgroundSize: "28px 28px", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: -1, left: 0, right: 0 }}>
+          <svg viewBox="0 0 1440 48" style={{ width: "100%", height: 48, display: "block" }} preserveAspectRatio="none">
+            <path d="M0,48L1440,48L1440,14C1080,44,720,2,360,26C180,38,90,12,0,22Z" fill="#fafffe" />
+          </svg>
+        </div>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <motion.div initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65 }} style={{ maxWidth: 700 }}>
+            <span style={{ display: "inline-block", background: "rgba(255,255,255,0.18)", backdropFilter: "blur(8px)", color: "white", padding: "5px 16px", borderRadius: 99, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 22, border: "1px solid rgba(255,255,255,0.3)" }}>
+              🌿 Pulvert — Protection des Cultures
+            </span>
+            <h1 style={{ fontSize: "clamp(2.2rem,5vw,3.6rem)", fontWeight: 900, color: "white", lineHeight: 1.08, letterSpacing: "-0.025em", marginBottom: 18, textShadow: "0 2px 12px rgba(0,0,0,0.2)" }}>
+              Équipements de<br /><span style={{ color: currentDiv?.accent ?? "#F2C200" }}>Pulvérisation</span>
+            </h1>
+            <p style={{ fontSize: "1.02rem", color: "rgba(255,255,255,0.85)", lineHeight: 1.76, marginBottom: 32, maxWidth: 560 }}>
+              Gamme complète de pulvérisateurs agricoles et de jardin. Performance, durabilité et précision pour tous vos travaux de traitement phytosanitaire.
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+              <Link href={`/${locale}/contact`} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 24px", background: "white", color: "#1D6B2A", fontWeight: 700, borderRadius: 11, textDecoration: "none" }}>
+                Demander un devis →
+              </Link>
+              <Link href={`/${locale}/activites/pulverisation`} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 24px", background: "rgba(255,255,255,0.15)", color: "white", fontWeight: 600, borderRadius: 11, textDecoration: "none", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.3)" }}>
+                Nos services
+              </Link>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* SÉLECTEUR DIVISION */}
+      <section style={{ padding: "2rem 2rem 0", background: "white" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+          <div style={{ display: "flex", gap: 10, borderBottom: "2px solid #e8f0e9", paddingBottom: 0 }}>
+            {DIVISIONS_STATIC.map(div => (
+              <button key={div.id}
+                onClick={() => { setActiveDivision(div.id); setActiveCategory(""); setSearch(""); }}
+                style={{
+                  padding: "12px 24px", fontWeight: 700, fontSize: "0.9rem", border: "none", cursor: "pointer", borderRadius: "10px 10px 0 0", transition: "all .2s",
+                  background: activeDivision === div.id ? "#1D6B2A" : "transparent",
+                  color:      activeDivision === div.id ? "white" : "#4a6b4e",
+                  borderBottom: activeDivision === div.id ? "2px solid #1D6B2A" : "none",
+                }}>
+                {div.name}
               </button>
             ))}
-            <div className="ml-auto relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input type="text" placeholder="Rechercher…" value={search} onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm w-48 outline-none focus:w-60 transition-all"
-                onFocus={(e) => (e.target.style.borderColor = accent)} onBlur={(e) => (e.target.style.borderColor = "")} />
-              {search && <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400"><XMarkIcon className="w-3.5 h-3.5" /></button>}
+          </div>
+        </div>
+      </section>
+
+      {/* CATALOGUE */}
+      <section style={{ padding: "2rem 2rem 5rem", background: "white" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+
+          {/* Barre filtres */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 28, alignItems: "center" }}>
+            {/* Recherche */}
+            <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
+              <MagnifyingGlassIcon style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", width: 16, height: 16, color: "#4a6b4e" }} />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un produit..."
+                style={{ width: "100%", padding: "10px 12px 10px 36px", borderRadius: 11, border: "1.5px solid #e0e8e1", fontSize: "0.85rem", outline: "none", background: "#f8fef8" }} />
+              {search && (
+                <button onClick={() => setSearch("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer" }}>
+                  <XMarkIcon style={{ width: 16, height: 16, color: "#4a6b4e" }} />
+                </button>
+              )}
+            </div>
+            {/* Catégories */}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <button onClick={() => setActiveCategory("")}
+                style={{ padding: "8px 16px", borderRadius: 99, fontSize: "0.8rem", fontWeight: 700, border: "1.5px solid", cursor: "pointer", background: !currentCat ? "#1D6B2A" : "white", color: !currentCat ? "white" : "#1D6B2A", borderColor: "#1D6B2A" }}>
+                Tous
+              </button>
+              {categories.map(cat => (
+                <button key={cat.slug} onClick={() => setActiveCategory(cat.slug)}
+                  style={{ padding: "8px 16px", borderRadius: 99, fontSize: "0.8rem", fontWeight: 700, border: "1.5px solid", cursor: "pointer", background: currentCat === cat.slug ? "#1D6B2A" : "white", color: currentCat === cat.slug ? "white" : "#1D6B2A", borderColor: "#1D6B2A" }}>
+                  {cat.nom}
+                </button>
+              ))}
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* GRILLE */}
-      <div className="max-w-screen-xl mx-auto px-8 py-8">
-        <p className="text-sm text-gray-500 mb-6"><span className="font-black text-gray-900 text-2xl">{filtered.length}</span> produit{filtered.length > 1 ? "s" : ""}</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtered.map((p) => (
-            <motion.div key={p.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all p-5 flex flex-col gap-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-gray-900 text-sm leading-snug">{p.name}</h3>
-                  <p className="text-[11px] font-mono text-gray-400 mt-0.5">{p.code}</p>
-                </div>
-                <span className="flex-shrink-0 text-[11px] font-black text-white px-3 py-1.5 rounded-lg" style={{ backgroundColor: accent }}>{p.format}</span>
-              </div>
-              <div className="flex gap-1.5 flex-wrap">
-                <span className="text-[11px] px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full font-medium">{p.catEmoji} {p.catName}</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed flex-1">{p.description}</p>
-              <div className="flex gap-2 pt-1">
-                <a href="tel:+21671333858" className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-white rounded-xl hover:opacity-90 transition-opacity" style={{ backgroundColor: accent }}>
-                  <PhoneIcon className="w-3.5 h-3.5" /> Appeler
-                </a>
-                <Link href={`/${locale}/contact?product=${encodeURIComponent(p.name)}`}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold rounded-xl border-2 hover:bg-gray-50 transition-all"
-                  style={{ borderColor: accent, color: accent }}>
-                  <EnvelopeIcon className="w-3.5 h-3.5" /> Devis
-                </Link>
-              </div>
-            </motion.div>
-          ))}
+          {/* Grille produits */}
+          {loading ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 16 }}>
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} style={{ background: "#f8fef8", borderRadius: 16, padding: "1.25rem", border: "1.5px solid #e0e8e1", height: 180, animation: "pulse 1.5s infinite" }} />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "4rem", color: "#4a6b4e" }}>
+              <p style={{ fontSize: "1rem", fontWeight: 600 }}>Aucun produit trouvé.</p>
+              <button onClick={() => { setSearch(""); setActiveCategory(""); }} style={{ marginTop: 12, padding: "8px 20px", background: "#1D6B2A", color: "white", border: "none", borderRadius: 10, cursor: "pointer", fontWeight: 700 }}>
+                Réinitialiser
+              </button>
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div key={activeDivision + currentCat + search} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 16 }}>
+                {filtered.map((p, i) => {
+                  const img = p.images?.[0];
+                  return (
+                    <motion.div key={p.id_produit} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                      style={{ background: "#f8fef8", borderRadius: 16, overflow: "hidden", border: "1.5px solid #e0e8e1", transition: "transform .2s,box-shadow .2s" }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-4px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 24px rgba(29,107,42,0.12)"; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ""; (e.currentTarget as HTMLElement).style.boxShadow = ""; }}>
+                      {img?.url ? (
+                        <div style={{ position: "relative", height: 110, background: "white" }}>
+                          <Image src={img.url} alt={img.alt ?? p.nom} fill className="object-contain p-3" sizes="220px" />
+                        </div>
+                      ) : (
+                        <div style={{ height: 90, background: "linear-gradient(135deg,#dcf5de,#c8eccc)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <span style={{ fontSize: "2rem" }}>🌿</span>
+                        </div>
+                      )}
+                      <div style={{ padding: "1rem" }}>
+                        <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
+                          <span style={{ background: "rgba(29,107,42,0.1)", color: "#1D6B2A", padding: "2px 8px", borderRadius: 99, fontSize: "0.65rem", fontWeight: 800, textTransform: "uppercase" }}>
+                            {p.categorie.nom}
+                          </span>
+                          {p.division !== "standard" && (
+                            <span style={{ background: "#F2C200", color: "#2C1A0E", padding: "2px 8px", borderRadius: 99, fontSize: "0.65rem", fontWeight: 800 }}>
+                              {p.division}
+                            </span>
+                          )}
+                        </div>
+                        <h3 style={{ fontWeight: 800, color: "#002810", fontSize: "0.9rem", marginBottom: 4, lineHeight: 1.3 }}>{p.nom}</h3>
+                        {p.description && (
+                          <p style={{ color: "#4a6b4e", fontSize: "0.75rem", lineHeight: 1.5, marginBottom: 10 }}>
+                            {p.description.replace(/<[^>]+>/g, "").substring(0, 70)}
+                          </p>
+                        )}
+                        <Link href={`/${locale}/produits/${p.slug}`}
+                          style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: "0.75rem", fontWeight: 700, color: "#1D6B2A", textDecoration: "none" }}>
+                          Voir le produit →
+                        </Link>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            </AnimatePresence>
+          )}
         </div>
-      </div>
+      </section>
 
-      {/* FOOTER */}
-      <div className={`bg-gradient-to-br ${div.gradient} text-white py-14 mt-4`}>
-        <div className="max-w-lg mx-auto px-8 text-center">
-          <h2 className="text-2xl font-black mb-2">Besoin d'un conseil technique ?</h2>
-          <p className="text-white/70 text-sm mb-8">Nos spécialistes en pulvérisation vous accompagnent dans vos choix.</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <a href="tel:+21671333858" className="flex items-center justify-center gap-2 px-7 py-3.5 bg-white font-bold rounded-xl text-sm hover:bg-gray-50" style={{ color: accent }}>
-              <PhoneIcon className="w-4 h-4" /> (+216) 71 333 858
+      {/* CTA */}
+      <section style={{ padding: "4rem 2rem", background: "#f0f9f1" }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+          style={{ maxWidth: 540, margin: "0 auto", textAlign: "center" }}>
+          <h2 style={{ fontSize: "clamp(1.4rem,3vw,2rem)", fontWeight: 900, color: "#002810", marginBottom: 10 }}>Besoin d'un équipement de pulvérisation ?</h2>
+          <p style={{ color: "#4a6b4e", marginBottom: 28, lineHeight: 1.65 }}>Nos experts vous conseillent le matériel adapté à votre culture et surface.</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
+            <a href="tel:+21671333858" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 24px", background: "#1D6B2A", color: "white", fontWeight: 700, borderRadius: 11, textDecoration: "none" }}>
+              <PhoneIcon style={{ width: 16, height: 16 }} /> (+216) 71 333 858
             </a>
-            <Link href={`/${locale}/contact`} className="flex items-center justify-center gap-2 px-7 py-3.5 bg-white/10 border-2 border-white/50 text-white font-bold rounded-xl text-sm hover:bg-white/20">
-              <EnvelopeIcon className="w-4 h-4" /> Contactez-nous
+            <Link href={`/${locale}/contact`} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "11px 24px", background: "white", color: "#1D6B2A", fontWeight: 600, borderRadius: 11, textDecoration: "none", border: "1.5px solid #c8eccc" }}>
+              <EnvelopeIcon style={{ width: 16, height: 16 }} /> Nous écrire
             </Link>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </section>
     </div>
   );
 }

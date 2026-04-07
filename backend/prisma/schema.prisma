@@ -144,7 +144,7 @@ model Produit {
 }
 
 model ProduitImage {
-  id_imgp       Int     @id @default(autoincrement())
+  id_imgP       Int     @id @default(autoincrement())
   id_produit    Int
   url           String  @db.VarChar(500)
   alt           String? @db.VarChar(255)

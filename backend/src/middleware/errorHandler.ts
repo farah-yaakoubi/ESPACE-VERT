@@ -1,4 +1,9 @@
+// src/middleware/errorHandler.ts
 import { Request, Response, NextFunction } from "express";
+
+export function notFoundHandler(req: Request, res: Response): void {
+  res.status(404).json({ success: false, error: `Route ${req.method} ${req.path} introuvable` });
+}
 
 export function errorHandler(
   err: Error,
@@ -6,18 +11,6 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
-  console.error("Error:", err.message);
-  res.status(500).json({
-    success: false,
-    error: process.env.NODE_ENV === "production"
-      ? "Erreur serveur interne"
-      : err.message,
-  });
-}
-
-export function notFound(req: Request, res: Response): void {
-  res.status(404).json({
-    success: false,
-    error: `Route non trouvée : ${req.method} ${req.path}`,
-  });
+  console.error("[ErrorHandler]", err);
+  res.status(500).json({ success: false, error: "Erreur serveur interne" });
 }
