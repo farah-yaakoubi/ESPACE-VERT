@@ -1,0 +1,193 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design tokens ──────────────────────────────────────────────────────────── */
+:root {
+  --font-display: "Syne";
+  --font-body:    "DM Sans";
+
+  --ev-50:  #f0fdf4;
+  --ev-100: #dcfce7;
+  --ev-200: #bbf7d0;
+  --ev-300: #86efac;
+  --ev-400: #4ade80;
+  --ev-500: #22c55e;
+  --ev-600: #16a34a;
+  --ev-700: #15803d;
+  --ev-800: #166534;
+  --ev-900: #14532d;
+  --ev-950: #052e16;
+
+  --leaf:   #7dc040;
+  --forest: #0a5c2e;
+  --forest-dk: #073d1e;
+
+  --sand-50:  #faf9f7;
+  --sand-100: #f5f2ed;
+  --sand-200: #ede8e0;
+  --sand-300: #ddd6ca;
+
+  --nav-h: 72px;
+  --transition: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  --radius-card: 1.25rem;
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    font-family: var(--font-body), "DM Sans", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-sand-50 text-gray-800;
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar        { width: 5px; background: var(--sand-100); }
+  ::-webkit-scrollbar-thumb  { background: #86d988; border-radius: 99px; }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display), "Syne", sans-serif;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+  }
+  img { display: block; }
+}
+
+/* ── Component layer ─────────────────────────────────────────────────────────── */
+@layer components {
+
+  /* Container */
+  .container-ev {
+    @apply mx-auto px-4 sm:px-6 lg:px-8;
+    max-width: 1200px;
+  }
+
+  /* Sections */
+  .section    { @apply py-16 md:py-24; }
+  .section-sm { @apply py-10 md:py-14; }
+
+  /* Eyebrow label */
+  .eyebrow {
+    @apply text-xs font-bold tracking-[.16em] uppercase;
+    color: var(--leaf);
+    font-family: var(--font-display), sans-serif;
+  }
+
+  /* Headings */
+  .h-display {
+    font-family: var(--font-display), sans-serif;
+    @apply text-4xl md:text-5xl lg:text-6xl font-extrabold;
+    letter-spacing: -0.03em;
+  }
+  .h-section {
+    font-family: var(--font-display), sans-serif;
+    @apply text-3xl md:text-4xl font-bold;
+  }
+  .h-card {
+    font-family: var(--font-display), sans-serif;
+    @apply text-lg font-semibold leading-snug;
+  }
+
+  /* ── Buttons ──────────────────────────────────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-semibold
+           rounded-xl px-5 py-2.5 text-sm transition-all duration-200
+           select-none disabled:opacity-50 disabled:cursor-not-allowed;
+    font-family: var(--font-display), sans-serif;
+  }
+  .btn-sm  { @apply px-3.5 py-1.5 text-xs; }
+  .btn-lg  { @apply px-6 py-3 text-base; }
+
+  .btn-primary {
+    @apply btn bg-ev-700 text-white hover:bg-ev-800
+           shadow-[0_4px_24px_rgba(22,163,74,.25)]
+           hover:shadow-[0_8px_40px_rgba(22,163,74,.35)]
+           hover:-translate-y-px active:translate-y-0;
+  }
+  .btn-outline {
+    @apply btn border-2 border-ev-700 text-ev-700 hover:bg-ev-50 active:bg-ev-100;
+  }
+  .btn-ghost {
+    @apply btn text-ev-700 hover:bg-ev-50;
+  }
+  .btn-loading {
+    @apply opacity-70 pointer-events-none;
+  }
+
+  /* ── Cards ────────────────────────────────────────────────────────────────── */
+  .card {
+    @apply bg-white rounded-[var(--radius-card)] border border-sand-200;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.04);
+    transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
+  }
+  .card-hover:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,.08), 0 12px 32px rgba(0,0,0,.06);
+    @apply border-ev-200 -translate-y-1;
+  }
+
+  /* ── Form fields ──────────────────────────────────────────────────────────── */
+  .field {
+    @apply w-full rounded-xl border border-sand-200 bg-white px-4 py-2.5 text-sm text-gray-900
+           placeholder:text-gray-400 outline-none
+           focus:border-ev-400 focus:ring-2 focus:ring-ev-400/20
+           transition-colors duration-150;
+  }
+  .field-error { @apply border-red-400 focus:ring-red-400/20; }
+  .field-label { @apply block text-sm font-medium text-gray-700 mb-1.5; }
+  .field-hint  { @apply text-xs text-red-500 mt-1; }
+
+  /* ── Skeleton shimmer ─────────────────────────────────────────────────────── */
+  .skeleton {
+    @apply rounded-lg bg-sand-200 animate-[shimmer_1.5s_infinite];
+    background: linear-gradient(90deg, var(--sand-100) 25%, var(--sand-200) 50%, var(--sand-100) 75%);
+    background-size: 200% 100%;
+  }
+
+  /* ── Utility helpers ──────────────────────────────────────────────────────── */
+  .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+}
+
+/* ── Animations ─────────────────────────────────────────────────────────────── */
+@keyframes shimmer    { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes fadeUp     { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes fadeIn     { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideRight { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+@keyframes float      { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+@keyframes pulse-leaf {
+  0%,100% { box-shadow: 0 0 0 0 rgba(125,192,64,.35); }
+  50%      { box-shadow: 0 0 0 10px rgba(125,192,64,0); }
+}
+
+.animate-fade-up    { animation: fadeUp    .55s ease both; }
+.animate-fade-in    { animation: fadeIn    .45s ease both; }
+.animate-slide-r    { animation: slideRight .4s ease both; }
+.animate-float      { animation: float     5s ease-in-out infinite; }
+.delay-75           { animation-delay: 75ms; }
+.delay-150          { animation-delay: 150ms; }
+.delay-225          { animation-delay: 225ms; }
+
+/* ── Badges ──────────────────────────────────────────────────────────────────── */
+@layer components {
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+    font-family: var(--font-display), sans-serif;
+  }
+  .badge-green  { @apply bg-ev-100  text-ev-800;  }
+  .badge-sand   { @apply bg-sand-200 text-gray-700; }
+  .badge-matar  { @apply bg-sky-100 text-sky-800;  }
+}
+
+/* ── Pulse animation for leaf badge ────────────────────────────────────────── */
+@keyframes pulse-leaf {
+  0%,100% { box-shadow: 0 0 0 0 rgba(125,192,64,.4);  }
+  50%      { box-shadow: 0 0 0 8px rgba(125,192,64,0); }
+}

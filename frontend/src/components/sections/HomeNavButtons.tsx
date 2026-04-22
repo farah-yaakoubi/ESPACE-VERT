@@ -1,0 +1,159 @@
+"use client";
+// HomeNavButtons — adapted from reference (no next-intl)
+
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { useState } from "react";
+import Image from "next/image";
+import { ArrowRight } from "lucide-react";
+
+const GREEN_DARK = "#0a6030";
+const GREEN_MAIN = "#7dc040";
+const GREEN_LIME = "#4a9060";
+
+const ChevronRight = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 18l6-6-6-6"/>
+  </svg>
+);
+
+const ACTIVITES = [
+  { href:"/activites/semences-et-plants",       label:"Semences & Plants",       fallback:"linear-gradient(170deg,#0a6030 0%,#2d6e1a 55%,#4a8f2a 100%)" },
+  { href:"/activites/irrigation",               label:"Irrigation",               fallback:"linear-gradient(170deg,#c8e8f0 0%,#a0d4e4 55%,#4ba8d8 100%)" },
+  { href:"/activites/fertilisation",            label:"Fertilisation",            fallback:"linear-gradient(170deg,#daf0dc 0%,#b8e8c0 55%,#7dc040 100%)" },
+  { href:"/activites/machinisme-et-jardinage",  label:"Machinisme & Jardinage",  fallback:"linear-gradient(170deg,#fde8c4 0%,#f8c890 55%,#e8a060 100%)" },
+  { href:"/activites/pulverisation",            label:"Pulvérisation",            fallback:"linear-gradient(170deg,#e6f7e8 0%,#c8eccc 55%,#7dc040 100%)" },
+];
+
+const MARQUES = [
+  { href:"/marques/fertivert", label:"Fertivert", sub:"Pro & Garden",          desc:"Engrais organiques & biostimulants",   photo:"/logos/LOGO_FERTiVERT_white.png", fallback:"linear-gradient(135deg,#e6f7e8 0%,#0a6030 50%,#2d6e1a 100%)", accent:GREEN_MAIN, isLogo:true },
+  { href:"/marques/pulvert",   label:"Pulvert",   sub:"Agricole & Garden",     desc:"Pulvérisation & équipements",          photo:"/images/marques/pulvert-bg.jpg",  fallback:"linear-gradient(135deg,#fdfbea 0%,#f4e860 100%)", accent:"#F2C200", isLogo:false },
+  { href:"/marques/matar",     label:"Matar",     sub:"Irrigation & Smart",    desc:"Systèmes d'irrigation connectés",      photo:"/images/marques/matar-bg.jpg",   fallback:"linear-gradient(135deg,#eff8ff 0%,#90d4f0 100%)", accent:"#4BA8D8", isLogo:false },
+];
+
+function ActivityCard({ item, index }: { item: typeof ACTIVITES[0]; index: number }) {
+  const [imgError, setImgError] = useState(false);
+  return (
+    <motion.div
+      initial={{ opacity:0, y:18 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
+      transition={{ delay: index * 0.08, duration:0.55, ease:[0.22,1,0.36,1] }}
+      className="flex-1 min-w-0" style={{ height:"clamp(300px,50vw,500px)" }}>
+      <Link href={item.href} className="group relative block w-full h-full overflow-hidden cursor-pointer">
+        <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-110 will-change-transform">
+          <div className="w-full h-full" style={{ background: item.fallback }} />
+        </div>
+        <div className="absolute inset-0 z-10" style={{ background:"linear-gradient(to top,rgba(10,96,48,0.85) 0%,rgba(10,96,48,0.25) 50%,transparent 85%)" }} />
+        <div className="absolute bottom-0 left-0 right-0 z-20 p-5 flex items-end justify-between">
+          <h3 className="text-white font-black leading-tight drop-shadow" style={{ fontSize:"clamp(14px,1.8vw,22px)" }}>{item.label}</h3>
+          <motion.div className="flex-shrink-0 rounded-full flex items-center justify-center shadow-lg"
+            style={{ width:48, height:48, background:GREEN_MAIN, boxShadow:`0 4px 18px rgba(125,192,64,0.55)` }}
+            whileHover={{ scale:1.18 }} transition={{ type:"spring", stiffness:400, damping:18 }}>
+            <motion.div animate={{ x:[0,5,0] }} transition={{ repeat:Infinity, duration:1.4, ease:"easeInOut", delay:index*0.25 }}>
+              <ChevronRight />
+            </motion.div>
+          </motion.div>
+        </div>
+        <div className="absolute inset-0 z-30 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          style={{ boxShadow:`inset 0 0 0 3px ${GREEN_MAIN}` }} />
+      </Link>
+    </motion.div>
+  );
+}
+
+function BrandCard({ item, index }: { item: typeof MARQUES[0]; index: number }) {
+  const [imgError, setImgError] = useState(false);
+  return (
+    <motion.div
+      initial={{ opacity:0, y:18 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
+      transition={{ delay: 0.1 + index * 0.1, duration:0.5, ease:[0.22,1,0.36,1] }}
+      style={{ height:260 }}>
+      <Link href={item.href} className="group relative block w-full h-full overflow-hidden cursor-pointer">
+        <div className="absolute inset-0 transition-transform duration-700 ease-out group-hover:scale-110 will-change-transform">
+          {item.isLogo ? (
+            <>
+              <div className="w-full h-full" style={{ background: item.fallback }} />
+              <div className="absolute inset-0 flex items-center justify-center p-8">
+                <Image src={item.photo} alt={item.label} width={240} height={120}
+                  className="object-contain w-full max-w-[240px] max-h-[120px]"
+                  style={{ filter:"drop-shadow(0 4px 24px rgba(10,96,48,0.40)) brightness(1.05)" }}
+                  onError={() => setImgError(true)} />
+              </div>
+            </>
+          ) : !imgError ? (
+            <Image src={item.photo} alt={item.label} fill className="object-cover" onError={() => setImgError(true)} sizes="33vw" />
+          ) : (
+            <div className="w-full h-full" style={{ background: item.fallback }} />
+          )}
+        </div>
+        <div className="absolute inset-0 z-10" style={{ background:"linear-gradient(to top,rgba(10,96,48,0.88) 0%,rgba(10,96,48,0.30) 55%,rgba(10,96,48,0.04) 100%)" }} />
+        {index < MARQUES.length - 1 && (
+          <div className="absolute top-0 right-0 bottom-0 z-20 w-px" style={{ background:"rgba(255,255,255,0.20)" }} />
+        )}
+        <div className="absolute bottom-0 left-0 right-0 z-20 p-5 flex items-end justify-between">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-widest mb-0.5" style={{ color: item.accent }}>{item.sub}</p>
+            <h3 className="text-white font-black text-2xl leading-none drop-shadow mb-1">{item.label}</h3>
+            <p className="text-white/55 text-[12px]">{item.desc}</p>
+          </div>
+          <motion.div className="flex-shrink-0 rounded-full flex items-center justify-center shadow-lg"
+            style={{ width:44, height:44, background:item.accent, boxShadow:`0 4px 16px ${item.accent}66` }}
+            whileHover={{ scale:1.12 }} transition={{ type:"spring", stiffness:400, damping:18 }}>
+            <motion.div animate={{ x:[0,5,0] }} transition={{ repeat:Infinity, duration:1.4, ease:"easeInOut", delay:index*0.3 }}>
+              <ChevronRight />
+            </motion.div>
+          </motion.div>
+        </div>
+        <div className="absolute inset-0 z-30 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          style={{ boxShadow:`inset 0 0 0 3px ${item.accent}` }} />
+      </Link>
+    </motion.div>
+  );
+}
+
+export default function HomeNavButtons() {
+  return (
+    <section style={{ background:"#ffffff" }}>
+      {/* Header Activités */}
+      <div className="px-6 pt-12 pb-5 max-w-[1400px] mx-auto flex items-end justify-between">
+        <motion.div initial={{ opacity:0, y:16 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] mb-1" style={{ color:GREEN_LIME }}>Notre expertise</p>
+          <h2 className="text-3xl font-black" style={{ color:"#1a2e1a" }}>
+            Nos activités <span style={{ color:GREEN_DARK }}>agricoles</span>
+          </h2>
+        </motion.div>
+        <Link href="/activites" className="hidden sm:flex items-center gap-2 text-sm font-semibold hover:opacity-70 transition-opacity" style={{ color:GREEN_DARK }}>
+          Voir tout
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+
+      {/* Grille activités plein écran */}
+      <div className="flex" style={{ gap:0 }} id="nos-activites">
+        {ACTIVITES.map((item, i) => (
+          <ActivityCard key={item.href} item={item} index={i} />
+        ))}
+      </div>
+
+      {/* Header Marques */}
+      <div id="nos-marques" className="px-6 pt-12 pb-4 max-w-[1400px] mx-auto flex items-end justify-between">
+        <motion.div initial={{ opacity:0, y:16 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] mb-1" style={{ color:GREEN_LIME }}>Nos marques</p>
+          <h2 className="text-3xl font-black" style={{ color:"#1a2e1a" }}>
+            Trois marques, <span style={{ color:GREEN_DARK }}>une expertise</span>
+          </h2>
+        </motion.div>
+        <Link href="/marques" className="hidden sm:flex items-center gap-2 text-sm font-semibold hover:opacity-70 transition-opacity" style={{ color:GREEN_DARK }}>
+          Voir tout
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+
+      {/* Grille marques */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 pb-12" style={{ gap:0 }}>
+        {MARQUES.map((m, i) => (
+          <BrandCard key={m.href} item={m} index={i} />
+        ))}
+      </div>
+    </section>
+  );
+}

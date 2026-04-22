@@ -10,5 +10,6 @@ rdvPublicRouter.post("/",        ctrl.book);
 export const rdvAdminRouter = Router();
 rdvAdminRouter.use(authenticate);
 rdvAdminRouter.get("/",       ctrl.list);
+rdvAdminRouter.get("/stats",  ctrl.stats);
 rdvAdminRouter.get("/:id",    ctrl.getById);
-rdvAdminRouter.patch("/:id",  ctrl.update);
+rdvAdminRouter.put("/:id",    ctrl.update);

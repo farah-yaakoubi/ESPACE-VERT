@@ -7,6 +7,31 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── ENUMS ────────────────────────────────────────────────────────────────────
+enum DevisStatut {
+  nouveau
+  en_cours
+  traite
+  rejete
+  @@map("devis_statut")
+}
+
+enum RdvStatut {
+  nouveau
+  confirme
+  annule
+  termine
+  @@map("rdv_statut")
+}
+
+enum Division {
+  standard
+  pro
+  garden
+  @@map("division")
+}
+
+// ─── RBAC ─────────────────────────────────────────────────────────────────────
 model Role {
   id_role     Int     @id @default(autoincrement())
   nom         String  @unique @db.VarChar(80)
@@ -24,7 +49,6 @@ model Admin {
   id_role      Int      @default(2)
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
-
   role          Role             @relation(fields: [id_role], references: [id_role])
   actualites    Actualite[]
   devis_traites DevisDemande[]
@@ -32,6 +56,7 @@ model Admin {
   messages_rep  ContactMessage[]
   audit_logs    AuditLog[]
   sessions      SessionAdmin[]
+  @@index([id_role])
   @@map("admins")
 }
 
@@ -43,23 +68,26 @@ model SessionAdmin {
   user_agent    String?  @db.Text
   expires_at    DateTime
   created_at    DateTime @default(now())
-  admin         Admin    @relation(fields: [id_admin], references: [id_admin], onDelete: Cascade)
+  admin Admin @relation(fields: [id_admin], references: [id_admin], onDelete: Cascade)
+  @@index([id_admin])
   @@map("sessions_admin")
 }
 
+// ─── VISITEUR ─────────────────────────────────────────────────────────────────
 model Visiteur {
   id_visiteur    Int      @id @default(autoincrement())
   token_visiteur String   @unique @db.VarChar(128)
   ip_address     String   @db.VarChar(45)
   user_agent     String?  @db.Text
   pays           String?  @db.VarChar(80)
+  region         String?  @db.VarChar(120)
   first_visit    DateTime @default(now())
   last_visit     DateTime @updatedAt
-
-  visites_pages VisitePage[]
-  devis         DevisDemande[]
-  rendez_vous   RendezVous[]
-  messages      ContactMessage[]
+  visites_pages  VisitePage[]
+  search_queries SearchQuery[]
+  devis          DevisDemande[]
+  rendez_vous    RendezVous[]
+  messages       ContactMessage[]
   @@map("visiteurs")
 }
 
@@ -70,10 +98,25 @@ model VisitePage {
   titre       String?  @db.VarChar(255)
   duree       Int      @default(0)
   visited_at  DateTime @default(now())
-  visiteur    Visiteur @relation(fields: [id_visiteur], references: [id_visiteur], onDelete: Cascade)
+  visiteur Visiteur @relation(fields: [id_visiteur], references: [id_visiteur], onDelete: Cascade)
+  @@index([id_visiteur])
+  @@index([visited_at])
   @@map("visites_pages")
 }
 
+model SearchQuery {
+  id_search   Int      @id @default(autoincrement())
+  id_visiteur Int
+  query       String   @db.VarChar(500)
+  nb_results  Int      @default(0)
+  searched_at DateTime @default(now())
+  visiteur Visiteur @relation(fields: [id_visiteur], references: [id_visiteur], onDelete: Cascade)
+  @@index([id_visiteur])
+  @@index([searched_at])
+  @@map("search_queries")
+}
+
+// ─── CATALOGUE ────────────────────────────────────────────────────────────────
 model Marque {
   id_marque   Int         @id @default(autoincrement())
   nom         String      @db.VarChar(120)
@@ -97,27 +140,31 @@ model Activite {
   actif       Boolean     @default(true)
   created_at  DateTime    @default(now())
   categories  Categorie[]
+  produits    Produit[]
   @@map("activites")
 }
 
 model Categorie {
-  id_categorie Int         @id @default(autoincrement())
-  nom          String      @db.VarChar(150)
-  description  String?     @db.Text
-  image        String?     @db.VarChar(500)
-  slug         String      @unique @db.VarChar(180)
+  id_categorie Int      @id @default(autoincrement())
+  nom          String   @db.VarChar(150)
+  description  String?  @db.Text
+  image        String?  @db.VarChar(500)
+  slug         String   @unique @db.VarChar(180)
+  // ← Une catégorie peut appartenir à une marque ET/OU une activité
   id_activite  Int?
   id_marque    Int?
   parent_id    Int?
-  ordre        Int         @default(0)
-  actif        Boolean     @default(true)
-  created_at   DateTime    @default(now())
-
+  ordre        Int      @default(0)
+  actif        Boolean  @default(true)
+  created_at   DateTime @default(now())
   activite  Activite?   @relation(fields: [id_activite], references: [id_activite], onDelete: SetNull)
   marque    Marque?     @relation(fields: [id_marque],   references: [id_marque],   onDelete: SetNull)
   parent    Categorie?  @relation("SousCategories", fields: [parent_id], references: [id_categorie], onDelete: SetNull)
   sous_cats Categorie[] @relation("SousCategories")
   produits  Produit[]
+  @@index([id_activite])
+  @@index([id_marque])
+  @@index([parent_id])
   @@map("categories")
 }
 
@@ -129,17 +176,22 @@ model Produit {
   slug            String   @unique @db.VarChar(220)
   id_categorie    Int
   id_marque       Int
-  division        String   @default("standard") @db.VarChar(20)
+  id_activite     Int?     // ← lien direct optionnel avec activité
+  division        Division @default(standard)
   tags            Json?    @default("[]")
   actif           Boolean  @default(true)
   ordre           Int      @default(0)
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
-
-  categorie Categorie      @relation(fields: [id_categorie], references: [id_categorie])
-  marque    Marque         @relation(fields: [id_marque],    references: [id_marque])
+  categorie Categorie @relation(fields: [id_categorie], references: [id_categorie])
+  marque    Marque    @relation(fields: [id_marque],    references: [id_marque])
+  activite  Activite? @relation(fields: [id_activite],  references: [id_activite], onDelete: SetNull)
   images    ProduitImage[]
   devis     DevisDemande[]
+  @@index([id_categorie])
+  @@index([id_marque])
+  @@index([id_activite])
+  @@index([actif])
   @@map("produits")
 }
 
@@ -150,10 +202,12 @@ model ProduitImage {
   alt           String? @db.VarChar(255)
   ordre         Int     @default(0)
   is_principale Boolean @default(false)
-  produit       Produit @relation(fields: [id_produit], references: [id_produit], onDelete: Cascade)
+  produit Produit @relation(fields: [id_produit], references: [id_produit], onDelete: Cascade)
+  @@index([id_produit])
   @@map("produits_images")
 }
 
+// ─── CONTENU ÉDITORIAL ────────────────────────────────────────────────────────
 model Actualite {
   id_actualite Int       @id @default(autoincrement())
   titre        String    @db.VarChar(255)
@@ -165,60 +219,67 @@ model Actualite {
   id_admin     Int?
   created_at   DateTime  @default(now())
   updated_at   DateTime  @updatedAt
-  admin        Admin?    @relation(fields: [id_admin], references: [id_admin], onDelete: SetNull)
+  admin Admin? @relation(fields: [id_admin], references: [id_admin], onDelete: SetNull)
+  @@index([publiee])
   @@map("actualites")
 }
 
 model Faq {
-  id_faq     Int      @id @default(autoincrement())
-  question   String   @db.Text
-  reponse    String   @db.Text
-  categorie  String?  @db.VarChar(120)
-  ordre      Int      @default(0)
-  active     Boolean  @default(true)
-  created_at DateTime @default(now())
+  id_faq           Int      @id @default(autoincrement())
+  question         String   @db.Text
+  reponse          String   @db.Text
+  categorie        String?  @db.VarChar(120)
+  ordre            Int      @default(0)
+  active           Boolean  @default(true)
+  nb_consultations Int      @default(0)
+  created_at       DateTime @default(now())
+  @@index([active])
   @@map("faqs")
 }
 
+// ─── CRM ──────────────────────────────────────────────────────────────────────
 model DevisDemande {
-  id_devis     Int      @id @default(autoincrement())
-  nom          String   @db.VarChar(150)
-  email        String   @db.VarChar(180)
-  telephone    String?  @db.VarChar(30)
-  message      String?  @db.Text
-  statut       String   @default("nouveau") @db.VarChar(20)
-  id_produit   Int?
-  id_visiteur  Int?
-  id_admin     Int?
-  note_interne String?  @db.Text
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
-
+  id_devis      Int         @id @default(autoincrement())
+  nom           String      @db.VarChar(150)
+  email         String      @db.VarChar(180)
+  telephone     String?     @db.VarChar(30)
+  message       String?     @db.Text
+  reponse_admin String?     @db.Text
+  statut        DevisStatut @default(nouveau)
+  id_produit    Int?
+  id_visiteur   Int?
+  id_admin      Int?
+  note_interne  String?     @db.Text
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
   produit  Produit?  @relation(fields: [id_produit],  references: [id_produit],  onDelete: SetNull)
   visiteur Visiteur? @relation(fields: [id_visiteur], references: [id_visiteur], onDelete: SetNull)
   admin    Admin?    @relation(fields: [id_admin],    references: [id_admin],    onDelete: SetNull)
+  @@index([statut])
+  @@index([id_admin])
   @@map("devis_demandes")
 }
 
 model RendezVous {
-  id_rdv         Int      @id @default(autoincrement())
-  nom            String   @db.VarChar(150)
-  email          String   @db.VarChar(180)
-  telephone      String?  @db.VarChar(30)
-  date_souhaitee DateTime @db.Date
-  heure          String?  @db.VarChar(10)
-  objet          String?  @db.VarChar(255)
-  agence         String?  @db.VarChar(120)
-  message        String?  @db.Text
-  statut         String   @default("nouveau") @db.VarChar(20)
+  id_rdv         Int       @id @default(autoincrement())
+  nom            String    @db.VarChar(150)
+  email          String    @db.VarChar(180)
+  telephone      String?   @db.VarChar(30)
+  date_souhaitee DateTime  @db.Date
+  heure          String?   @db.VarChar(10)
+  objet          String?   @db.VarChar(255)
+  agence         String?   @db.VarChar(120)
+  message        String?   @db.Text
+  statut         RdvStatut @default(nouveau)
   id_visiteur    Int?
   id_admin       Int?
-  note_interne   String?  @db.Text
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
-
+  note_interne   String?   @db.Text
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
   visiteur Visiteur? @relation(fields: [id_visiteur], references: [id_visiteur], onDelete: SetNull)
   admin    Admin?    @relation(fields: [id_admin],    references: [id_admin],    onDelete: SetNull)
+  @@index([statut])
+  @@index([date_souhaitee])
   @@map("rendez_vous")
 }
 
@@ -234,12 +295,13 @@ model ContactMessage {
   id_admin    Int?
   created_at  DateTime  @default(now())
   replied_at  DateTime?
-
   visiteur Visiteur? @relation(fields: [id_visiteur], references: [id_visiteur], onDelete: SetNull)
   admin    Admin?    @relation(fields: [id_admin],    references: [id_admin],    onDelete: SetNull)
+  @@index([lu])
   @@map("contact_messages")
 }
 
+// ─── TRAÇABILITÉ ──────────────────────────────────────────────────────────────
 model AuditLog {
   id_log      Int      @id @default(autoincrement())
   id_admin    Int?
@@ -249,6 +311,9 @@ model AuditLog {
   detail      Json?
   ip_address  String?  @db.VarChar(45)
   date_action DateTime @default(now())
-  admin       Admin?   @relation(fields: [id_admin], references: [id_admin], onDelete: SetNull)
+  admin Admin? @relation(fields: [id_admin], references: [id_admin], onDelete: SetNull)
+  @@index([id_admin])
+  @@index([entity_name])
+  @@index([date_action])
   @@map("audit_logs")
 }

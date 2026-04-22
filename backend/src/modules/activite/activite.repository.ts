@@ -1,37 +1,71 @@
-// src/modules/activite/activite.service.ts
-import { activiteRepository } from "./activite.repository";
-import { logAudit } from "../../lib/audit";
+import { prisma } from "../../lib/prisma";
 import { CreateActiviteDto, UpdateActiviteDto } from "./activite.schema";
 
-export const activiteService = {
-  async listPublic() { return activiteRepository.findAllPublic(); },
+export const activiteRepository = {
 
-  async list() { return activiteRepository.findAll(); },
-
-  async getById(id: number) {
-    const a = await activiteRepository.findById(id);
-    if (!a) throw { status: 404, message: "Activité introuvable" };
-    return a;
+  async findAllPublic() {
+    return prisma.activite.findMany({
+      where:   { actif: true },
+      orderBy: { ordre: "asc" },
+      select:  { id_activite: true, nom: true, slug: true, description: true, image: true, ordre: true, actif: true },
+    });
   },
 
-  async create(data: CreateActiviteDto, id_admin: number) {
-    const existing = await activiteRepository.findBySlug(data.slug);
-    if (existing) throw { status: 409, message: "Ce slug est déjà utilisé" };
-    const activite = await activiteRepository.create(data);
-    await logAudit({ id_admin, action: "CREATE", entity_name: "activite", entity_id: activite.id_activite });
-    return activite;
+  async findAll() {
+    return prisma.activite.findMany({
+      orderBy: { ordre: "asc" },
+      include: { _count: { select: { categories: true, produits: true } } },
+    });
   },
 
-  async update(id: number, data: UpdateActiviteDto, id_admin: number) {
-    await activiteService.getById(id);
-    const activite = await activiteRepository.update(id, data);
-    await logAudit({ id_admin, action: "UPDATE", entity_name: "activite", entity_id: id });
-    return activite;
+  // Retourne l'activité avec ses catégories ET ses produits directs
+  async findBySlugPublic(slug: string) {
+    return prisma.activite.findUnique({
+      where: { slug, actif: true } as any,
+      include: {
+        categories: {
+          where:   { actif: true },
+          orderBy: { ordre: "asc" },
+          select:  { id_categorie: true, nom: true, slug: true, description: true, image: true, parent_id: true, id_marque: true },
+        },
+        // ← Produits directement liés via id_activite
+        produits: {
+          where:   { actif: true },
+          orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+          select:  {
+            id_produit: true, nom: true, slug: true, description: true,
+            division: true, tags: true, created_at: true,
+            marque:    { select: { nom: true, slug: true, logo: true } },
+            categorie: { select: { nom: true, slug: true } },
+            images:    { where: { is_principale: true }, take: 1, select: { url: true, alt: true } },
+          },
+        },
+      },
+    });
   },
 
-  async delete(id: number, id_admin: number) {
-    await activiteService.getById(id);
-    await activiteRepository.delete(id);
-    await logAudit({ id_admin, action: "DELETE", entity_name: "activite", entity_id: id });
+  async findById(id_activite: number) {
+    return prisma.activite.findUnique({
+      where:   { id_activite },
+      include: { categories: { orderBy: { ordre: "asc" } } },
+    });
+  },
+
+  async findBySlug(slug: string) {
+    return prisma.activite.findUnique({ where: { slug } });
+  },
+
+  async create(data: CreateActiviteDto) {
+    return prisma.activite.create({
+      data: { ...data, slug: data.slug.toLowerCase(), actif: true },
+    });
+  },
+
+  async update(id_activite: number, data: UpdateActiviteDto) {
+    return prisma.activite.update({ where: { id_activite }, data });
+  },
+
+  async delete(id_activite: number) {
+    return prisma.activite.delete({ where: { id_activite } });
   },
 };

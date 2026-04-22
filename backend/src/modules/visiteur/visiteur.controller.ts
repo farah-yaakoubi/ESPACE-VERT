@@ -1,7 +1,6 @@
-// src/modules/visiteur/visiteur.controller.ts
 import { Request, Response } from "express";
 import { visiteurService } from "./visiteur.service";
-import { TrackSchema, VisiteurQuerySchema } from "./visiteur.schema";
+import { TrackSchema, VisiteurQuerySchema, StatsVisiteurQuerySchema } from "./visiteur.schema";
 import { ok, badRequest, notFound, serverError } from "../../lib/response";
 
 const parseId = (p: string) => { const n = Number(p); return isNaN(n) ? null : n; };
@@ -13,7 +12,7 @@ const handle  = (res: Response, err: unknown) => {
   return serverError(res);
 };
 
-// Public
+// Public — tracking
 export const track = async (req: Request, res: Response) => {
   try {
     const dto        = TrackSchema.parse(req.body);
@@ -30,4 +29,7 @@ export const list    = async (req: Request, res: Response) => {
 };
 export const getById = async (req: Request, res: Response) => {
   try { const id = parseId(req.params.id); if (!id) return badRequest(res, "ID invalide"); ok(res, await visiteurService.getById(id)); } catch (e) { handle(res, e); }
+};
+export const getStats = async (req: Request, res: Response) => {
+  try { const q = StatsVisiteurQuerySchema.parse(req.query); ok(res, await visiteurService.getStats(q)); } catch (e) { handle(res, e); }
 };

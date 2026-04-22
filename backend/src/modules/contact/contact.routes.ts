@@ -8,7 +8,8 @@ contactPublicRouter.post("/", ctrl.send);
 
 export const contactAdminRouter = Router();
 contactAdminRouter.use(authenticate);
-contactAdminRouter.get("/",       ctrl.list);
-contactAdminRouter.get("/:id",    ctrl.getById);
-contactAdminRouter.patch("/:id",  ctrl.update);
-contactAdminRouter.delete("/:id", ctrl.remove);
+contactAdminRouter.get("/",              ctrl.list);
+contactAdminRouter.get("/unread-count",  ctrl.countUnread);
+contactAdminRouter.get("/:id",           ctrl.getById);
+contactAdminRouter.post("/:id/reply",    ctrl.reply);
+contactAdminRouter.delete("/:id",        ctrl.remove);

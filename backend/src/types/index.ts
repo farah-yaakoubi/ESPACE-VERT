@@ -1,6 +1,6 @@
+// src/types/index.ts
 // ══════════════════════════════════════════════════════
-//  src/types/index.ts
-//  Types partagés dans tout le projet
+//  Types partagés — alignés sur les enums Prisma
 // ══════════════════════════════════════════════════════
 
 // ─── JWT ──────────────────────────────────────────────
@@ -15,14 +15,15 @@ export type JwtPayload = {
 export type AuditAction =
   | "LOGIN" | "LOGOUT"
   | "CREATE" | "UPDATE" | "DELETE"
-  | "VIEW";
+  | "VIEW" | "REPLY" | "STATUS_CHANGE";
 
-// ─── Statuts métier ───────────────────────────────────
-export type StatutDevis = "nouveau" | "en_cours" | "traite"  | "rejete";
-export type StatutRdv   = "nouveau" | "confirme" | "annule"  | "termine";
+// ─── Statuts métier (miroir des enums Prisma) ─────────
+export type DevisStatut = "nouveau" | "en_cours" | "traite" | "rejete";
+export type RdvStatut   = "nouveau" | "confirme" | "annule" | "termine";
+export type Division    = "standard" | "pro" | "garden";
 
 // ─── Réponse API standard ─────────────────────────────
-export interface ApiResponse<T = unknown> {
+export interface ApiSuccess<T = unknown> {
   success: true;
   data:    T;
   meta?:   PaginationMeta;
@@ -37,12 +38,6 @@ export interface PaginationMeta {
   total: number;
   page:  number;
   pages: number;
-  limit: number;
-}
-
-// ─── Params pagination communs ────────────────────────
-export interface PaginationParams {
-  page:  number;
   limit: number;
 }
 

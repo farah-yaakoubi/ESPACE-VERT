@@ -1,5 +1,3 @@
-// src/modules/produit/produit.service.ts
-// Logique métier — validation métier, règles, orchestration
 import { produitRepository } from "./produit.repository";
 import { paginate } from "../../lib/response";
 import { logAudit } from "../../lib/audit";
@@ -10,21 +8,18 @@ import {
 
 export const produitService = {
 
-  // ── Public ────────────────────────────────────────────────────
   async listPublic(params: ProduitPublicQueryDto) {
     const { produits, total } = await produitRepository.findAllPublic({
-      page:        params.page,
-      limit:       params.limit,
-      id_marque:   params.id_marque,
+      page:         params.page,
+      limit:        params.limit,
+      id_marque:    params.id_marque,
       id_categorie: params.id_categorie,
-      marque_slug: params.marque,
-      division:    params.division,
-      search:      params.search,
+      id_activite:  params.id_activite, // ← NOUVEAU
+      marque_slug:  params.marque,
+      division:     params.division,
+      search:       params.search,
     });
-    return {
-      data: produits,
-      meta: paginate(total, params.page, params.limit),
-    };
+    return { data: produits, meta: paginate(total, params.page, params.limit) };
   },
 
   async getBySlugPublic(slug: string) {
@@ -33,13 +28,9 @@ export const produitService = {
     return p;
   },
 
-  // ── Admin ─────────────────────────────────────────────────────
   async list(params: ProduitQueryDto) {
     const { produits, total } = await produitRepository.findAll(params);
-    return {
-      data: produits,
-      meta: paginate(total, params.page, params.limit),
-    };
+    return { data: produits, meta: paginate(total, params.page, params.limit) };
   },
 
   async getById(id: number) {
@@ -49,32 +40,59 @@ export const produitService = {
   },
 
   async create(data: CreateProduitDto, id_admin: number) {
-    // Règle : slug unique
     const existing = await produitRepository.findBySlug(data.slug);
     if (existing) throw { status: 409, message: "Ce slug est déjà utilisé" };
 
-    const produit = await produitRepository.create(data);
-    await logAudit({ id_admin, action: "CREATE", entity_name: "produit", entity_id: produit.id_produit });
+    // Si id_activite non fourni → déduire depuis la catégorie
+    let payload = { ...data };
+    if (!payload.id_activite && payload.id_categorie) {
+      const { prisma } = await import("../../lib/prisma");
+      const cat = await prisma.categorie.findUnique({ where: { id_categorie: payload.id_categorie } });
+      if (cat?.id_activite) payload.id_activite = cat.id_activite;
+    }
+
+    const produit = await produitRepository.create(payload);
+    await logAudit({
+      id_admin, action: "CREATE", entity_name: "produit",
+      entity_id: produit.id_produit,
+      detail: { nom: data.nom, id_categorie: data.id_categorie, id_marque: data.id_marque },
+    });
     return produit;
   },
 
   async update(id: number, data: UpdateProduitDto, id_admin: number) {
-    await produitService.getById(id); // vérifie existence
+    const before = await produitService.getById(id);
     const produit = await produitRepository.update(id, data);
-    await logAudit({ id_admin, action: "UPDATE", entity_name: "produit", entity_id: id });
+    await logAudit({
+      id_admin, action: "UPDATE", entity_name: "produit", entity_id: id,
+      detail: { before: { nom: before.nom, actif: before.actif }, after: { nom: data.nom, actif: data.actif } },
+    });
     return produit;
   },
 
   async delete(id: number, id_admin: number) {
-    await produitService.getById(id);
+    const before = await produitService.getById(id);
     await produitRepository.delete(id);
-    await logAudit({ id_admin, action: "DELETE", entity_name: "produit", entity_id: id });
+    // Stocker le snapshot AVANT suppression pour historique complet
+    await logAudit({
+      id_admin, action: "DELETE", entity_name: "produit", entity_id: id,
+      detail: {
+        snapshot: {
+          nom:          before.nom,
+          slug:         before.slug,
+          id_categorie: before.id_categorie,
+          id_marque:    before.id_marque,
+          division:     before.division,
+          actif:        before.actif,
+        },
+      },
+    });
   },
 
   async addImage(id: number, data: AddImageDto, id_admin: number) {
     await produitService.getById(id);
     const image = await produitRepository.addImage(id, data);
-    await logAudit({ id_admin, action: "UPDATE", entity_name: "produit", entity_id: id, detail: { action: "add_image" } });
+    await logAudit({ id_admin, action: "UPDATE", entity_name: "produit", entity_id: id, detail: { action: "add_image", url: data.url } });
     return image;
   },
 

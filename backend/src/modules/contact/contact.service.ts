@@ -3,11 +3,10 @@ import { contactRepository } from "./contact.repository";
 import { paginate } from "../../lib/response";
 import { logAudit } from "../../lib/audit";
 import { prisma } from "../../lib/prisma";
-import { CreateContactDto, UpdateContactDto, ContactQueryDto } from "./contact.schema";
+import { CreateContactDto, ReplyContactDto, ContactQueryDto } from "./contact.schema";
 
 export const contactService = {
 
-  // ── Public ────────────────────────────────────────────────────
   async send(data: CreateContactDto) {
     let id_visiteur: number | undefined;
     if (data.token_visiteur) {
@@ -17,13 +16,12 @@ export const contactService = {
     return contactRepository.create({
       nom:         data.nom.trim(),
       email:       data.email.toLowerCase().trim(),
-      sujet:       data.sujet   ?? null,
-      message:     data.message.trim(),
-      id_visiteur: id_visiteur  ?? null,
+      sujet:       data.sujet ?? null,
+      message:     data.message,
+      id_visiteur: id_visiteur ?? null,
     });
   },
 
-  // ── Admin ─────────────────────────────────────────────────────
   async list(params: ContactQueryDto) {
     const { messages, total } = await contactRepository.findAll(params);
     return { data: messages, meta: paginate(total, params.page, params.limit) };
@@ -35,17 +33,28 @@ export const contactService = {
     return m;
   },
 
-  async update(id: number, data: UpdateContactDto, id_admin: number) {
+  async markRead(id: number, id_admin: number) {
     await contactService.getById(id);
-    const replied_at = data.reponse ? new Date() : undefined;
-    const message = await contactRepository.update(id, { ...data, id_admin, ...(replied_at && { replied_at }) });
-    await logAudit({ id_admin, action: "UPDATE", entity_name: "message", entity_id: id });
-    return message;
+    const m = await contactRepository.markRead(id);
+    await logAudit({ id_admin, action: "UPDATE", entity_name: "contact", entity_id: id, detail: { action: "mark_read" } });
+    return m;
+  },
+
+  async reply(id: number, dto: ReplyContactDto, id_admin: number) {
+    const current = await contactService.getById(id);
+    if (current.reponse) throw { status: 409, message: "Ce message a déjà reçu une réponse" };
+    const m = await contactRepository.reply(id, dto.reponse, id_admin);
+    await logAudit({ id_admin, action: "REPLY", entity_name: "contact", entity_id: id });
+    return m;
   },
 
   async delete(id: number, id_admin: number) {
     await contactService.getById(id);
     await contactRepository.delete(id);
-    await logAudit({ id_admin, action: "DELETE", entity_name: "message", entity_id: id });
+    await logAudit({ id_admin, action: "DELETE", entity_name: "contact", entity_id: id });
+  },
+
+  async countUnread() {
+    return contactRepository.countUnread();
   },
 };

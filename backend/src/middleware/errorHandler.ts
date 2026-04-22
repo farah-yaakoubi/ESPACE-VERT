@@ -6,11 +6,8 @@ export function notFoundHandler(req: Request, res: Response): void {
 }
 
 export function errorHandler(
-  err: Error,
-  _req: Request,
-  res: Response,
-  _next: NextFunction
+  err: Error, _req: Request, res: Response, _next: NextFunction
 ): void {
-  console.error("[ErrorHandler]", err);
+  console.error("[UnhandledError]", err);
   res.status(500).json({ success: false, error: "Erreur serveur interne" });
 }

@@ -1,4 +1,3 @@
-// src/modules/produit/produit.schema.ts
 import { z } from "zod";
 
 export const CreateProduitSchema = z.object({
@@ -8,6 +7,7 @@ export const CreateProduitSchema = z.object({
   fiche_technique: z.string().optional().nullable(),
   id_categorie:    z.number().int().positive(),
   id_marque:       z.number().int().positive(),
+  id_activite:     z.number().int().positive().optional().nullable(), // ← NOUVEAU
   division:        z.enum(["standard", "pro", "garden"]).default("standard"),
   tags:            z.array(z.string()).optional().default([]),
   ordre:           z.number().int().min(0).optional().default(0),
@@ -22,6 +22,7 @@ export const ProduitQuerySchema = z.object({
   limit:         z.coerce.number().int().min(1).max(100).default(20),
   id_marque:     z.coerce.number().int().positive().optional(),
   id_categorie:  z.coerce.number().int().positive().optional(),
+  id_activite:   z.coerce.number().int().positive().optional(), // ← NOUVEAU
   marque:        z.string().optional(),
   division:      z.string().optional(),
   actif:         z.enum(["true","false"]).optional(),
@@ -33,6 +34,7 @@ export const ProduitPublicQuerySchema = z.object({
   limit:         z.coerce.number().int().min(1).max(100).default(20),
   id_marque:     z.coerce.number().int().positive().optional(),
   id_categorie:  z.coerce.number().int().positive().optional(),
+  id_activite:   z.coerce.number().int().positive().optional(), // ← NOUVEAU
   marque:        z.string().optional(),
   division:      z.string().optional(),
   search:        z.string().optional(),
@@ -45,8 +47,8 @@ export const AddImageSchema = z.object({
   is_principale: z.boolean().optional().default(false),
 });
 
-export type CreateProduitDto    = z.infer<typeof CreateProduitSchema>;
-export type UpdateProduitDto    = z.infer<typeof UpdateProduitSchema>;
-export type ProduitQueryDto     = z.infer<typeof ProduitQuerySchema>;
+export type CreateProduitDto      = z.infer<typeof CreateProduitSchema>;
+export type UpdateProduitDto      = z.infer<typeof UpdateProduitSchema>;
+export type ProduitQueryDto       = z.infer<typeof ProduitQuerySchema>;
 export type ProduitPublicQueryDto = z.infer<typeof ProduitPublicQuerySchema>;
-export type AddImageDto         = z.infer<typeof AddImageSchema>;
+export type AddImageDto           = z.infer<typeof AddImageSchema>;

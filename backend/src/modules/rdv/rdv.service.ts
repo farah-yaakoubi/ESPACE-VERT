@@ -1,14 +1,21 @@
 // src/modules/rdv/rdv.service.ts
-import { rdvRepository, CRENEAUX } from "./rdv.repository";
+import { rdvRepository } from "./rdv.repository";
 import { paginate } from "../../lib/response";
 import { logAudit } from "../../lib/audit";
 import { prisma } from "../../lib/prisma";
-import { CreateRdvDto, UpdateRdvDto, RdvQueryDto } from "./rdv.schema";
+import { CreateRdvDto, UpdateRdvDto, RdvQueryDto, RDV_STATUTS } from "./rdv.schema";
+
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  nouveau:  ["confirme", "annule"],
+  confirme: ["termine", "annule"],
+  annule:   [],
+  termine:  [],
+};
 
 export const rdvService = {
 
   getCreneaux() {
-    return CRENEAUX;
+    return rdvRepository.getCreneaux();
   },
 
   async book(data: CreateRdvDto) {
@@ -47,9 +54,35 @@ export const rdvService = {
   },
 
   async update(id: number, data: UpdateRdvDto, id_admin: number) {
-    await rdvService.getById(id);
+    const current = await rdvService.getById(id);
+
+    if (data.statut && data.statut !== current.statut) {
+      const allowed = VALID_TRANSITIONS[current.statut as string] ?? [];
+      if (!allowed.includes(data.statut)) {
+        throw {
+          status:  422,
+          message: `Transition invalide : ${current.statut} → ${data.statut}. Autorisées : ${allowed.join(", ") || "aucune"}`,
+        };
+      }
+    }
+
     const rdv = await rdvRepository.update(id, { ...data, id_admin });
-    await logAudit({ id_admin, action: "UPDATE", entity_name: "rdv", entity_id: id, detail: { statut: data.statut } });
+
+    await logAudit({
+      id_admin,
+      action:      data.statut ? "STATUS_CHANGE" : "UPDATE",
+      entity_name: "rdv",
+      entity_id:   id,
+      detail:      { statut_avant: current.statut, statut_apres: data.statut ?? current.statut },
+    });
+
     return rdv;
+  },
+
+  async stats() {
+    const counts = await rdvRepository.countByStatut();
+    return Object.fromEntries(
+      RDV_STATUTS.map(s => [s, counts.find(c => c.statut === s)?._count.statut ?? 0])
+    );
   },
 };

@@ -4,6 +4,7 @@
   "description": "Espace Vert API — Architecture modulaire",
   "main": "dist/index.js",
   "scripts": {
+     "seed": "node seed.js",
     "dev":         "tsx watch src/index.ts",
     "build":       "tsc",
     "start":       "node dist/index.js",
