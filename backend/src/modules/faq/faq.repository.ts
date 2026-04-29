@@ -53,7 +53,7 @@ export const faqRepository = {
       select:   { categorie: true },
       orderBy:  { categorie: "asc" },
     });
-    return rows.map(r => r.categorie).filter(Boolean);
+    return rows.map((r: { categorie: string | null }) => r.categorie).filter(Boolean);
   },
 
   // Top FAQs les plus consultées

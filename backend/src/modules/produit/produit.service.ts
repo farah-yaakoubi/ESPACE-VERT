@@ -90,9 +90,20 @@ export const produitService = {
   },
 
   async addImage(id: number, data: AddImageDto, id_admin: number) {
-    await produitService.getById(id);
-    const image = await produitRepository.addImage(id, data);
-    await logAudit({ id_admin, action: "UPDATE", entity_name: "produit", entity_id: id, detail: { action: "add_image", url: data.url } });
+    const produit = await produitRepository.addImage(id, data);
+    await logAudit({ id_admin, action: "ADD_IMAGE", entity_name: "produit", entity_id: id, detail: { url: data.url } });
+    return produit;
+  },
+
+  async updateImage(id_imgP: number, data: { is_principale?: boolean; alt?: string | null }, id_admin: number) {
+    const image = await produitRepository.updateImage(id_imgP, data);
+    await logAudit({ id_admin, action: "UPDATE_IMAGE", entity_name: "produit_image", entity_id: id_imgP });
+    return image;
+  },
+
+  async setPrincipale(id_produit: number, id_imgP: number, id_admin: number) {
+    const image = await produitRepository.setPrincipale(id_produit, id_imgP);
+    await logAudit({ id_admin, action: "SET_PRINCIPALE", entity_name: "produit_image", entity_id: id_imgP });
     return image;
   },
 

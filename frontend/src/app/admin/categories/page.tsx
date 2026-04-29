@@ -1,25 +1,193 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
-import { adminCategories, adminMarques, adminActivites, type CategorieAdmin, type MarqueAdmin, type ActiviteAdmin } from "@/lib/admin-api";
-import { Plus, Edit2, Trash2, RefreshCw, CheckCircle, XCircle } from "lucide-react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import {
+  adminCategories, adminMarques, adminActivites,
+  type CategorieAdmin, type MarqueAdmin, type ActiviteAdmin,
+} from "@/lib/admin-api";
+import {
+  Plus, Edit2, Trash2, RefreshCw, X, ChevronRight, ChevronDown,
+  FolderOpen, Folder, Tag, Activity, Info, AlertCircle,
+} from "lucide-react";
+import { toast } from "@/components/ui/Toast";
 
 function toSlug(s: string) {
-  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-    .replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
-const EMPTY = { nom:"", slug:"", description:"", image:"", id_activite:"", id_marque:"", parent_id:"", ordre:0, actif:true };
+const EMPTY = { nom: "", slug: "", description: "", image: "", id_activite: "", id_marque: "", parent_id: "", ordre: 0, actif: true };
 
+// ── Nœud d'arbre ─────────────────────────────────────────────────
+interface TreeNode extends CategorieAdmin {
+  children: TreeNode[];
+  depth: number;
+}
+
+function buildTree(flat: CategorieAdmin[]): TreeNode[] {
+  const map = new Map<number, TreeNode>();
+  flat.forEach(c => map.set(c.id_categorie, { ...c, children: [], depth: 0 }));
+  const roots: TreeNode[] = [];
+  map.forEach(node => {
+    if (node.parent_id && map.has(node.parent_id)) {
+      const parent = map.get(node.parent_id)!;
+      node.depth = parent.depth + 1;
+      parent.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+  const sort = (arr: TreeNode[]) => arr.sort((a, b) => a.ordre - b.ordre || a.nom.localeCompare(b.nom));
+  map.forEach(n => sort(n.children));
+  return sort(roots);
+}
+
+function flattenTree(nodes: TreeNode[]): TreeNode[] {
+  const result: TreeNode[] = [];
+  const walk = (arr: TreeNode[]) => arr.forEach(n => { result.push(n); walk(n.children); });
+  walk(nodes);
+  return result;
+}
+
+// ── Badge marque/activité ────────────────────────────────────────
+function Badge({ label, type }: { label: string; type: "marque" | "activite" }) {
+  return (
+    <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+      type === "marque" ? "bg-blue-50 text-blue-600 border border-blue-100" : "bg-green-50 text-green-600 border border-green-100"
+    }`}>
+      {type === "marque" ? <Tag size={8} /> : <Activity size={8} />}
+      {label}
+    </span>
+  );
+}
+
+// ── Ligne de l'arbre ─────────────────────────────────────────────
+function TreeRow({
+  node, expanded, onToggle, onEdit, onDelete, onAddChild,
+}: {
+  node: TreeNode;
+  expanded: boolean;
+  onToggle: () => void;
+  onEdit: (c: CategorieAdmin) => void;
+  onDelete: (c: CategorieAdmin) => void;
+  onAddChild: (parent: CategorieAdmin) => void;
+}) {
+  const hasChildren = node.children.length > 0;
+  const count = (node as any)._count;
+
+  return (
+    <tr className={`group hover:bg-gray-50/80 transition-colors ${!node.actif ? "opacity-50" : ""}`}>
+      {/* Nom avec indentation */}
+      <td className="px-4 py-2.5">
+        <div className="flex items-center" style={{ paddingLeft: `${node.depth * 22}px` }}>
+          {/* Toggle expand */}
+          <button
+            onClick={onToggle}
+            className={`shrink-0 w-5 h-5 flex items-center justify-center rounded transition-colors mr-1 ${
+              hasChildren ? "text-gray-500 hover:text-gray-800 hover:bg-gray-200" : "text-transparent cursor-default"
+            }`}
+          >
+            {hasChildren ? (expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />) : null}
+          </button>
+
+          {/* Icône dossier */}
+          <span className={`shrink-0 mr-2 ${hasChildren ? "text-amber-500" : "text-gray-400"}`}>
+            {hasChildren
+              ? (expanded ? <FolderOpen size={14} /> : <Folder size={14} />)
+              : <span className="text-[10px] text-gray-300">└</span>}
+          </span>
+
+          <div className="min-w-0">
+            <p className={`font-medium text-gray-800 truncate ${node.depth === 0 ? "text-sm" : "text-xs"}`}>
+              {node.nom}
+            </p>
+            <p className="text-[10px] text-gray-400 font-mono">{node.slug}</p>
+          </div>
+        </div>
+      </td>
+
+      {/* Badges marque / activité */}
+      <td className="px-4 py-2.5">
+        <div className="flex flex-wrap gap-1">
+          {node.marque   && <Badge label={(node.marque as any).nom}   type="marque"   />}
+          {node.activite && <Badge label={(node.activite as any).nom} type="activite" />}
+        </div>
+      </td>
+
+      {/* Compteurs */}
+      <td className="px-4 py-2.5 text-center">
+        {count?.sous_cats > 0 && (
+          <span className="text-xs bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full border border-amber-100">
+            {count.sous_cats} sous-cat.
+          </span>
+        )}
+      </td>
+      <td className="px-4 py-2.5 text-center">
+        {count?.produits > 0 && (
+          <span className="text-xs bg-ev-50 text-ev-600 px-2 py-0.5 rounded-full border border-ev-100">
+            {count.produits} produit{count.produits > 1 ? "s" : ""}
+          </span>
+        )}
+      </td>
+
+      {/* Ordre */}
+      <td className="px-4 py-2.5 text-center text-xs text-gray-400">{node.ordre}</td>
+
+      {/* Statut */}
+      <td className="px-4 py-2.5">
+        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+          node.actif ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"
+        }`}>
+          {node.actif ? "Actif" : "Inactif"}
+        </span>
+      </td>
+
+      {/* Actions */}
+      <td className="px-4 py-2.5">
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button onClick={() => onAddChild(node)} title="Ajouter une sous-catégorie"
+            className="p-1.5 text-gray-400 hover:text-ev-600 hover:bg-ev-50 rounded-lg">
+            <Plus size={12} />
+          </button>
+          <button onClick={() => onEdit(node)}
+            className="p-1.5 text-gray-400 hover:text-ev-600 hover:bg-ev-50 rounded-lg">
+            <Edit2 size={12} />
+          </button>
+          <button onClick={() => onDelete(node)}
+            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+            <Trash2 size={12} />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+// ── Alert inline ─────────────────────────────────────────────────
+function Alert({ type, children }: { type: "error" | "info"; children: React.ReactNode }) {
+  const s = type === "error"
+    ? "bg-red-50 border-red-200 text-red-700"
+    : "bg-blue-50 border-blue-200 text-blue-700";
+  const Icon = type === "error" ? AlertCircle : Info;
+  return (
+    <div className={`flex items-start gap-2.5 border rounded-xl px-4 py-3 text-sm ${s}`}>
+      <Icon size={15} className="shrink-0 mt-0.5" />
+      <span className="leading-relaxed">{children}</span>
+    </div>
+  );
+}
+
+// ── Page principale ───────────────────────────────────────────────
 export default function AdminCategoriesPage() {
   const [items,     setItems]     = useState<CategorieAdmin[]>([]);
   const [marques,   setMarques]   = useState<MarqueAdmin[]>([]);
   const [activites, setActivites] = useState<ActiviteAdmin[]>([]);
   const [loading,   setLoading]   = useState(true);
-  const [modal,     setModal]     = useState<"create"|"edit"|null>(null);
-  const [editing,   setEditing]   = useState<CategorieAdmin|null>(null);
+  const [modal,     setModal]     = useState<"create" | "edit" | null>(null);
+  const [editing,   setEditing]   = useState<CategorieAdmin | null>(null);
   const [form,      setForm]      = useState(EMPTY);
   const [saving,    setSaving]    = useState(false);
   const [err,       setErr]       = useState("");
   const [search,    setSearch]    = useState("");
+  const [expanded,  setExpanded]  = useState<Set<number>>(new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -29,105 +197,211 @@ export default function AdminCategoriesPage() {
         adminMarques.list(),
         adminActivites.list(),
       ]);
-      setItems(Array.isArray(cats) ? cats : (cats as any).data ?? []);
+      const catArr = Array.isArray(cats) ? cats : (cats as any).data ?? [];
+      setItems(catArr);
       setMarques(Array.isArray(mrqs) ? mrqs : (mrqs as any).data ?? []);
       setActivites(Array.isArray(acts) ? acts : (acts as any).data ?? []);
+      // Auto-expand racines
+      setExpanded(new Set(catArr.filter((c: CategorieAdmin) => !c.parent_id).map((c: CategorieAdmin) => c.id_categorie)));
     } finally { setLoading(false); }
-  },[]);
+  }, []);
 
-  useEffect(()=>{load();},[load]);
+  useEffect(() => { load(); }, [load]);
 
-  const openCreate = () => { setForm(EMPTY); setEditing(null); setErr(""); setModal("create"); };
-  const openEdit   = (c: CategorieAdmin) => {
-    setForm({nom:c.nom,slug:c.slug,description:c.description??"",image:c.image??"",
-      id_activite:c.id_activite?String(c.id_activite):"",
-      id_marque:c.id_marque?String(c.id_marque):"",
-      parent_id:c.parent_id?String(c.parent_id):"",
-      ordre:c.ordre,actif:c.actif});
+  // Arbre complet
+  const tree = useMemo(() => buildTree(items), [items]);
+
+  // Aplatissement pour l'affichage (respecte expanded)
+  const visibleRows = useMemo(() => {
+    const result: TreeNode[] = [];
+    const walk = (nodes: TreeNode[]) => {
+      nodes.forEach(n => {
+        // Filtre recherche
+        if (search) {
+          const matches = n.nom.toLowerCase().includes(search.toLowerCase()) || n.slug.includes(search.toLowerCase());
+          if (!matches && !flattenTree([n]).some(x => x.nom.toLowerCase().includes(search.toLowerCase()))) return;
+        }
+        result.push(n);
+        if (expanded.has(n.id_categorie)) walk(n.children);
+      });
+    };
+    walk(tree);
+    return result;
+  }, [tree, expanded, search]);
+
+  const toggleExpand = (id: number) => {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const expandAll   = () => setExpanded(new Set(items.map(c => c.id_categorie)));
+  const collapseAll = () => setExpanded(new Set(items.filter(c => !c.parent_id).map(c => c.id_categorie)));
+
+  const openCreate = (parentCat?: CategorieAdmin) => {
+    setForm({
+      ...EMPTY,
+      parent_id:   parentCat ? String(parentCat.id_categorie) : "",
+      id_marque:   parentCat ? String(parentCat.id_marque ?? "") : "",
+      id_activite: parentCat ? String(parentCat.id_activite ?? "") : "",
+    });
+    setEditing(null); setErr(""); setModal("create");
+  };
+
+  const openEdit = (c: CategorieAdmin) => {
+    setForm({
+      nom:         c.nom,
+      slug:        c.slug,
+      description: c.description ?? "",
+      image:       c.image ?? "",
+      id_activite: c.id_activite ? String(c.id_activite) : "",
+      id_marque:   c.id_marque   ? String(c.id_marque)   : "",
+      parent_id:   c.parent_id   ? String(c.parent_id)   : "",
+      ordre:       c.ordre,
+      actif:       c.actif,
+    });
     setEditing(c); setErr(""); setModal("edit");
   };
 
   const handleSave = async () => {
-    if(!form.nom.trim()||!form.slug.trim()){setErr("Nom et slug requis.");return;}
+    if (!form.nom.trim() || !form.slug.trim()) { setErr("Nom et slug sont requis."); return; }
     setSaving(true); setErr("");
     try {
       const p = {
-        nom:form.nom, slug:form.slug,
-        description:form.description||null, image:form.image||null,
-        id_activite:form.id_activite?Number(form.id_activite):null,
-        id_marque:form.id_marque?Number(form.id_marque):null,
-        parent_id:form.parent_id?Number(form.parent_id):null,
-        ordre:form.ordre,
-        ...(modal==="edit"?{actif:form.actif}:{}),
+        nom:         form.nom,
+        slug:        form.slug,
+        description: form.description || null,
+        image:       form.image       || null,
+        id_activite: form.id_activite ? Number(form.id_activite) : null,
+        id_marque:   form.id_marque   ? Number(form.id_marque)   : null,
+        parent_id:   form.parent_id   ? Number(form.parent_id)   : null,
+        ordre:       form.ordre,
+        ...(modal === "edit" ? { actif: form.actif } : {}),
       };
-      if(modal==="create") await adminCategories.create(p as any);
-      else if(editing) await adminCategories.update(editing.id_categorie,p as any);
+      if (modal === "create") {
+        await adminCategories.create(p as any);
+        toast.success("Catégorie créée", form.nom);
+      } else if (editing) {
+        await adminCategories.update(editing.id_categorie, p as any);
+        toast.success("Catégorie mise à jour", form.nom);
+      }
       setModal(null); load();
-    } catch(e){setErr((e as Error).message);}
-    finally{setSaving(false);}
+    } catch (e) { setErr((e as Error).message); }
+    finally { setSaving(false); }
   };
 
   const handleDelete = async (c: CategorieAdmin) => {
-    if(!confirm(`Supprimer la catégorie "${c.nom}" ?`)) return;
-    try { await adminCategories.remove(c.id_categorie); load(); }
-    catch(e){alert((e as Error).message);}
+    const hasChildren = items.some(x => x.parent_id === c.id_categorie);
+    if (hasChildren) {
+      toast.warning("Suppression impossible", `La catégorie « ${c.nom} » a des sous-catégories. Supprimez-les d'abord.`);
+      return;
+    }
+    if (!confirm(`Supprimer la catégorie « ${c.nom} » ?`)) return;
+    try {
+      await adminCategories.remove(c.id_categorie);
+      toast.success("Catégorie supprimée", c.nom);
+      load();
+    } catch (e) { toast.error("Erreur", (e as Error).message); }
   };
 
-  const filtered = items.filter(c =>
-    !search || c.nom.toLowerCase().includes(search.toLowerCase()) || c.slug.includes(search.toLowerCase())
-  );
+  // Options catégories parentes pour le select (exclut soi-même et ses descendants)
+  const parentOptions = useMemo(() => {
+    if (!editing) return items;
+    const descendants = new Set<number>();
+    const collect = (id: number) => {
+      items.filter(c => c.parent_id === id).forEach(c => { descendants.add(c.id_categorie); collect(c.id_categorie); });
+    };
+    collect(editing.id_categorie);
+    return items.filter(c => c.id_categorie !== editing.id_categorie && !descendants.has(c.id_categorie));
+  }, [items, editing]);
+
+  // Pour le select parent : affichage indenté
+  const parentOptionsOrdered = useMemo(() => {
+    const result: { cat: CategorieAdmin; depth: number }[] = [];
+    const walk = (nodes: TreeNode[]) => {
+      nodes.forEach(n => {
+        const orig = parentOptions.find(c => c.id_categorie === n.id_categorie);
+        if (orig) result.push({ cat: orig, depth: n.depth });
+        walk(n.children);
+      });
+    };
+    walk(buildTree(parentOptions));
+    return result;
+  }, [parentOptions]);
+
+  const rootCount = items.filter(c => !c.parent_id).length;
+  const subCount  = items.filter(c =>  c.parent_id).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+
+      {/* En-tête */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Catégories</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{items.length} catégorie{items.length!==1?"s":""}</p>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {rootCount} catégorie{rootCount !== 1 ? "s" : ""} racine · {subCount} sous-catégorie{subCount !== 1 ? "s" : ""}
+          </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={load} className="p-2 text-gray-500 hover:text-gray-800 rounded-xl hover:bg-gray-100"><RefreshCw size={16}/></button>
-          <button onClick={openCreate} className="flex items-center gap-2 bg-ev-700 hover:bg-ev-800 text-white text-sm font-medium px-4 py-2 rounded-xl">
-            <Plus size={16}/>Nouvelle catégorie
+          <button onClick={load} className="p-2 text-gray-500 hover:text-gray-800 rounded-xl hover:bg-gray-100">
+            <RefreshCw size={16} />
+          </button>
+          <button onClick={() => openCreate()} className="flex items-center gap-2 bg-ev-700 hover:bg-ev-800 text-white text-sm font-medium px-4 py-2 rounded-xl">
+            <Plus size={16} /> Nouvelle catégorie
           </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-200 p-4">
-        <input placeholder="Rechercher…" value={search} onChange={e=>setSearch(e.target.value)}
-          className="w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"/>
+      {/* Légende + contrôles */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-4 flex flex-wrap items-center gap-4">
+        <div className="relative flex-1 min-w-[200px]">
+          <input placeholder="Rechercher une catégorie…" value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full h-9 pl-3 pr-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500" />
+        </div>
+        <div className="flex gap-2 text-xs">
+          <button onClick={expandAll}   className="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600">Tout déplier</button>
+          <button onClick={collapseAll} className="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600">Réduire</button>
+        </div>
+        <div className="flex items-center gap-3 text-xs text-gray-500">
+          <span className="flex items-center gap-1"><Tag size={10} className="text-blue-500" />Marque</span>
+          <span className="flex items-center gap-1"><Activity size={10} className="text-green-500" />Activité</span>
+        </div>
       </div>
 
+      {/* Arbre */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        {loading ? (<div className="flex items-center justify-center py-16"><div className="w-7 h-7 border-4 border-ev-600 border-t-transparent rounded-full animate-spin"/></div>)
-        : filtered.length===0 ? (<div className="text-center py-16 text-gray-400">Aucune catégorie trouvée</div>)
-        : (
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-7 h-7 border-4 border-ev-600 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : visibleRows.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">Aucune catégorie trouvée</div>
+        ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>{["Nom","Slug","Marque","Activité","Parent","Ordre","Statut","Actions"].map(h=>(
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
-                ))}</tr>
+                <tr>
+                  {["Catégorie / Sous-catégorie", "Rattachement", "Sous-cats", "Produits", "Ordre", "Statut", "Actions"].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filtered.map(c=>(
-                  <tr key={c.id_categorie} className={`hover:bg-gray-50 ${!c.actif?"opacity-50":""}`}>
-                    <td className="px-4 py-3 font-medium text-gray-800">{c.nom}</td>
-                    <td className="px-4 py-3 text-gray-400 font-mono text-xs">{c.slug}</td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{c.marque?.nom??<span className="text-gray-300">—</span>}</td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{c.activite?.nom??<span className="text-gray-300">—</span>}</td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{c.parent?.nom??<span className="text-gray-300">—</span>}</td>
-                    <td className="px-4 py-3 text-gray-500">{c.ordre}</td>
-                    <td className="px-4 py-3">
-                      {c.actif?<span className="flex items-center gap-1 text-xs text-green-600"><CheckCircle size={12}/>Actif</span>
-                              :<span className="flex items-center gap-1 text-xs text-red-500"><XCircle size={12}/>Inactif</span>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        <button onClick={()=>openEdit(c)} className="p-1.5 text-gray-400 hover:text-ev-600 hover:bg-ev-50 rounded-lg"><Edit2 size={13}/></button>
-                        <button onClick={()=>handleDelete(c)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 size={13}/></button>
-                      </div>
-                    </td>
-                  </tr>
+                {visibleRows.map(node => (
+                  <TreeRow
+                    key={node.id_categorie}
+                    node={node}
+                    expanded={expanded.has(node.id_categorie)}
+                    onToggle={() => toggleExpand(node.id_categorie)}
+                    onEdit={openEdit}
+                    onDelete={handleDelete}
+                    onAddChild={openCreate}
+                  />
                 ))}
               </tbody>
             </table>
@@ -135,84 +409,113 @@ export default function AdminCategoriesPage() {
         )}
       </div>
 
-      {modal&&(
+      {/* Modal */}
+      {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="p-5 border-b flex items-center justify-between">
-              <h2 className="font-bold text-gray-900">{modal==="create"?"Nouvelle catégorie":`Modifier — ${editing?.nom}`}</h2>
-              <button onClick={()=>setModal(null)} className="text-gray-400 hover:text-gray-700">✕</button>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
+            <div className="p-5 border-b flex items-center justify-between sticky top-0 bg-white z-10">
+              <h2 className="font-bold text-gray-900">
+                {modal === "create" ? "Nouvelle catégorie" : `Modifier — ${editing?.nom}`}
+              </h2>
+              <button onClick={() => setModal(null)} className="text-gray-400 hover:text-gray-700"><X size={18} /></button>
             </div>
             <div className="p-5 space-y-4">
-              {err&&<div className="p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl">{err}</div>}
+              {err && <Alert type="error">{err}</Alert>}
+
+              {/* Nom + Slug */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Nom *</label>
-                  <input value={form.nom} onChange={e=>{setForm({...form,nom:e.target.value,slug:modal==="create"?toSlug(e.target.value):form.slug});}}
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"/>
+                  <input value={form.nom}
+                    onChange={e => setForm({ ...form, nom: e.target.value, slug: modal === "create" ? toSlug(e.target.value) : form.slug })}
+                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Slug *</label>
-                  <input value={form.slug} onChange={e=>setForm({...form,slug:e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,"")})}
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 font-mono text-xs"/>
+                  <input value={form.slug}
+                    onChange={e => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })}
+                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 font-mono text-xs" />
                 </div>
               </div>
+
+              {/* Catégorie parente (hiérarchie indentée) */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Catégorie parente <span className="text-gray-400 font-normal">(laisser vide = catégorie racine)</span>
+                </label>
+                <select value={form.parent_id} onChange={e => setForm({ ...form, parent_id: e.target.value })}
+                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white">
+                  <option value="">— Catégorie racine —</option>
+                  {parentOptionsOrdered.map(({ cat, depth }) => (
+                    <option key={cat.id_categorie} value={cat.id_categorie}>
+                      {"　".repeat(depth)}{depth > 0 ? "└ " : ""}{cat.nom}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Marque + Activité */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Marque</label>
-                  <select value={form.id_marque} onChange={e=>setForm({...form,id_marque:e.target.value})}
+                  <select value={form.id_marque} onChange={e => setForm({ ...form, id_marque: e.target.value })}
                     className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white">
                     <option value="">— Aucune —</option>
-                    {marques.map(m=><option key={m.id_marque} value={m.id_marque}>{m.nom}</option>)}
+                    {marques.map(m => <option key={m.id_marque} value={m.id_marque}>{m.nom}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Activité</label>
-                  <select value={form.id_activite} onChange={e=>setForm({...form,id_activite:e.target.value})}
+                  <select value={form.id_activite} onChange={e => setForm({ ...form, id_activite: e.target.value })}
                     className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white">
                     <option value="">— Aucune —</option>
-                    {activites.map(a=><option key={a.id_activite} value={a.id_activite}>{a.nom}</option>)}
+                    {activites.map(a => <option key={a.id_activite} value={a.id_activite}>{a.nom}</option>)}
                   </select>
                 </div>
               </div>
+
+              {/* Ordre + Image */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Catégorie parente</label>
-                  <select value={form.parent_id} onChange={e=>setForm({...form,parent_id:e.target.value})}
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white">
-                    <option value="">— Aucune —</option>
-                    {items.filter(c=>!editing||c.id_categorie!==editing.id_categorie).map(c=>(
-                      <option key={c.id_categorie} value={c.id_categorie}>{c.nom}</option>
-                    ))}
-                  </select>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Ordre d&apos;affichage</label>
+                  <input type="number" value={form.ordre} onChange={e => setForm({ ...form, ordre: Number(e.target.value) })}
+                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Ordre</label>
-                  <input type="number" value={form.ordre} onChange={e=>setForm({...form,ordre:Number(e.target.value)})}
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"/>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Image (URL)</label>
+                  <input value={form.image} onChange={e => setForm({ ...form, image: e.target.value })} placeholder="https://..."
+                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500" />
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Image (URL)</label>
-                <input value={form.image} onChange={e=>setForm({...form,image:e.target.value})} placeholder="https://..."
-                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"/>
-              </div>
+
+              {/* Description */}
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
-                <textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} rows={2}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 resize-none"/>
+                <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 resize-none" />
               </div>
-              {modal==="edit"&&(
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={form.actif} onChange={e=>setForm({...form,actif:e.target.checked})} className="accent-ev-600"/>
+
+              {modal === "edit" && (
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" checked={form.actif} onChange={e => setForm({ ...form, actif: e.target.checked })} className="accent-ev-600 w-4 h-4" />
                   Catégorie active
                 </label>
               )}
+
+              {form.parent_id && (
+                <Alert type="info">
+                  Cette catégorie sera rattachée comme sous-catégorie de «{" "}
+                  {items.find(c => String(c.id_categorie) === form.parent_id)?.nom ?? "…"} ».
+                </Alert>
+              )}
             </div>
             <div className="p-5 pt-0 flex gap-3">
-              <button onClick={()=>setModal(null)} className="flex-1 h-10 border text-sm text-gray-600 rounded-xl hover:bg-gray-50">Annuler</button>
+              <button onClick={() => setModal(null)} className="flex-1 h-10 border text-sm text-gray-600 rounded-xl hover:bg-gray-50">Annuler</button>
               <button onClick={handleSave} disabled={saving}
                 className="flex-1 h-10 bg-ev-700 text-white text-sm rounded-xl hover:bg-ev-800 disabled:opacity-60 flex items-center justify-center">
-                {saving?<span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>:(modal==="create"?"Créer":"Enregistrer")}
+                {saving
+                  ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : (modal === "create" ? "Créer" : "Enregistrer")}
               </button>
             </div>
           </div>

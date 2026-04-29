@@ -68,6 +68,41 @@ const SLIDES = [
   },
 ];
 
+interface PageHeroProps {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  image?: string;
+  imagePlaceholder?: boolean;
+}
+
+export function PageHero({ eyebrow, title, subtitle, image, imagePlaceholder }: PageHeroProps) {
+  return (
+    <div
+      className="relative bg-ev-900 overflow-hidden"
+      style={imagePlaceholder && !image ? { background: "linear-gradient(135deg, #0a5c2e 0%, #134e4a 100%)" } : undefined}
+    >
+      {image && (
+        <Image src={image} alt={title} fill className="object-cover opacity-20" sizes="100vw" />
+      )}
+      <div className="relative z-10 container-ev py-16 md:py-20">
+        {eyebrow && (
+          <p className="text-ev-400 text-xs font-semibold uppercase tracking-widest mb-3">{eyebrow}</p>
+        )}
+        <h1
+          className="text-3xl md:text-5xl font-bold text-white leading-tight"
+          style={{ fontFamily: "var(--font-display, sans-serif)" }}
+        >
+          {title}
+        </h1>
+        {subtitle && (
+          <p className="mt-4 text-ev-200 text-lg max-w-2xl">{subtitle}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function Hero() {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);

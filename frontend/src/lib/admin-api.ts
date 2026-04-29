@@ -11,6 +11,8 @@
 //   /api/admin/admins      → gestion admins (superAdmin seulement)
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { ProduitImage } from "@/types/api";
+
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 // ── Token store ───────────────────────────────────────────────────────────────
@@ -276,8 +278,11 @@ export interface ProduitAdmin {
   division:   string;
   ordre:      number;
   created_at: string;
+  fiche_technique?: string | null;
+  id_activite?: number | null;
   marque:     { nom: string; slug: string };
   categorie:  { nom: string; slug: string };
+  activite?:  { nom: string; slug: string } | null;
   images:     { url: string; is_principale: boolean }[];
 }
 
@@ -354,10 +359,62 @@ export const adminFaq = {
 
 // ── Produits CRUD complet ─────────────────────────────────────────────────────
 export const adminProduitsCreate = {
-  create: (data: { nom: string; slug: string; id_categorie: number; id_marque: number; id_activite?: number | null; division?: string; description?: string | null; fiche_technique?: string | null; ordre?: number }) =>
+  create: (data: { nom: string; slug: string; id_categorie: number; id_marque?: number | null; id_activite?: number | null; division?: string; description?: string | null; fiche_technique?: string | null; ordre?: number }) =>
     request<ProduitAdmin>("/admin/produits", { method: "POST", body: JSON.stringify(data) }),
-  update: (id: number, data: Partial<{ nom: string; slug: string; id_categorie: number; id_marque: number; id_activite: number | null; division: string; description: string | null; fiche_technique: string | null; actif: boolean; ordre: number }>) =>
+  update: (id: number, data: Partial<{ nom: string; slug: string; id_categorie: number; id_marque: number | null; id_activite: number | null; division: string; description: string | null; fiche_technique: string | null; actif: boolean; ordre: number }>) =>
     request<ProduitAdmin>(`/admin/produits/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+};
+
+// ── Upload fichiers ───────────────────────────────────────────────
+// Utilise FormData (pas Content-Type: application/json)
+async function uploadFile(path: string, file: File): Promise<{ url: string; filename: string; size: number }> {
+  const form = new FormData();
+  form.append("file", file);
+  const token = tokenStore.get();
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(err.error ?? `Erreur ${res.status}`);
+  }
+  const json = await res.json();
+  return json.data ?? json;
+}
+
+export const adminUpload = {
+  image:          (file: File) => uploadFile("/admin/upload/image", file),
+  pdf:            (file: File) => uploadFile("/admin/upload/pdf", file),
+  produitImage:   (id: number, file: File, alt?: string, isPrinc = false) => {
+    const form = new FormData();
+    form.append("file", file);
+    if (alt)     form.append("alt", alt);
+    form.append("is_principale", String(isPrinc));
+    const token = tokenStore.get();
+    return fetch(`${BASE}/admin/produits/${id}/images/upload`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    }).then(async r => {
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error ?? `Erreur ${r.status}`); }
+      const j = await r.json(); return (j.data ?? j) as ProduitImage;
+    });
+  },
+  produitFiche: (id: number, file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    const token = tokenStore.get();
+    return fetch(`${BASE}/admin/produits/${id}/fiche-technique`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    }).then(async r => {
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error ?? `Erreur ${r.status}`); }
+      const j = await r.json(); return (j.data ?? j) as { url: string };
+    });
+  },
 };
 
 // ── Visiteurs + Statistiques comportement ─────────────────────────────────────

@@ -128,14 +128,14 @@ export const visiteurRepository = {
       visiteursActifs,
       totalPages,
       avgDuree: Math.round(avgDuree._avg.duree ?? 0),
-      topPages: topPages.map(p => ({
+      topPages: topPages.map((p: any) => ({
         url:   p.url,
         titre: p.titre ?? p.url,
         vues:  p._count.url,
         duree: Math.round(p._avg.duree ?? 0),
       })),
-      paysStats: paysStats.map(p => ({ pays: p.pays!, count: p._count.pays })),
-      searchStats: searchStats.map(s => ({ query: s.query, count: s._count.query })),
+      paysStats: paysStats.map((p: any) => ({ pays: p.pays!, count: p._count.pays })),
+      searchStats: searchStats.map((s: any) => ({ query: s.query, count: s._count.query })),
       faqStats,
     };
   },

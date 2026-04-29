@@ -10,6 +10,7 @@ import cors         from "cors";
 import helmet       from "helmet";
 import morgan       from "morgan";
 import rateLimit    from "express-rate-limit";
+import path         from "path";
 
 import { corsOptions }        from "./config/cors";
 import { notFoundHandler, errorHandler } from "./middleware/errorHandler";
@@ -18,7 +19,7 @@ import { notFoundHandler, errorHandler } from "./middleware/errorHandler";
 import { produitPublicRouter }    from "./modules/produit/produit.routes";
 import { marquePublicRouter }     from "./modules/marque/marque.routes";
 import { activitePublicRouter }   from "./modules/activite/activite.routes";
-import { categoriePublicRouter }  from "./modules/categorie/categorie.routes";
+import { categoriePublicRouter, marqueTreeRouter }  from "./modules/categorie/categorie.routes"; // ← ajout marqueTreeRouter
 import { actualitePublicRouter }  from "./modules/actualite/actualite.routes";
 import { faqPublicRouter }        from "./modules/faq/faq.routes";
 import { devisPublicRouter }      from "./modules/devis/devis.routes";
@@ -41,10 +42,14 @@ import { visiteurAdminRouter }    from "./modules/visiteur/visiteur.routes";
 import { adminAdminRouter }       from "./modules/admin/admin.routes";
 import { statsAdminRouter }       from "./modules/stats/stats.routes";
 import { auditAdminRouter }       from "./modules/audit/audit.routes";
+import { uploadRouter }           from "./modules/upload/upload.routes";
 
 // ══════════════════════════════════════════════════════════════════
 const app  = express();
 const PORT = Number(process.env.PORT ?? 4000);
+
+// ── Fichiers statiques uploadés ───────────────────────────────────
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // ── Sécurité & parsing ────────────────────────────────────────────
 app.set("trust proxy", 1);
@@ -78,16 +83,17 @@ const publicLimiter = rateLimit({
 // ══════════════════════════════════════════════════════════════════
 //  ROUTES PUBLIQUES   /api/*
 // ══════════════════════════════════════════════════════════════════
-app.use("/api/produits",   produitPublicRouter);
-app.use("/api/marques",    marquePublicRouter);
-app.use("/api/activites",  activitePublicRouter);
-app.use("/api/categories", categoriePublicRouter);
-app.use("/api/actualites", actualitePublicRouter);
-app.use("/api/faq",        faqPublicRouter);
-app.use("/api/devis",      publicLimiter, devisPublicRouter);
-app.use("/api/rdv",        publicLimiter, rdvPublicRouter);
-app.use("/api/contact",    publicLimiter, contactPublicRouter);
-app.use("/api/visiteurs",  visiteurPublicRouter);
+app.use("/api/produits",          produitPublicRouter);
+app.use("/api/marques",           marquePublicRouter);
+app.use("/api/marques/:slug",     marqueTreeRouter);    // ← NOUVEAU : GET /api/marques/:slug/tree
+app.use("/api/activites",         activitePublicRouter);
+app.use("/api/categories",        categoriePublicRouter);
+app.use("/api/actualites",        actualitePublicRouter);
+app.use("/api/faq",               faqPublicRouter);
+app.use("/api/devis",             publicLimiter, devisPublicRouter);
+app.use("/api/rdv",               publicLimiter, rdvPublicRouter);
+app.use("/api/contact",           publicLimiter, contactPublicRouter);
+app.use("/api/visiteurs",         visiteurPublicRouter);
 
 // ══════════════════════════════════════════════════════════════════
 //  ROUTES ADMIN       /api/admin/*
@@ -106,6 +112,7 @@ app.use("/api/admin/visiteurs",  visiteurAdminRouter);
 app.use("/api/admin/admins",     adminAdminRouter);
 app.use("/api/admin/stats",      statsAdminRouter);
 app.use("/api/admin/audit",      auditAdminRouter);
+app.use("/api/admin/upload",     uploadRouter);
 
 // ── Health check ──────────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {

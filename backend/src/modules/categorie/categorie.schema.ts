@@ -19,6 +19,10 @@ export const UpdateCategorieSchema = CreateCategorieSchema.partial().extend({
 export const CategorieQuerySchema = z.object({
   id_marque:   z.coerce.number().int().positive().optional(),
   id_activite: z.coerce.number().int().positive().optional(),
+  // "root" = seulement les catégories sans parent ; "all" = tout (défaut)
+  scope:       z.enum(["root", "all"]).optional().default("all"),
+  // renvoie l'arbre imbriqué pour la route publique
+  tree:        z.coerce.boolean().optional().default(false),
 });
 
 export type CreateCategorieDto  = z.infer<typeof CreateCategorieSchema>;

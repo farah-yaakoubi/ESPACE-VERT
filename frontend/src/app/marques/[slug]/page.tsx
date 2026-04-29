@@ -3,7 +3,12 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { marquesService } from "@/services";
-import { MarqueProduitsSection } from "./MarqueProduitsSection";
+import { CategoryTree } from "@/components/catalogue/CategoryTree";
+import { fetchMarqueTree } from "@/lib/api/catalogue";
+
+interface PageProps {
+  params: Promise<{ slug: string }>;
+}
 
 export const revalidate = 300;
 
@@ -14,11 +19,7 @@ export async function generateStaticParams() {
 }
 
 /* ── Metadata ────────────────────────────────────────────────────── */
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   try {
     const marque = await marquesService.bySlug(slug);
@@ -32,11 +33,7 @@ export async function generateMetadata({
 }
 
 /* ── Page ────────────────────────────────────────────────────────── */
-export default async function MarqueDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function MarqueDetailPage({ params }: PageProps) {
   const { slug } = await params;
 
   let marque;
@@ -45,6 +42,9 @@ export default async function MarqueDetailPage({
   } catch {
     notFound();
   }
+
+  // Arbre de catégories pour CategoryTree
+  const tree = await fetchMarqueTree(slug);
 
   /* Special rule: Matar + Irrigation → show RDV link */
   const isMatar = marque.slug === "matar";
@@ -102,30 +102,38 @@ export default async function MarqueDetailPage({
       </section>
 
       {/* ── Categories quick nav ───────────────────────────────── */}
-      {marque.categories.length > 0 && (
+      {tree && tree.categories.length > 0 && (
         <section className="bg-white border-b border-sand-200">
           <div className="container-ev py-4">
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
               <span className="text-xs text-gray-400 font-medium shrink-0">Catégories :</span>
-              {marque.categories.map((cat) => (
-                <span
+              {tree.categories.map((cat) => (
+                <a
                   key={cat.id_categorie}
+                  href={`#cat-${cat.id_categorie}`}
                   className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-ev-50 text-ev-700 border border-ev-100 whitespace-nowrap"
                 >
                   {cat.nom}
-                </span>
+                </a>
               ))}
             </div>
           </div>
         </section>
       )}
 
-      {/* ── Products — client section with search/filter ──────── */}
-      <MarqueProduitsSection
-        id_marque={marque.id_marque}
-        categories={marque.categories}
-        isMatar={isMatar}
-      />
+      {/* ── Arbre catégories / produits ────────────────────────── */}
+      {tree && (
+        <section className="bg-sand-50 border-b border-sand-200">
+          <div className="container-ev py-8">
+            <CategoryTree
+              tree={tree}
+              produitBasePath="/produits"
+              showProduits={true}
+            />
+          </div>
+        </section>
+      )}
+
     </>
   );
 }

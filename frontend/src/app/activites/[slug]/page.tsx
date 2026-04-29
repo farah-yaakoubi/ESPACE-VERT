@@ -38,30 +38,33 @@ export default async function ActiviteDetailPage({
   const act  = acts.find((a) => a.slug === slug);
   if (!act) notFound();
 
+  // TypeScript guard — after notFound() act is guaranteed defined
+  const activite = act!;
+
   /* Categories belonging to this activite */
-  const categories = await categoriesService.list({ id_activite: act.id_activite });
+  const categories = await categoriesService.list({ id_activite: activite.id_activite });
 
   /* Special rule: Irrigation + Matar → show RDV CTA */
-  const isIrrigation = act.slug === "irrigation";
+  const isIrrigation = activite.slug === "irrigation";
 
   return (
     <>
       {/* ── Activite hero ───────────────────────────────────────── */}
       <section className="relative bg-ev-950 py-16 md:py-24 overflow-hidden">
-        {act.image && (
+        {activite.image && (
           <>
-            <Image src={act.image} alt={act.nom} fill className="object-cover opacity-20" sizes="100vw" />
+            <Image src={activite.image} alt={activite.nom} fill className="object-cover opacity-20" sizes="100vw" />
             <div className="absolute inset-0 bg-gradient-to-r from-ev-950/95 to-ev-950/50" />
           </>
         )}
         <div className="container-ev relative z-10">
           <p className="eyebrow text-ev-400 mb-3">Activité</p>
           <h1 className="text-4xl md:text-5xl font-bold text-white font-display mb-4">
-            {act.nom}
+            {activite.nom}
           </h1>
-          {act.description && (
+          {activite.description && (
             <p className="text-white/65 text-lg max-w-2xl leading-relaxed">
-              {act.description}
+              {activite.description}
             </p>
           )}
 
@@ -105,7 +108,7 @@ export default async function ActiviteDetailPage({
 
       {/* ── Products section (client component) ─────────────────── */}
       <ActiviteProduitsSection
-        id_activite={act.id_activite}
+        id_activite={activite.id_activite}
         categories={categories}
       />
     </>

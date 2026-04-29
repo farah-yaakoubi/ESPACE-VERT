@@ -127,3 +127,6 @@ DROP INDEX `sessions_admin_id_admin_fkey` ON `sessions_admin`;
 -- RedefineIndex
 CREATE INDEX `visites_pages_id_visiteur_idx` ON `visites_pages`(`id_visiteur`);
 DROP INDEX `visites_pages_id_visiteur_fkey` ON `visites_pages`;
+
+ALTER TABLE `produits`
+  MODIFY COLUMN `id_marque` INTEGER NULL;

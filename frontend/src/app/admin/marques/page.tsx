@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { adminMarques, type MarqueAdmin } from "@/lib/admin-api";
+import { ImageUploader } from "@/components/admin/ImageUploader";
 import { Plus, Edit2, Trash2, RefreshCw, X, AlertCircle, Check, Upload, ExternalLink } from "lucide-react";
 
 function toSlug(s:string){return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");}
@@ -128,17 +129,22 @@ export default function AdminMarquesPage(){
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Logo <span className="normal-case font-normal text-gray-400">(URL)</span></label>
-                <div className="flex gap-2">
-                  <input value={form.logo} onChange={e=>F("logo",e.target.value)} placeholder="https://… ou /logos/marque.png"
-                    className="flex-1 h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 font-mono text-xs bg-gray-50"/>
-                  {form.logo&&(
-                    <div className="w-10 h-10 rounded-xl border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center flex-shrink-0">
-                      <Image src={form.logo} alt="Logo" width={36} height={36} className="object-contain p-1"
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Logo</label>
+                <ImageUploader onUpload={url=>F("logo",url)} label="Logo de la marque" />
+                {form.logo&&(
+                  <div className="mt-2 flex items-center gap-3 p-2 bg-gray-50 rounded-xl border border-gray-100">
+                    <div className="w-12 h-12 rounded-lg border border-gray-200 bg-white overflow-hidden flex items-center justify-center flex-shrink-0">
+                      <Image src={form.logo} alt="Logo" width={44} height={44} className="object-contain p-1"
                         onError={e=>{(e.target as HTMLImageElement).style.display="none";}}/>
                     </div>
-                  )}
-                </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-mono text-gray-400 truncate">{form.logo}</p>
+                    </div>
+                    <button type="button" onClick={()=>F("logo","")} className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 shrink-0">
+                      <X size={13}/>
+                    </button>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Description</label>

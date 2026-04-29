@@ -1,14 +1,5 @@
 "use client";
-/**
- * useProducts — hook corrigé
- *
- * BUG CORRIGÉ : L'ancien hook recevait `initial` (objet recréé à chaque render)
- * dans le tableau de dépendances, ce qui empêchait `fetchData` de se ré-exécuter
- * quand id_marque ou id_activite changeaient réellement.
- *
- * La solution : extraire les valeurs primitives de `initial` une seule fois
- * via useMemo, puis les référencer directement dans useCallback.
- */
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { produitsService } from "@/services";
 import type { ProduitCard, ApiMeta } from "@/types/api";
@@ -55,7 +46,8 @@ export function useProducts(initial: UseProductsOptions = {}): UseProductsResult
       const res = await produitsService.list({
         page,
         limit:        stableLimit,
-        id_marque:    stableMarque,      // ← valeur primitive stable
+        id_marque:    stableMarque,
+        id_activite:  stableActivite,    // ← filtrage par activité
         id_categorie: categorie,
         division:     stableDivision,
         search:       search || undefined,
@@ -71,9 +63,7 @@ export function useProducts(initial: UseProductsOptions = {}): UseProductsResult
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, search, categorie, stableMarque, stableDivision, stableLimit]);
-  // ⚠️  stableActivite intentionnellement absent ici :
-  //     le backend /api/produits ne filtre PAS par id_activite directement.
-  //     Le filtrage par activité se fait via id_categorie (voir ActiviteProduitsSection).
+  // stableActivite inclus : le backend supporte ?id_activite= (filtrage via categorie.id_activite)
 
   useEffect(() => { fetchData(); }, [fetchData]);
 

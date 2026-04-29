@@ -159,7 +159,7 @@ model Categorie {
   created_at   DateTime @default(now())
   activite  Activite?   @relation(fields: [id_activite], references: [id_activite], onDelete: SetNull)
   marque    Marque?     @relation(fields: [id_marque],   references: [id_marque],   onDelete: SetNull)
-  parent    Categorie?  @relation("SousCategories", fields: [parent_id], references: [id_categorie], onDelete: SetNull)
+  parent    Categorie?  @relation("SousCategories", fields: [parent_id], references: [id_categorie], onDelete: Cascade)
   sous_cats Categorie[] @relation("SousCategories")
   produits  Produit[]
   @@index([id_activite])
@@ -175,7 +175,7 @@ model Produit {
   fiche_technique String?  @db.Text
   slug            String   @unique @db.VarChar(220)
   id_categorie    Int
-  id_marque       Int
+  id_marque       Int?     // ← optionnel : un produit peut n'appartenir qu'à une activité
   id_activite     Int?     // ← lien direct optionnel avec activité
   division        Division @default(standard)
   tags            Json?    @default("[]")
@@ -183,8 +183,8 @@ model Produit {
   ordre           Int      @default(0)
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
-  categorie Categorie @relation(fields: [id_categorie], references: [id_categorie])
-  marque    Marque    @relation(fields: [id_marque],    references: [id_marque])
+  categorie Categorie @relation(fields: [id_categorie], references: [id_categorie], onDelete: Restrict, onUpdate: Cascade)
+  marque    Marque?   @relation(fields: [id_marque],    references: [id_marque])
   activite  Activite? @relation(fields: [id_activite],  references: [id_activite], onDelete: SetNull)
   images    ProduitImage[]
   devis     DevisDemande[]

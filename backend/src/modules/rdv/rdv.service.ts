@@ -82,7 +82,7 @@ export const rdvService = {
   async stats() {
     const counts = await rdvRepository.countByStatut();
     return Object.fromEntries(
-      RDV_STATUTS.map(s => [s, counts.find(c => c.statut === s)?._count.statut ?? 0])
+      RDV_STATUTS.map(s => [s, counts.find((c: { statut: string; _count: { statut: number } }) => c.statut === s)?._count.statut ?? 0])
     );
   },
 };

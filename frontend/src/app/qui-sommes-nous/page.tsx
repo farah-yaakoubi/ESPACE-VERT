@@ -69,11 +69,6 @@ export default function QuiSommesNousPage() {
             <h1 style={{fontSize:"clamp(2.6rem,6vw,4.5rem)",fontWeight:900,color:C.text,lineHeight:1.02,letterSpacing:"-0.03em",marginBottom:22}}>
               Qui sommes-<span style={{color:C.forest}}>nous</span>&nbsp;?
             </h1>
-            <motion.p initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:0.25,duration:0.6}}
-              style={{fontSize:"1.08rem",color:C.mid,maxWidth:580,margin:"0 auto",lineHeight:1.8}}>
-              Fondé par M. Abderraouf Ghariani, le Groupe Espace Vert est une référence tunisienne
-              en production agricole, irrigation, espaces verts et animalerie depuis plus de 30 ans.
-            </motion.p>
           </motion.div>
         </div>
       </section>

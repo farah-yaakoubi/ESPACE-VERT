@@ -4,210 +4,250 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, FileText, Calendar, MessageSquare,
-  Package, Newspaper, LogOut, Menu, ChevronRight,
-  Leaf, User, Users, Shield, ExternalLink, BarChart2,
-  Tag, Layers, HelpCircle, ChevronDown
+  Package, Newspaper, LogOut, Menu, X, Leaf, Users,
+  Shield, ExternalLink, Tag, Layers, Activity, HelpCircle,
+  Bell, Eye, ChevronDown,
 } from "lucide-react";
 import { tokenStore, adminAuth, isSuperAdmin, type Admin } from "@/lib/admin-api";
 
-type NavItem = {
-  href: string;
-  icon: React.ElementType;
-  label: string;
-  superAdminOnly?: boolean;
-  children?: { href: string; label: string }[];
-};
-
-const NAV: NavItem[] = [
-  { href: "/admin/dashboard",  icon: LayoutDashboard, label: "Tableau de bord" },
+const NAV_GROUPS = [
   {
-    href: "/admin/catalogue",
-    icon: Package,
-    label: "Catalogue",
-    children: [
-      { href: "/admin/marques",    label: "Marques" },
-      { href: "/admin/activites",  label: "Activités" },
-      { href: "/admin/categories", label: "Catégories" },
-      { href: "/admin/produits",   label: "Produits" },
+    label: "MENU PRINCIPAL",
+    items: [
+      { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     ],
   },
-  { href: "/admin/actualites", icon: Newspaper,        label: "Actualités" },
-  { href: "/admin/faq",        icon: HelpCircle,       label: "FAQ" },
-  { href: "/admin/devis",      icon: FileText,         label: "Devis" },
-  { href: "/admin/rdv",        icon: Calendar,         label: "Rendez-vous" },
-  { href: "/admin/contact",    icon: MessageSquare,    label: "Messages" },
-  { href: "/admin/visiteurs",   icon: BarChart2, label: "Visiteurs & Stats",  superAdminOnly: true },
-  { href: "/admin/admins",     icon: Users,     label: "Administrateurs",    superAdminOnly: true },
+  {
+    label: "CATALOGUE",
+    items: [
+      { href: "/admin/marques",    icon: Tag,         label: "Marques"    },
+      { href: "/admin/activites",  icon: Activity,    label: "Activités"  },
+      { href: "/admin/categories", icon: Layers,      label: "Catégories" },
+      { href: "/admin/produits",   icon: Package,     label: "Produits"   },
+    ],
+  },
+  {
+    label: "CONTENU",
+    items: [
+      { href: "/admin/actualites", icon: Newspaper,   label: "Actualités" },
+      { href: "/admin/faq",        icon: HelpCircle,  label: "FAQ"        },
+    ],
+  },
+  {
+    label: "CRM",
+    items: [
+      { href: "/admin/devis",   icon: FileText,      label: "Devis"    },
+      { href: "/admin/rdv",     icon: Calendar,      label: "RDV"      },
+      { href: "/admin/contact", icon: MessageSquare, label: "Messages" },
+    ],
+  },
+  {
+    label: "SYSTÈME",
+    items: [
+      { href: "/admin/visiteurs", icon: Eye,    label: "Visiteurs", superOnly: false },
+      { href: "/admin/audit",     icon: Shield, label: "Audit",     superOnly: true  },
+      { href: "/admin/admins",    icon: Users,  label: "Admins",    superOnly: true  },
+    ],
+  },
 ];
 
+/* page label from pathname */
+function pageLabel(pathname: string) {
+  const seg = pathname.split("/").filter(Boolean).pop() ?? "dashboard";
+  const map: Record<string, string> = {
+    dashboard:"Dashboard",marques:"Marques",activites:"Activités",categories:"Catégories",
+    produits:"Produits",actualites:"Actualités",faq:"FAQ",devis:"Devis",rdv:"Rendez-vous",
+    contact:"Messages",visiteurs:"Visiteurs",audit:"Audit",admins:"Administrateurs",
+  };
+  return map[seg] ?? seg.replace(/-/g," ");
+}
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const router   = useRouter();
-  const [admin,   setAdmin]   = useState<Admin | null>(() => tokenStore.getAdmin());
-  const [open,    setOpen]    = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [openSub, setOpenSub] = useState<string | null>("/admin/catalogue");
+  const pathname  = usePathname();
+  const router    = useRouter();
+  const [admin,     setAdmin]    = useState<Admin | null>(() => tokenStore.getAdmin());
+  const [sideOpen,  setSideOpen] = useState(false);
+  const [authReady, setAuthReady]= useState(false);
+
+  const isLoginPage = pathname === "/admin/login";
 
   useEffect(() => {
-    if (pathname === "/admin/login") { setLoading(false); return; }
+    if (isLoginPage) { setAuthReady(true); return; }
     const token = tokenStore.get();
     if (!token) { router.replace("/admin/login"); return; }
     adminAuth.me()
-      .then((a) => { setAdmin(a); tokenStore.setAdmin(a); })
-      .catch(() => { tokenStore.clear(); router.replace("/admin/login"); })
-      .finally(() => setLoading(false));
-  }, [pathname, router]);
+      .then(a => { setAdmin(a); tokenStore.setAdmin(a); setAuthReady(true); })
+      .catch(() => { tokenStore.clear(); router.replace("/admin/login"); });
+  }, [isLoginPage, router]);
 
-  // Auto-expand submenu if current path is inside it
-  useEffect(() => {
-    NAV.forEach(n => {
-      if (n.children?.some(c => pathname.startsWith(c.href))) {
-        setOpenSub(n.href);
-      }
-    });
-  }, [pathname]);
+  if (isLoginPage) return <>{children}</>;
 
-  if (pathname === "/admin/login") return <>{children}</>;
-  if (loading && !admin) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-ev-600 border-t-transparent rounded-full animate-spin" />
+  if (!authReady) return (
+    <div className="min-h-screen flex items-center justify-center bg-[#F1F5F9]">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 rounded-full border-4 border-[#EEF2FF] border-t-[#3C50E0] animate-spin" style={{ borderWidth: 3 }} />
+        <p className="text-sm text-gray-400">Chargement…</p>
       </div>
-    );
-  }
+    </div>
+  );
 
+  const superAdmin = isSuperAdmin(admin);
   const handleLogout = async () => {
     try { await adminAuth.logout(tokenStore.getRefresh()); } catch {}
-    tokenStore.clear();
-    router.push("/admin/login");
+    tokenStore.clear(); router.push("/admin/login");
   };
-
-  const superAdmin  = isSuperAdmin(admin);
-  const visibleNav  = NAV.filter(n => !n.superAdminOnly || superAdmin);
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-ev-950 flex flex-col transition-transform duration-300
-        ${open ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}>
+    <div className="min-h-screen flex bg-[#F1F5F9]">
+
+      {/* ── SIDEBAR ─────────────────────────────────────────────────────── */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-[260px] flex flex-col transition-transform duration-300
+          ${sideOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
+        style={{ background: "#1C2434", boxShadow: "4px 0 20px rgba(0,0,0,0.15)" }}>
 
         {/* Logo */}
-        <div className="h-16 flex items-center gap-3 px-5 border-b border-white/10 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-ev-600 flex items-center justify-center shrink-0">
+        <div className="h-[70px] flex items-center gap-3 px-6 shrink-0"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: "linear-gradient(135deg,#3C50E0,#7B8FF0)" }}>
             <Leaf size={18} className="text-white" />
           </div>
           <div>
-            <p className="text-white font-bold text-sm leading-none">Espace Vert</p>
-            <p className="text-ev-400 text-xs mt-0.5">Administration</p>
+            <p className="text-white font-bold text-[15px] leading-none" style={{ letterSpacing: "-0.02em" }}>EspaceVert</p>
+            <p className="text-[11px] mt-1 font-medium" style={{ color: "#3C50E0" }}>Administration</p>
           </div>
+          <button onClick={() => setSideOpen(false)} className="lg:hidden ml-auto text-gray-500 hover:text-white p-1 rounded">
+            <X size={16} />
+          </button>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
-          {visibleNav.map((item) => {
-            const Icon    = item.icon;
-            const hasKids = !!item.children;
-            const isOpen  = openSub === item.href;
-            const active  = !hasKids && pathname.startsWith(item.href);
-            const parentActive = hasKids && item.children!.some(c => pathname.startsWith(c.href));
-
-            if (hasKids) {
-              return (
-                <div key={item.href}>
-                  <button
-                    onClick={() => setOpenSub(isOpen ? null : item.href)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
-                      ${parentActive ? "bg-ev-800 text-white" : "text-ev-300 hover:bg-white/10 hover:text-white"}`}
-                  >
-                    <Icon size={18} />
-                    <span className="flex-1 text-left">{item.label}</span>
-                    <ChevronDown size={14} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
-                  </button>
-                  {isOpen && (
-                    <div className="ml-4 mt-0.5 space-y-0.5 border-l border-white/10 pl-3">
-                      {item.children!.map(child => (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          onClick={() => setOpen(false)}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all
-                            ${pathname.startsWith(child.href) ? "bg-ev-700 text-white" : "text-ev-400 hover:bg-white/10 hover:text-white"}`}
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            }
-
+        <nav className="flex-1 overflow-y-auto py-4 px-4 space-y-5">
+          {NAV_GROUPS.map(group => {
+            const visibleItems = group.items.filter((item: any) => !item.superOnly || superAdmin);
+            if (visibleItems.length === 0) return null;
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
-                  ${active ? "bg-ev-700 text-white" : "text-ev-300 hover:bg-white/10 hover:text-white"}`}
-              >
-                <Icon size={18} />
-                <span className="flex-1">{item.label}</span>
-                {item.superAdminOnly && <Shield size={11} className="opacity-30" />}
-                {active && <ChevronRight size={14} className="opacity-50" />}
-              </Link>
+              <div key={group.label}>
+                <p className="px-3 mb-2 text-[10px] font-semibold tracking-[0.12em]"
+                  style={{ color: "rgba(255,255,255,0.2)" }}>{group.label}</p>
+                <div className="space-y-0.5">
+                  {visibleItems.map((item: any) => {
+                    const Icon   = item.icon;
+                    const active = isActive(item.href);
+                    return (
+                      <Link key={item.href} href={item.href} onClick={() => setSideOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] font-medium transition-all duration-150"
+                        style={{
+                          color:      active ? "#fff"                         : "rgba(255,255,255,0.5)",
+                          background: active ? "linear-gradient(90deg,#3C50E0,#4F60E8)" : "transparent",
+                          boxShadow:  active ? "0 4px 10px rgba(60,80,224,0.3)" : "none",
+                        }}>
+                        <Icon size={16} />
+                        <span className="flex-1">{item.label}</span>
+                        {(item as any).superOnly && <Shield size={9} style={{ opacity: 0.4 }} />}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
             );
           })}
         </nav>
 
-        {/* Footer */}
-        <div className="p-3 border-t border-white/10 shrink-0 space-y-1">
+        {/* Bottom user card */}
+        <div className="p-4 shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
           {admin && (
-            <div className="flex items-center gap-3 mb-2 px-2 py-1">
-              <div className="w-8 h-8 rounded-full bg-ev-700 flex items-center justify-center shrink-0">
-                <User size={16} className="text-white" />
+            <div className="flex items-center gap-3 p-3 rounded-xl mb-2"
+              style={{ background: "rgba(255,255,255,0.06)" }}>
+              <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-white text-sm font-bold"
+                style={{ background: "linear-gradient(135deg,#3C50E0,#7B8FF0)" }}>
+                {admin.nom[0]?.toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-white text-sm font-medium truncate">{admin.nom}</p>
-                <span className={`text-xs px-1.5 py-0.5 rounded font-medium
-                  ${superAdmin ? "bg-yellow-500/20 text-yellow-300" : "bg-ev-600/30 text-ev-300"}`}>
+                <p className="text-white text-[13px] font-semibold truncate leading-none">{admin.nom}</p>
+                <span className="text-[11px] font-medium mt-0.5 block" style={{ color: superAdmin ? "#F59E0B" : "#3C50E0" }}>
                   {superAdmin ? "Super Admin" : admin.role?.nom ?? "Admin"}
                 </span>
               </div>
+              <ChevronDown size={14} style={{ color: "rgba(255,255,255,0.3)" }} />
             </div>
           )}
           <Link href="/" target="_blank"
-            className="flex items-center gap-3 px-3 py-2 rounded-xl text-ev-400 hover:text-white text-xs transition-all hover:bg-white/5">
-            <ExternalLink size={14} />Voir le site
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12.5px] transition-all mb-0.5 hover:bg-white/5"
+            style={{ color: "rgba(255,255,255,0.35)" }}>
+            <ExternalLink size={13} /> Voir le site public
           </Link>
           <button onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-ev-300 hover:bg-white/10 hover:text-white text-sm transition-all">
-            <LogOut size={16} />Déconnexion
+            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12.5px] transition-all text-left hover:bg-red-900/20 hover:text-red-400"
+            style={{ color: "rgba(255,255,255,0.35)" }}>
+            <LogOut size={13} /> Déconnexion
           </button>
         </div>
       </aside>
 
-      {open && <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setOpen(false)} />}
+      {/* Mobile overlay */}
+      {sideOpen && (
+        <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={() => setSideOpen(false)} />
+      )}
 
-      {/* Main */}
-      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
-        <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
-          <button onClick={() => setOpen(true)} className="lg:hidden p-2 text-gray-500 rounded-lg hover:bg-gray-100">
-            <Menu size={20} />
-          </button>
-          <p className="hidden lg:block text-sm text-gray-400">Groupe Espace Vert — Back-office</p>
+      {/* ── MAIN ──────────────────────────────────────────────────────────── */}
+      <div className="flex-1 lg:ml-[260px] flex flex-col min-h-screen">
+
+        {/* Topbar */}
+        <header className="h-[70px] bg-white flex items-center justify-between px-5 lg:px-7 sticky top-0 z-30"
+          style={{ borderBottom: "1px solid #E2E8F0", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
           <div className="flex items-center gap-3">
+            <button onClick={() => setSideOpen(true)}
+              className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100">
+              <Menu size={18} />
+            </button>
+            {/* Breadcrumb */}
+            <div className="hidden sm:flex items-center gap-2 text-sm">
+              <span className="text-gray-400">Admin</span>
+              <span className="text-gray-300">/</span>
+              <span className="font-semibold text-gray-700">{pageLabel(pathname)}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Notification bell */}
+            <Link href="/admin/contact"
+              className="relative w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 transition-colors">
+              <Bell size={17} />
+            </Link>
+
+            {/* Site link */}
+            <Link href="/" target="_blank"
+              className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-[#3C50E0] px-3 py-1.5 rounded-lg hover:bg-[#EEF2FF] transition-colors border border-transparent hover:border-[#C7D2FE]">
+              <ExternalLink size={12} /> Site public
+            </Link>
+
+            {/* User */}
             {admin && (
-              <span className="text-sm text-gray-500 hidden sm:flex items-center gap-2">
-                {admin.nom}
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium
-                  ${superAdmin ? "bg-yellow-100 text-yellow-700" : "bg-ev-50 text-ev-700"}`}>
-                  {superAdmin ? "Super Admin" : "Admin"}
-                </span>
-              </span>
+              <div className="flex items-center gap-2.5 pl-3 ml-1" style={{ borderLeft: "1px solid #E2E8F0" }}>
+                <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                  style={{ background: "linear-gradient(135deg,#3C50E0,#7B8FF0)" }}>
+                  {admin.nom[0]?.toUpperCase()}
+                </div>
+                <div className="hidden sm:block">
+                  <p className="text-sm font-semibold text-gray-700 leading-none">{admin.nom}</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: superAdmin ? "#F59E0B" : "#3C50E0" }}>
+                    {superAdmin ? "Super Admin" : admin.role?.nom ?? "Admin"}
+                  </p>
+                </div>
+                <ChevronDown size={13} className="text-gray-400 hidden sm:block" />
+              </div>
             )}
           </div>
         </header>
-        <main className="flex-1 p-4 lg:p-6">{children}</main>
+
+        {/* Page content */}
+        <main className="flex-1 p-5 lg:p-8 max-w-[1400px] mx-auto w-full">
+          {children}
+        </main>
       </div>
     </div>
   );

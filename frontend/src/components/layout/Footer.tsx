@@ -148,9 +148,9 @@ export function Footer() {
                 alt="Groupe Espace Vert"
                 width={400} height={120}
                 style={{
-                  height: 64,
+                  height: 90,
                   width:  "auto",
-                  maxWidth: 300,
+                  maxWidth: 360,
                   objectFit: "contain",
                   display: "block",
                   /* Légère luminosité pour bien ressortir sur #0f2607 */

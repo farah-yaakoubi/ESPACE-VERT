@@ -15,7 +15,8 @@ export type JwtPayload = {
 export type AuditAction =
   | "LOGIN" | "LOGOUT"
   | "CREATE" | "UPDATE" | "DELETE"
-  | "VIEW" | "REPLY" | "STATUS_CHANGE";
+  | "VIEW" | "REPLY" | "STATUS_CHANGE"
+  | "TOGGLE" | "ADD_IMAGE" | "UPDATE_IMAGE" | "SET_PRINCIPALE";
 
 // ─── Statuts métier (miroir des enums Prisma) ─────────
 export type DevisStatut = "nouveau" | "en_cours" | "traite" | "rejete";

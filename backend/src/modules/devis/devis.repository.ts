@@ -1,7 +1,8 @@
 // src/modules/devis/devis.repository.ts
 // Couche DB pure — aucune logique métier
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
-import { DevisQueryDto } from "./devis.schema";
+import { DevisQueryDto, type DevisStatut } from "./devis.schema";
 
 // ── Types internes ────────────────────────────────────────────────────────────
 export type CreateDevisPayload = {
@@ -14,7 +15,7 @@ export type CreateDevisPayload = {
 };
 
 export type UpdateDevisPayload = {
-  statut?:       string;
+  statut?:       DevisStatut;
   note_interne?: string | null;
   reponse_admin?: string | null;
   id_admin?:     number;
@@ -76,9 +77,15 @@ export const devisRepository = {
   },
 
   async update(id_devis: number, data: UpdateDevisPayload) {
+    const payload: Prisma.DevisDemandeUncheckedUpdateInput = {};
+    if (data.statut !== undefined) payload.statut = data.statut;
+    if (data.note_interne !== undefined) payload.note_interne = data.note_interne;
+    if (data.reponse_admin !== undefined) payload.reponse_admin = data.reponse_admin;
+    if (data.id_admin !== undefined) payload.id_admin = data.id_admin;
+
     return prisma.devisDemande.update({
       where:   { id_devis },
-      data,
+      data: payload,
       include: LIST_INCLUDE,
     });
   },

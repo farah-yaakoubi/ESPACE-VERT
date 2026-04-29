@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         */}
         <VisiteurTracker />
 
-        <main className="flex-1 pt-[80px]">{children}</main>
+        <main className="flex-1 pt-[96px]">{children}</main>
         <Footer />
       </body>
     </html>

@@ -6,7 +6,7 @@ export const CreateProduitSchema = z.object({
   description:     z.string().optional().nullable(),
   fiche_technique: z.string().optional().nullable(),
   id_categorie:    z.number().int().positive(),
-  id_marque:       z.number().int().positive(),
+  id_marque:       z.number().int().positive().optional().nullable(), // ← optionnel (marque OU activité)
   id_activite:     z.number().int().positive().optional().nullable(), // ← NOUVEAU
   division:        z.enum(["standard", "pro", "garden"]).default("standard"),
   tags:            z.array(z.string()).optional().default([]),
@@ -19,7 +19,7 @@ export const UpdateProduitSchema = CreateProduitSchema.partial().extend({
 
 export const ProduitQuerySchema = z.object({
   page:          z.coerce.number().int().min(1).default(1),
-  limit:         z.coerce.number().int().min(1).max(100).default(20),
+  limit:         z.coerce.number().int().min(1).max(500).default(20),
   id_marque:     z.coerce.number().int().positive().optional(),
   id_categorie:  z.coerce.number().int().positive().optional(),
   id_activite:   z.coerce.number().int().positive().optional(), // ← NOUVEAU
@@ -31,7 +31,7 @@ export const ProduitQuerySchema = z.object({
 
 export const ProduitPublicQuerySchema = z.object({
   page:          z.coerce.number().int().min(1).default(1),
-  limit:         z.coerce.number().int().min(1).max(100).default(20),
+  limit:         z.coerce.number().int().min(1).max(500).default(20),
   id_marque:     z.coerce.number().int().positive().optional(),
   id_categorie:  z.coerce.number().int().positive().optional(),
   id_activite:   z.coerce.number().int().positive().optional(), // ← NOUVEAU

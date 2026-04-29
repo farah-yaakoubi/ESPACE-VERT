@@ -1,222 +1,146 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, FileText, MessageCircle, Download } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
+import { ChevronRight, Tag, Layers, Activity, Package } from "lucide-react";
 import { produitsService } from "@/services";
+import { ProduitGallery } from "./ProduitGallery";
 import { ProduitActions } from "./ProduitActions";
 
 export const revalidate = 60;
 
-/* ── Static params ─────────────────────────────────────────────── */
 export async function generateStaticParams() {
   try {
     const res = await produitsService.list({ limit: 200 });
     return res.data.map((p) => ({ slug: p.slug }));
-  } catch {
-    return [];
-  }
+  } catch { return []; }
 }
 
-/* ── Metadata ──────────────────────────────────────────────────── */
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   try {
     const p = await produitsService.bySlug(slug);
     return {
-      title:       p.nom,
-      description: p.description ?? `Produit ${p.nom} — ${p.marque.nom}`,
+      title: `${p.nom} — ${p.marque.nom}`,
+      description: p.description ?? `Découvrez ${p.nom} de la gamme ${p.marque.nom}.`,
+      openGraph: { images: p.images[0] ? [p.images[0].url] : [] },
     };
-  } catch {
-    return { title: "Produit introuvable" };
-  }
+  } catch { return { title: "Produit introuvable" }; }
 }
 
-const DIVISION_BADGE: Record<string, { label: string; variant: "green" | "sand" | "matar" }> = {
-  pro:    { label: "Gamme Pro",    variant: "green" },
-  garden: { label: "Gamme Garden", variant: "sand"  },
+const DIV = {
+  pro:      { label: "Gamme Pro",    bg: "bg-blue-50",   text: "text-blue-700",  border: "border-blue-200",  dot: "bg-blue-500"  },
+  garden:   { label: "Gamme Garden", bg: "bg-green-50",  text: "text-green-700", border: "border-green-200", dot: "bg-green-500" },
+  standard: { label: "Standard",     bg: "bg-gray-50",   text: "text-gray-600",  border: "border-gray-200",  dot: "bg-gray-400"  },
 };
 
-/* ── Page ──────────────────────────────────────────────────────── */
-export default async function ProduitDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function ProduitDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  let produit: Awaited<ReturnType<typeof produitsService.bySlug>>;
+  try { produit = await produitsService.bySlug(slug); } catch { notFound(); }
 
-  let produit;
-  try {
-    produit = await produitsService.bySlug(slug);
-  } catch {
-    notFound();
-  }
-
-  /* Pick principal image, fall back to first */
-  const mainImg =
-    produit.images.find((i) => i.is_principale) ?? produit.images[0] ?? null;
-
-  const otherImgs = produit.images.filter((i) => i !== mainImg);
-
-  const divBadge = DIVISION_BADGE[produit.division];
+  const div      = DIV[produit.division as keyof typeof DIV] ?? DIV.standard;
+  const fichePdf = produit.fiche_technique?.startsWith("http") ? produit.fiche_technique : null;
 
   return (
-    <div className="bg-sand-50 min-h-screen">
+    <div className="min-h-screen" style={{ background: "#f8faf8" }}>
 
-      {/* ── Breadcrumb ─────────────────────────────────────────── */}
+      {/* ── Breadcrumb ──────────────────────────────────────────── */}
       <div className="bg-white border-b border-sand-200">
         <div className="container-ev py-3">
           <nav className="flex items-center gap-1.5 text-xs text-gray-400 flex-wrap">
             <Link href="/" className="hover:text-ev-700 transition-colors">Accueil</Link>
-            <ChevronRight size={12} />
+            <ChevronRight size={11} />
             <Link href={`/marques/${produit.marque.slug}`} className="hover:text-ev-700 transition-colors">
               {produit.marque.nom}
             </Link>
-            <ChevronRight size={12} />
-            {produit.categorie.parent && (
-              <>
-                <span>{produit.categorie.parent.nom}</span>
-                <ChevronRight size={12} />
-              </>
+            <ChevronRight size={11} />
+            {produit.categorie?.parent && (
+              <><span className="hover:text-ev-700">{produit.categorie.parent.nom}</span><ChevronRight size={11} /></>
             )}
             <span className="text-gray-700 font-medium">{produit.nom}</span>
           </nav>
         </div>
       </div>
 
-      {/* ── Main content ───────────────────────────────────────── */}
+      {/* ── Main ────────────────────────────────────────────────── */}
       <div className="container-ev py-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:gap-16">
 
-          {/* ── Left : Images ────────────────────────────────────── */}
-          <div className="space-y-4">
-            {/* Main image */}
-            <div className="relative aspect-square rounded-3xl bg-white border border-sand-200 overflow-hidden shadow-card">
-              {mainImg ? (
-                <Image
-                  src={mainImg.url}
-                  alt={mainImg.alt ?? produit.nom}
-                  fill
-                  priority
-                  className="object-contain p-8"
-                  sizes="(max-width:1024px)100vw,50vw"
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-6xl opacity-15 select-none">
-                  🌿
-                </div>
-              )}
-            </div>
+          {/* ── Galerie ─────────────────────────────────────────── */}
+          <ProduitGallery images={produit.images} nomProduit={produit.nom} />
 
-            {/* Thumbnails */}
-            {otherImgs.length > 0 && (
-              <div className="flex gap-3 overflow-x-auto pb-1">
-                {otherImgs.map((img, i) => (
-                  <div
-                    key={i}
-                    className="relative w-20 h-20 rounded-xl bg-white border border-sand-200 overflow-hidden shrink-0"
-                  >
-                    <Image
-                      src={img.url}
-                      alt={img.alt ?? `${produit.nom} — vue ${i + 2}`}
-                      fill
-                      className="object-contain p-2"
-                      sizes="80px"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* ── Infos ────────────────────────────────────────────── */}
+          <div className="flex flex-col gap-5">
 
-          {/* ── Right : Info + Actions ────────────────────────────── */}
-          <div className="flex flex-col gap-6">
-
-            {/* Badges */}
+            {/* Tags badges */}
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="sand">{produit.categorie.nom}</Badge>
-              <Link href={`/marques/${produit.marque.slug}`}>
-                <Badge variant="green">{produit.marque.nom}</Badge>
-              </Link>
-              {divBadge && (
-                <Badge variant={divBadge.variant}>{divBadge.label}</Badge>
+              {produit.categorie && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-sand-100 text-gray-600 border border-sand-200">
+                  <Layers size={11} /> {produit.categorie.nom}
+                </span>
               )}
+              <Link href={`/marques/${produit.marque.slug}`}>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-ev-50 text-ev-700 border border-ev-200 hover:bg-ev-100 transition-colors cursor-pointer">
+                  <Tag size={11} /> {produit.marque.nom}
+                </span>
+              </Link>
+              {produit.activite && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                  <Activity size={11} /> {produit.activite.nom}
+                </span>
+              )}
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${div.bg} ${div.text} ${div.border}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${div.dot}`} />
+                {div.label}
+              </span>
             </div>
 
-            {/* Name */}
+            {/* Titre */}
             <h1
-              className="text-3xl md:text-4xl font-bold text-ev-950 leading-tight"
-              style={{ fontFamily: "var(--font-display)" }}
+              className="text-3xl md:text-4xl font-black text-ev-950 leading-tight"
+              style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.025em" }}
             >
               {produit.nom}
             </h1>
 
             {/* Description */}
             {produit.description && (
-              <p className="text-gray-600 leading-relaxed text-[15px]">
-                {produit.description}
-              </p>
-            )}
-
-            {/* Tags */}
-            {Array.isArray(produit.tags) && produit.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {(produit.tags as string[]).map((tag) => (
-                  <span key={tag} className="tag">{tag}</span>
-                ))}
+              <div className="rounded-2xl bg-white border border-sand-200 p-5"
+                style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
+                <p className="text-gray-600 leading-relaxed text-sm whitespace-pre-line">
+                  {produit.description}
+                </p>
               </div>
             )}
 
-            {/* Fiche technique download */}
-            {produit.fiche_technique && (
-              <a
-                href={produit.fiche_technique}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-ev-700 hover:text-ev-900 transition-colors"
-              >
-                <Download size={16} />
-                Télécharger la fiche technique
-              </a>
-            )}
-
-            <div className="divider" />
-
-            {/* ── CTA buttons ─────────────────────────────────────── */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <ProduitActions
-                id_produit={produit.id_produit}
-                nomProduit={produit.nom}
-                marqueSlug={produit.marque.slug}
-                activiteSlug={produit.categorie.slug}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* ── Fiche technique (rich text if stored as text) ─────── */}
-        {produit.fiche_technique &&
-          !produit.fiche_technique.startsWith("http") && (
-            <div className="mt-14">
-              <h2
-                className="text-2xl font-bold text-ev-900 mb-6"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                Fiche technique
-              </h2>
-              <div className="card p-8">
+            {/* Fiche technique HTML */}
+            {produit.fiche_technique && !fichePdf && (
+              <details className="group rounded-2xl bg-white border border-sand-200 overflow-hidden"
+                style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
+                <summary className="flex items-center justify-between px-5 py-4 cursor-pointer text-sm font-semibold text-ev-800 hover:bg-ev-50 transition-colors list-none">
+                  <span className="flex items-center gap-2">
+                    <Package size={15} className="text-ev-600" />
+                    Fiche technique
+                  </span>
+                  <ChevronRight size={14} className="text-gray-400 group-open:rotate-90 transition-transform" />
+                </summary>
                 <div
-                  className="prose prose-green max-w-none text-sm leading-relaxed whitespace-pre-wrap text-gray-700"
+                  className="px-5 pb-5 pt-2 text-sm text-gray-600 leading-relaxed prose prose-sm max-w-none prose-green"
                   dangerouslySetInnerHTML={{ __html: produit.fiche_technique }}
                 />
-              </div>
-            </div>
-          )}
+              </details>
+            )}
+
+            {/* Actions (Devis / RDV / Contact / Fiche PDF) */}
+            <ProduitActions
+              id_produit={produit.id_produit}
+              nomProduit={produit.nom}
+              marqueSlug={produit.marque.slug}
+              activiteSlug={produit.activite?.slug ?? null}
+              fichePdfUrl={fichePdf}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

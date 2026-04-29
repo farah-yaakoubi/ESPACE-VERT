@@ -17,12 +17,15 @@ export const marqueRepository = {
       where:   { slug },
       include: {
         categories: {
-          where:   { actif: true },
+          where:   { actif: true, parent_id: null }, // ← uniquement les catégories racines (niveau 1)
           orderBy: { ordre: "asc" },
           select:  { id_categorie: true, nom: true, slug: true, description: true, image: true, id_activite: true, parent_id: true },
         },
         produits: {
-          where:   { actif: true },
+          where:   {
+            actif: true,
+            categorie: { is: {} },
+          },
           orderBy: { ordre: "asc" },
           select:  {
             id_produit: true, nom: true, slug: true, description: true,
@@ -45,7 +48,14 @@ export const marqueRepository = {
   async findById(id_marque: number) {
     return prisma.marque.findUnique({
       where:   { id_marque },
-      include: { categories: { orderBy: { ordre: "asc" } }, produits: { take: 10, orderBy: { ordre: "asc" } } },
+      include: {
+        categories: { orderBy: { ordre: "asc" } },
+        produits: {
+          where: { categorie: { is: {} } },
+          take: 10,
+          orderBy: { ordre: "asc" },
+        },
+      },
     });
   },
 

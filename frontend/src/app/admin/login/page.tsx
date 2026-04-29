@@ -1,19 +1,32 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Leaf, Eye, EyeOff, AlertCircle, Clock } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, Clock, ArrowRight, Shield, Leaf, Package, BarChart3, Users } from "lucide-react";
 import { adminAuth, tokenStore } from "@/lib/admin-api";
 
+const FEATURES = [
+  { icon: Package,   label: "Gestion catalogue & produits" },
+  { icon: BarChart3, label: "CRM · Devis · RDV · Messages" },
+  { icon: Users,     label: "Actualités, FAQ & Admins"     },
+  { icon: Shield,    label: "Audit & traçabilité complète" },
+];
+
 export default function AdminLoginPage() {
-  const router      = useRouter();
-  const searchParams= useSearchParams();
-  const reason      = searchParams.get("reason");
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+  const reason       = searchParams.get("reason");
 
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [showPw,   setShowPw]   = useState(false);
   const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState(reason === "inactivity" ? "Session expirée pour inactivité." : "");
+  const [error,    setError]    = useState(
+    reason === "inactivity" ? "Session expirée pour inactivité." : ""
+  );
+
+  useEffect(() => {
+    if (tokenStore.get()) router.replace("/admin/dashboard");
+  }, [router]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,101 +39,178 @@ export default function AdminLoginPage() {
       tokenStore.setAdmin(res.admin);
       router.replace("/admin/dashboard");
     } catch (err: any) {
-      setError(err.message ?? "Identifiants incorrects");
+      setError(err.message ?? "Identifiants incorrects.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex" style={{ background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)" }}>
+    <div className="min-h-screen flex" style={{ fontFamily: "'Inter', sans-serif" }}>
 
-      {/* Panel gauche décoratif */}
-      <div className="hidden lg:flex flex-1 flex-col items-center justify-center p-12 relative overflow-hidden"
-        style={{ background: "linear-gradient(160deg, #052e16 0%, #0a3d1e 50%, #166534 100%)" }}>
-        <div style={{ position:"absolute", inset:0, opacity:0.04,
-          backgroundImage:"linear-gradient(rgba(255,255,255,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.5) 1px,transparent 1px)",
-          backgroundSize:"40px 40px" }} />
-        <div style={{ position:"absolute", top:"15%", right:"-15%", width:"50%", aspectRatio:"1", borderRadius:"50%",
-          background:"rgba(125,192,64,0.08)", filter:"blur(60px)" }} />
-        <div className="relative z-10 max-w-xs text-center">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
-            style={{ background: "linear-gradient(135deg, #16a34a, #7dc040)" }}>
-            <Leaf size={28} className="text-white" />
+      {/* ── Panel gauche ─────────────────────────────────────────── */}
+      <div
+        className="hidden lg:flex w-[480px] shrink-0 flex-col justify-between p-12 relative overflow-hidden"
+        style={{ background: "#1C2434" }}
+      >
+        {/* Subtle grid */}
+        <div style={{
+          position: "absolute", inset: 0,
+          backgroundImage: "linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px)",
+          backgroundSize: "40px 40px",
+        }} />
+        {/* Glow */}
+        <div style={{ position:"absolute", top:"20%", left:"-20%", width:"60%", aspectRatio:"1",
+          borderRadius:"50%", background:"rgba(60,80,224,0.12)", filter:"blur(70px)" }} />
+        <div style={{ position:"absolute", bottom:"15%", right:"-10%", width:"45%", aspectRatio:"1",
+          borderRadius:"50%", background:"rgba(16,185,129,0.08)", filter:"blur(60px)" }} />
+
+        {/* Top: logo */}
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ background: "linear-gradient(135deg,#3C50E0,#7B8FF0)" }}>
+            <Leaf size={20} className="text-white" />
           </div>
-          <h1 className="text-3xl font-black text-white mb-3" style={{ fontFamily:"var(--font-display, Syne)" }}>
-            Espace Vert
-          </h1>
-          <p className="text-white/50 text-sm leading-relaxed">
-            Panneau d'administration du Groupe Espace Vert. Accès réservé aux administrateurs autorisés.
+          <div>
+            <p className="text-white font-bold text-[16px] leading-none" style={{ letterSpacing:"-0.02em" }}>EspaceVert</p>
+            <p className="text-[11px] mt-0.5 font-medium" style={{ color:"#3C50E0" }}>Administration</p>
+          </div>
+        </div>
+
+        {/* Middle: headline + features */}
+        <div className="relative z-10">
+          <h2 className="text-[32px] font-bold text-white leading-tight mb-4" style={{ letterSpacing:"-0.04em" }}>
+            Gérez votre activité<br />en toute simplicité.
+          </h2>
+          <p className="text-sm leading-relaxed mb-10" style={{ color:"rgba(255,255,255,0.45)" }}>
+            Interface sécurisée pour les administrateurs du Groupe Espace Vert.
           </p>
-          <div className="mt-10 space-y-3">
-            {["Gestion du catalogue", "CRM & Devis", "Actualités & FAQ", "Audit & Traçabilité"].map(f => (
-              <div key={f} className="flex items-center gap-2.5 text-sm text-white/45">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                {f}
+          <div className="space-y-3.5">
+            {FEATURES.map(({ icon: Icon, label }) => (
+              <div key={label} className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background:"rgba(60,80,224,0.15)", border:"1px solid rgba(60,80,224,0.3)" }}>
+                  <Icon size={14} style={{ color:"#7B8FF0" }} />
+                </div>
+                <span className="text-[13px]" style={{ color:"rgba(255,255,255,0.5)" }}>{label}</span>
               </div>
             ))}
           </div>
         </div>
+
+        {/* Bottom: site link */}
+        <div className="relative z-10 pt-6" style={{ borderTop:"1px solid rgba(255,255,255,0.07)" }}>
+          <a href="/" target="_blank"
+            className="inline-flex items-center gap-2 text-xs transition-colors"
+            style={{ color:"rgba(255,255,255,0.25)" }}
+            onMouseEnter={e => (e.currentTarget.style.color="rgba(255,255,255,0.55)")}
+            onMouseLeave={e => (e.currentTarget.style.color="rgba(255,255,255,0.25)")}>
+            <ArrowRight size={11} /> Voir le site public
+          </a>
+        </div>
       </div>
-      {/* Formulaire */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-sm">
-          <div className="lg:hidden flex items-center gap-2.5 mb-8">
+
+      {/* ── Formulaire ───────────────────────────────────────────── */}
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12" style={{ background:"#F1F5F9" }}>
+        <div className="w-full max-w-[400px]">
+
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center gap-3 mb-10">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #16a34a, #7dc040)" }}>
+              style={{ background:"linear-gradient(135deg,#3C50E0,#7B8FF0)" }}>
               <Leaf size={18} className="text-white" />
             </div>
             <div>
-              <p className="font-black text-gray-900 leading-none">Espace Vert</p>
-              <p className="text-xs text-gray-400 mt-0.5">Administration</p>
+              <p className="font-bold text-gray-800 text-base leading-none" style={{ letterSpacing:"-0.02em" }}>EspaceVert</p>
+              <p className="text-xs mt-0.5" style={{ color:"#3C50E0" }}>Administration</p>
             </div>
           </div>
 
-          <h2 className="text-2xl font-black text-gray-900 mb-1" style={{ fontFamily:"var(--font-display, Syne)" }}>
-            Connexion
-          </h2>
-          <p className="text-gray-400 text-sm mb-7">Accédez à votre espace de gestion.</p>
-
-          {error && (
-            <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 font-medium mb-5">
-              {reason === "inactivity" ? <Clock size={16} className="flex-shrink-0 mt-0.5" /> : <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />}
-              {error}
+          {/* Card */}
+          <div className="bg-white rounded-2xl p-8 shadow-sm" style={{ border:"1px solid #E2E8F0" }}>
+            <div className="mb-7">
+              <h1 className="text-2xl font-bold text-gray-800 mb-1" style={{ letterSpacing:"-0.04em" }}>
+                Connexion
+              </h1>
+              <p className="text-sm text-gray-400">Accédez à votre espace d&apos;administration.</p>
             </div>
-          )}
 
-          <form onSubmit={submit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="admin@espacevert.tn" autoComplete="email"
-                className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-ev-500 transition-colors bg-white"
-                style={{ "--tw-border-opacity":"1" } as any} />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Mot de passe</label>
-              <div className="relative">
-                <input type={showPw ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••" autoComplete="current-password"
-                  className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-ev-500 transition-colors bg-white pr-12" />
-                <button type="button" onClick={() => setShowPw(v => !v)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                  {showPw ? <EyeOff size={17} /> : <Eye size={17} />}
-                </button>
+            {/* Error */}
+            {error && (
+              <div className="flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm font-medium mb-6"
+                style={{ background: reason === "inactivity" ? "#FFFBEB" : "#FEF2F2",
+                         border: `1px solid ${reason === "inactivity" ? "#FDE68A" : "#FECACA"}`,
+                         color: reason === "inactivity" ? "#92400E" : "#B91C1C" }}>
+                {reason === "inactivity"
+                  ? <Clock size={15} className="shrink-0 mt-0.5" />
+                  : <AlertCircle size={15} className="shrink-0 mt-0.5" />}
+                {error}
               </div>
-            </div>
-            <button type="submit" disabled={loading}
-              className="w-full py-3.5 rounded-xl font-bold text-white text-sm mt-2 transition-all disabled:opacity-60 flex items-center justify-center gap-2 hover:opacity-90"
-              style={{ background: "linear-gradient(135deg, #0a5c2e, #16a34a)", boxShadow: "0 4px 20px rgba(22,163,74,0.35)" }}>
-              {loading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              {loading ? "Connexion…" : "Se connecter"}
-            </button>
-          </form>
+            )}
 
-          <p className="text-center text-xs text-gray-400 mt-8">
-            Accès sécurisé · Session auto-expire après 30min d'inactivité
-          </p>
+            <form onSubmit={submit} className="space-y-5">
+              {/* Email */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  Adresse e-mail
+                </label>
+                <input
+                  type="email" value={email} onChange={e => setEmail(e.target.value)}
+                  placeholder="admin@espacevert.tn" autoComplete="email" autoFocus
+                  className="w-full px-4 py-3 rounded-xl text-sm text-gray-800 placeholder:text-gray-400 outline-none transition-all"
+                  style={{ border:"2px solid #E2E8F0", background:"#F8FAFC" }}
+                  onFocus={e => { e.currentTarget.style.borderColor="#3C50E0"; e.currentTarget.style.background="#fff"; }}
+                  onBlur={e  => { e.currentTarget.style.borderColor="#E2E8F0"; e.currentTarget.style.background="#F8FAFC"; }}
+                />
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  Mot de passe
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPw ? "text" : "password"}
+                    value={password} onChange={e => setPassword(e.target.value)}
+                    placeholder="••••••••" autoComplete="current-password"
+                    className="w-full px-4 py-3 rounded-xl text-sm text-gray-800 placeholder:text-gray-400 outline-none transition-all pr-11"
+                    style={{ border:"2px solid #E2E8F0", background:"#F8FAFC" }}
+                    onFocus={e => { e.currentTarget.style.borderColor="#3C50E0"; e.currentTarget.style.background="#fff"; }}
+                    onBlur={e  => { e.currentTarget.style.borderColor="#E2E8F0"; e.currentTarget.style.background="#F8FAFC"; }}
+                  />
+                  <button type="button" onClick={() => setShowPw(v => !v)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                    {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Submit */}
+              <button
+                type="submit" disabled={loading}
+                className="w-full py-3 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{
+                  background: loading ? "#94A3B8" : "linear-gradient(135deg,#3C50E0,#4F60E8)",
+                  boxShadow: loading ? "none" : "0 4px 16px rgba(60,80,224,0.35)",
+                }}>
+                {loading ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Connexion…
+                  </>
+                ) : (
+                  <>Se connecter <ArrowRight size={15} /></>
+                )}
+              </button>
+            </form>
+          </div>
+
+          {/* Footer note */}
+          <div className="mt-5 flex items-center justify-center gap-1.5 text-xs text-gray-400">
+            <Shield size={11} className="text-gray-300" />
+            <span>Accès sécurisé · Session expire après 30 min d&apos;inactivité</span>
+          </div>
         </div>
       </div>
     </div>

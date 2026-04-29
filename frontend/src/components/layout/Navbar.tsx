@@ -7,7 +7,7 @@ import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const NAV_H  = 80;
@@ -38,8 +38,9 @@ const Ico = {
   ChevR:  (p:any) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}><path d="M9 18l6-6-6-6"/></svg>,
 };
 
-interface Activite { id_activite: number; nom: string; slug: string; description: string | null; image: string | null; }
-interface Marque   { id_marque:   number; nom: string; slug: string; logo: string | null; description: string | null; categories?: { nom: string; slug: string }[]; }
+interface CatItem   { id_categorie: number; nom: string; slug: string; parent_id: number | null; sous_cats?: CatItem[]; }
+interface Activite  { id_activite: number; nom: string; slug: string; description: string | null; image: string | null; categories?: CatItem[]; }
+interface Marque    { id_marque:   number; nom: string; slug: string; logo: string | null; description: string | null; categories?: CatItem[]; }
 
 function TreePines({ color="#e2ede7", h=60 }: { color?: string; h?: number }) {
   const pines = [{x:0,w:18,h:48},{x:14,w:22,h:60},{x:30,w:16,h:42},{x:44,w:24,h:64},{x:62,w:18,h:50},{x:76,w:20,h:55},{x:92,w:15,h:38},{x:104,w:26,h:68},{x:124,w:18,h:46},{x:138,w:22,h:58},{x:154,w:16,h:40},{x:166,w:24,h:62},{x:184,w:20,h:52},{x:200,w:18,h:44},{x:214,w:26,h:70},{x:234,w:16,h:36},{x:246,w:22,h:56},{x:262,w:18,h:48},{x:276,w:24,h:64},{x:294,w:20,h:50}];
@@ -103,17 +104,45 @@ function ActivitesDropdown({ activites, onClose }: { activites: Activite[]; onCl
         </div>
       </div>
 
-      {/* Panneau détail */}
+      {/* Panneau détail avec catégories */}
       <div style={{ flex:1, padding:"16px 20px", background:"#fff", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", bottom:0, right:0, left:0, opacity:0.06, pointerEvents:"none" }}><TreePines color={C.sage} h={80}/></div>
         <AnimatePresence mode="wait">
           {act ? (
             <motion.div key={act.id_activite} initial={{ opacity:0, x:10 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0 }} transition={{ duration:0.13 }} style={{ position:"relative", zIndex:1 }}>
               <p style={{ ...TY.secLabel, color:C.ink3, marginBottom:12 }}>{act.nom}</p>
-              {act.description && <p style={{ ...TY.ddItemDesc, color:C.ink2, marginBottom:16, lineHeight:1.6 }}>{act.description}</p>}
+              {act.description && <p style={{ ...TY.ddItemDesc, color:C.ink2, marginBottom:14, lineHeight:1.6 }}>{act.description}</p>}
+              {act.categories && act.categories.length > 0 && (
+                <div style={{ display:"flex", flexDirection:"column", gap:1, marginBottom:14 }}>
+                  {act.categories.map(cat => (
+                    <div key={cat.slug}>
+                      <Link href={`/activites/${act.slug}`} onClick={onClose}
+                        style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 9px", borderRadius:8, textDecoration:"none", transition:"background 0.1s" }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.sageLt; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+                        <div style={{ width:6, height:6, borderRadius:"50%", background:`linear-gradient(135deg,${C.sage},${C.sageMd})`, flexShrink:0 }}/>
+                        <span style={{ ...TY.ddItemName, color:C.ink }}>{cat.nom}</span>
+                      </Link>
+                      {cat.sous_cats && cat.sous_cats.length > 0 && (
+                        <div style={{ paddingLeft:22, display:"flex", flexDirection:"column", gap:0 }}>
+                          {cat.sous_cats.map(sc => (
+                            <Link key={sc.slug} href={`/activites/${act.slug}`} onClick={onClose}
+                              style={{ display:"flex", alignItems:"center", gap:6, padding:"4px 9px", borderRadius:6, textDecoration:"none", transition:"background 0.1s" }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.sageLt; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+                              <Ico.ChevR style={{ width:9, height:9, color:C.ink4, flexShrink:0 }}/>
+                              <span style={{ ...TY.ddItemDesc, color:C.ink2, fontSize:11.5 }}>{sc.nom}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
               <Link href={`/activites/${act.slug}`} onClick={onClose}
-                style={{ display:"flex", alignItems:"center", gap:4, ...TY.cta, color:C.sage, textDecoration:"none" }}>
-                Voir l'activité <Ico.ChevR style={{ width:13, height:13 }}/>
+                style={{ display:"flex", alignItems:"center", gap:4, paddingTop:12, borderTop:`1.5px solid ${C.line}`, ...TY.cta, color:C.sage, textDecoration:"none" }}>
+                Voir l&apos;activité <Ico.ChevR style={{ width:13, height:13 }}/>
               </Link>
             </motion.div>
           ) : (
@@ -178,15 +207,30 @@ function MarquesDropdown({ marques, onClose }: { marques: Marque[]; onClose: () 
             <motion.div key={brand.id_marque} initial={{ opacity:0, x:10 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0 }} transition={{ duration:0.13 }} style={{ position:"relative", zIndex:1 }}>
               <p style={{ ...TY.secLabel, color:C.ink3, marginBottom:12 }}>Catégories · {brand.nom}</p>
               {brand.categories && brand.categories.length > 0 ? (
-                <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
-                  {brand.categories.slice(0, 6).map(cat => (
-                    <Link key={cat.slug} href={`/produits?categorie=${cat.slug}`} onClick={onClose}
-                      style={{ display:"flex", alignItems:"center", gap:10, padding:"7px 9px", borderRadius:8, textDecoration:"none", transition:"background 0.1s" }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.sageLt; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
-                      <div style={{ width:6, height:6, borderRadius:"50%", background:`linear-gradient(135deg,${C.sage},${C.sageMd})`, flexShrink:0 }}/>
-                      <span style={{ ...TY.ddItemName, color:C.ink }}>{cat.nom}</span>
-                    </Link>
+                <div style={{ display:"flex", flexDirection:"column", gap:1 }}>
+                  {brand.categories.map(cat => (
+                    <div key={cat.slug}>
+                      <Link href={`/marques/${brand.slug}`} onClick={onClose}
+                        style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 9px", borderRadius:8, textDecoration:"none", transition:"background 0.1s" }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.sageLt; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+                        <div style={{ width:6, height:6, borderRadius:"50%", background:`linear-gradient(135deg,${C.sage},${C.sageMd})`, flexShrink:0 }}/>
+                        <span style={{ ...TY.ddItemName, color:C.ink }}>{cat.nom}</span>
+                      </Link>
+                      {cat.sous_cats && cat.sous_cats.length > 0 && (
+                        <div style={{ paddingLeft:22, display:"flex", flexDirection:"column", gap:0 }}>
+                          {cat.sous_cats.map(sc => (
+                            <Link key={sc.slug} href={`/marques/${brand.slug}`} onClick={onClose}
+                              style={{ display:"flex", alignItems:"center", gap:6, padding:"4px 9px", borderRadius:6, textDecoration:"none", transition:"background 0.1s" }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = C.sageLt; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+                              <Ico.ChevR style={{ width:9, height:9, color:C.ink4, flexShrink:0 }}/>
+                              <span style={{ ...TY.ddItemDesc, color:C.ink2, fontSize:11.5 }}>{sc.nom}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -218,7 +262,16 @@ function MarquesDropdown({ marques, onClose }: { marques: Marque[]; onClose: () 
 // ── Navbar principale ────────────────────────────────────────────────────────
 export function Navbar() {
   const pathname   = usePathname();
+  const router     = useRouter();
   const [scrolled, setScrolled]   = useState(false);
+
+  const scrollToSection = (id: string) => {
+    if (pathname === "/") {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      router.push(`/#${id}`);
+    }
+  };
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileSec, setMobileSec]   = useState<string | null>(null);
   const [logoErr,   setLogoErr]     = useState(false);
@@ -229,13 +282,39 @@ export function Navbar() {
 
   // ── Charger activités et marques depuis le backend ─────────────────
   useEffect(() => {
-    fetch(`${BASE}/activites`).then(r => r.json()).then(j => setActivites(j.data ?? j ?? [])).catch(() => {});
+    // Charger les activités avec leurs catégories
+    fetch(`${BASE}/activites`).then(r => r.json()).then(j => {
+      const data: Activite[] = j.data ?? j ?? [];
+      // Enrichir chaque activité avec ses catégories
+      Promise.all(data.map(a =>
+        fetch(`${BASE}/categories?id_activite=${a.id_activite}`).then(r => r.json())
+          .then(d => {
+            const all: CatItem[] = d.data ?? d ?? [];
+            // Construire arbre : racines + leurs enfants
+            const roots = all.filter(c => !c.parent_id).map(c => ({
+              ...c,
+              sous_cats: all.filter(sc => sc.parent_id === c.id_categorie)
+            }));
+            return { ...a, categories: roots };
+          })
+          .catch(() => a)
+      )).then(setActivites);
+    }).catch(() => {});
+
     fetch(`${BASE}/marques`).then(r => r.json()).then(j => {
       const data: Marque[] = j.data ?? j ?? [];
       // Charger les catégories pour chaque marque
       Promise.all(data.map(m =>
         fetch(`${BASE}/marques/${m.slug}`).then(r => r.json())
-          .then(d => ({ ...m, categories: d.data?.categories ?? d?.categories ?? [] }))
+          .then(d => {
+            const all: CatItem[] = d.data?.categories ?? d?.categories ?? [];
+            // Construire arbre : racines + leurs enfants
+            const roots = all.filter(c => !c.parent_id).map(c => ({
+              ...c,
+              sous_cats: all.filter(sc => sc.parent_id === c.id_categorie)
+            }));
+            return { ...m, categories: roots };
+          })
           .catch(() => m)
       )).then(setMarques);
     }).catch(() => {});
@@ -265,8 +344,8 @@ export function Navbar() {
             {/* Logo */}
             <Link href="/" style={{ display:"flex", alignItems:"center", marginRight:40, flexShrink:0, textDecoration:"none", lineHeight:0 }}>
               {!logoErr ? (
-                <Image src="/logos/LOGO ESPACE VERT.png" alt="Espace Vert" width={320} height={90}
-                  style={{ objectFit:"contain", height:72, width:"auto", maxWidth:280, display:"block" }}
+                <Image src="/logos/LOGO ESPACE VERT.png" alt="Espace Vert" width={4500} height={1200}
+                  style={{ objectFit:"contain", height:90, width:"auto", maxWidth:340, display:"block" }}
                   onError={() => setLogoErr(true)} priority/>
               ) : (
                 <span style={{ fontFamily:"var(--font-display)", fontWeight:900, fontSize:"1.2rem", color:C.sageDk, letterSpacing:"-0.03em" }}>
@@ -281,7 +360,7 @@ export function Navbar() {
 
               {/* Activités */}
               <div style={{ position:"relative" }} onMouseEnter={acts.show} onMouseLeave={acts.hide}>
-                <button style={acts.open || isActive("/activites") ? nlOn : nlBtn} className="hover:text-[#2e7d4f]">
+                <button onClick={() => scrollToSection("nos-activites")} style={acts.open || isActive("/activites") ? nlOn : nlBtn} className="hover:text-[#2e7d4f]">
                   Nos activités
                   <motion.span animate={{ rotate: acts.open ? 180 : 0 }} transition={{ duration:0.22 }} style={{ display:"flex", alignItems:"center" }}>
                     <ChevronDownIcon style={{ width:12, height:12, opacity:0.5 }}/>
@@ -300,7 +379,7 @@ export function Navbar() {
 
               {/* Marques */}
               <div style={{ position:"relative" }} onMouseEnter={marquesH.show} onMouseLeave={marquesH.hide}>
-                <button style={marquesH.open || isActive("/marques") ? nlOn : nlBtn} className="hover:text-[#2e7d4f]">
+                <button onClick={() => scrollToSection("nos-marques")} style={marquesH.open || isActive("/marques") ? nlOn : nlBtn} className="hover:text-[#2e7d4f]">
                   Nos marques
                   <motion.span animate={{ rotate: marquesH.open ? 180 : 0 }} transition={{ duration:0.22 }} style={{ display:"flex", alignItems:"center" }}>
                     <ChevronDownIcon style={{ width:12, height:12, opacity:0.5 }}/>
@@ -352,7 +431,7 @@ export function Navbar() {
 
               {/* Activités mobile */}
               <div>
-                <button onClick={() => setMobileSec(mobileSec === "acts" ? null : "acts")}
+                <button onClick={() => { scrollToSection("nos-activites"); setMobileOpen(false); setMobileSec(mobileSec === "acts" ? null : "acts"); }}
                   style={{ ...TY.mobileLink, color:C.ink, padding:"11px 16px", borderRadius:10, width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", background:"transparent", border:"none", cursor:"pointer" }} className="hover:bg-[#edf8f3]">
                   Nos activités
                   <ChevronDownIcon style={{ width:16, height:16, transition:"transform 0.2s", transform: mobileSec === "acts" ? "rotate(180deg)" : "none", color:C.ink3 }}/>
@@ -380,10 +459,10 @@ export function Navbar() {
               {/* Marques mobile */}
               <div>
                 <div style={{ display:"flex" }}>
-                  <Link href="/marques" onClick={() => setMobileOpen(false)}
-                    style={{ ...TY.mobileLink, color:C.ink, padding:"11px 16px", borderRadius:"10px 0 0 10px", flex:1, textDecoration:"none", display:"block" }} className="hover:bg-[#edf8f3]">
+                  <button onClick={() => { scrollToSection("nos-marques"); setMobileOpen(false); }}
+                    style={{ ...TY.mobileLink, color:C.ink, padding:"11px 16px", borderRadius:"10px 0 0 10px", flex:1, textDecoration:"none", display:"block", background:"transparent", border:"none", cursor:"pointer", textAlign:"left", fontFamily:"inherit" }} className="hover:bg-[#edf8f3]">
                     Nos marques
-                  </Link>
+                  </button>
                   <button onClick={() => setMobileSec(mobileSec === "brands" ? null : "brands")}
                     style={{ padding:"11px 14px", borderRadius:"0 10px 10px 0", background:"transparent", border:"none", borderLeft:`1.5px solid ${C.line}`, cursor:"pointer", color:C.ink3 }} className="hover:bg-[#edf8f3]">
                     <ChevronDownIcon style={{ width:16, height:16, transition:"transform 0.2s", transform: mobileSec === "brands" ? "rotate(180deg)" : "none" }}/>

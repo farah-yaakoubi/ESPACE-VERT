@@ -12,6 +12,7 @@
   "dependencies": {
     "@heroicons/react": "^2.1.5",
     "@hookform/resolvers": "^3.3.4",
+    "bootstrap": "^5.3.8",
     "clsx": "^2.1.0",
     "framer-motion": "^11.11.17",
     "lucide-react": "^0.460.0",

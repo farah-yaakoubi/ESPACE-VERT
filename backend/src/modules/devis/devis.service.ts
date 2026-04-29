@@ -95,7 +95,7 @@ export const devisService = {
   async stats() {
     const counts = await devisRepository.countByStatut();
     return Object.fromEntries(
-      DEVIS_STATUTS.map(s => [s, counts.find(c => c.statut === s)?._count.statut ?? 0])
+      DEVIS_STATUTS.map(s => [s, counts.find((c: { statut: string; _count: { statut: number } }) => c.statut === s)?._count.statut ?? 0])
     );
   },
 };

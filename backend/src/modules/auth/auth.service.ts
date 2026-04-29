@@ -28,13 +28,12 @@ export const authService = {
 
     const access_token  = generateAccessToken(payload);
     const refresh_token = generateRefreshToken(payload);
-
     await authRepository.createSession({
       id_admin:      admin.id_admin,
       refresh_token,
       ip_address:    ip         ?? "unknown",
       user_agent:    userAgent  ?? undefined,
-      expires_at:    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      expires_at:    new Date(Date.now() + 7 * 24 * 36000* 60 * 1000),
     });
 
     await logAudit({

@@ -82,6 +82,8 @@ export interface Categorie {
 // ── ProduitImage ──────────────────────────────────────────────────────────────
 
 export interface ProduitImage {
+  id_imgP?:     number;   // présent dans les réponses admin
+  id_produit?:  number;
   url:          string;
   alt:          string | null;
   ordre:        number;
@@ -121,6 +123,7 @@ export interface Produit {
   updated_at:      string;
   id_categorie:    number;
   id_marque:       number;
+  id_activite?:    number | null;
   categorie: {
     id_categorie: number;
     nom:          string;
@@ -134,6 +137,10 @@ export interface Produit {
     logo:        string | null;
     description: string | null;
   };
+  activite?: {
+    nom:  string;
+    slug: string;
+  } | null;
   images: ProduitImage[];
 }
 

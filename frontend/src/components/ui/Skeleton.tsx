@@ -23,10 +23,12 @@ export function SkeletonCard() {
   );
 }
 
-export function GridSkeleton({ count = 8 }: { count?: number }) {
+export function GridSkeleton({ count, cols, rows }: { count?: number; cols?: number; rows?: number }) {
+  const total = count ?? ((cols ?? 3) * (rows ?? 2));
+  const colClass = cols === 4 ? "xl:grid-cols-4 lg:grid-cols-3" : cols === 2 ? "sm:grid-cols-2" : "lg:grid-cols-3";
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {Array.from({ length: count }).map((_, i) => <SkeletonCard key={i} />)}
+    <div className={`grid grid-cols-1 sm:grid-cols-2 ${colClass} gap-6`}>
+      {Array.from({ length: total }).map((_, i) => <SkeletonCard key={i} />)}
     </div>
   );
 }

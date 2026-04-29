@@ -45,15 +45,16 @@ export default async function ActualiteDetailPage({
 }) {
   const { slug } = await params;
 
-  let article;
+  let article: Awaited<ReturnType<typeof actualitesService.bySlug>>;
   try {
     article = await actualitesService.bySlug(slug);
   } catch {
     notFound();
   }
 
-  /* Use published_at if available, otherwise created_at */
-  const dateDisplay = article.published_at ?? article.created_at;
+  // TypeScript: article is guaranteed defined after try/catch with notFound()
+  const post = article!;
+  const dateDisplay = post.published_at ?? post.created_at;
 
   return (
     <div className="bg-sand-50 min-h-screen">
@@ -66,14 +67,12 @@ export default async function ActualiteDetailPage({
             <ChevronRight size={12} />
             <Link href="/actualites" className="hover:text-ev-700 transition-colors">Actualités</Link>
             <ChevronRight size={12} />
-            <span className="text-gray-700 font-medium line-clamp-1">{article.titre}</span>
+            <span className="text-gray-700 font-medium line-clamp-1">{post.titre}</span>
           </nav>
         </div>
       </div>
-
       {/* ── Article ────────────────────────────────────────────── */}
       <article className="container-ev py-12 max-w-3xl">
-
         {/* Back link */}
         <Link
           href="/actualites"
@@ -84,11 +83,11 @@ export default async function ActualiteDetailPage({
         </Link>
 
         {/* Cover image */}
-        {article.image && (
+        {post.image && (
           <div className="relative w-full aspect-video rounded-3xl overflow-hidden mb-8 shadow-card">
             <Image
-              src={article.image}
-              alt={article.titre}
+              src={post.image}
+              alt={post.titre}
               fill
               priority
               className="object-cover"
@@ -103,10 +102,10 @@ export default async function ActualiteDetailPage({
             <Calendar size={14} />
             {formatDate(dateDisplay)}
           </span>
-          {article.admin && (
+          {post.admin && (
             <span className="flex items-center gap-1.5">
               <User size={14} />
-              {article.admin.nom}
+              {post.admin.nom}
             </span>
           )}
         </div>
@@ -116,7 +115,7 @@ export default async function ActualiteDetailPage({
           className="text-3xl md:text-4xl font-bold text-ev-950 mb-8 leading-tight text-balance"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          {article.titre}
+          {post.titre}
         </h1>
 
         {/* Content — stored as HTML in contenu field */}
@@ -129,7 +128,7 @@ export default async function ActualiteDetailPage({
             prose-pre:bg-ev-950 prose-pre:text-ev-100
             text-gray-700 leading-relaxed
           "
-          dangerouslySetInnerHTML={{ __html: article.contenu }}
+          dangerouslySetInnerHTML={{ __html: post.contenu }}
         />
 
         {/* Footer */}

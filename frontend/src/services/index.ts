@@ -61,19 +61,10 @@ export const produitsService = {
     if (params.page)         qs.set("page",         String(params.page));
     if (params.limit)        qs.set("limit",         String(params.limit));
     if (params.id_marque)    qs.set("id_marque",     String(params.id_marque));
+    if (params.id_activite)  qs.set("id_activite",   String(params.id_activite));
     if (params.id_categorie) qs.set("id_categorie",  String(params.id_categorie));
     if (params.division)     qs.set("division",      params.division);
     if (params.search)       qs.set("search",        params.search);
-
-    /*
-     * Le backend /api/produits ne filtre pas directement par id_activite.
-     * La relation est : Produit → Categorie → Activite.
-     * Si id_activite est fourni SANS id_categorie, on ne peut pas filtrer
-     * directement — les sections activite passent toujours id_categorie
-     * via le filtre de catégorie. id_activite est conservé dans useProducts
-     * pour usage futur ou si le backend l'ajoute.
-     */
-
     const q = qs.toString();
     const res = await get<ProduitCard[]>(`/produits${q ? `?${q}` : ""}`, { revalidate: 60 });
     if (!res.success) throw new Error(res.error);

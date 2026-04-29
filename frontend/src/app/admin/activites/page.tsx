@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { adminActivites, type ActiviteAdmin } from "@/lib/admin-api";
-import { Plus, Edit2, Trash2, RefreshCw, CheckCircle, XCircle, ExternalLink } from "lucide-react";
+import { ImageUploader } from "@/components/admin/ImageUploader";
+import { Plus, Edit2, Trash2, RefreshCw, CheckCircle, XCircle, ExternalLink, X } from "lucide-react";
+import Image from "next/image";
 
 function toSlug(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
@@ -121,9 +123,19 @@ export default function AdminActivitesPage() {
                   className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 font-mono"/>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Image (URL)</label>
-                <input value={form.image} onChange={e=>setForm({...form,image:e.target.value})} placeholder="https://..."
-                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"/>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">Image</label>
+                <ImageUploader onUpload={url=>setForm(f=>({...f,image:url}))} label="Image de l'activité" />
+                {form.image&&(
+                  <div className="mt-2 flex items-center gap-3 p-2 bg-gray-50 rounded-xl border border-gray-100">
+                    <div className="w-12 h-12 rounded-lg border border-gray-200 bg-white overflow-hidden flex-shrink-0">
+                      <Image src={form.image} alt="Aperçu" width={48} height={48} className="w-full h-full object-cover" onError={()=>{}}/>
+                    </div>
+                    <p className="flex-1 text-xs font-mono text-gray-400 truncate">{form.image}</p>
+                    <button type="button" onClick={()=>setForm(f=>({...f,image:""}))} className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 shrink-0">
+                      <X size={13}/>
+                    </button>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>

@@ -5,6 +5,7 @@ import { CreateFaqDto, UpdateFaqDto, FaqQueryDto } from "./faq.schema";
 export const faqService = {
   async listPublic(params: FaqQueryDto) { return faqRepository.findAllPublic(params); },
   async listAdmin(params: FaqQueryDto)  { return faqRepository.findAll(params); },
+  async getCategories() { return faqRepository.getCategories(); },
   async getById(id: number) {
     const f = await faqRepository.findById(id);
     if (!f) throw { status: 404, message: "FAQ introuvable" };

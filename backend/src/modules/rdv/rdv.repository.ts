@@ -1,6 +1,7 @@
 // src/modules/rdv/rdv.repository.ts
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
-import { RdvQueryDto } from "./rdv.schema";
+import { RdvQueryDto, type RdvStatut } from "./rdv.schema";
 
 export const CRENEAUX = [
   "08:00","08:30","09:00","09:30","10:00","10:30",
@@ -21,7 +22,7 @@ export type CreateRdvPayload = {
 };
 
 export type UpdateRdvPayload = {
-  statut?:       string;
+  statut?:       RdvStatut;
   note_interne?: string | null;
   heure?:        string | null;
   id_admin?:     number;
@@ -71,9 +72,15 @@ export const rdvRepository = {
   },
 
   async update(id_rdv: number, data: UpdateRdvPayload) {
+    const payload: Prisma.RendezVousUncheckedUpdateInput = {};
+    if (data.statut !== undefined) payload.statut = data.statut;
+    if (data.note_interne !== undefined) payload.note_interne = data.note_interne;
+    if (data.heure !== undefined) payload.heure = data.heure;
+    if (data.id_admin !== undefined) payload.id_admin = data.id_admin;
+
     return prisma.rendezVous.update({
       where:   { id_rdv },
-      data,
+      data: payload,
       include: LIST_INCLUDE,
     });
   },

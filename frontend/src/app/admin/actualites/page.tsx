@@ -1,11 +1,11 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
 import {
-  adminActualites, adminActualitesCreate,
+  adminActualites, adminActualitesCreate, adminUpload,
   type ActualiteAdmin, type ActualiteDetail
 } from "@/lib/admin-api";
-import { Plus, Edit2, Search, RefreshCw, ToggleLeft, ToggleRight, Trash2, Newspaper, ExternalLink } from "lucide-react";
+import { Plus, Edit2, Search, RefreshCw, ToggleLeft, ToggleRight, Trash2, Newspaper, ExternalLink, Upload, Link as LinkIcon, Loader2, X } from "lucide-react";
 
 function fmt(d: string) {
   return new Date(d).toLocaleDateString("fr-FR", { day:"2-digit", month:"2-digit", year:"numeric" });
@@ -27,6 +27,9 @@ export default function AdminActualitesPage() {
   const [form,    setForm]    = useState(EMPTY);
   const [saving,  setSaving]  = useState(false);
   const [err,     setErr]     = useState("");
+  const [imgTab,  setImgTab]  = useState<"url"|"file">("url");
+  const [imgUploading, setImgUploading] = useState(false);
+  const imgFileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async (page=1) => {
     setLoading(true);
@@ -164,9 +167,40 @@ export default function AdminActualitesPage() {
                   className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 font-mono text-xs"/>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Image (URL)</label>
-                <input value={form.image} onChange={e=>setForm({...form,image:e.target.value})} placeholder="https://..."
-                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"/>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Image de couverture</label>
+                <div className="flex gap-2 mb-2">
+                  {(["url","file"] as const).map(t => (
+                    <button key={t} onClick={()=>setImgTab(t)} type="button"
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg font-medium border transition-colors ${imgTab===t?"bg-ev-700 text-white border-ev-700":"bg-white text-gray-600 border-gray-200 hover:border-ev-300"}`}>
+                      {t==="url"?<><LinkIcon size={11}/>URL</>:<><Upload size={11}/>Fichier</>}
+                    </button>
+                  ))}
+                </div>
+                {imgTab==="url" ? (
+                  <input value={form.image} onChange={e=>setForm({...form,image:e.target.value})} placeholder="https://..."
+                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"/>
+                ) : (
+                  <div onClick={()=>imgFileRef.current?.click()}
+                    className="border-2 border-dashed border-gray-200 hover:border-ev-400 rounded-xl p-4 text-center cursor-pointer transition-colors hover:bg-gray-50">
+                    <input ref={imgFileRef} type="file" accept="image/*" className="hidden" onChange={async e=>{
+                      const f=e.target.files?.[0]; if(!f) return;
+                      setImgUploading(true);
+                      try { const d=await adminUpload.image(f); setForm(prev=>({...prev,image:d.url})); }
+                      catch(ex){ setErr((ex as Error).message); }
+                      finally { setImgUploading(false); }
+                    }}/>
+                    {imgUploading ? <div className="flex items-center justify-center gap-2"><Loader2 size={18} className="animate-spin text-ev-600"/><span className="text-sm text-ev-700">Upload…</span></div>
+                      : <><Upload size={18} className="mx-auto mb-1 text-gray-400"/><p className="text-xs text-gray-500">Cliquer pour choisir une image</p></>}
+                  </div>
+                )}
+                {form.image && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 shrink-0">
+                      <Image src={form.image} alt="Aperçu" width={64} height={64} className="object-cover w-full h-full" onError={()=>{}}/>
+                    </div>
+                    <button onClick={()=>setForm({...form,image:""})} className="text-xs text-red-500 hover:underline flex items-center gap-1"><X size={11}/>Supprimer</button>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Contenu * (HTML accepté)</label>

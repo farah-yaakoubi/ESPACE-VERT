@@ -1,8 +1,7 @@
 // src/lib/audit.ts
 // FIX: Audit enrichi — sauvegarde l'objet AVANT suppression dans detail
 import { prisma } from "./prisma";
-
-export type AuditAction = "LOGIN"|"LOGOUT"|"CREATE"|"UPDATE"|"DELETE"|"REPLY"|"STATUS_CHANGE"|"TOGGLE"|"VIEW";
+import type { AuditAction } from "../types";
 
 export interface AuditParams {
   id_admin?:    number;
