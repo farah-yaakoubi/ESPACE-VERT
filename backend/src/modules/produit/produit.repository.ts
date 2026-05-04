@@ -189,7 +189,7 @@ export const produitRepository = {
     return prisma.produitImage.create({ data: { id_produit, ...data } });
   },
 
-  async updateImage(id_imgP: number, data: Partial<{ alt: string | null; is_principale: boolean; ordre: number }>) {
+  async updateImage(id_imgP: number, data: Partial<{ alt: string | null; is_principale: boolean; ordre: number; conditionnement: string | null }>) {
     return prisma.produitImage.update({ where: { id_imgP }, data });
   },
 
@@ -199,6 +199,30 @@ export const produitRepository = {
   },
 
   async deleteImage(id_imgP: number) {
-    return prisma.produitImage.delete({ where: { id_imgP } });
+    // Récupérer l'URL avant suppression pour pouvoir effacer le fichier physique
+    const img = await prisma.produitImage.findUnique({ where: { id_imgP } });
+    const deleted = await prisma.produitImage.delete({ where: { id_imgP } });
+
+    // Supprimer le fichier physique si l'URL pointe vers notre serveur local
+    if (img?.url) {
+      try {
+        const { URL } = await import("url");
+        const { default: fs } = await import("fs");
+        const { default: path } = await import("path");
+        const parsed = new URL(img.url);
+        // Seulement si c'est un fichier uploadé localement (/uploads/...)
+        if (parsed.pathname.startsWith("/uploads/")) {
+          const filename = parsed.pathname.replace("/uploads/", "");
+          const filePath = path.join(process.cwd(), "uploads", filename);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
+        }
+      } catch {
+        // Ne pas bloquer si la suppression du fichier échoue
+      }
+    }
+
+    return deleted;
   },
 };

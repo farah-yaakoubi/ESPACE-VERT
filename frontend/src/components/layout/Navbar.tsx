@@ -10,7 +10,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const NAV_H  = 80;
+const NAV_H  = 64;
 const BASE   = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 const C = {
@@ -86,7 +86,7 @@ function ActivitesDropdown({ activites, onClose }: { activites: Activite[]; onCl
                   <Link href={`/activites/${a.slug}`} onClick={onClose}
                     onMouseEnter={() => setHov(a.id_activite)}
                     style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 14px", borderLeft:`3px solid ${on ? C.sage : "transparent"}`, background: on ? `linear-gradient(90deg,${C.sageLt},#e8f8ef)` : "transparent", transition:"all 0.12s", textDecoration:"none" }}>
-                    <div style={{ width:30, height:30, borderRadius:8, flexShrink:0, background: on ? `linear-gradient(135deg,${C.sage},${C.sageMd})` : "#e2ede7", display:"flex", alignItems:"center", justifyContent:"center", boxShadow: on ? `0 3px 8px rgba(46,125,79,0.3)` : "none", overflow:"hidden" }}>
+                    <div style={{ width:30, height:30, borderRadius:8, flexShrink:0, background: "#fff", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", boxShadow: on ? `0 3px 8px rgba(46,125,79,0.15)` : "0 1px 3px rgba(0,0,0,0.06)", border: on ? `1.5px solid ${C.border}` : "1.5px solid #e2ede7" }}>
                       {a.image
                         ? <Image src={a.image} alt={a.nom} width={30} height={30} style={{ objectFit:"cover", width:"100%", height:"100%" }}/>
                         : <Ico.Leaf style={{ width:13, height:13, color: on ? "#fff" : C.ink3 }}/>
@@ -182,9 +182,9 @@ function MarquesDropdown({ marques, onClose }: { marques: Marque[]; onClose: () 
                 <Link href={`/marques/${m.slug}`} onClick={onClose}
                   onMouseEnter={() => setBrand(m)}
                   style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 14px", borderLeft:`3px solid ${on ? C.sage : "transparent"}`, background: on ? `linear-gradient(90deg,${C.sageLt},#e8f8ef)` : "transparent", transition:"all 0.12s", textDecoration:"none" }}>
-                  <div style={{ width:30, height:30, borderRadius:8, flexShrink:0, background: on ? `linear-gradient(135deg,${C.sage},${C.sageMd})` : "#e2ede7", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", boxShadow: on ? `0 3px 8px rgba(46,125,79,0.3)` : "none" }}>
+                  <div style={{ width:30, height:30, borderRadius:8, flexShrink:0, background: "#fff", display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden", boxShadow: on ? `0 3px 8px rgba(46,125,79,0.15)` : "0 1px 3px rgba(0,0,0,0.06)", border: on ? `1.5px solid ${C.border}` : "1.5px solid #e2ede7" }}>
                     {m.logo
-                      ? <Image src={m.logo} alt={m.nom} width={30} height={30} style={{ objectFit:"contain", padding:2, filter: on ? "brightness(10)" : "none" }}/>
+                      ? <Image src={m.logo} alt={m.nom} width={30} height={30} style={{ objectFit:"contain", padding:2 }}/>
                       : <Ico.Leaf style={{ width:13, height:13, color: on ? "#fff" : C.ink3 }}/>
                     }
                   </div>
@@ -337,15 +337,15 @@ export function Navbar() {
   return (
     <>
       <nav className="fixed inset-x-0 top-0 z-50"
-        style={{ background: scrolled ? "rgba(255,255,255,0.97)" : "rgba(255,255,255,0.93)", backdropFilter:"blur(28px)", borderBottom:`1.5px solid ${scrolled ? "rgba(46,125,79,0.15)" : C.line}`, boxShadow: scrolled ? `0 2px 24px rgba(46,125,79,0.1)` : "none", transition:"all 0.3s" }}>
+        style={{ background: scrolled ? "rgba(255,255,255,0.98)" : "rgba(248,251,249,0.96)", backdropFilter:"blur(20px)", borderBottom:`1.5px solid ${scrolled ? "rgba(46,125,79,0.18)" : C.line}`, boxShadow: scrolled ? `0 2px 20px rgba(46,125,79,0.12)` : "none", transition:"all 0.3s" }}>
         <div style={{ height:2.5, background:`linear-gradient(90deg,${C.gradA},${C.gradB},${C.gradC})` }}/>
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           <div style={{ display:"flex", alignItems:"center", height:NAV_H }}>
             {/* Logo */}
             <Link href="/" style={{ display:"flex", alignItems:"center", marginRight:40, flexShrink:0, textDecoration:"none", lineHeight:0 }}>
               {!logoErr ? (
-                <Image src="/logos/LOGO ESPACE VERT.png" alt="Espace Vert" width={4500} height={1200}
-                  style={{ objectFit:"contain", height:90, width:"auto", maxWidth:340, display:"block" }}
+                <Image src="/logos/LOGO ESPACE VERT.png" alt="Espace Vert" width={4500} height={1000}
+                  style={{ objectFit:"contain", height:560, width:"auto", maxWidth:230, display:"block" }}
                   onError={() => setLogoErr(true)} priority/>
               ) : (
                 <span style={{ fontFamily:"var(--font-display)", fontWeight:900, fontSize:"1.2rem", color:C.sageDk, letterSpacing:"-0.03em" }}>
@@ -476,7 +476,7 @@ export function Navbar() {
                           style={{ display:"flex", alignItems:"center", gap:11, marginLeft:12, padding:"10px 14px", borderRadius:12, border:`1.5px solid ${C.line}`, marginBottom:8, textDecoration:"none", background:"#fff" }} className="hover:bg-[#edf8f3]">
                           <div style={{ width:36, height:36, borderRadius:9, background:`linear-gradient(135deg,${C.sage},${C.sageMd})`, display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}>
                             {m.logo
-                              ? <Image src={m.logo} alt={m.nom} width={36} height={36} style={{ objectFit:"contain", padding:4, filter:"brightness(10)" }}/>
+                              ? <Image src={m.logo} alt={m.nom} width={36} height={36} style={{ objectFit:"contain", padding:4 }}/>
                               : <Ico.Leaf style={{ width:16, height:16, color:"rgba(255,255,255,0.92)" }}/>
                             }
                           </div>

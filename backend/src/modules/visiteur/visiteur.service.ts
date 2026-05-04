@@ -1,5 +1,7 @@
+// src/modules/visiteur/visiteur.service.ts
+// REMPLACE l'ancien fichier
 import { visiteurRepository } from "./visiteur.repository";
-import { paginate } from "../../lib/response";
+import { paginate }           from "../../lib/response";
 import { TrackDto, VisiteurQueryDto, StatsVisiteurQueryDto } from "./visiteur.schema";
 
 export const visiteurService = {
@@ -11,9 +13,13 @@ export const visiteurService = {
       await visiteurRepository.logPage(visiteur.id_visiteur, data.url, data.titre, data.duree);
     }
 
-    // Tracking recherche
     if (data.search_query?.trim()) {
       await visiteurRepository.logSearch(visiteur.id_visiteur, data.search_query.trim(), data.search_results ?? 0);
+    }
+
+    // NOUVEAU — incrémenter la consultation FAQ
+    if (data.id_faq) {
+      await visiteurRepository.incrementFaqConsultation(data.id_faq).catch(() => null);
     }
 
     return visiteur.token_visiteur;

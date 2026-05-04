@@ -1,16 +1,3 @@
-// src/lib/admin-api.ts
-// ─────────────────────────────────────────────────────────────────────────────
-// Client HTTP admin — aligné EXACTEMENT sur les routes backend :
-//   /api/admin/auth        → auth
-//   /api/admin/stats       → dashboard
-//   /api/admin/devis       → devis
-//   /api/admin/rdv         → rdv
-//   /api/admin/messages    → contact  ← NB: "messages" pas "contact"
-//   /api/admin/produits    → produits
-//   /api/admin/actualites  → actualites
-//   /api/admin/admins      → gestion admins (superAdmin seulement)
-// ─────────────────────────────────────────────────────────────────────────────
-
 import type { ProduitImage } from "@/types/api";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
@@ -283,7 +270,7 @@ export interface ProduitAdmin {
   marque:     { nom: string; slug: string };
   categorie:  { nom: string; slug: string };
   activite?:  { nom: string; slug: string } | null;
-  images:     { url: string; is_principale: boolean }[];
+  images:     ProduitImage[];
 }
 
 export interface ActualiteAdmin {
@@ -387,11 +374,12 @@ async function uploadFile(path: string, file: File): Promise<{ url: string; file
 export const adminUpload = {
   image:          (file: File) => uploadFile("/admin/upload/image", file),
   pdf:            (file: File) => uploadFile("/admin/upload/pdf", file),
-  produitImage:   (id: number, file: File, alt?: string, isPrinc = false) => {
+  produitImage:   (id: number, file: File, alt?: string, isPrinc = false, conditionnement?: string) => {
     const form = new FormData();
     form.append("file", file);
-    if (alt)     form.append("alt", alt);
+    if (alt)              form.append("alt", alt);
     form.append("is_principale", String(isPrinc));
+    if (conditionnement)  form.append("conditionnement", conditionnement);
     const token = tokenStore.get();
     return fetch(`${BASE}/admin/produits/${id}/images/upload`, {
       method: "POST",

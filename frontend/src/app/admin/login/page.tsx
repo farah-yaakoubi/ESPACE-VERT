@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, AlertCircle, Clock, ArrowRight, Shield, Leaf, Package, BarChart3, Users } from "lucide-react";
+import Image from "next/image";
 import { adminAuth, tokenStore } from "@/lib/admin-api";
 
 const FEATURES = [
@@ -65,16 +66,20 @@ export default function AdminLoginPage() {
         <div style={{ position:"absolute", bottom:"15%", right:"-10%", width:"45%", aspectRatio:"1",
           borderRadius:"50%", background:"rgba(16,185,129,0.08)", filter:"blur(60px)" }} />
 
-        {/* Top: logo */}
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg,#3C50E0,#7B8FF0)" }}>
-            <Leaf size={20} className="text-white" />
-          </div>
-          <div>
-            <p className="text-white font-bold text-[16px] leading-none" style={{ letterSpacing:"-0.02em" }}>EspaceVert</p>
-            <p className="text-[11px] mt-0.5 font-medium" style={{ color:"#3C50E0" }}>Administration</p>
-          </div>
+        {/* Top: logo image */}
+        <div className="relative z-10">
+          <Image
+            src="/logos/LOGO ESPACE VERT.png"
+            alt="Espace Vert"
+            width={160}
+            height={60}
+            className="object-contain"
+            style={{ filter: "brightness(0) invert(1)" }}
+          />
+          <p className="text-[11px] mt-2 font-medium tracking-widest uppercase"
+            style={{ color:"rgba(255,255,255,0.35)" }}>
+            Administration
+          </p>
         </div>
 
         {/* Middle: headline + features */}
@@ -116,14 +121,13 @@ export default function AdminLoginPage() {
 
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background:"linear-gradient(135deg,#3C50E0,#7B8FF0)" }}>
-              <Leaf size={18} className="text-white" />
-            </div>
-            <div>
-              <p className="font-bold text-gray-800 text-base leading-none" style={{ letterSpacing:"-0.02em" }}>EspaceVert</p>
-              <p className="text-xs mt-0.5" style={{ color:"#3C50E0" }}>Administration</p>
-            </div>
+            <Image
+              src="/images/logos/LOGO ESPACE VERT.png"
+              alt="Espace Vert"
+              width={120}
+              height={45}
+              className="object-contain"
+            />
           </div>
 
           {/* Card */}

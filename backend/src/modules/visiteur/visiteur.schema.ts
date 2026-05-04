@@ -1,3 +1,5 @@
+// src/modules/visiteur/visiteur.schema.ts
+// REMPLACE l'ancien fichier
 import { z } from "zod";
 
 export const TrackSchema = z.object({
@@ -8,6 +10,8 @@ export const TrackSchema = z.object({
   // Tracking recherche
   search_query:   z.string().max(500).optional(),
   search_results: z.number().int().min(0).optional().default(0),
+  // NOUVEAU — tracking FAQ
+  id_faq:         z.number().int().positive().optional(),
 });
 
 export const VisiteurQuerySchema = z.object({
@@ -19,6 +23,6 @@ export const StatsVisiteurQuerySchema = z.object({
   days: z.coerce.number().int().min(1).max(365).default(30),
 });
 
-export type TrackDto               = z.infer<typeof TrackSchema>;
-export type VisiteurQueryDto       = z.infer<typeof VisiteurQuerySchema>;
-export type StatsVisiteurQueryDto  = z.infer<typeof StatsVisiteurQuerySchema>;
+export type TrackDto              = z.infer<typeof TrackSchema>;
+export type VisiteurQueryDto      = z.infer<typeof VisiteurQuerySchema>;
+export type StatsVisiteurQueryDto = z.infer<typeof StatsVisiteurQuerySchema>;

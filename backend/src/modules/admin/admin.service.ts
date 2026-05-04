@@ -1,10 +1,10 @@
 // src/modules/admin/admin.service.ts
+// REMPLACE l'ancien fichier — ajoute updateMe (profil perso) + avatar
 import { adminRepository } from "./admin.repository";
-import { hashPassword } from "../../lib/auth";
-import { logAudit } from "../../lib/audit";
+import { hashPassword }    from "../../lib/auth";
+import { logAudit }        from "../../lib/audit";
 import { CreateAdminDto, UpdateAdminDto } from "./admin.schema";
 
-// Retire le mot de passe de la réponse
 const sanitize = <T extends { mot_de_passe?: string }>(admin: T) => {
   const { mot_de_passe, ...safe } = admin;
   return safe;
@@ -58,6 +58,18 @@ export const adminService = {
 
     const admin = await adminRepository.update(id, updateData);
     await logAudit({ id_admin: id_admin_requester, action: "UPDATE", entity_name: "admin", entity_id: id });
+    return sanitize(admin);
+  },
+
+  // NOUVEAU — modifier son propre profil (nom, email, avatar)
+  async updateMe(id_admin: number, data: { nom?: string; email?: string; avatar?: string }) {
+    const updateData: any = {};
+    if (data.nom)    updateData.nom    = data.nom.trim();
+    if (data.email)  updateData.email  = data.email.toLowerCase().trim();
+    if (data.avatar !== undefined) updateData.avatar = data.avatar;
+
+    const admin = await adminRepository.update(id_admin, updateData);
+    await logAudit({ id_admin, action: "UPDATE", entity_name: "admin", entity_id: id_admin, detail: { action: "update_profile" } });
     return sanitize(admin);
   },
 

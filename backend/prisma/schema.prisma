@@ -8,6 +8,14 @@ datasource db {
 }
 
 // ─── ENUMS ────────────────────────────────────────────────────────────────────
+// NOUVEAU
+enum NotifType {
+  nouveau_devis
+  nouveau_rdv
+  nouveau_message
+  @@map("notif_type")
+}
+
 enum DevisStatut {
   nouveau
   en_cours
@@ -47,17 +55,53 @@ model Admin {
   mot_de_passe String   @db.VarChar(255)
   actif        Boolean  @default(true)
   id_role      Int      @default(2)
+  avatar       String?  @db.VarChar(500)
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
-  role          Role             @relation(fields: [id_role], references: [id_role])
-  actualites    Actualite[]
-  devis_traites DevisDemande[]
-  rdv_confirmes RendezVous[]
-  messages_rep  ContactMessage[]
-  audit_logs    AuditLog[]
-  sessions      SessionAdmin[]
+  role              Role             @relation(fields: [id_role], references: [id_role])
+  actualites        Actualite[]
+  devis_traites     DevisDemande[]
+  rdv_confirmes     RendezVous[]
+  messages_rep      ContactMessage[]
+  audit_logs        AuditLog[]
+  sessions          SessionAdmin[]
+  notifs_recues     AdminNotification[] @relation("NotifDestinataire")
+  messages_envoyes  ChatMessage[]       @relation("ChatEmetteur")
+  messages_recus    ChatMessage[]       @relation("ChatRecepteur")
   @@index([id_role])
   @@map("admins")
+}
+
+// ─── NOTIFICATIONS ADMIN ──────────────────────────────────────────────────────
+model AdminNotification {
+  id_notif   Int       @id @default(autoincrement())
+  id_admin   Int
+  type       NotifType
+  titre      String    @db.VarChar(200)
+  corps      String?   @db.VarChar(500)
+  lien       String?   @db.VarChar(300)
+  lu         Boolean   @default(false)
+  created_at DateTime  @default(now())
+  admin Admin @relation("NotifDestinataire", fields: [id_admin], references: [id_admin], onDelete: Cascade)
+  @@index([id_admin, lu])
+  @@index([created_at])
+  @@map("admin_notifications")
+}
+
+// ─── CHAT INTER-ADMINS ────────────────────────────────────────────────────────
+model ChatMessage {
+  id_msg     Int      @id @default(autoincrement())
+  id_from    Int
+  id_to      Int
+  contenu    String   @db.Text
+  lu         Boolean  @default(false)
+  created_at DateTime @default(now())
+  emetteur  Admin @relation("ChatEmetteur",  fields: [id_from], references: [id_admin], onDelete: Cascade)
+  recepteur Admin @relation("ChatRecepteur", fields: [id_to],   references: [id_admin], onDelete: Cascade)
+  @@index([id_from, id_to])
+  @@index([id_to, lu])
+  @@index([created_at])
+  @@map("chat_messages")
 }
 
 model SessionAdmin {
@@ -81,6 +125,9 @@ model Visiteur {
   user_agent     String?  @db.Text
   pays           String?  @db.VarChar(80)
   region         String?  @db.VarChar(120)
+  device_type    String?  @db.VarChar(20)
+  browser        String?  @db.VarChar(60)
+  os             String?  @db.VarChar(60)
   first_visit    DateTime @default(now())
   last_visit     DateTime @updatedAt
   visites_pages  VisitePage[]
@@ -97,10 +144,13 @@ model VisitePage {
   url         String   @db.VarChar(500)
   titre       String?  @db.VarChar(255)
   duree       Int      @default(0)
+  id_produit  Int?
   visited_at  DateTime @default(now())
   visiteur Visiteur @relation(fields: [id_visiteur], references: [id_visiteur], onDelete: Cascade)
+  produit  Produit? @relation(fields: [id_produit], references: [id_produit], onDelete: SetNull)
   @@index([id_visiteur])
   @@index([visited_at])
+  @@index([id_produit])
   @@map("visites_pages")
 }
 
@@ -169,25 +219,34 @@ model Categorie {
 }
 
 model Produit {
-  id_produit      Int      @id @default(autoincrement())
-  nom             String   @db.VarChar(200)
-  description     String?  @db.Text
-  fiche_technique String?  @db.Text
-  slug            String   @unique @db.VarChar(220)
-  id_categorie    Int
-  id_marque       Int?     // ← optionnel : un produit peut n'appartenir qu'à une activité
-  id_activite     Int?     // ← lien direct optionnel avec activité
-  division        Division @default(standard)
-  tags            Json?    @default("[]")
-  actif           Boolean  @default(true)
-  ordre           Int      @default(0)
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  id_produit           Int      @id @default(autoincrement())
+  nom                  String   @db.VarChar(200)
+  description          String?  @db.Text
+  fiche_technique      String?  @db.Text
+  slug                 String   @unique @db.VarChar(220)
+  id_categorie         Int
+  id_marque            Int?     // ← optionnel : un produit peut n'appartenir qu'à une activité
+  id_activite          Int?     // ← lien direct optionnel avec activité
+  division             Division @default(standard)
+  tags                 Json?    @default("[]")
+  actif                Boolean  @default(true)
+  ordre                Int      @default(0)
+  // ── Champs techniques ──────────────────────────────────────────
+  sku                  String?  @db.VarChar(100)
+  poids                String?  @db.VarChar(50)
+  nature               String?  @db.VarChar(100)
+  composition_chimique String?  @db.Text
+  usage                String?  @db.Text
+  biologique           Boolean? @default(false)
+  conditionnement      String?  @db.VarChar(200)
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
   categorie Categorie @relation(fields: [id_categorie], references: [id_categorie], onDelete: Restrict, onUpdate: Cascade)
   marque    Marque?   @relation(fields: [id_marque],    references: [id_marque])
   activite  Activite? @relation(fields: [id_activite],  references: [id_activite], onDelete: SetNull)
   images    ProduitImage[]
   devis     DevisDemande[]
+  visites   VisitePage[]
   @@index([id_categorie])
   @@index([id_marque])
   @@index([id_activite])
@@ -202,6 +261,7 @@ model ProduitImage {
   alt           String? @db.VarChar(255)
   ordre         Int     @default(0)
   is_principale Boolean @default(false)
+  conditionnement String? @db.VarChar(200)
   produit Produit @relation(fields: [id_produit], references: [id_produit], onDelete: Cascade)
   @@index([id_produit])
   @@map("produits_images")

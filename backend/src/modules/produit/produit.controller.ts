@@ -1,5 +1,4 @@
-// src/modules/produit/produit.controller.ts
-// HTTP in/out uniquement — parse req, appelle service, envoie res
+
 import { Request, Response } from "express";
 import multer from "multer";
 import path   from "path";
@@ -179,11 +178,24 @@ export const uploadImageFile = (req: Request, res: Response) => {
     if (err) return badRequest(res, err.message);
     if (!req.file) return badRequest(res, "Aucun fichier reçu");
     try {
-      const url  = fileUrl(req, "images", req.file.filename);
-      const alt  = (req.body?.alt  as string) || null;
+      const url     = fileUrl(req, "images", req.file.filename);
+      const alt     = (req.body?.alt as string) || null;
       const isPrinc = req.body?.is_principale === "true";
+
+      // ── Anti-doublon : URL identique déjà enregistrée pour ce produit ──
+      const { prisma } = await import("../../lib/prisma");
+      const existing = await prisma.produitImage.findFirst({ where: { id_produit: id, url } });
+      if (existing) {
+        // Fichier dupliqué sur disque → nettoyage immédiat
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch { /* ignore */ }
+        return ok(res, existing);
+      }
+
+      const conditionnement = (req.body?.conditionnement as string) || null;
       const data = await produitService.addImage(id, {
-        url, alt, ordre: 0, is_principale: isPrinc,
+        url, alt, ordre: 0, is_principale: isPrinc, conditionnement,
       }, req.admin!.id_admin);
       created(res, data);
     } catch (e) { handleError(res, e); }

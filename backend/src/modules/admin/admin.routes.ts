@@ -1,9 +1,15 @@
 // src/modules/admin/admin.routes.ts
-import { Router } from "express";
-import { authenticate, requireSuperAdmin } from "../../middleware/authMiddleware";
-import * as ctrl from "./admin.controller";
+// REMPLACE l'ancien fichier — ajoute PATCH /me accessible à tous les admins
+import { Router }                              from "express";
+import { authenticate, requireSuperAdmin }     from "../../middleware/authMiddleware";
+import * as ctrl                               from "./admin.controller";
 
 export const adminAdminRouter = Router();
+
+// ── Route "me" — tout admin connecté peut modifier son profil ────────────────
+adminAdminRouter.patch("/me", authenticate, ctrl.updateMe);
+
+// ── Routes super-admin uniquement ────────────────────────────────────────────
 adminAdminRouter.use(authenticate, requireSuperAdmin);
 adminAdminRouter.get("/roles",  ctrl.getRoles);
 adminAdminRouter.get("/",       ctrl.list);
