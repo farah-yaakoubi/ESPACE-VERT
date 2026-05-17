@@ -1,8 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Maximize2, X, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize2, X, ZoomIn, ZoomOut, Package } from "lucide-react";
 
 interface Img {
   url: string;
@@ -11,127 +11,399 @@ interface Img {
   conditionnement?: string | null;
 }
 
-/* ── Palette par index conditionnement ─────────────────────────── */
+/* ── Palette par conditionnement ─────────────────────────────── */
 const COND_PALETTES = [
-  { bg: "#e8f5e9", border: "#66bb6a", text: "#1b5e20", dot: "#2e7d32", tabBg: "#2e7d32" },
-  { bg: "#e3f2fd", border: "#64b5f6", text: "#0d47a1", dot: "#1565c0", tabBg: "#1565c0" },
-  { bg: "#fff3e0", border: "#ffa726", text: "#e65100", dot: "#ef6c00", tabBg: "#e65100" },
-  { bg: "#f3e5f5", border: "#ba68c8", text: "#4a148c", dot: "#6a1b9a", tabBg: "#6a1b9a" },
-  { bg: "#fce4ec", border: "#f48fb1", text: "#880e4f", dot: "#ad1457", tabBg: "#c2185b" },
-  { bg: "#e0f7fa", border: "#4dd0e1", text: "#006064", dot: "#00838f", tabBg: "#00838f" },
+  { bg: "#e8f5e9", border: "#66bb6a", text: "#1b5e20", tab: "#2e7d32", accent: "#4caf50" },
+  { bg: "#e3f2fd", border: "#64b5f6", text: "#0d47a1", tab: "#1565c0", accent: "#2196f3" },
+  { bg: "#fff3e0", border: "#ffa726", text: "#e65100", tab: "#ef6c00", accent: "#ff9800" },
+  { bg: "#f3e5f5", border: "#ba68c8", text: "#4a148c", tab: "#6a1b9a", accent: "#9c27b0" },
+  { bg: "#fce4ec", border: "#f48fb1", text: "#880e4f", tab: "#c2185b", accent: "#e91e63" },
+  { bg: "#e0f7fa", border: "#4dd0e1", text: "#006064", tab: "#00838f", accent: "#00bcd4" },
 ];
 
 function getPalette(idx: number) {
   return COND_PALETTES[idx % COND_PALETTES.length];
 }
 
-/* ── Mini galerie pour un conditionnement ─────────────────────── */
-function CondGallery({ images, nom }: { images: Img[]; nom: string }) {
-  const [active, setActive] = useState(0);
+/* ── Tailles des cadres : du grand au petit ───────────────────── */
+// Plus le conditionnement est à gauche (index 0) → plus grand
+const FRAME_SIZES = [
+  { width: "100%", aspectRatio: "1/1",   label: "xl"  },
+  { width: "90%",  aspectRatio: "1/1",   label: "lg"  },
+  { width: "80%",  aspectRatio: "1/1",   label: "md"  },
+  { width: "70%",  aspectRatio: "1/1",   label: "sm"  },
+  { width: "60%",  aspectRatio: "1/1",   label: "xs"  },
+  { width: "55%",  aspectRatio: "1/1",   label: "xxs" },
+];
+
+function getFrameSize(idx: number) {
+  return FRAME_SIZES[Math.min(idx, FRAME_SIZES.length - 1)];
+}
+
+/* ── Diaporama unifié (toutes images mélangées) ───────────────── */
+interface SlideItem {
+  img: Img;
+  condLabel: string | null;
+  condIdx: number;
+}
+
+function UnifiedSlideshow({ slides, nomProduit }: { slides: SlideItem[]; nomProduit: string }) {
+  const [current, setCurrent] = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const safeIdx = Math.min(active, images.length - 1);
-  const mainImg = images[safeIdx];
+  const [autoPlay, setAutoPlay] = useState(true);
 
-  const prev = () => setActive(a => (a - 1 + images.length) % images.length);
-  const next = () => setActive(a => (a + 1) % images.length);
+  const prev = useCallback(() => setCurrent(c => (c - 1 + slides.length) % slides.length), [slides.length]);
+  const next = useCallback(() => setCurrent(c => (c + 1) % slides.length), [slides.length]);
+
+  useEffect(() => {
+    if (!autoPlay || lightbox) return;
+    const t = setInterval(next, 3500);
+    return () => clearInterval(t);
+  }, [autoPlay, lightbox, next]);
+
+  const slide = slides[current];
+  const pal = slide.condIdx >= 0 ? getPalette(slide.condIdx) : { bg: "#f5f5f5", border: "#bdbdbd", text: "#424242", tab: "#616161", accent: "#9e9e9e" };
 
   return (
-    <>
-      <div className="relative aspect-square rounded-xl overflow-hidden bg-white border border-gray-100 group cursor-zoom-in"
-        style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}
-        onClick={() => { setLightbox(true); setZoom(1); }}>
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div key={safeIdx}
-            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.04 }} transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            className="absolute inset-0">
-            <Image src={mainImg.url} alt={mainImg.alt ?? nom} fill
-              className="object-contain p-5" sizes="(max-width:768px)50vw,25vw" priority />
-          </motion.div>
-        </AnimatePresence>
+    <div className="w-full">
+      {/* Slideshow principal */}
+      <div
+        className="relative rounded-2xl overflow-hidden border-2 transition-colors duration-500"
+        style={{
+          borderColor: pal.border,
+          boxShadow: `0 4px 24px ${pal.border}44`,
+          background: pal.bg,
+        }}
+        onMouseEnter={() => setAutoPlay(false)}
+        onMouseLeave={() => setAutoPlay(true)}
+      >
+        {/* Badge conditionnement */}
+        {slide.condLabel && (
+          <div
+            className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-md"
+            style={{ background: pal.tab }}
+          >
+            <Package size={11} />
+            {slide.condLabel}
+          </div>
+        )}
 
-        <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <div className="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1 text-[10px] font-semibold text-gray-600 shadow">
-            <Maximize2 size={10} /> Agrandir
+        {/* Compteur */}
+        <div className="absolute top-3 right-3 z-10 bg-black/30 backdrop-blur-sm text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+          {current + 1} / {slides.length}
+        </div>
+
+        {/* Image */}
+        <div
+          className="relative w-full cursor-zoom-in"
+          style={{ aspectRatio: "4/3" }}
+          onClick={() => { setLightbox(true); setZoom(1); }}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={current}
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -30 }}
+              transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+              className="absolute inset-0"
+            >
+              <Image
+                src={slide.img.url}
+                alt={slide.img.alt ?? nomProduit}
+                fill
+                className="object-contain p-6"
+                sizes="(max-width:768px)100vw,60vw"
+                priority
+              />
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Hint agrandir */}
+          <div className="absolute bottom-3 right-3 opacity-0 hover:opacity-100 transition-opacity">
+            <div className="bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1 text-[10px] font-semibold text-gray-600 shadow">
+              <Maximize2 size={10} /> Agrandir
+            </div>
           </div>
         </div>
 
-        {images.length > 1 && (
+        {/* Contrôles nav */}
+        {slides.length > 1 && (
           <>
-            <button onClick={e => { e.stopPropagation(); prev(); }}
-              className="absolute left-1.5 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-white">
-              <ChevronLeft size={14} className="text-gray-700" />
+            <button
+              onClick={prev}
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110"
+            >
+              <ChevronLeft size={18} className="text-gray-700" />
             </button>
-            <button onClick={e => { e.stopPropagation(); next(); }}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-white">
-              <ChevronRight size={14} className="text-gray-700" />
+            <button
+              onClick={next}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-md transition-all hover:scale-110"
+            >
+              <ChevronRight size={18} className="text-gray-700" />
             </button>
-            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1 pointer-events-none">
-              {images.map((_, i) => (
-                <span key={i} className={`rounded-full transition-all duration-200 bg-black/25 ${i === safeIdx ? "w-4 h-1.5" : "w-1.5 h-1.5"}`} />
-              ))}
-            </div>
           </>
         )}
+
+        {/* Barre de progression */}
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/10">
+          <motion.div
+            className="h-full"
+            style={{ background: pal.accent }}
+            animate={{ width: `${((current + 1) / slides.length) * 100}%` }}
+            transition={{ duration: 0.3 }}
+          />
+        </div>
       </div>
 
-      {/* Thumbnails */}
-      {images.length > 1 && (
-        <div className="flex gap-1.5 mt-2 overflow-x-auto">
-          {images.map((img, i) => (
-            <button key={i} onClick={() => setActive(i)}
-              className={`relative w-12 h-12 rounded-lg overflow-hidden shrink-0 border-2 transition-all ${i === safeIdx ? "border-gray-500 shadow-sm" : "border-gray-200 hover:border-gray-400"}`}>
-              <Image src={img.url} alt="" fill className="object-contain p-1" sizes="48px" />
-            </button>
-          ))}
+      {/* Thumbnails avec indicateur de conditionnement */}
+      {slides.length > 1 && (
+        <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+          {slides.map((s, i) => {
+            const p = s.condIdx >= 0 ? getPalette(s.condIdx) : { border: "#bdbdbd", bg: "#f5f5f5", accent: "#9e9e9e", tab:"#616161", text:"#424242" };
+            return (
+              <button
+                key={i}
+                onClick={() => setCurrent(i)}
+                className="relative shrink-0 rounded-xl overflow-hidden transition-all duration-200"
+                style={{
+                  width: 56, height: 56,
+                  border: `2px solid ${i === current ? p.accent : "#e5e7eb"}`,
+                  boxShadow: i === current ? `0 0 0 2px ${p.border}` : "none",
+                  background: p.bg,
+                }}
+              >
+                <Image src={s.img.url} alt="" fill className="object-contain p-1" sizes="56px" />
+                {/* Bande couleur conditionnement en bas */}
+                <div
+                  className="absolute bottom-0 left-0 right-0 h-1"
+                  style={{ background: p.tab }}
+                />
+              </button>
+            );
+          })}
         </div>
       )}
 
       {/* Lightbox */}
       <AnimatePresence>
         {lightbox && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] bg-black/95 flex flex-col"
-            onClick={() => { setLightbox(false); setZoom(1); }}>
+            onClick={() => { setLightbox(false); setZoom(1); }}
+          >
             <div className="flex items-center justify-between px-4 py-3 shrink-0" onClick={e => e.stopPropagation()}>
-              <span className="text-white/60 text-sm">{nom} · {safeIdx + 1}/{images.length}</span>
               <div className="flex items-center gap-2">
-                <button onClick={() => setZoom(z => Math.max(0.5, z - 0.25))} className="p-2 text-white/70 hover:text-white rounded-lg"><ZoomOut size={16}/></button>
+                {slide.condLabel && (
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: pal.tab, color: "white" }}>
+                    {slide.condLabel}
+                  </span>
+                )}
+                <span className="text-white/60 text-sm">{nomProduit} · {current + 1}/{slides.length}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setZoom(z => Math.max(0.5, z - 0.25))} className="p-2 text-white/70 hover:text-white rounded-lg"><ZoomOut size={16} /></button>
                 <span className="text-white/50 text-xs w-10 text-center">{Math.round(zoom * 100)}%</span>
-                <button onClick={() => setZoom(z => Math.min(4, z + 0.25))} className="p-2 text-white/70 hover:text-white rounded-lg"><ZoomIn size={16}/></button>
-                <button onClick={() => { setLightbox(false); setZoom(1); }} className="p-2 text-white/70 hover:text-white rounded-lg ml-2"><X size={18}/></button>
+                <button onClick={() => setZoom(z => Math.min(4, z + 0.25))} className="p-2 text-white/70 hover:text-white rounded-lg"><ZoomIn size={16} /></button>
+                <button onClick={() => { setLightbox(false); setZoom(1); }} className="p-2 text-white/70 hover:text-white rounded-lg ml-2"><X size={18} /></button>
               </div>
             </div>
             <div className="flex-1 flex items-center justify-center" onClick={e => e.stopPropagation()}>
-              <div style={{ position:"relative", width:"min(800px,90vw)", height:"min(700px,80vh)", transform:`scale(${zoom})`, transformOrigin:"center" }}>
-                <Image src={mainImg.url} alt={mainImg.alt ?? nom} fill className="object-contain" sizes="100vw"/>
+              <div style={{ position: "relative", width: "min(800px,90vw)", height: "min(700px,80vh)", transform: `scale(${zoom})`, transformOrigin: "center" }}>
+                <Image src={slide.img.url} alt={slide.img.alt ?? nomProduit} fill className="object-contain" sizes="100vw" />
               </div>
             </div>
-            {images.length > 1 && (
+            {slides.length > 1 && (
               <div className="flex items-center justify-center gap-4 py-4 shrink-0" onClick={e => e.stopPropagation()}>
-                <button onClick={prev} className="p-2 text-white/70 hover:text-white rounded-full"><ChevronLeft size={22}/></button>
+                <button onClick={prev} className="p-2 text-white/70 hover:text-white rounded-full"><ChevronLeft size={22} /></button>
                 <div className="flex gap-1.5">
-                  {images.map((_, i) => (
-                    <button key={i} onClick={() => setActive(i)} className={`rounded-full transition-all ${i === safeIdx ? "w-5 h-2 bg-white" : "w-2 h-2 bg-white/30"}`}/>
-                  ))}
+                  {slides.map((s, i) => {
+                    const p = s.condIdx >= 0 ? getPalette(s.condIdx) : { accent: "#9e9e9e" };
+                    return (
+                      <button key={i} onClick={() => setCurrent(i)}
+                        className="rounded-full transition-all"
+                        style={{
+                          width: i === current ? 20 : 8,
+                          height: 8,
+                          background: i === current ? p.accent : "rgba(255,255,255,0.3)",
+                        }}
+                      />
+                    );
+                  })}
                 </div>
-                <button onClick={next} className="p-2 text-white/70 hover:text-white rounded-full"><ChevronRight size={22}/></button>
+                <button onClick={next} className="p-2 text-white/70 hover:text-white rounded-full"><ChevronRight size={22} /></button>
               </div>
             )}
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 }
 
-/* ── Composant principal ────────────────────────────────────────── */
-export function ProduitFicheSection({ images, nomProduit }: { images: Img[]; nomProduit: string; conditionnements?: string[] }) {
-  // Grouper par conditionnement
+/* ── Grille de cadres du grand au petit ──────────────────────── */
+function ConditionnementFrames({
+  grouped,
+  sans,
+  nomProduit,
+}: {
+  grouped: Record<string, Img[]>;
+  sans: Img[];
+  nomProduit: string;
+}) {
+  const conditionnements = Object.keys(grouped);
+
+  return (
+    <div className="space-y-6">
+      {/* Légende des conditionnements */}
+      <div className="flex flex-wrap gap-2">
+        {conditionnements.map((cond, idx) => {
+          const pal = getPalette(idx);
+          const size = getFrameSize(idx);
+          return (
+            <div key={cond} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border" style={{ background: pal.bg, borderColor: pal.border, color: pal.text }}>
+              <Package size={10} />
+              {cond}
+              <span className="opacity-60 font-normal">· {size.label}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Cadres empilés du grand au petit — alignés à gauche */}
+      <div className="flex flex-col items-center gap-4">
+        {conditionnements.map((cond, idx) => {
+          const pal = getPalette(idx);
+          const frame = getFrameSize(idx);
+          const imgs = grouped[cond];
+          return (
+            <motion.div
+              key={cond}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.08, duration: 0.4 }}
+              className="rounded-2xl overflow-hidden border-2"
+              style={{
+                width: frame.width,
+                borderColor: pal.border,
+                boxShadow: `0 2px 16px ${pal.border}33`,
+              }}
+            >
+              {/* Header du cadre */}
+              <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: pal.tab }}>
+                <Package size={13} className="text-white/80" />
+                <span className="text-xs font-bold text-white uppercase tracking-wider">{cond}</span>
+                <span className="ml-auto text-[10px] text-white/60">{imgs.length} photo{imgs.length > 1 ? "s" : ""}</span>
+              </div>
+
+              {/* Mini galerie dans le cadre */}
+              <CondMiniGallery images={imgs} nom={`${nomProduit} — ${cond}`} pal={pal} />
+            </motion.div>
+          );
+        })}
+
+        {/* Images sans conditionnement */}
+        {sans.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: conditionnements.length * 0.08, duration: 0.4 }}
+            className="rounded-2xl overflow-hidden border-2 border-gray-300"
+            style={{
+              width: getFrameSize(conditionnements.length).width,
+              boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+            }}
+          >
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-600">
+              <span className="text-xs font-bold text-white uppercase tracking-wider">Vue générale</span>
+              <span className="ml-auto text-[10px] text-white/60">{sans.length} photo{sans.length > 1 ? "s" : ""}</span>
+            </div>
+            <CondMiniGallery
+              images={sans}
+              nom={nomProduit}
+              pal={{ bg: "#f5f5f5", border: "#bdbdbd", text: "#424242", tab: "#616161", accent: "#9e9e9e" }}
+            />
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Mini galerie dans un cadre ──────────────────────────────── */
+function CondMiniGallery({ images, nom, pal }: { images: Img[]; nom: string; pal: any }) {
+  const [active, setActive] = useState(0);
+  const safe = Math.min(active, images.length - 1);
+  const img = images[safe];
+
+  return (
+    <div className="p-3" style={{ background: pal.bg }}>
+      <div className="relative aspect-square rounded-xl overflow-hidden bg-white/70">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={safe}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="absolute inset-0"
+          >
+            <Image src={img.url} alt={img.alt ?? nom} fill className="object-contain p-4" sizes="(max-width:768px)80vw,40vw" />
+          </motion.div>
+        </AnimatePresence>
+
+        {images.length > 1 && (
+          <>
+            <button
+              onClick={() => setActive(a => (a - 1 + images.length) % images.length)}
+              className="absolute left-1 top-1/2 -translate-y-1/2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center shadow hover:bg-white"
+            >
+              <ChevronLeft size={12} />
+            </button>
+            <button
+              onClick={() => setActive(a => (a + 1) % images.length)}
+              className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center shadow hover:bg-white"
+            >
+              <ChevronRight size={12} />
+            </button>
+          </>
+        )}
+      </div>
+
+      {images.length > 1 && (
+        <div className="flex gap-1 mt-2 overflow-x-auto">
+          {images.map((im, i) => (
+            <button key={i} onClick={() => setActive(i)}
+              className="relative shrink-0 rounded-lg overflow-hidden border-2 transition-all"
+              style={{ width: 36, height: 36, borderColor: i === safe ? pal.accent : "#e5e7eb", background: "white" }}
+            >
+              <Image src={im.url} alt="" fill className="object-contain p-0.5" sizes="36px" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Composant principal ─────────────────────────────────────── */
+export function ProduitFicheSection({
+  images,
+  nomProduit,
+}: {
+  images: Img[];
+  nomProduit: string;
+  conditionnements?: string[];
+}) {
+  const [mode, setMode] = useState<"diaporama" | "cadres">("diaporama");
+
+  /* Grouper par conditionnement */
   const grouped: Record<string, Img[]> = {};
   const sans: Img[] = [];
-
   for (const img of images) {
     if (img.conditionnement) {
       if (!grouped[img.conditionnement]) grouped[img.conditionnement] = [];
@@ -144,49 +416,58 @@ export function ProduitFicheSection({ images, nomProduit }: { images: Img[]; nom
   const conditionnements = Object.keys(grouped);
   const hasSeveral = conditionnements.length > 1 || (conditionnements.length >= 1 && sans.length > 0);
 
-  // Si pas de conditionnements distincts → galerie classique simple
+  /* Construire la liste de slides pour le diaporama unifié */
+  const slides: SlideItem[] = [
+    ...conditionnements.flatMap((cond, idx) =>
+      grouped[cond].map(img => ({ img, condLabel: cond, condIdx: idx }))
+    ),
+    ...sans.map(img => ({ img, condLabel: null, condIdx: -1 })),
+  ];
+
+  /* Pas de conditionnements multiples → galerie simple */
   if (!hasSeveral) {
     const allImgs = [...(grouped[conditionnements[0]] ?? []), ...sans];
-    return <CondGallery images={allImgs.length ? allImgs : images} nom={nomProduit} />;
+    const simplSlides: SlideItem[] = allImgs.map(img => ({ img, condLabel: null, condIdx: -1 }));
+    return <UnifiedSlideshow slides={simplSlides.length ? simplSlides : images.map(img => ({ img, condLabel: null, condIdx: -1 }))} nomProduit={nomProduit} />;
   }
 
   return (
     <div className="space-y-4">
-      {/* Grid des conditionnements */}
-      <div className={`grid gap-4 ${conditionnements.length === 2 ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2"}`}>
-        {conditionnements.map((cond, idx) => {
-          const pal = getPalette(idx);
-          return (
-            <div key={cond} className="rounded-2xl overflow-hidden border"
-              style={{ borderColor: pal.border, boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
-              {/* Tab header */}
-              <div className="flex items-center gap-2 px-4 py-2.5" style={{ background: pal.tabBg }}>
-                <span className="w-2 h-2 rounded-full bg-white/60" />
-                <span className="text-xs font-bold text-white uppercase tracking-wider">{cond}</span>
-                <span className="ml-auto text-[10px] text-white/60">{grouped[cond].length} photo{grouped[cond].length > 1 ? "s" : ""}</span>
-              </div>
-              <div className="p-3" style={{ background: pal.bg }}>
-                <CondGallery images={grouped[cond]} nom={`${nomProduit} — ${cond}`} />
-              </div>
-            </div>
-          );
-        })}
+      {/* Toggle mode */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setMode("diaporama")}
+          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all"
+          style={mode === "diaporama"
+            ? { background: "#1e293b", color: "white", borderColor: "#1e293b" }
+            : { background: "white", color: "#64748b", borderColor: "#e2e8f0" }
+          }
+        >
+          ▶ Diaporama
+        </button>
+        <button
+          onClick={() => setMode("cadres")}
+          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all"
+          style={mode === "cadres"
+            ? { background: "#1e293b", color: "white", borderColor: "#1e293b" }
+            : { background: "white", color: "#64748b", borderColor: "#e2e8f0" }
+          }
+        >
+          ⊞ Cadres
+        </button>
       </div>
 
-      {/* Images sans conditionnement (vues génériques) */}
-      {sans.length > 0 && (
-        <div className="rounded-2xl overflow-hidden border border-gray-200"
-          style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.04)" }}>
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-700">
-            <span className="w-2 h-2 rounded-full bg-white/50" />
-            <span className="text-xs font-bold text-white uppercase tracking-wider">Vue générale</span>
-            <span className="ml-auto text-[10px] text-white/50">{sans.length} photo{sans.length > 1 ? "s" : ""}</span>
-          </div>
-          <div className="p-3 bg-gray-50">
-            <CondGallery images={sans} nom={nomProduit} />
-          </div>
-        </div>
-      )}
+      <AnimatePresence mode="wait">
+        {mode === "diaporama" ? (
+          <motion.div key="diaporama" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <UnifiedSlideshow slides={slides} nomProduit={nomProduit} />
+          </motion.div>
+        ) : (
+          <motion.div key="cadres" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <ConditionnementFrames grouped={grouped} sans={sans} nomProduit={nomProduit} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

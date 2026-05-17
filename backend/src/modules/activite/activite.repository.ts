@@ -7,7 +7,7 @@ export const activiteRepository = {
     return prisma.activite.findMany({
       where:   { actif: true },
       orderBy: { ordre: "asc" },
-      select:  { id_activite: true, nom: true, slug: true, description: true, image: true, ordre: true, actif: true },
+      select:  { id_activite: true, nom: true, slug: true, description: true, image: true, banniere: true, ordre: true, actif: true },
     });
   },
 

@@ -1,4 +1,4 @@
-// src/modules/auth/auth.repository.ts
+// src/modules/auth/auth.repository.ts — CORRIGÉ : inclut permissions du rôle
 import { prisma } from "../../lib/prisma";
 
 export const authRepository = {
@@ -6,14 +6,14 @@ export const authRepository = {
   async findAdminByEmail(email: string) {
     return prisma.admin.findUnique({
       where:   { email: email.toLowerCase().trim() },
-      include: { role: true },
+      include: { role: true }, // role.permissions inclus pour vérification
     });
   },
 
   async findAdminById(id_admin: number) {
     return prisma.admin.findUnique({
       where:   { id_admin },
-      include: { role: { select: { nom: true } } },
+      include: { role: { select: { nom: true, permissions: true } } },
     });
   },
 
@@ -29,8 +29,8 @@ export const authRepository = {
 
   async findSession(refresh_token: string) {
     return prisma.sessionAdmin.findFirst({
-      where:   { refresh_token, expires_at: { gt: new Date() } },
-      include: { admin: { include: { role: true } } },
+      where:   { refresh_token },
+      include: { admin: { include: { role: { select: { nom: true, permissions: true } } } } },
     });
   },
 

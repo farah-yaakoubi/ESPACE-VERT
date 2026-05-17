@@ -69,12 +69,11 @@ export default function AdminLoginPage() {
         {/* Top: logo image */}
         <div className="relative z-10">
           <Image
-            src="/logos/LOGO ESPACE VERT.png"
+            src="/logos/logo-espace-vert.png"
             alt="Espace Vert"
             width={160}
             height={60}
             className="object-contain"
-            style={{ filter: "brightness(0) invert(1)" }}
           />
           <p className="text-[11px] mt-2 font-medium tracking-widest uppercase"
             style={{ color:"rgba(255,255,255,0.35)" }}>
@@ -122,7 +121,7 @@ export default function AdminLoginPage() {
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10">
             <Image
-              src="/images/logos/LOGO ESPACE VERT.png"
+              src="/logos/logo-espace-vert.png"
               alt="Espace Vert"
               width={120}
               height={45}

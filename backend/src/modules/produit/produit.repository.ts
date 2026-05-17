@@ -1,4 +1,4 @@
-import { prisma } from "../../lib/prisma";
+import { prisma } from  "../../lib/prisma";
 import { CreateProduitDto, UpdateProduitDto, ProduitQueryDto, AddImageDto } from "./produit.schema";
 
 // Protège les listes publiques/admin contre des produits orphelins
@@ -29,9 +29,12 @@ const ADMIN_INCLUDE = {
 } as const;
 
 // Include léger pour la liste admin (seulement l'image principale)
+// IMPORTANT : id_categorie et id_marque sont aussi renvoyés au niveau produit
+// (champs scalaires natifs de la table) pour que le formulaire d'édition puisse
+// pré-sélectionner la catégorie et la marque sans faire de recherche par nom.
 const ADMIN_LIST_INCLUDE = {
   marque:    { select: { nom: true, slug: true } },
-  categorie: { select: { nom: true, slug: true } },
+  categorie: { select: { id_categorie: true, nom: true, slug: true } },
   activite:  { select: { nom: true, slug: true } },
   images:    { where: { is_principale: true }, take: 1 },
 } as const;
@@ -60,11 +63,24 @@ export const produitRepository = {
       where.id_categorie = catIds.length === 1 ? catIds[0] : { in: catIds };
     }
     if (id_activite) {
-      // Un produit appartient à une activité soit directement (id_activite),
-      // soit via sa catégorie (categorie.id_activite)
+      // Récupérer TOUTES les catégories appartenant à cette activité
+      // + leurs descendants (sous-catégories profondes sans id_activite direct)
+      const activiteCats = await prisma.categorie.findMany({
+        where:  { id_activite },
+        select: { id_categorie: true },
+      });
+      const allCats = await prisma.categorie.findMany({
+        select: { id_categorie: true, parent_id: true },
+      });
+      const collectCatIds = (parentId: number): number[] => {
+        const children = allCats.filter(c => c.parent_id === parentId);
+        return [parentId, ...children.flatMap(c => collectCatIds(c.id_categorie))];
+      };
+      const allCatIds = activiteCats.flatMap(c => collectCatIds(c.id_categorie));
+
       where.OR = [
         { id_activite: id_activite },
-        { categorie: { id_activite: id_activite } },
+        { id_categorie: { in: allCatIds.length > 0 ? allCatIds : [-1] } },
       ];
     }
     if (division)     where.division     = division;
@@ -178,7 +194,44 @@ export const produitRepository = {
   },
 
   async delete(id_produit: number) {
-    return prisma.produit.delete({ where: { id_produit } });
+    // Récupérer toutes les images avant suppression pour nettoyer les fichiers physiques
+    const images = await prisma.produitImage.findMany({
+      where: { id_produit },
+      select: { url: true },
+    });
+
+    const deleted = await prisma.produit.delete({ where: { id_produit } });
+
+    // Supprimer les fichiers physiques après suppression en DB
+    if (images.length > 0) {
+      const { default: fs } = await import("fs");
+      const { default: path } = await import("path");
+
+      for (const img of images) {
+        if (!img.url) continue;
+        try {
+          let filePath: string | null = null;
+
+          if (img.url.startsWith("http://") || img.url.startsWith("https://")) {
+            const { URL } = await import("url");
+            const parsed = new URL(img.url);
+            if (parsed.pathname.startsWith("/uploads/")) {
+              filePath = path.join(process.cwd(), parsed.pathname.replace(/^\//, ""));
+            }
+          } else if (img.url.startsWith("/uploads/")) {
+            filePath = path.join(process.cwd(), img.url.replace(/^\//, ""));
+          }
+
+          if (filePath && fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
+        } catch {
+          // Ne pas bloquer si la suppression d'un fichier échoue
+        }
+      }
+    }
+
+    return deleted;
   },
 
   // ── Images ────────────────────────────────────────────────────
@@ -206,17 +259,30 @@ export const produitRepository = {
     // Supprimer le fichier physique si l'URL pointe vers notre serveur local
     if (img?.url) {
       try {
-        const { URL } = await import("url");
         const { default: fs } = await import("fs");
         const { default: path } = await import("path");
-        const parsed = new URL(img.url);
-        // Seulement si c'est un fichier uploadé localement (/uploads/...)
-        if (parsed.pathname.startsWith("/uploads/")) {
-          const filename = parsed.pathname.replace("/uploads/", "");
-          const filePath = path.join(process.cwd(), "uploads", filename);
-          if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
+
+        let filePath: string | null = null;
+
+        // Cas 1 : URL absolue (http://... ou https://...)
+        if (img.url.startsWith("http://") || img.url.startsWith("https://")) {
+          const { URL } = await import("url");
+          const parsed = new URL(img.url);
+          if (parsed.pathname.startsWith("/uploads/")) {
+            // parsed.pathname ex: "/uploads/images/abc123.jpg"
+            // → on reconstruit le chemin relatif depuis process.cwd()
+            const relativePath = parsed.pathname.replace(/^\//, ""); // "uploads/images/abc123.jpg"
+            filePath = path.join(process.cwd(), relativePath);
           }
+        }
+        // Cas 2 : chemin relatif direct (ex: "/uploads/images/abc.jpg")
+        else if (img.url.startsWith("/uploads/")) {
+          const relativePath = img.url.replace(/^\//, "");
+          filePath = path.join(process.cwd(), relativePath);
+        }
+
+        if (filePath && fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
         }
       } catch {
         // Ne pas bloquer si la suppression du fichier échoue

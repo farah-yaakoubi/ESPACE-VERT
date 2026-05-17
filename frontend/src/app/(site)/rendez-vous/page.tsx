@@ -1,3 +1,4 @@
+import { PageHeroStatic } from "@/components/sections/PageHeroStatic";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarDays, Droplets, Info } from "lucide-react";
@@ -12,27 +13,14 @@ export const metadata: Metadata = {
 export default function RendezVousPage() {
   return (
     <>
-      {/* ── Hero spécifique Matar Irrigation ─────────────────── */}
-      <section className="bg-gradient-to-br from-sky-950 to-sky-800 py-16 md:py-24">
-        <div className="container-ev">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-700/50 border border-sky-600/50 text-sky-300 text-xs font-semibold">
-              <Droplets size={13} />
-              Matar — Irrigation
-            </span>
-          </div>
-          <h1
-            className="text-4xl md:text-5xl font-bold text-white mb-4"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Prendre rendez-vous
-          </h1>
-          <p className="text-sky-200 text-lg max-w-xl">
-            Un expert Matar se déplace ou vous reçoit en agence pour évaluer vos
-            besoins en irrigation et vous proposer la solution adaptée.
-          </p>
-        </div>
-      </section>
+      {/* Hero image fixe + zoom-in */}
+      <PageHeroStatic
+        page="rendez-vous"
+        eyebrow="Matar — Irrigation"
+        title="Prendre rendez-vous"
+        subtitle="Un expert Matar se déplace ou vous reçoit en agence pour évaluer vos besoins en irrigation."
+        fallbackImage="/images/hero/matar.webp"
+      />
 
       <section className="section">
         <div className="container-ev">

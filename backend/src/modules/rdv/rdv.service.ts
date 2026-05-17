@@ -4,6 +4,8 @@ import { paginate } from "../../lib/response";
 import { logAudit } from "../../lib/audit";
 import { prisma } from "../../lib/prisma";
 import { CreateRdvDto, UpdateRdvDto, RdvQueryDto, RDV_STATUTS } from "./rdv.schema";
+import { notifRepository } from "../notifications/notifications.repository";
+import { notifSseBroadcast } from "../notifications/notifications.controller";
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   nouveau:  ["confirme", "annule"],
@@ -39,6 +41,19 @@ export const rdvService = {
       agence:         data.agence        ?? null,
       message:        data.message       ?? null,
       id_visiteur:    id_visiteur        ?? null,
+    }).then(async (rdv) => {
+      try {
+        const dateStr = dateRdv.toLocaleDateString("fr-FR");
+        await notifRepository.createForAll(
+          "nouveau_rdv",
+          `Nouveau RDV — ${data.nom.trim()}`,
+          `Souhaité le ${dateStr}`,
+          "/admin/rdv",
+          { source_label: data.nom.trim() }
+        );
+        notifSseBroadcast({ type: "nouveau_rdv", titre: `Nouveau RDV — ${data.nom.trim()}` });
+      } catch (e) { console.error("[rdv notif]", e); }
+      return rdv;
     });
   },
 

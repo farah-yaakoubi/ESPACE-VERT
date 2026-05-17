@@ -30,7 +30,7 @@ export function MarqueCard({ marque, className }: { marque: Marque; className?: 
         <div className="flex flex-col flex-1 p-5">
           <h3
             className="text-xl font-bold mb-2 group-hover:text-ev-700 transition-colors"
-            style={{ fontFamily: "var(--font-display)", color: "#111" }}
+            style={{ fontFamily: "var(--font-display)" }}
           >
             {marque.nom}
           </h3>

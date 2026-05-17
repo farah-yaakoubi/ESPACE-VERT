@@ -1,5 +1,3 @@
-// src/index.ts
-// REMPLACE l'ancien fichier — ajoute les routes notifications et chat
 import "dotenv/config";
 import express      from "express";
 import cors         from "cors";
@@ -39,14 +37,19 @@ import { adminAdminRouter }       from "./modules/admin/admin.routes";
 import { statsAdminRouter }       from "./modules/stats/stats.routes";
 import { auditAdminRouter }       from "./modules/audit/audit.routes";
 import { uploadRouter }           from "./modules/upload/upload.routes";
-// ── NOUVEAU ───────────────────────────────────────────────────────────────────
 import { notifRouter }            from "./modules/notifications/notifications.routes";
-import { chatRouter }             from "./modules/chat/chat.routes"; 
+import { chatRouter }             from "./modules/chat/chat.routes";
+import { heroSlidePublicRouter, heroSlideAdminRouter } from "./modules/hero-slide/hero-slide.routes";
+
+// ── ✅ AJOUT : Route chatbot public ───────────────────────────────────────────
+import { aiRouter }               from "./modules/ai/ai.routes";
 
 const app  = express();
 const PORT = process.env.PORT ?? 4000;
 
 app.set("trust proxy", 1);
+
+// ── Fichiers statiques uploads ────────────────────────────────────────────────
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // ── Middlewares ───────────────────────────────────────────────────────────────
@@ -59,7 +62,14 @@ if (process.env.NODE_ENV !== "production") {
   app.use(morgan("dev"));
 }
 
-const publicLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, message: "Trop de requêtes" });
+const submissionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 150,
+  message: { error: "Trop de soumissions, veuillez réessayer dans quelques minutes." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS",
+});
 
 // ── Routes publiques ──────────────────────────────────────────────────────────
 app.use("/api/produits",          produitPublicRouter);
@@ -69,10 +79,14 @@ app.use("/api/activites",         activitePublicRouter);
 app.use("/api/categories",        categoriePublicRouter);
 app.use("/api/actualites",        actualitePublicRouter);
 app.use("/api/faq",               faqPublicRouter);
-app.use("/api/devis",             publicLimiter, devisPublicRouter);
-app.use("/api/rdv",               publicLimiter, rdvPublicRouter);
-app.use("/api/contact",           publicLimiter, contactPublicRouter);
+app.use("/api/devis",             submissionLimiter, devisPublicRouter);
+app.use("/api/rdv",               submissionLimiter, rdvPublicRouter);
+app.use("/api/contact",           submissionLimiter, contactPublicRouter);
 app.use("/api/visiteurs",         visiteurPublicRouter);
+app.use("/api/hero-slides",       heroSlidePublicRouter);
+
+// ── ✅ AJOUT : Chatbot public ─────────────────────────────────────────────────
+app.use("/api/ai",                aiRouter);
 
 // ── Routes admin ──────────────────────────────────────────────────────────────
 app.use("/api/admin/auth",        authAdminRouter);
@@ -84,18 +98,23 @@ app.use("/api/admin/actualites",  actualiteAdminRouter);
 app.use("/api/admin/faq",         faqAdminRouter);
 app.use("/api/admin/devis",       devisAdminRouter);
 app.use("/api/admin/rdv",         rdvAdminRouter);
-app.use("/api/admin/messages",    contactAdminRouter);
+app.use("/api/admin/contact",     contactAdminRouter);
 app.use("/api/admin/visiteurs",   visiteurAdminRouter);
 app.use("/api/admin/admins",      adminAdminRouter);
 app.use("/api/admin/stats",       statsAdminRouter);
 app.use("/api/admin/audit",       auditAdminRouter);
+app.use("/api/admin/uploads",     uploadRouter);
 app.use("/api/admin/upload",      uploadRouter);
-// ── NOUVEAU ───────────────────────────────────────────────────────────────────
 app.use("/api/admin/notifications", notifRouter);
-app.use("/api/admin/chat",          chatRouter);
+app.use("/api/admin/chat",        chatRouter);
+app.use("/api/admin/hero-slides", heroSlideAdminRouter);
 
-// ── Error handlers ────────────────────────────────────────────────────────────
+// ── Fallback ──────────────────────────────────────────────────────────────────
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-app.listen(PORT, () => console.log(`✅  API EspaceVert démarrée sur le port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Espace Vert API démarrée sur le port ${PORT}`);
+});
+
+export default app;

@@ -3,6 +3,13 @@ import type { Config } from "tailwindcss";
 export default {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
+    screens: {
+      sm:    "640px",
+      md:    "768px",
+      lg:    "1024px",
+      xl:    "1280px",
+      "2xl": "1536px",
+    },
     extend: {
       colors: {
         ev: {
@@ -21,15 +28,18 @@ export default {
         display: ["var(--font-display)", "Syne", "sans-serif"],
         body:    ["var(--font-body)",    "DM Sans", "system-ui", "sans-serif"],
       },
+      maxWidth: {
+        "container": "1200px",
+      },
       borderRadius: {
         "2xl": "1rem", "3xl": "1.5rem", "4xl": "2rem",
       },
       boxShadow: {
-        card:       "0 1px 3px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.04)",
-        "card-hover":"0 4px 12px rgba(0,0,0,.08), 0 12px 32px rgba(0,0,0,.06)",
-        green:      "0 4px 24px rgba(22,163,74,.25)",
-        "green-lg": "0 8px 40px rgba(22,163,74,.35)",
-        leaf:       "0 4px 20px rgba(125,192,64,.35)",
+        card:         "0 1px 3px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.04)",
+        "card-hover": "0 4px 12px rgba(0,0,0,.08), 0 12px 32px rgba(0,0,0,.06)",
+        green:        "0 4px 24px rgba(22,163,74,.25)",
+        "green-lg":   "0 8px 40px rgba(22,163,74,.35)",
+        leaf:         "0 4px 20px rgba(125,192,64,.35)",
       },
       keyframes: {
         shimmer:  { from: { backgroundPosition: "200% 0" }, to: { backgroundPosition: "-200% 0" } },

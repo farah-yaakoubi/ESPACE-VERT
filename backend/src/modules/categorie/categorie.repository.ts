@@ -93,6 +93,30 @@ export const categorieRepository = {
       },
     });
 
+    // Si filtrage par activité : inclure aussi les sous-catégories profondes
+    // dont id_activite est null mais dont l'ancêtre a id_activite = params.id_activite
+    if (params.id_activite && rows.length > 0) {
+      const directIds = new Set(rows.map(r => r.id_categorie));
+      const allFlat = await prisma.categorie.findMany({
+        where:   { actif: true },
+        orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+        select:  {
+          ...catSelect,
+          marque:   { select: { nom: true, slug: true } },
+          activite: { select: { nom: true, slug: true } },
+          _count:   { select: { produits: true } },
+        },
+      });
+      // Collecter récursivement les descendants
+      const collectDesc = (parentId: number): typeof allFlat => {
+        const children = allFlat.filter(c => (c as any).parent_id === parentId && !directIds.has(c.id_categorie));
+        return [...children, ...children.flatMap(c => collectDesc(c.id_categorie))];
+      };
+      const descendants = [...directIds].flatMap(id => collectDesc(id));
+      descendants.forEach(d => { if (!directIds.has(d.id_categorie)) { (rows as any[]).push(d); directIds.add(d.id_categorie); } });
+      (rows as any[]).sort((a: any, b: any) => (a.ordre - b.ordre) || a.nom.localeCompare(b.nom, "fr"));
+    }
+
     return params.tree ? buildTree(rows as unknown as CatFlat[]) : rows;
   },
 
@@ -202,6 +226,79 @@ export const categorieRepository = {
 
   async findBySlug(slug: string) {
     return prisma.categorie.findUnique({ where: { slug } });
+  },
+
+  async findBySlugWithChildren(slug: string) {
+    // 1. Trouver la catégorie
+    const cat = await prisma.categorie.findUnique({
+      where:  { slug },
+      select: {
+        id_categorie: true, nom: true, slug: true,
+        description: true, image: true, parent_id: true, ordre: true,
+        parent:    { select: { nom: true, slug: true } },
+        sous_cats: {
+          where:   { actif: true },
+          orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+          select: {
+            id_categorie: true, nom: true, slug: true,
+            description: true, image: true, ordre: true,
+          },
+        },
+      },
+    });
+    if (!cat) return null;
+
+    // 2. Produits directs de cette catégorie
+    const produits = await prisma.produit.findMany({
+      where:   { id_categorie: cat.id_categorie, actif: true },
+      orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+      select: {
+        id_produit: true, nom: true, slug: true,
+        description: true, division: true, tags: true, ordre: true,
+        id_categorie: true,
+        images: {
+          orderBy: [{ is_principale: "desc" }, { ordre: "asc" }],
+          take:    1,
+          select:  { url: true, alt: true },
+        },
+      },
+    });
+
+    // 3. Produits des sous-catégories
+    const sousCatIds = cat.sous_cats.map(s => s.id_categorie);
+    const sousProduits = sousCatIds.length > 0
+      ? await prisma.produit.findMany({
+          where:   { id_categorie: { in: sousCatIds }, actif: true },
+          orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+          select: {
+            id_produit: true, nom: true, slug: true,
+            description: true, division: true, tags: true, ordre: true,
+            id_categorie: true,
+            images: {
+              orderBy: [{ is_principale: "desc" }, { ordre: "asc" }],
+              take:    1,
+              select:  { url: true, alt: true },
+            },
+          },
+        })
+      : [];
+
+    // 4. Grouper les sous-produits par sous-catégorie
+    const map = new Map<number, typeof sousProduits>();
+    sousProduits.forEach(p => {
+      const list = map.get(p.id_categorie) ?? [];
+      list.push(p);
+      map.set(p.id_categorie, list);
+    });
+
+    return {
+      ...cat,
+      produits,
+      sous_cats: cat.sous_cats.map(s => ({
+        ...s,
+        produits: map.get(s.id_categorie) ?? [],
+      })),
+    };
   },
 
   async isLeaf(id_categorie: number): Promise<boolean> {

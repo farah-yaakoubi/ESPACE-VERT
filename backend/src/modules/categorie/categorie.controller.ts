@@ -1,6 +1,7 @@
 // src/modules/categorie/categorie.controller.ts
 import { Request, Response } from "express";
-import { categorieService } from "./categorie.service";
+import { categorieService }    from "./categorie.service";
+import { categorieRepository } from "./categorie.repository";
 import { CreateCategorieSchema, UpdateCategorieSchema, CategorieQuerySchema } from "./categorie.schema";
 import { ok, created, badRequest, notFound, conflict, serverError } from "../../lib/response";
 const parseId = (p: string) => { const n = Number(p); return isNaN(n) ? null : n; };
@@ -32,6 +33,15 @@ export const getMarqueTree = async (req: Request, res: Response) => {
     const { slug } = req.params;
     if (!slug) return badRequest(res, "Slug manquant");
     ok(res, await categorieService.getTreeByMarqueSlug(slug));
+  } catch (e) { handle(res, e); }
+};
+
+export const getBySlugPublic = async (req: Request, res: Response) => {
+  try {
+    const { slug } = req.params;
+    const data = await categorieRepository.findBySlugWithChildren(slug);
+    if (!data) return notFound(res, "Catégorie introuvable");
+    ok(res, data);
   } catch (e) { handle(res, e); }
 };
 

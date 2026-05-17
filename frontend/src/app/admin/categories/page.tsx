@@ -54,23 +54,35 @@ interface TreeNode extends CategorieAdmin {
 
 function buildTree(flat: CategorieAdmin[]): TreeNode[] {
   const map = new Map<number, TreeNode>();
+  // Créer tous les nœuds sans depth (sera calculé après construction)
   flat.forEach((c) =>
     map.set(c.id_categorie, { ...c, children: [], depth: 0 }),
   );
   const roots: TreeNode[] = [];
   map.forEach((node) => {
     if (node.parent_id && map.has(node.parent_id)) {
-      const parent = map.get(node.parent_id)!;
-      node.depth = parent.depth + 1;
-      parent.children.push(node);
+      map.get(node.parent_id)!.children.push(node);
     } else {
+      // Parent absent ou null → nœud racine
       roots.push(node);
     }
   });
+
+  // Tri à chaque niveau : ordre ASC, puis nom ASC (même règle que le backend)
   const sort = (arr: TreeNode[]) =>
-    arr.sort((a, b) => a.ordre - b.ordre || a.nom.localeCompare(b.nom));
-  map.forEach((n) => sort(n.children));
-  return sort(roots);
+    arr.sort((a, b) => a.ordre - b.ordre || a.nom.localeCompare(b.nom, "fr"));
+
+  // Calcul récursif du depth APRÈS construction complète de l'arbre
+  const assignDepth = (nodes: TreeNode[], depth: number): TreeNode[] => {
+    sort(nodes);
+    nodes.forEach((n) => {
+      n.depth = depth;
+      assignDepth(n.children, depth + 1);
+    });
+    return nodes;
+  };
+
+  return assignDepth(roots, 0);
 }
 
 function flattenTree(nodes: TreeNode[]): TreeNode[] {

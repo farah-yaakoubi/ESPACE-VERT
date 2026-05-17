@@ -10,6 +10,7 @@ export const categoriePublicRouter = Router();
 // Liste plate / arborescence filtrée
 // GET /api/public/categories?id_marque=1&tree=true
 categoriePublicRouter.get("/", ctrl.listPublic);
+categoriePublicRouter.get("/:slug", ctrl.getBySlugPublic);
 
 // ── Route arbre complet d'une marque ─────────────────────────────────────────
 // À monter dans src/index.ts sur : /api/public/marques/:slug/tree

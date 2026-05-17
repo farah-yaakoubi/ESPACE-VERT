@@ -34,6 +34,7 @@ export interface Marque {
   nom:         string;
   slug:        string;
   logo:        string | null;
+  banniere:    string | null;
   description: string | null;
   actif:       boolean;
 }
@@ -62,8 +63,24 @@ export interface Activite {
   slug:        string;
   description: string | null;
   image:       string | null;
+  banniere:    string | null;
   ordre:       number;
   actif:       boolean;
+}
+/** Shape returned by GET /api/activites/:slug — includes categories + direct produits */
+export interface ActiviteDetail extends Activite {
+  categories: ActiviteCategorie[];
+  produits:   ProduitCard[];
+}
+
+export interface ActiviteCategorie {
+  id_categorie: number;
+  nom:          string;
+  slug:         string;
+  description:  string | null;
+  image:        string | null;
+  parent_id:    number | null;
+  id_marque:    number | null;
 }
 
 // ── Categorie  (GET /api/categories?id_marque=&id_activite=) ─────────────────
@@ -77,6 +94,7 @@ export interface Categorie {
   id_marque:    number | null;
   id_activite:  number | null;
   parent_id:    number | null;
+  ordre:        number;
 }
 
 // ── ProduitImage ──────────────────────────────────────────────────────────────
@@ -195,4 +213,41 @@ export interface CreateRdvPayload {
   agence?:         string;
   message?:        string;
   token_visiteur?: string;
+}
+
+// ── CategorieDetail  (GET /api/categories/:slug) ─────────────────────────────
+// Retourné par findBySlugWithChildren — contient sous-catégories + produits
+
+export interface CategorieDetailProduit {
+  id_produit:   number;
+  nom:          string;
+  slug:         string;
+  description:  string | null;
+  division:     string;
+  tags:         unknown;
+  ordre:        number;
+  id_categorie: number;
+  images:       { url: string; alt: string | null }[];
+}
+
+export interface CategorieDetailSousCat {
+  id_categorie: number;
+  nom:          string;
+  slug:         string;
+  description:  string | null;
+  image:        string | null;
+  ordre:        number;
+  produits:     CategorieDetailProduit[];
+}
+
+export interface CategorieDetail {
+  id_categorie: number;
+  nom:          string;
+  slug:         string;
+  description:  string | null;
+  image:        string | null;
+  parent_id:    number | null;
+  parent:       { nom: string; slug: string } | null;
+  sous_cats:    CategorieDetailSousCat[];
+  produits:     CategorieDetailProduit[];
 }

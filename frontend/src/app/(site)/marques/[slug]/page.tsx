@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { marquesService } from "@/services";
 import { CategoryTree } from "@/components/catalogue/CategoryTree";
 import { fetchMarqueTree } from "@/lib/api/catalogue";
-
+import { PageHeroStatic } from "@/components/sections/PageHeroStatic";
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
@@ -43,63 +42,36 @@ export default async function MarqueDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  // Arbre de catégories pour CategoryTree
-  const tree = await fetchMarqueTree(slug);
-
-  /* Special rule: Matar + Irrigation → show RDV link */
+  const tree    = await fetchMarqueTree(slug);
   const isMatar = marque.slug === "matar";
 
   return (
     <>
-      {/* ── Brand hero ─────────────────────────────────────────── */}
-      <section className="bg-gradient-to-br from-ev-950 to-ev-800 py-16 md:py-24">
-        <div className="container-ev">
-          <div className="flex flex-col md:flex-row items-center gap-10">
+      {/* ── Hero — récupère le slide "marque:{slug}" depuis l'admin Hero ── */}
+      <PageHeroStatic
+        page={`marque:${slug}`}
+        eyebrow="Marque"
+        title={marque.nom}
+        subtitle={marque.description ?? undefined}
+        fallbackImage="/images/hero/fertivert.webp"
+      />
 
-            {/* Logo */}
-            <div className="relative w-40 h-40 rounded-3xl bg-white/10 flex items-center justify-center shrink-0 overflow-hidden border border-white/15">
-              {marque.logo ? (
-                <Image
-                  src={marque.logo}
-                  alt={marque.nom}
-                  fill
-                  className="object-contain p-6"
-                  priority
-                />
-              ) : (
-                <span className="text-5xl font-bold text-white/30 font-display">
-                  {marque.nom[0]}
-                </span>
-              )}
-            </div>
-
-            {/* Info */}
-            <div className="text-center md:text-left">
-              <p className="eyebrow text-ev-300 mb-2">Marque</p>
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 font-display">
-                {marque.nom}
-              </h1>
-              {marque.description && (
-                <p className="text-white/65 text-lg leading-relaxed max-w-2xl">
-                  {marque.description}
-                </p>
-              )}
-
-              {/* Matar: RDV CTA for Irrigation */}
-              {isMatar && (
-                <div className="mt-6 flex flex-wrap gap-3 justify-center md:justify-start">
-                  <Link
-                    href="/rendez-vous"
-                    className="btn btn-lg bg-sky-500 text-white hover:bg-sky-600"
-                  >
-                    Prendre rendez-vous — Irrigation
-                  </Link>
-                </div>
-              )}
-            </div>
+      {/* CTA Matar RDV — affiché sous le hero si besoin */}
+      {isMatar && (
+        <div className="bg-sky-50 border-b border-sky-100 py-3">
+          <div className="container-ev flex items-center justify-between gap-4">
+            <p className="text-sm text-sky-800 font-medium">
+              Solutions d&apos;irrigation Matar — Prenez rendez-vous avec un expert
+            </p>
+            <Link
+              href="/rendez-vous"
+              className="shrink-0 btn btn-sm bg-sky-500 text-white hover:bg-sky-600"
+            >
+              Prendre RDV
+            </Link>
           </div>
         </div>
-      </section>
+      )}
 
       {/* ── Categories quick nav ───────────────────────────────── */}
       {tree && tree.categories.length > 0 && (
@@ -133,7 +105,6 @@ export default async function MarqueDetailPage({ params }: PageProps) {
           </div>
         </section>
       )}
-
     </>
   );
 }

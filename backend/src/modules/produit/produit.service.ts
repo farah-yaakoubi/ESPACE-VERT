@@ -1,10 +1,11 @@
 import { produitRepository } from "./produit.repository";
-import { paginate } from "../../lib/response";
+import { paginate } from "../../lib/pagination";
 import { logAudit } from "../../lib/audit";
 import {
   CreateProduitDto, UpdateProduitDto,
   ProduitQueryDto, ProduitPublicQueryDto, AddImageDto,
 } from "./produit.schema";
+import { categorieService } from "../categorie/categorie.service";
 
 export const produitService = {
 
@@ -14,7 +15,7 @@ export const produitService = {
       limit:        params.limit,
       id_marque:    params.id_marque,
       id_categorie: params.id_categorie,
-      id_activite:  params.id_activite, // ← NOUVEAU
+      id_activite:  params.id_activite,
       marque_slug:  params.marque,
       division:     params.division,
       search:       params.search,
@@ -43,6 +44,9 @@ export const produitService = {
     const existing = await produitRepository.findBySlug(data.slug);
     if (existing) throw { status: 409, message: "Ce slug est déjà utilisé" };
 
+    // Vérifie que la catégorie est une feuille (pas de sous-catégories)
+    await categorieService.assertIsLeaf(data.id_categorie);
+
     // Si id_activite non fourni → déduire depuis la catégorie
     let payload = { ...data };
     if (!payload.id_activite && payload.id_categorie) {
@@ -62,6 +66,12 @@ export const produitService = {
 
   async update(id: number, data: UpdateProduitDto, id_admin: number) {
     const before = await produitService.getById(id);
+
+    // Si la catégorie change, vérifier que la nouvelle est une feuille
+    if (data.id_categorie && data.id_categorie !== before.id_categorie) {
+      await categorieService.assertIsLeaf(data.id_categorie);
+    }
+
     const produit = await produitRepository.update(id, data);
     await logAudit({
       id_admin, action: "UPDATE", entity_name: "produit", entity_id: id,
@@ -73,7 +83,6 @@ export const produitService = {
   async delete(id: number, id_admin: number) {
     const before = await produitService.getById(id);
     await produitRepository.delete(id);
-    // Stocker le snapshot AVANT suppression pour historique complet
     await logAudit({
       id_admin, action: "DELETE", entity_name: "produit", entity_id: id,
       detail: {

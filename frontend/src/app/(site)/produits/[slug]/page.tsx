@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, Tag, Layers, Activity, Package } from "lucide-react";
+import { ChevronRight, Tag, Layers, Activity, Package, Home } from "lucide-react";
 import { produitsService } from "@/services";
 import { ProduitGallery } from "./ProduitGallery";
 import { ProduitFicheSection } from "./ProduitFicheSection";
@@ -20,9 +20,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   try {
     const p = await produitsService.bySlug(slug);
+    const brandName = p.marque?.nom ?? "Espace Vert";
     return {
-      title: `${p.nom} — ${p.marque.nom}`,
-      description: p.description ?? `Découvrez ${p.nom} de la gamme ${p.marque.nom}.`,
+      title: `${p.nom} — ${brandName}`,
+      description: p.description ?? `Découvrez ${p.nom}${p.marque ? ` de la gamme ${p.marque.nom}` : ""}.`,
       openGraph: { images: p.images[0] ? [p.images[0].url] : [] },
     };
   } catch { return { title: "Produit introuvable" }; }
@@ -48,6 +49,19 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
       .filter(Boolean) as string[]
   )];
 
+  // Liens de retour : activité > marque > catégorie parent (en fonction de ce qui est disponible)
+  const backHref = produit.activite
+    ? `/activites/${produit.activite.slug}`
+    : produit.marque
+    ? `/marques/${produit.marque.slug}`
+    : "/";
+
+  const backLabel = produit.activite
+    ? produit.activite.nom
+    : produit.marque
+    ? produit.marque.nom
+    : "Accueil";
+
   return (
     <div className="min-h-screen" style={{ background: "#f8faf8" }}>
 
@@ -55,22 +69,54 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
       <div className="bg-white border-b border-sand-200">
         <div className="container-ev py-3">
           <nav className="flex items-center gap-1.5 text-xs text-gray-400 flex-wrap">
-            <Link href="/" className="hover:text-ev-700 transition-colors">Accueil</Link>
-            <ChevronRight size={11} />
-            <Link href={`/marques/${produit.marque.slug}`} className="hover:text-ev-700 transition-colors">
-              {produit.marque.nom}
+            <Link href="/" className="hover:text-ev-700 transition-colors flex items-center gap-1">
+              <Home size={10} /> Accueil
             </Link>
             <ChevronRight size={11} />
-            {produit.categorie?.parent && (
-              <><span>{produit.categorie.parent.nom}</span><ChevronRight size={11} /></>
+
+            {/* Marque — seulement si elle existe */}
+            {produit.marque && (
+              <>
+                <Link href={`/marques/${produit.marque.slug}`} className="hover:text-ev-700 transition-colors">
+                  {produit.marque.nom}
+                </Link>
+                <ChevronRight size={11} />
+              </>
             )}
+
+            {/* Activité — seulement si elle existe et pas déjà via marque */}
+            {produit.activite && !produit.marque && (
+              <>
+                <Link href={`/activites/${produit.activite.slug}`} className="hover:text-ev-700 transition-colors">
+                  {produit.activite.nom}
+                </Link>
+                <ChevronRight size={11} />
+              </>
+            )}
+
+            {/* Catégorie parente */}
+            {produit.categorie?.parent && (
+              <>
+                <span className="text-gray-500">{produit.categorie.parent.nom}</span>
+                <ChevronRight size={11} />
+              </>
+            )}
+
+            {/* Catégorie directe */}
+            {produit.categorie && (
+              <>
+                <span className="text-gray-500">{produit.categorie.nom}</span>
+                <ChevronRight size={11} />
+              </>
+            )}
+
             <span className="text-gray-700 font-medium">{produit.nom}</span>
           </nav>
         </div>
       </div>
 
-      <div className="container-ev py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:gap-16">
+      <div className="container-ev py-8 sm:py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 xl:gap-16">
 
           {/* ── Galerie ─────────────────────────────────────────── */}
           <div className="space-y-4">
@@ -80,7 +126,7 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
             }
           </div>
 
-          {/* ── Infos + Tableau technique ────────────────────────── */}
+          {/* ── Infos ────────────────────────────────────────────── */}
           <div className="flex flex-col gap-5">
 
             {/* Badges */}
@@ -90,15 +136,20 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
                   <Layers size={11} /> {produit.categorie.nom}
                 </span>
               )}
-              <Link href={`/marques/${produit.marque.slug}`}>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-ev-50 text-ev-700 border border-ev-200 hover:bg-ev-100 transition-colors cursor-pointer">
-                  <Tag size={11} /> {produit.marque.nom}
-                </span>
-              </Link>
+              {/* Badge marque — uniquement si marque existe */}
+              {produit.marque && (
+                <Link href={`/marques/${produit.marque.slug}`}>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-ev-50 text-ev-700 border border-ev-200 hover:bg-ev-100 transition-colors cursor-pointer">
+                    <Tag size={11} /> {produit.marque.nom}
+                  </span>
+                </Link>
+              )}
               {produit.activite && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200">
-                  <Activity size={11} /> {produit.activite.nom}
-                </span>
+                <Link href={`/activites/${produit.activite.slug}`}>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 transition-colors cursor-pointer">
+                    <Activity size={11} /> {produit.activite.nom}
+                  </span>
+                </Link>
               )}
               <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${div.bg} ${div.text} ${div.border}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${div.dot}`} />
@@ -129,7 +180,7 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
               </div>
             )}
 
-            {/* ── Tableau données techniques style catalogue ─────── */}
+            {/* Tableau technique */}
             <ProduitTechTable
               sku={(produit as any).sku}
               poids={(produit as any).poids}
@@ -142,7 +193,7 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
               categorie={produit.categorie?.nom}
             />
 
-            {/* Fiche technique HTML inline */}
+            {/* Fiche technique HTML */}
             {produit.fiche_technique && !fichePdf && (
               <details className="group rounded-2xl bg-white border border-sand-200 overflow-hidden"
                 style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
@@ -160,8 +211,17 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
               </details>
             )}
 
-           
-            
+            {/* Bouton retour */}
+            <div className="mt-2">
+              <Link
+                href={backHref}
+                className="inline-flex items-center gap-2 text-sm text-ev-700 hover:text-ev-900 font-medium transition-colors"
+              >
+                <ChevronRight size={14} className="rotate-180" />
+                Retour vers {backLabel}
+              </Link>
+            </div>
+
           </div>
         </div>
       </div>

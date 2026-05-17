@@ -4,6 +4,8 @@ import { paginate } from "../../lib/response";
 import { logAudit } from "../../lib/audit";
 import { prisma } from "../../lib/prisma";
 import { CreateContactDto, ReplyContactDto, ContactQueryDto } from "./contact.schema";
+import { notifRepository } from "../notifications/notifications.repository";
+import { notifSseBroadcast } from "../notifications/notifications.controller";
 
 export const contactService = {
 
@@ -19,6 +21,18 @@ export const contactService = {
       sujet:       data.sujet ?? null,
       message:     data.message,
       id_visiteur: id_visiteur ?? null,
+    }).then(async (msg) => {
+      try {
+        await notifRepository.createForAll(
+          "nouveau_message",
+          `Nouveau message — ${data.nom.trim()}`,
+          data.sujet ?? data.message.slice(0, 80),
+          "/admin/contact",
+          { source_label: data.nom.trim() }
+        );
+        notifSseBroadcast({ type: "nouveau_message", titre: `Nouveau message — ${data.nom.trim()}` });
+      } catch (e) { console.error("[contact notif]", e); }
+      return msg;
     });
   },
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { CalendarDays, Mail, ChevronRight, Leaf, Building2, Target, Star } from "lucide-react";
 import { TimelineEV } from "@/components/qui-sommes-nous/TimelineEV";
+import { PageHeroStatic } from "@/components/sections/PageHeroStatic";
 import AgenceSection  from "@/components/qui-sommes-nous/AgenceSection";
 
 const C = { forest:"#10693B", leaf:"#4CAF50", sage:"#66BB6A", foam:"#F1FDF4", cream:"#FAFFF8", mint:"#C8E6C9", mist:"#E8F5E9", text:"#1B3A2F", mid:"#2E7D52", soft:"#5A8A6A", white:"#FFFFFF" };
@@ -51,31 +52,18 @@ function StatCard({ stat, i }:{ stat:typeof STATS[0]; i:number }) {
 export default function QuiSommesNousPage() {
   return (
     <div style={{background:C.white,minHeight:"100vh"}}>
-      {/* HERO */}
-      <section style={{background:`linear-gradient(135deg,${C.cream} 0%,#DAF5DE 55%,#CCE9D4 100%)`,position:"relative",overflow:"hidden",padding:"7rem 2rem 6rem",borderBottom:`1px solid ${C.mist}`}}>
-        <div style={{position:"absolute",inset:0,backgroundImage:`radial-gradient(${C.forest}08 1px,transparent 1px)`,backgroundSize:"28px 28px",pointerEvents:"none"}}/>
-        <div style={{position:"absolute",top:-100,right:-100,width:500,height:500,borderRadius:"50%",background:`radial-gradient(circle,${C.leaf}18 0%,transparent 70%)`,pointerEvents:"none"}}/>
-        <div style={{position:"absolute",bottom:-1,left:0,right:0}}>
-          <svg viewBox="0 0 1440 60" style={{width:"100%",height:60,display:"block"}} preserveAspectRatio="none">
-            <path d="M0,60L1440,60L1440,20C1080,52,720,4,360,30C180,44,90,14,0,26Z" fill={C.white}/>
-          </svg>
-        </div>
-        <div style={{maxWidth:820,margin:"0 auto",textAlign:"center",position:"relative"}}>
-          <motion.div initial={{opacity:0,y:36}} animate={{opacity:1,y:0}} transition={{duration:0.75,ease:[0.22,1,0.36,1]}}>
-            <motion.span initial={{opacity:0,scale:0.8}} animate={{opacity:1,scale:1}} transition={{delay:0.1,duration:0.4}}
-              style={{display:"inline-flex",alignItems:"center",gap:8,background:C.forest,color:C.white,padding:"6px 20px",borderRadius:99,fontSize:11,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:28,boxShadow:`0 4px 20px ${C.forest}35`}}>
-              <Leaf size={12} strokeWidth={2.5}/> Groupe Espace Vert · Fondé en 1995
-            </motion.span>
-            <h1 style={{fontSize:"clamp(2.6rem,6vw,4.5rem)",fontWeight:900,color:C.text,lineHeight:1.02,letterSpacing:"-0.03em",marginBottom:22}}>
-              Qui sommes-<span style={{color:C.forest}}>nous</span>&nbsp;?
-            </h1>
-          </motion.div>
-        </div>
-      </section>
-
+      {/* Hero image fixe + zoom-in */}
+      <PageHeroStatic
+        page="qui-sommes-nous"
+        eyebrow="Groupe Espace Vert · Fondé en 1995"
+        title="Qui sommes-nous ?"
+        subtitle="30 ans d'expertise au service de l'agriculture tunisienne."
+        fallbackImage="/images/hero/Untitled-4.webp"
+        height="52vh"
+      />
       {/* STATS */}
-      <section style={{padding:"4rem 2rem",background:C.white}}>
-        <div style={{maxWidth:1100,margin:"0 auto",display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(155px,1fr))",gap:14}}>
+      <section style={{padding:"4rem 0",background:C.white}}>
+        <div className="container-ev" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:14}}>
           {STATS.map((s,i)=><StatCard key={i} stat={s} i={i}/>)}
         </div>
       </section>
@@ -84,8 +72,8 @@ export default function QuiSommesNousPage() {
       <TimelineEV/>
 
       {/* SOCIÉTÉS */}
-      <section style={{padding:"5.5rem 2rem",background:C.white}}>
-        <div style={{maxWidth:1100,margin:"0 auto"}}>
+      <section style={{padding:"5.5rem 0",background:C.white}}>
+        <div className="container-ev">
           <motion.div {...FADE()} style={{textAlign:"center",marginBottom:"3.5rem"}}>
             <span style={{display:"inline-flex",alignItems:"center",gap:7,background:C.forest,color:C.white,padding:"5px 18px",borderRadius:99,fontSize:11,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:16}}>
               <Building2 size={11} strokeWidth={2.5}/> Structure du Groupe
@@ -108,8 +96,8 @@ export default function QuiSommesNousPage() {
       </section>
 
       {/* MISSION */}
-      <section style={{padding:"4rem 2rem",background:C.foam}}>
-        <div style={{maxWidth:900,margin:"0 auto"}}>
+      <section style={{padding:"4rem 0",background:C.foam}}>
+        <div className="container-ev" style={{maxWidth:900}}>
           <motion.div {...FADE()} style={{background:`linear-gradient(135deg,${C.forest} 0%,${C.sage} 100%)`,borderRadius:26,padding:"3rem",position:"relative",overflow:"hidden"}}>
             <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(rgba(255,255,255,0.05) 1px,transparent 1px)",backgroundSize:"22px 22px",pointerEvents:"none"}}/>
             <div style={{position:"relative",display:"flex",alignItems:"flex-start",gap:22,flexWrap:"wrap"}}>
@@ -128,8 +116,8 @@ export default function QuiSommesNousPage() {
       </section>
 
       {/* VALEURS */}
-      <section style={{padding:"5.5rem 2rem",background:C.white}}>
-        <div style={{maxWidth:1100,margin:"0 auto"}}>
+      <section style={{padding:"5.5rem 0",background:C.white}}>
+        <div className="container-ev">
           <motion.div {...FADE()} style={{textAlign:"center",marginBottom:"3rem"}}>
             <span style={{display:"inline-flex",alignItems:"center",gap:7,background:C.forest,color:C.white,padding:"5px 18px",borderRadius:99,fontSize:11,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:16}}>
               <Star size={11} strokeWidth={2.5}/> Nos Valeurs
@@ -154,10 +142,11 @@ export default function QuiSommesNousPage() {
       <AgenceSection/>
 
       {/* CTA FINAL */}
-      <section style={{padding:"5rem 2rem",background:C.white,textAlign:"center"}}>
-        <motion.div {...FADE()}>
-          <h2 style={{fontSize:"1.55rem",fontWeight:900,color:C.text,marginBottom:10}}>Vous souhaitez en savoir plus&nbsp;?</h2>
-          <p style={{color:C.soft,marginBottom:32,fontSize:"0.97rem"}}>Notre équipe d&apos;experts est à votre disposition.</p>
+      <section style={{padding:"5rem 0",background:C.white,textAlign:"center"}}>
+        <div className="container-ev">
+          <motion.div {...FADE()}>
+          <h2 style={{fontSize:"clamp(1.2rem,2.5vw,1.55rem)",fontWeight:900,color:C.text,marginBottom:10}}>Vous souhaitez en savoir plus&nbsp;?</h2>
+          <p style={{color:C.soft,marginBottom:32,fontSize:"clamp(0.85rem,1.5vw,0.97rem)"}}>Notre équipe d&apos;experts est à votre disposition.</p>
           <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
             <motion.div whileHover={{scale:1.03,y:-2}} whileTap={{scale:0.97}}>
               <Link href="/contact" style={{display:"inline-flex",alignItems:"center",gap:8,background:C.forest,color:C.white,padding:"0.85rem 1.9rem",borderRadius:13,fontWeight:700,fontSize:"0.92rem",textDecoration:"none",boxShadow:`0 4px 18px ${C.forest}35`}}>
@@ -165,7 +154,8 @@ export default function QuiSommesNousPage() {
               </Link>
             </motion.div>
           </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </section>
     </div>
   );

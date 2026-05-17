@@ -5,6 +5,8 @@ import { paginate } from "../../lib/response";
 import { logAudit } from "../../lib/audit";
 import { prisma } from "../../lib/prisma";
 import { CreateDevisDto, UpdateDevisDto, DevisQueryDto, DEVIS_STATUTS } from "./devis.schema";
+import { notifRepository } from "../notifications/notifications.repository";
+import { notifSseBroadcast } from "../notifications/notifications.controller";
 
 // ── Transitions de statut autorisées (workflow) ───────────────────────────────
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -40,6 +42,19 @@ export const devisService = {
       message:     data.message    ?? null,
       id_produit:  data.id_produit ?? null,
       id_visiteur: id_visiteur     ?? null,
+    }).then(async (devis) => {
+      // Notifier tous les admins
+      try {
+        await notifRepository.createForAll(
+          "nouveau_devis",
+          `Nouveau devis — ${data.nom.trim()}`,
+          data.message?.slice(0, 80) ?? undefined,
+          "/admin/devis",
+          { source_label: data.nom.trim() }
+        );
+        notifSseBroadcast({ type: "nouveau_devis", titre: `Nouveau devis — ${data.nom.trim()}` });
+      } catch (e) { console.error("[devis notif]", e); }
+      return devis;
     });
   },
 

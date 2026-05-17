@@ -44,6 +44,10 @@ export const authService = {
       ip_address:  ip,
     });
 
+    // Inclure les permissions du rôle dans la réponse
+    const rolePerms = Array.isArray((admin as any).role?.permissions)
+      ? (admin as any).role.permissions
+      : [];
     return {
       access_token,
       refresh_token,
@@ -93,7 +97,14 @@ export const authService = {
   async me(id_admin: number) {
     const admin = await authRepository.findAdminById(id_admin);
     if (!admin) throw { status: 404, message: "Admin introuvable" };
-    const { mot_de_passe, ...safe } = admin;
+    const { mot_de_passe, ...rest } = admin;
+    // Attacher les permissions du rôle directement sur l'objet admin
+    const safe = {
+      ...rest,
+      permissions: Array.isArray((admin as any).role?.permissions)
+        ? (admin as any).role.permissions
+        : [],
+    };
     return safe;
   },
 

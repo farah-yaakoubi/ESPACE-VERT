@@ -1,6 +1,6 @@
-// src/modules/produit/produit.routes.ts
+
 import { Router } from "express";
-import { authenticate } from "../../middleware/authMiddleware";
+import { authenticate, requirePermission } from "../../middleware/authMiddleware";
 import * as ctrl from "./produit.controller";
 
 // ── Public ────────────────────────────────────────────
@@ -11,13 +11,19 @@ produitPublicRouter.get("/:slug", ctrl.getBySlugPublic);
 // ── Admin ─────────────────────────────────────────────
 export const produitAdminRouter = Router();
 produitAdminRouter.use(authenticate);
-produitAdminRouter.get("/",                        ctrl.list);
-produitAdminRouter.post("/",                       ctrl.create);
-produitAdminRouter.get("/:id",                     ctrl.getById);
-produitAdminRouter.put("/:id",                     ctrl.update);
-produitAdminRouter.delete("/:id",                  ctrl.remove);
-produitAdminRouter.post("/:id/images",             ctrl.addImage);
-produitAdminRouter.post("/:id/images/upload",      ctrl.uploadImageFile);
-produitAdminRouter.put("/:id/images/:imgId",       ctrl.updateImageHandler);
-produitAdminRouter.post("/:id/fiche-technique",    ctrl.uploadFicheTechnique);
-produitAdminRouter.delete("/:id/images/:imgId",    ctrl.deleteImage);
+
+// Lecture : produits.read
+produitAdminRouter.get("/",      requirePermission("produits.read"), ctrl.list);
+produitAdminRouter.get("/:id",   requirePermission("produits.read"), ctrl.getById);
+
+// Écriture : produits.write
+produitAdminRouter.post("/",                          requirePermission("produits.write"), ctrl.create);
+produitAdminRouter.put("/:id",                        requirePermission("produits.write"), ctrl.update);
+produitAdminRouter.post("/:id/images",                requirePermission("produits.write"), ctrl.addImage);
+produitAdminRouter.post("/:id/images/upload",         requirePermission("produits.write"), ctrl.uploadImageFile);
+produitAdminRouter.put("/:id/images/:imgId",          requirePermission("produits.write"), ctrl.updateImageHandler);
+produitAdminRouter.post("/:id/fiche-technique",       requirePermission("produits.write"), ctrl.uploadFicheTechnique);
+
+// Suppression : produits.delete
+produitAdminRouter.delete("/:id",                     requirePermission("produits.delete"), ctrl.remove);
+produitAdminRouter.delete("/:id/images/:imgId",       requirePermission("produits.delete"), ctrl.deleteImage);

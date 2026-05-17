@@ -1,30 +1,373 @@
 "use client";
 import { ImageUploader } from "@/components/admin/ImageUploader";
-import { pushToast } from "@/components/admin/Toast";
+import { toast } from "@/components/admin/Toast";
 import {
   adminActivites,
-  adminProduits,
+  adminCategories,
+  adminMarques,
   type ActiviteAdmin,
-  type ProduitAdmin,
+  type CategorieAdmin,
+  type MarqueAdmin,
 } from "@/lib/admin-api";
 import {
   Activity,
   AlertCircle,
-  ArrowLeft,
+  ChevronDown,
   ChevronRight,
   Edit2,
   ExternalLink,
-  Eye,
-  Package,
+  Folder,
+  FolderOpen,
+  Image as ImageIcon,
+  Info,
+  Layers,
   Plus,
   RefreshCw,
-  Search,
+  Tag,
   Trash2,
   X,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+/* ══════════════════════════════════════════════════════════════════
+   SECTION — Gestion des Activités (CRUD + bannière)
+══════════════════════════════════════════════════════════════════ */
+
+const EMPTY_ACT = { nom: "", slug: "", description: "", image: "", banniere: "", ordre: 0, actif: true };
+
+function toSlugAct(s: string) {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function ActivitesCrudPanel() {
+  const [items, setItems] = useState<ActiviteAdmin[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState<"create" | "edit" | null>(null);
+  const [editing, setEditing] = useState<ActiviteAdmin | null>(null);
+  const [form, setForm] = useState(EMPTY_ACT);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+  const [confirmDel, setConfirmDel] = useState<ActiviteAdmin | null>(null);
+
+  const F = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const d = await adminActivites.list();
+      setItems(Array.isArray(d) ? d : (d as any).data ?? []);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const openCreate = () => {
+    setForm(EMPTY_ACT);
+    setEditing(null);
+    setErr("");
+    setModal("create");
+  };
+
+  const openEdit = (a: ActiviteAdmin) => {
+    setForm({
+      nom:         a.nom,
+      slug:        a.slug,
+      description: a.description ?? "",
+      image:       a.image ?? "",
+      banniere:    (a as any).banniere ?? "",
+      ordre:       a.ordre,
+      actif:       a.actif,
+    });
+    setEditing(a);
+    setErr("");
+    setModal("edit");
+  };
+
+  const handleSave = async () => {
+    if (!form.nom.trim() || !form.slug.trim()) { setErr("Nom et slug requis."); return; }
+    setSaving(true); setErr("");
+    try {
+      const p = {
+        nom:         form.nom,
+        slug:        form.slug,
+        description: form.description || null,
+        image:       form.image || null,
+        banniere:    form.banniere || null,
+        ordre:       form.ordre,
+        ...(modal === "edit" ? { actif: form.actif } : {}),
+      };
+      if (modal === "create") await adminActivites.create(p as any);
+      else if (editing)       await adminActivites.update(editing.id_activite, p as any);
+      setModal(null);
+      toast.success(modal === "create" ? "Activité créée" : "Activité mise à jour", form.nom);
+      load();
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (a: ActiviteAdmin) => {
+    setConfirmDel(null);
+    try {
+      await adminActivites.remove(a.id_activite);
+      toast.success("Activité supprimée", a.nom);
+      load();
+    } catch (e: any) {
+      toast.error("Erreur", e.message);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <Activity size={18} className="text-green-600" /> Activités
+          </h2>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Gérez les activités et leur bannière héro respective
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={load} className="p-2 text-gray-500 hover:text-gray-800 rounded-xl hover:bg-gray-100">
+            <RefreshCw size={15} />
+          </button>
+          <button
+            onClick={openCreate}
+            className="flex items-center gap-2 bg-ev-700 hover:bg-ev-800 text-white text-sm font-medium px-4 py-2 rounded-xl"
+          >
+            <Plus size={15} /> Nouvelle activité
+          </button>
+        </div>
+      </div>
+
+      {/* Confirm delete */}
+      {confirmDel && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+              <AlertCircle size={22} className="text-red-600" />
+            </div>
+            <p className="text-gray-700 text-sm text-center mb-6">
+              Supprimer « {confirmDel.nom} » ? Cette action est irréversible.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmDel(null)} className="flex-1 h-10 border border-gray-200 text-sm text-gray-600 rounded-xl hover:bg-gray-50">Annuler</button>
+              <button onClick={() => handleDelete(confirmDel)} className="flex-1 h-10 bg-red-600 text-white text-sm rounded-xl hover:bg-red-700">Supprimer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Liste */}
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-7 h-7 border-4 border-ev-600 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : items.length === 0 ? (
+          <div className="text-center py-12 text-gray-400 text-sm">Aucune activité</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  {["Activité", "Image", "Bannière", "Ordre", "Statut", "Actions"].map((h) => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {items.map((a) => (
+                  <tr key={a.id_activite} className="group hover:bg-gray-50/80 transition-colors">
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-gray-800 text-sm">{a.nom}</p>
+                      <p className="text-[10px] text-gray-400 font-mono">{a.slug}</p>
+                      {a.description && (
+                        <p className="text-xs text-gray-500 mt-0.5 max-w-xs truncate">{a.description}</p>
+                      )}
+                    </td>
+                    {/* Image miniature */}
+                    <td className="px-4 py-3">
+                      {a.image ? (
+                        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
+                          <Image src={a.image} alt="" fill style={{ objectFit: "cover" }} />
+                        </div>
+                      ) : (
+                        <span className="text-gray-300 text-xs">—</span>
+                      )}
+                    </td>
+                    {/* Bannière */}
+                    <td className="px-4 py-3">
+                      {(a as any).banniere ? (
+                        <div className="relative w-20 h-10 rounded-lg overflow-hidden bg-gray-100">
+                          <Image src={(a as any).banniere} alt="" fill style={{ objectFit: "cover" }} />
+                        </div>
+                      ) : (
+                        <span className="text-xs text-amber-500 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">
+                          Non configurée
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-center text-xs text-gray-400">{a.ordre}</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${a.actif ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
+                        {a.actif ? "Actif" : "Inactif"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Link
+                          href={`/activites/${a.slug}`}
+                          target="_blank"
+                          className="p-1.5 text-gray-400 hover:text-ev-600 hover:bg-ev-50 rounded-lg"
+                          title="Voir la page"
+                        >
+                          <ExternalLink size={13} />
+                        </Link>
+                        <button onClick={() => openEdit(a)} className="p-1.5 text-gray-400 hover:text-ev-600 hover:bg-ev-50 rounded-lg">
+                          <Edit2 size={13} />
+                        </button>
+                        <button onClick={() => setConfirmDel(a)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Modal */}
+      {modal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
+            <div className="p-5 border-b flex items-center justify-between sticky top-0 bg-white z-10">
+              <h2 className="font-bold text-gray-900">
+                {modal === "create" ? "Nouvelle activité" : `Modifier — ${editing?.nom}`}
+              </h2>
+              <button onClick={() => setModal(null)} className="text-gray-400 hover:text-gray-700"><X size={18} /></button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {err && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl flex items-start gap-2">
+                  <AlertCircle size={14} className="shrink-0 mt-0.5" />{err}
+                </div>
+              )}
+
+              {/* Nom + Slug */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Nom *</label>
+                  <input
+                    value={form.nom}
+                    onChange={(e) => { F("nom", e.target.value); if (modal === "create") F("slug", toSlugAct(e.target.value)); }}
+                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Slug *</label>
+                  <input
+                    value={form.slug}
+                    onChange={(e) => F("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => F("description", e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 resize-none"
+                />
+              </div>
+
+              {/* Ordre */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Ordre</label>
+                <input
+                  type="number" value={form.ordre}
+                  onChange={(e) => F("ordre", Number(e.target.value))}
+                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
+                />
+              </div>
+
+              {/* Image miniature */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Image miniature <span className="text-gray-400 font-normal">(carte sur la page /activites)</span>
+                </label>
+                {form.image && (
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden mb-2 bg-gray-100">
+                    <Image src={form.image} alt="" fill style={{ objectFit: "cover" }} />
+                  </div>
+                )}
+                <ImageUploader onUpload={(v) => F("image", v)} />
+                <input
+                  type="text" value={form.image}
+                  onChange={(e) => F("image", e.target.value)}
+                  placeholder="/images/activites/mon-image.webp"
+                  className="mt-1 w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
+                />
+              </div>
+
+              {/* Bannière */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Bannière héro <span className="text-gray-400 font-normal">(image pleine largeur sur la page /activites/slug)</span>
+                </label>
+                {form.banniere && (
+                  <div className="relative w-full h-24 rounded-xl overflow-hidden mb-2 bg-gray-100">
+                    <Image src={form.banniere} alt="" fill style={{ objectFit: "cover" }} />
+                  </div>
+                )}
+                <ImageUploader onUpload={(v) => F("banniere", v)} />
+                <input
+                  type="text" value={form.banniere}
+                  onChange={(e) => F("banniere", e.target.value)}
+                  placeholder="/images/hero/mon-activite-banner.webp"
+                  className="mt-1 w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
+                />
+              </div>
+
+              {modal === "edit" && (
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" checked={form.actif} onChange={(e) => F("actif", e.target.checked)} className="accent-ev-600 w-4 h-4" />
+                  Activité active
+                </label>
+              )}
+            </div>
+
+            <div className="p-5 pt-0 flex gap-3">
+              <button onClick={() => setModal(null)} className="flex-1 h-10 border text-sm text-gray-600 rounded-xl hover:bg-gray-50">Annuler</button>
+              <button
+                onClick={handleSave} disabled={saving}
+                className="flex-1 h-10 bg-ev-700 text-white text-sm rounded-xl hover:bg-ev-800 disabled:opacity-60 flex items-center justify-center"
+              >
+                {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : modal === "create" ? "Créer" : "Enregistrer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function toSlug(s: string) {
   return s
@@ -39,10 +382,233 @@ const EMPTY = {
   slug: "",
   description: "",
   image: "",
+  id_activite: "",
+  id_marque: "",
+  parent_id: "",
   ordre: 0,
   actif: true,
 };
 
+// ── Nœud d'arbre ─────────────────────────────────────────────────
+interface TreeNode extends CategorieAdmin {
+  children: TreeNode[];
+  depth: number;
+}
+
+function buildTree(flat: CategorieAdmin[]): TreeNode[] {
+  const map = new Map<number, TreeNode>();
+  // Créer tous les nœuds sans depth (sera calculé après construction)
+  flat.forEach((c) =>
+    map.set(c.id_categorie, { ...c, children: [], depth: 0 }),
+  );
+  const roots: TreeNode[] = [];
+  map.forEach((node) => {
+    if (node.parent_id && map.has(node.parent_id)) {
+      map.get(node.parent_id)!.children.push(node);
+    } else {
+      // Parent absent ou null → nœud racine
+      roots.push(node);
+    }
+  });
+
+  // Tri à chaque niveau : ordre ASC, puis nom ASC (même règle que le backend)
+  const sort = (arr: TreeNode[]) =>
+    arr.sort((a, b) => a.ordre - b.ordre || a.nom.localeCompare(b.nom, "fr"));
+
+  // Calcul récursif du depth APRÈS construction complète de l'arbre
+  const assignDepth = (nodes: TreeNode[], depth: number): TreeNode[] => {
+    sort(nodes);
+    nodes.forEach((n) => {
+      n.depth = depth;
+      assignDepth(n.children, depth + 1);
+    });
+    return nodes;
+  };
+
+  return assignDepth(roots, 0);
+}
+
+function flattenTree(nodes: TreeNode[]): TreeNode[] {
+  const result: TreeNode[] = [];
+  const walk = (arr: TreeNode[]) =>
+    arr.forEach((n) => {
+      result.push(n);
+      walk(n.children);
+    });
+  walk(nodes);
+  return result;
+}
+
+// ── Badge marque/activité ────────────────────────────────────────
+function Badge({
+  label,
+  type,
+}: {
+  label: string;
+  type: "marque" | "activite";
+}) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+        type === "marque"
+          ? "bg-blue-50 text-blue-600 border border-blue-100"
+          : "bg-green-50 text-green-600 border border-green-100"
+      }`}
+    >
+      {type === "marque" ? <Tag size={8} /> : <Activity size={8} />}
+      {label}
+    </span>
+  );
+}
+
+// ── Ligne de l'arbre ─────────────────────────────────────────────
+function TreeRow({
+  node,
+  expanded,
+  onToggle,
+  onEdit,
+  onDelete,
+  onAddChild,
+}: {
+  node: TreeNode;
+  expanded: boolean;
+  onToggle: () => void;
+  onEdit: (c: CategorieAdmin) => void;
+  onDelete: (c: CategorieAdmin) => void;
+  onAddChild: (parent: CategorieAdmin) => void;
+}) {
+  const hasChildren = node.children.length > 0;
+  const count = (node as any)._count;
+
+  return (
+    <tr
+      className={`group hover:bg-gray-50/80 transition-colors ${!node.actif ? "opacity-50" : ""}`}
+    >
+      {/* Nom avec indentation */}
+      <td className="px-4 py-2.5">
+        <div
+          className="flex items-center"
+          style={{ paddingLeft: `${node.depth * 22}px` }}
+        >
+          {/* Toggle expand */}
+          <button
+            onClick={onToggle}
+            className={`shrink-0 w-5 h-5 flex items-center justify-center rounded transition-colors mr-1 ${
+              hasChildren
+                ? "text-gray-500 hover:text-gray-800 hover:bg-gray-200"
+                : "text-transparent cursor-default"
+            }`}
+          >
+            {hasChildren ? (
+              expanded ? (
+                <ChevronDown size={13} />
+              ) : (
+                <ChevronRight size={13} />
+              )
+            ) : null}
+          </button>
+
+          {/* Icône dossier */}
+          <span
+            className={`shrink-0 mr-2 ${hasChildren ? "text-amber-500" : "text-gray-400"}`}
+          >
+            {hasChildren ? (
+              expanded ? (
+                <FolderOpen size={14} />
+              ) : (
+                <Folder size={14} />
+              )
+            ) : (
+              <span className="text-[10px] text-gray-300">└</span>
+            )}
+          </span>
+
+          <div className="min-w-0">
+            <p
+              className={`font-medium text-gray-800 truncate ${node.depth === 0 ? "text-sm" : "text-xs"}`}
+            >
+              {node.nom}
+            </p>
+            <p className="text-[10px] text-gray-400 font-mono">{node.slug}</p>
+          </div>
+        </div>
+      </td>
+
+      {/* Badges marque / activité */}
+      <td className="px-4 py-2.5">
+        <div className="flex flex-wrap gap-1">
+          {node.marque && (
+            <Badge label={(node.marque as any).nom} type="marque" />
+          )}
+          {node.activite && (
+            <Badge label={(node.activite as any).nom} type="activite" />
+          )}
+        </div>
+      </td>
+
+      {/* Compteurs */}
+      <td className="px-4 py-2.5 text-center">
+        {count?.sous_cats > 0 && (
+          <span className="text-xs bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full border border-amber-100">
+            {count.sous_cats} sous-cat.
+          </span>
+        )}
+      </td>
+      <td className="px-4 py-2.5 text-center">
+        {count?.produits > 0 && (
+          <span className="text-xs bg-ev-50 text-ev-600 px-2 py-0.5 rounded-full border border-ev-100">
+            {count.produits} produit{count.produits > 1 ? "s" : ""}
+          </span>
+        )}
+      </td>
+
+      {/* Ordre */}
+      <td className="px-4 py-2.5 text-center text-xs text-gray-400">
+        {node.ordre}
+      </td>
+
+      {/* Statut */}
+      <td className="px-4 py-2.5">
+        <span
+          className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+            node.actif
+              ? "bg-green-100 text-green-700"
+              : "bg-red-100 text-red-600"
+          }`}
+        >
+          {node.actif ? "Actif" : "Inactif"}
+        </span>
+      </td>
+
+      {/* Actions */}
+      <td className="px-4 py-2.5">
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => onAddChild(node)}
+            title="Ajouter une sous-catégorie"
+            className="p-1.5 text-gray-400 hover:text-ev-600 hover:bg-ev-50 rounded-lg"
+          >
+            <Plus size={12} />
+          </button>
+          <button
+            onClick={() => onEdit(node)}
+            className="p-1.5 text-gray-400 hover:text-ev-600 hover:bg-ev-50 rounded-lg"
+          >
+            <Edit2 size={12} />
+          </button>
+          <button
+            onClick={() => onDelete(node)}
+            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+          >
+            <Trash2 size={12} />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+// ── Confirm Dialog ────────────────────────────────────────────────
 function ConfirmDialog({
   message,
   onConfirm,
@@ -78,324 +644,151 @@ function ConfirmDialog({
   );
 }
 
-/* ─── Detail panel ─────────────────────────────────────────────── */
-function ActiviteDetail({
-  activite,
-  onBack,
-  onEdit,
-  onDelete,
+// ── Alert inline ─────────────────────────────────────────────────
+function Alert({
+  type,
+  children,
 }: {
-  activite: ActiviteAdmin;
-  onBack: () => void;
-  onEdit: (a: ActiviteAdmin) => void;
-  onDelete: (a: ActiviteAdmin) => void;
+  type: "error" | "info";
+  children: React.ReactNode;
 }) {
-  const [produits, setProduits] = useState<ProduitAdmin[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    setLoading(true);
-    adminProduits
-      .list({ id_activite: String(activite.id_activite), limit: "100" } as any)
-      .then((r) => setProduits(r.data))
-      .catch(() => setProduits([]))
-      .finally(() => setLoading(false));
-  }, [activite.id_activite]);
-
-  const filtered = produits.filter((p) =>
-    p.nom.toLowerCase().includes(search.toLowerCase()),
-  );
-
+  const s =
+    type === "error"
+      ? "bg-red-50 border-red-200 text-red-700"
+      : "bg-blue-50 border-blue-200 text-blue-700";
+  const Icon = type === "error" ? AlertCircle : Info;
   return (
-    <div className="space-y-5">
-      <button
-        onClick={onBack}
-        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800"
-      >
-        <ArrowLeft size={16} /> Retour aux activités
-      </button>
-
-      {/* Hero */}
-      <div
-        className="bg-white rounded-2xl border overflow-hidden"
-        style={{ borderColor: "#E2E8F0" }}
-      >
-        <div
-          className="h-48 relative overflow-hidden"
-          style={{ background: "linear-gradient(135deg,#f0fdf4,#dcfce7)" }}
-        >
-          {activite.image && (
-            <Image
-              src={activite.image}
-              alt={activite.nom}
-              fill
-              className="object-cover opacity-20"
-            />
-          )}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
-              {activite.image ? (
-                <div className="w-20 h-20 rounded-2xl overflow-hidden mx-auto mb-3 shadow-lg">
-                  <Image
-                    src={activite.image}
-                    alt={activite.nom}
-                    width={80}
-                    height={80}
-                    className="object-cover"
-                  />
-                </div>
-              ) : (
-                <div
-                  className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                  style={{
-                    background: "linear-gradient(135deg,#D1FAE5,#A7F3D0)",
-                  }}
-                >
-                  <Activity size={32} className="text-green-600" />
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="absolute top-4 right-4">
-            <span
-              className={`text-xs font-semibold px-2.5 py-1 rounded-full ${activite.actif ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
-            >
-              {activite.actif ? "Active" : "Inactive"}
-            </span>
-          </div>
-        </div>
-        <div className="p-5 flex items-start justify-between gap-4">
-          <div>
-            <h1
-              className="text-xl font-bold text-gray-900"
-              style={{ letterSpacing: "-0.03em" }}
-            >
-              {activite.nom}
-            </h1>
-            <p className="text-xs text-gray-400 font-mono mt-0.5">
-              /activites/{activite.slug}
-            </p>
-            {activite.description && (
-              <p className="text-sm text-gray-600 mt-2 max-w-lg">
-                {activite.description}
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <a
-              href={`/activites/${activite.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50"
-            >
-              <Eye size={13} /> Voir
-            </a>
-            <button
-              onClick={() => onEdit(activite)}
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50"
-            >
-              <Edit2 size={13} /> Modifier
-            </button>
-            <button
-              onClick={() => onDelete(activite)}
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50"
-            >
-              <Trash2 size={13} /> Supprimer
-            </button>
-          </div>
-        </div>
-        <div className="px-5 pb-5 grid grid-cols-3 gap-3">
-          {[
-            {
-              label: "Produits",
-              val: produits.length,
-              color: "#3C50E0",
-              bg: "#EEF2FF",
-            },
-            {
-              label: "Ordre",
-              val: `#${activite.ordre}`,
-              color: "#8B5CF6",
-              bg: "#EDE9FE",
-            },
-            {
-              label: "Statut",
-              val: activite.actif ? "Active" : "Inactive",
-              color: activite.actif ? "#10B981" : "#6B7280",
-              bg: activite.actif ? "#D1FAE5" : "#F3F4F6",
-            },
-          ].map(({ label, val, color, bg }) => (
-            <div
-              key={label}
-              className="p-3 rounded-xl"
-              style={{ background: bg + "40" }}
-            >
-              <p className="text-xs text-gray-400 mb-0.5">{label}</p>
-              <p className="text-sm font-bold" style={{ color }}>
-                {val}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Produits */}
-      <div
-        className="bg-white rounded-2xl border overflow-hidden"
-        style={{ borderColor: "#E2E8F0" }}
-      >
-        <div
-          className="flex items-center justify-between px-5 py-4 border-b"
-          style={{ borderColor: "#F1F5F9" }}
-        >
-          <div>
-            <h2 className="font-bold text-gray-800 text-sm">
-              Produits liés à cette activité
-            </h2>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {produits.length} produit{produits.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search
-                size={13}
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Rechercher…"
-                className="h-8 pl-7 pr-3 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 w-44"
-              />
-            </div>
-            <Link
-              href="/admin/produits"
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl text-white"
-              style={{ background: "linear-gradient(135deg,#10B981,#059669)" }}
-            >
-              <Plus size={13} /> Nouveau produit
-            </Link>
-          </div>
-        </div>
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <div
-              className="w-6 h-6 rounded-full border-4 animate-spin"
-              style={{ borderColor: "#D1FAE5", borderTopColor: "#10B981" }}
-            />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">
-            <Package size={28} className="mx-auto mb-2 opacity-30" />
-            <p className="text-sm">
-              {search ? "Aucun résultat" : "Aucun produit pour cette activité"}
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y" style={{ borderColor: "#F8FAFC" }}>
-            {filtered.map((p) => {
-              const img = p.images.find((i) => i.is_principale) ?? p.images[0];
-              return (
-                <div
-                  key={p.id_produit}
-                  className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden border shrink-0 flex items-center justify-center">
-                    {img ? (
-                      <Image
-                        src={img.url}
-                        alt={p.nom}
-                        width={40}
-                        height={40}
-                        className="object-contain"
-                      />
-                    ) : (
-                      <span className="text-gray-300">🌿</span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">
-                      {p.nom}
-                    </p>
-                    <p className="text-xs text-gray-400 truncate">
-                      {(p.marque as any)?.nom ?? ""}
-                      {(p.categorie as any)?.nom
-                        ? ` · ${(p.categorie as any).nom}`
-                        : ""}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${p.actif ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
-                  >
-                    {p.actif ? "Actif" : "Inactif"}
-                  </span>
-                  <a
-                    href={`/produits/${p.slug}`}
-                    target="_blank"
-                    className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg shrink-0"
-                  >
-                    <ExternalLink size={12} />
-                  </a>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+    <div
+      className={`flex items-start gap-2.5 border rounded-xl px-4 py-3 text-sm ${s}`}
+    >
+      <Icon size={15} className="shrink-0 mt-0.5" />
+      <span className="leading-relaxed">{children}</span>
     </div>
   );
 }
 
-/* ─── Page principale ──────────────────────────────────────────── */
+// ── Page principale ───────────────────────────────────────────────
 export default function AdminActivitesPage() {
-  const [items, setItems] = useState<ActiviteAdmin[]>([]);
+  const [items, setItems] = useState<CategorieAdmin[]>([]);
+  const [marques, setMarques] = useState<MarqueAdmin[]>([]);
+  const [activites, setActivites] = useState<ActiviteAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
-  const [editing, setEditing] = useState<ActiviteAdmin | null>(null);
+  const [editing, setEditing] = useState<CategorieAdmin | null>(null);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
-  const [detail, setDetail] = useState<ActiviteAdmin | null>(null);
-  const [confirmDel, setConfirmDel] = useState<ActiviteAdmin | null>(null);
-  const F = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
+  const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [confirmDelete, setConfirmDelete] = useState<CategorieAdmin | null>(
+    null,
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const d = await adminActivites.list();
-      setItems(Array.isArray(d) ? d : ((d as any).data ?? []));
+      const [cats, mrqs, acts] = await Promise.all([
+        adminCategories.list(),
+        adminMarques.list(),
+        adminActivites.list(),
+      ]);
+      const catArr = Array.isArray(cats) ? cats : ((cats as any).data ?? []);
+      setItems(catArr);
+      setMarques(Array.isArray(mrqs) ? mrqs : ((mrqs as any).data ?? []));
+      setActivites(Array.isArray(acts) ? acts : ((acts as any).data ?? []));
+      // Auto-expand racines
+      setExpanded(
+        new Set(
+          catArr
+            .filter((c: CategorieAdmin) => !c.parent_id)
+            .map((c: CategorieAdmin) => c.id_categorie),
+        ),
+      );
     } finally {
       setLoading(false);
     }
   }, []);
+
   useEffect(() => {
     load();
   }, [load]);
 
-  const openCreate = () => {
-    setForm(EMPTY);
+  // Arbre complet
+  const tree = useMemo(() => buildTree(items), [items]);
+
+  // Aplatissement pour l'affichage (respecte expanded)
+  const visibleRows = useMemo(() => {
+    const result: TreeNode[] = [];
+    const walk = (nodes: TreeNode[]) => {
+      nodes.forEach((n) => {
+        // Filtre recherche
+        if (search) {
+          const matches =
+            n.nom.toLowerCase().includes(search.toLowerCase()) ||
+            n.slug.includes(search.toLowerCase());
+          if (
+            !matches &&
+            !flattenTree([n]).some((x) =>
+              x.nom.toLowerCase().includes(search.toLowerCase()),
+            )
+          )
+            return;
+        }
+        result.push(n);
+        if (expanded.has(n.id_categorie)) walk(n.children);
+      });
+    };
+    walk(tree);
+    return result;
+  }, [tree, expanded, search]);
+
+  const toggleExpand = (id: number) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const expandAll = () =>
+    setExpanded(new Set(items.map((c) => c.id_categorie)));
+  const collapseAll = () =>
+    setExpanded(
+      new Set(items.filter((c) => !c.parent_id).map((c) => c.id_categorie)),
+    );
+
+  const openCreate = (parentCat?: CategorieAdmin) => {
+    setForm({
+      ...EMPTY,
+      parent_id: parentCat ? String(parentCat.id_categorie) : "",
+      id_marque: parentCat ? String(parentCat.id_marque ?? "") : "",
+      id_activite: parentCat ? String(parentCat.id_activite ?? "") : "",
+    });
     setEditing(null);
     setErr("");
     setModal("create");
   };
-  const openEdit = (a: ActiviteAdmin) => {
+
+  const openEdit = (c: CategorieAdmin) => {
     setForm({
-      nom: a.nom,
-      slug: a.slug,
-      description: a.description ?? "",
-      image: a.image ?? "",
-      ordre: a.ordre,
-      actif: a.actif,
+      nom: c.nom,
+      slug: c.slug,
+      description: c.description ?? "",
+      image: c.image ?? "",
+      id_activite: c.id_activite ? String(c.id_activite) : "",
+      id_marque: c.id_marque ? String(c.id_marque) : "",
+      parent_id: c.parent_id ? String(c.parent_id) : "",
+      ordre: c.ordre,
+      actif: c.actif,
     });
-    setEditing(a);
+    setEditing(c);
     setErr("");
     setModal("edit");
   };
+
   const handleSave = async () => {
     if (!form.nom.trim() || !form.slug.trim()) {
-      setErr("Nom et slug requis.");
+      setErr("Nom et slug sont requis.");
       return;
     }
     setSaving(true);
@@ -406,340 +799,233 @@ export default function AdminActivitesPage() {
         slug: form.slug,
         description: form.description || null,
         image: form.image || null,
+        id_activite: form.id_activite ? Number(form.id_activite) : null,
+        id_marque: form.id_marque ? Number(form.id_marque) : null,
+        parent_id: form.parent_id ? Number(form.parent_id) : null,
         ordre: form.ordre,
         ...(modal === "edit" ? { actif: form.actif } : {}),
       };
-      if (modal === "create") await adminActivites.create(p as any);
-      else if (editing)
-        await adminActivites.update(editing.id_activite, p as any);
+      if (modal === "create") {
+        await adminCategories.create(p as any);
+        toast.success("Catégorie créée", form.nom);
+      } else if (editing) {
+        await adminCategories.update(editing.id_categorie, p as any);
+        toast.success("Catégorie mise à jour", form.nom);
+      }
       setModal(null);
-      pushToast({
-        type: "success",
-        message:
-          modal === "create" ? "Activité créée !" : "Activité mise à jour !",
-      });
       load();
-    } catch (e: any) {
-      setErr(e.message);
+    } catch (e) {
+      setErr((e as Error).message);
     } finally {
       setSaving(false);
     }
   };
-  const remove = async (a: ActiviteAdmin) => {
+
+  const handleDelete = (c: CategorieAdmin) => {
+    const hasChildren = items.some((x) => x.parent_id === c.id_categorie);
+    if (hasChildren) {
+      toast.warning(
+        "Suppression impossible",
+        `« ${c.nom} » a des sous-catégories. Supprimez-les d'abord.`,
+      );
+      return;
+    }
+    setConfirmDelete(c);
+  };
+
+  const confirmDeleteAction = async () => {
+    if (!confirmDelete) return;
+    const c = confirmDelete;
+    setConfirmDelete(null);
     try {
-      await adminActivites.remove(a.id_activite);
-      pushToast({
-        type: "success",
-        message: `Activité « ${a.nom} » supprimée`,
-      });
-      if (detail?.id_activite === a.id_activite) setDetail(null);
+      await adminCategories.remove(c.id_categorie);
+      toast.success("Catégorie supprimée", c.nom);
       load();
-    } catch (e: any) {
-      pushToast({ type: "error", message: e.message });
-    } finally {
-      setConfirmDel(null);
+    } catch (e) {
+      const msg = (e as Error).message;
+      if (
+        msg.includes("produit") ||
+        msg.includes("Foreign") ||
+        msg.includes("constraint")
+      ) {
+        toast.error(
+          "Suppression impossible",
+          `« ${c.nom} » est liée à des produits. Retirez-les d'abord.`,
+        );
+      } else {
+        toast.error("Erreur", msg);
+      }
     }
   };
 
-  function ActiviteModal() {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg">
-          <div className="p-5 border-b flex items-center justify-between">
-            <h2 className="font-bold text-gray-900">
-              {modal === "create"
-                ? "Nouvelle activité"
-                : `Modifier — ${editing?.nom}`}
-            </h2>
-            <button
-              onClick={() => setModal(null)}
-              className="text-gray-400 hover:text-gray-700"
-            >
-              <X size={18} />
-            </button>
-          </div>
-          <div className="p-5 space-y-4">
-            {err && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl flex items-start gap-2">
-                <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                {err}
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                  Nom *
-                </label>
-                <input
-                  value={form.nom}
-                  onChange={(e) => {
-                    F("nom", e.target.value);
-                    modal === "create" && F("slug", toSlug(e.target.value));
-                  }}
-                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                  Slug *
-                </label>
-                <input
-                  value={form.slug}
-                  onChange={(e) =>
-                    F(
-                      "slug",
-                      e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
-                    )
-                  }
-                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 font-mono text-xs"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                Description
-              </label>
-              <textarea
-                value={form.description}
-                onChange={(e) => F("description", e.target.value)}
-                rows={2}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Image
-              </label>
-              <ImageUploader onUpload={(v) => F("image", v)} />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                Ordre
-              </label>
-              <input
-                type="number"
-                value={form.ordre}
-                onChange={(e) => F("ordre", Number(e.target.value))}
-                className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-            {modal === "edit" && (
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.actif}
-                  onChange={(e) => F("actif", e.target.checked)}
-                  className="w-4 h-4 accent-green-600"
-                />
-                Activité active
-              </label>
-            )}
-          </div>
-          <div className="p-5 pt-0 flex gap-3">
-            <button
-              onClick={() => setModal(null)}
-              className="flex-1 h-10 border text-sm text-gray-600 rounded-xl hover:bg-gray-50"
-            >
-              Annuler
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex-1 h-10 text-white text-sm rounded-xl disabled:opacity-60 flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg,#10B981,#059669)" }}
-            >
-              {saving ? (
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : modal === "create" ? (
-                "Créer"
-              ) : (
-                "Enregistrer"
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
+  // Options catégories parentes pour le select (exclut soi-même et ses descendants)
+  const parentOptions = useMemo(() => {
+    if (!editing) return items;
+    const descendants = new Set<number>();
+    const collect = (id: number) => {
+      items
+        .filter((c) => c.parent_id === id)
+        .forEach((c) => {
+          descendants.add(c.id_categorie);
+          collect(c.id_categorie);
+        });
+    };
+    collect(editing.id_categorie);
+    return items.filter(
+      (c) =>
+        c.id_categorie !== editing.id_categorie &&
+        !descendants.has(c.id_categorie),
     );
-  }
+  }, [items, editing]);
 
-  if (detail)
-    return (
-      <>
-        {confirmDel && (
-          <ConfirmDialog
-            message={`Supprimer l'activité « ${confirmDel.nom} » ?`}
-            onConfirm={() => remove(confirmDel)}
-            onCancel={() => setConfirmDel(null)}
-          />
-        )}
-        <ActiviteDetail
-          activite={detail}
-          onBack={() => setDetail(null)}
-          onEdit={(a) => {
-            openEdit(a);
-          }}
-          onDelete={(a) => setConfirmDel(a)}
-        />
-        {modal && <ActiviteModal />}
-      </>
-    );
+  // Pour le select parent : affichage indenté
+  const parentOptionsOrdered = useMemo(() => {
+    const result: { cat: CategorieAdmin; depth: number }[] = [];
+    const walk = (nodes: TreeNode[]) => {
+      nodes.forEach((n) => {
+        const orig = parentOptions.find(
+          (c) => c.id_categorie === n.id_categorie,
+        );
+        if (orig) result.push({ cat: orig, depth: n.depth });
+        walk(n.children);
+      });
+    };
+    walk(buildTree(parentOptions));
+    return result;
+  }, [parentOptions]);
+
+  const rootCount = items.filter((c) => !c.parent_id).length;
+  const subCount = items.filter((c) => c.parent_id).length;
 
   return (
-    <div className="space-y-6">
-      {confirmDel && (
+    <div className="space-y-8">
+      {/* ── Section Activités (CRUD + bannière) ── */}
+      <ActivitesCrudPanel />
+
+      {/* ── Séparateur ── */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-gray-200" />
+        <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          <Layers size={13} /> Catégories
+        </div>
+        <div className="flex-1 h-px bg-gray-200" />
+      </div>
+
+      <div className="space-y-5">
+      {/* Confirm delete dialog */}
+      {confirmDelete && (
         <ConfirmDialog
-          message={`Supprimer l'activité « ${confirmDel.nom} » ?`}
-          onConfirm={() => remove(confirmDel)}
-          onCancel={() => setConfirmDel(null)}
+          message={`Supprimer « ${confirmDelete.nom} » ? Cette action est irréversible.`}
+          onConfirm={confirmDeleteAction}
+          onCancel={() => setConfirmDelete(null)}
         />
       )}
 
+      {/* En-tête */}
       <div className="flex items-center justify-between">
         <div>
-          <h1
-            className="text-2xl font-bold text-gray-900"
-            style={{ letterSpacing: "-0.04em" }}
-          >
-            Activités
-          </h1>
-          <p className="text-sm text-gray-400 mt-0.5">
-            {items.length} activité{items.length !== 1 ? "s" : ""}
+          <h1 className="text-2xl font-bold text-gray-900">Catégories</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {rootCount} catégorie{rootCount !== 1 ? "s" : ""} racine ·{" "}
+            {subCount} sous-catégorie{subCount !== 1 ? "s" : ""}
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={load}
-            className="p-2 text-gray-400 hover:text-gray-700 rounded-xl hover:bg-gray-100"
+            className="p-2 text-gray-500 hover:text-gray-800 rounded-xl hover:bg-gray-100"
           >
             <RefreshCw size={16} />
           </button>
           <button
-            onClick={openCreate}
-            className="flex items-center gap-2 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm"
-            style={{ background: "linear-gradient(135deg,#10B981,#059669)" }}
+            onClick={() => openCreate()}
+            className="flex items-center gap-2 bg-ev-700 hover:bg-ev-800 text-white text-sm font-medium px-4 py-2 rounded-xl"
           >
-            <Plus size={16} />
-            Nouvelle activité
+            <Plus size={16} /> Nouvelle catégorie
           </button>
         </div>
       </div>
 
-      <div
-        className="bg-white rounded-2xl border overflow-hidden"
-        style={{ borderColor: "#E2E8F0" }}
-      >
+      {/* Légende + contrôles */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-4 flex flex-wrap items-center gap-4">
+        <div className="relative flex-1 min-w-[200px]">
+          <input
+            placeholder="Rechercher une catégorie…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full h-9 pl-3 pr-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
+          />
+        </div>
+        <div className="flex gap-2 text-xs">
+          <button
+            onClick={expandAll}
+            className="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600"
+          >
+            Tout déplier
+          </button>
+          <button
+            onClick={collapseAll}
+            className="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600"
+          >
+            Réduire
+          </button>
+        </div>
+        <div className="flex items-center gap-3 text-xs text-gray-500">
+          <span className="flex items-center gap-1">
+            <Tag size={10} className="text-blue-500" />
+            Marque
+          </span>
+          <span className="flex items-center gap-1">
+            <Activity size={10} className="text-green-500" />
+            Activité
+          </span>
+        </div>
+      </div>
+
+      {/* Arbre */}
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         {loading ? (
-          <div className="flex justify-center py-16">
-            <div
-              className="w-7 h-7 rounded-full border-4 animate-spin"
-              style={{ borderColor: "#D1FAE5", borderTopColor: "#10B981" }}
-            />
+          <div className="flex items-center justify-center py-16">
+            <div className="w-7 h-7 border-4 border-ev-600 border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : items.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">Aucune activité</div>
+        ) : visibleRows.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">
+            Aucune catégorie trouvée
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead
-                style={{
-                  background: "#F8FAFC",
-                  borderBottom: "1px solid #E2E8F0",
-                }}
-              >
+              <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  {["Image", "Nom", "Slug", "Ordre", "Statut", "Actions"].map(
-                    (h) => (
-                      <th
-                        key={h}
-                        className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"
-                      >
-                        {h}
-                      </th>
-                    ),
-                  )}
+                  {[
+                    "Catégorie / Sous-catégorie",
+                    "Rattachement",
+                    "Sous-cats",
+                    "Produits",
+                    "Ordre",
+                    "Statut",
+                    "Actions",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
-                {items.map((a) => (
-                  <tr
-                    key={a.id_activite}
-                    className="hover:bg-gray-50 transition-colors cursor-pointer group"
-                    onClick={() => setDetail(a)}
-                  >
-                    <td className="px-4 py-3 w-12">
-                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-100 border flex items-center justify-center">
-                        {a.image ? (
-                          <Image
-                            src={a.image}
-                            alt={a.nom}
-                            width={40}
-                            height={40}
-                            className="object-cover"
-                          />
-                        ) : (
-                          <Activity size={18} className="text-gray-300" />
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-gray-800 group-hover:text-green-700 transition-colors">
-                        {a.nom}
-                      </p>
-                      {a.description && (
-                        <p className="text-xs text-gray-400 truncate max-w-[200px]">
-                          {a.description}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-400">
-                      {a.slug}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                        #{a.ordre}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`text-xs font-semibold px-2 py-0.5 rounded-full ${a.actif ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}
-                      >
-                        {a.actif ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td
-                      className="px-4 py-3"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => setDetail(a)}
-                          className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg"
-                          title="Voir détail"
-                        >
-                          <ChevronRight size={13} />
-                        </button>
-                        <a
-                          href={`/activites/${a.slug}`}
-                          target="_blank"
-                          className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg"
-                        >
-                          <ExternalLink size={13} />
-                        </a>
-                        <button
-                          onClick={() => openEdit(a)}
-                          className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg"
-                        >
-                          <Edit2 size={13} />
-                        </button>
-                        <button
-                          onClick={() => setConfirmDel(a)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+              <tbody className="divide-y divide-gray-100">
+                {visibleRows.map((node) => (
+                  <TreeRow
+                    key={node.id_categorie}
+                    node={node}
+                    expanded={expanded.has(node.id_categorie)}
+                    onToggle={() => toggleExpand(node.id_categorie)}
+                    onEdit={openEdit}
+                    onDelete={handleDelete}
+                    onAddChild={openCreate}
+                  />
                 ))}
               </tbody>
             </table>
@@ -747,7 +1033,222 @@ export default function AdminActivitesPage() {
         )}
       </div>
 
-      {modal && <ActiviteModal />}
+      {/* Modal */}
+      {modal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
+            <div className="p-5 border-b flex items-center justify-between sticky top-0 bg-white z-10">
+              <h2 className="font-bold text-gray-900">
+                {modal === "create"
+                  ? "Nouvelle catégorie"
+                  : `Modifier — ${editing?.nom}`}
+              </h2>
+              <button
+                onClick={() => setModal(null)}
+                className="text-gray-400 hover:text-gray-700"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              {err && <Alert type="error">{err}</Alert>}
+
+              {/* Nom + Slug */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Nom *
+                  </label>
+                  <input
+                    value={form.nom}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        nom: e.target.value,
+                        slug:
+                          modal === "create"
+                            ? toSlug(e.target.value)
+                            : form.slug,
+                      })
+                    }
+                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Slug *
+                  </label>
+                  <input
+                    value={form.slug}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        slug: e.target.value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9-]/g, ""),
+                      })
+                    }
+                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Catégorie parente (hiérarchie indentée) */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Catégorie parente{" "}
+                  <span className="text-gray-400 font-normal">
+                    (laisser vide = catégorie racine)
+                  </span>
+                </label>
+                <select
+                  value={form.parent_id}
+                  onChange={(e) =>
+                    setForm({ ...form, parent_id: e.target.value })
+                  }
+                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white"
+                >
+                  <option value="">— Catégorie racine —</option>
+                  {parentOptionsOrdered.map(({ cat, depth }) => (
+                    <option key={cat.id_categorie} value={cat.id_categorie}>
+                      {"　".repeat(depth)}
+                      {depth > 0 ? "└ " : ""}
+                      {cat.nom}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Marque + Activité */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Marque
+                  </label>
+                  <select
+                    value={form.id_marque}
+                    onChange={(e) =>
+                      setForm({ ...form, id_marque: e.target.value })
+                    }
+                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white"
+                  >
+                    <option value="">— Aucune —</option>
+                    {marques.map((m) => (
+                      <option key={m.id_marque} value={m.id_marque}>
+                        {m.nom}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Activité
+                  </label>
+                  <select
+                    value={form.id_activite}
+                    onChange={(e) =>
+                      setForm({ ...form, id_activite: e.target.value })
+                    }
+                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white"
+                  >
+                    <option value="">— Aucune —</option>
+                    {activites.map((a) => (
+                      <option key={a.id_activite} value={a.id_activite}>
+                        {a.nom}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Ordre + Image */}
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Ordre d&apos;affichage
+                  </label>
+                  <input
+                    type="number"
+                    value={form.ordre}
+                    onChange={(e) =>
+                      setForm({ ...form, ordre: Number(e.target.value) })
+                    }
+                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Image
+                  </label>
+                  <ImageUploader
+                    onUpload={(v) => setForm({ ...form, image: v })}
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
+                  rows={2}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 resize-none"
+                />
+              </div>
+
+              {modal === "edit" && (
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.actif}
+                    onChange={(e) =>
+                      setForm({ ...form, actif: e.target.checked })
+                    }
+                    className="accent-ev-600 w-4 h-4"
+                  />
+                  Catégorie active
+                </label>
+              )}
+
+              {form.parent_id && (
+                <Alert type="info">
+                  Cette catégorie sera rattachée comme sous-catégorie de «{" "}
+                  {items.find((c) => String(c.id_categorie) === form.parent_id)
+                    ?.nom ?? "…"}{" "}
+                  ».
+                </Alert>
+              )}
+            </div>
+            <div className="p-5 pt-0 flex gap-3">
+              <button
+                onClick={() => setModal(null)}
+                className="flex-1 h-10 border text-sm text-gray-600 rounded-xl hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 h-10 bg-ev-700 text-white text-sm rounded-xl hover:bg-ev-800 disabled:opacity-60 flex items-center justify-center"
+              >
+                {saving ? (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : modal === "create" ? (
+                  "Créer"
+                ) : (
+                  "Enregistrer"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
     </div>
   );
 }

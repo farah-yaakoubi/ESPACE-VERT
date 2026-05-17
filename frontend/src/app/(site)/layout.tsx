@@ -14,7 +14,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       <ChatWidget />
       <Navbar />
       <VisiteurTracker />
-      <main className="flex-1 pt-[96px]">{children}</main>
+      <main className="flex-1" style={{ overflowX: "hidden" }}>{children}</main>
       <Footer />
     </>
   );

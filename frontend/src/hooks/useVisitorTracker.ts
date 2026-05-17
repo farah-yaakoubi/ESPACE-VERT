@@ -1,13 +1,4 @@
 "use client";
-// src/hooks/useVisitorTracker.ts
-// ══════════════════════════════════════════════════════════════════
-//  Hook de tracking visiteurs — côté client
-//  • Génère/persiste un token_visiteur unique (localStorage)
-//  • Envoie automatiquement chaque changement de page
-//  • Mesure la durée réelle passée sur chaque page
-//  • Exclut AUTOMATIQUEMENT les pages /admin/*
-//  • Ne suit PAS les administrateurs connectés
-// ══════════════════════════════════════════════════════════════════
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 

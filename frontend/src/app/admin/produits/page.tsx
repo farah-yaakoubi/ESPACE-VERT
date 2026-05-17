@@ -118,6 +118,15 @@ function ImagesModal({ produit, onClose }: { produit: ProduitAdmin; onClose: () 
     toast.success("Image principale définie");
   };
 
+  const unsetPrincipale = async (id_imgP: number) => {
+    await fetch(`${BASE}/admin/produits/${produit.id_produit}/images/${id_imgP}`, {
+      method: "PUT", headers: { "Content-Type": "application/json", ...authH },
+      body: JSON.stringify({ is_principale: false }),
+    });
+    setImages(prev => prev.map((i: any) => i.id_imgP === id_imgP ? { ...i, is_principale: false } : i));
+    toast.success("Statut principale retiré — assignez-le à une autre image");
+  };
+
   const saveConditionnement = async (id_imgP: number) => {
     await fetch(`${BASE}/admin/produits/${produit.id_produit}/images/${id_imgP}`, {
       method: "PUT", headers: { "Content-Type": "application/json", ...authH },
@@ -174,12 +183,22 @@ function ImagesModal({ produit, onClose }: { produit: ProduitAdmin; onClose: () 
               <div className="flex-1 min-w-0">
                 <p className="text-[11px] font-mono text-gray-400 truncate mb-1.5">{img.url.split("/").pop()}</p>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  {/* Badge principale */}
+                  {/* Badge principale — assignable / transférable */}
                   {img.is_principale
-                    ? <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-100 text-amber-700 border border-amber-200">⭐ Principale</span>
+                    ? <div className="flex items-center gap-1">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-100 text-amber-700 border border-amber-200 flex items-center gap-1">
+                          ⭐ Principale
+                        </span>
+                        <button onClick={() => unsetPrincipale(img.id_imgP)}
+                          className="text-[10px] px-1.5 py-0.5 rounded-full border border-dashed border-gray-200 text-gray-300 hover:border-red-300 hover:text-red-400 transition-colors"
+                          title="Retirer le statut principale">
+                          ✕
+                        </button>
+                      </div>
                     : <button onClick={() => setPrincipale(img.id_imgP)}
-                        className="text-[10px] px-2 py-0.5 rounded-full border border-dashed border-gray-300 text-gray-400 hover:border-amber-400 hover:text-amber-600 transition-colors">
-                        Définir principale
+                        className="text-[10px] px-2 py-0.5 rounded-full border border-dashed border-gray-300 text-gray-400 hover:border-amber-400 hover:text-amber-600 transition-colors"
+                        title="Définir comme image principale de la card produit">
+                        ☆ Définir principale
                       </button>
                   }
                   {/* Badge conditionnement — édition inline */}
@@ -420,13 +439,16 @@ export default function AdminProduitsPage() {
     catsFiltrees.forEach(c=>map.set(c.id_categorie,{...c,children:[],depth:0}));
     const roots:CatNode[]=[];
     map.forEach(node=>{
-      if(node.parent_id&&map.has(node.parent_id)){const p=map.get(node.parent_id)!;node.depth=p.depth+1;p.children.push(node);}
+      if(node.parent_id&&map.has(node.parent_id)){map.get(node.parent_id)!.children.push(node);}
       else roots.push(node);
     });
-    const sort=(arr:CatNode[])=>arr.sort((a,b)=>a.ordre-b.ordre||a.nom.localeCompare(b.nom));
-    map.forEach(n=>sort(n.children));
+    // Tri + depth récursifs (le depth inline via parent.depth+1 est incorrect
+    // car Map.forEach n'est pas garantie dans l'ordre parent→enfant)
+    const sort=(arr:CatNode[])=>arr.sort((a,b)=>a.ordre-b.ordre||a.nom.localeCompare(b.nom,"fr"));
+    const assignDepth=(nodes:CatNode[],d:number)=>{sort(nodes);nodes.forEach(n=>{n.depth=d;assignDepth(n.children,d+1);});};
+    assignDepth(roots,0);
     const flat:CatNode[]=[], walk=(arr:CatNode[])=>arr.forEach(n=>{flat.push(n);walk(n.children);});
-    walk(sort(roots)); return flat;
+    walk(roots); return flat;
   })();
 
   const catFilterInfo = (() => {
@@ -460,12 +482,17 @@ export default function AdminProduitsPage() {
 
   const openCreate = () => { setForm(EMPTY); setEditing(null); setErr(""); setModal("create"); };
   const openEdit   = (p: ProduitAdmin) => {
-    const cat=categories.find(c=>c.id_categorie===(p as any).id_categorie);
-    const mrq=marques.find(m=>m.nom===(p.marque as any)?.nom);
+    // Priorité aux champs scalaires renvoyés directement par le backend.
+    // Fallback par slug/nom pour compatibilité si l'ancien endpoint est utilisé.
+    const catId  = p.id_categorie ?? p.categorie?.id_categorie
+                   ?? categories.find(c => c.slug === p.categorie?.slug)?.id_categorie;
+    const marqId = p.id_marque
+                   ?? marques.find(m => m.slug === p.marque?.slug)?.id_marque;
     setForm({
       nom:p.nom, slug:p.slug,
-      id_categorie:String(cat?.id_categorie??""), id_marque:String(mrq?.id_marque??""),
-      id_activite:String((p as any).id_activite??""), division:p.division,
+      id_categorie:catId ? String(catId) : "",
+      id_marque:   marqId ? String(marqId) : "",
+      id_activite:String(p.id_activite??""), division:p.division,
       description:(p as any).description??"", fiche_technique:(p as any).fiche_technique??"",
       ordre:p.ordre, actif:p.actif,
       sku:(p as any).sku??"",

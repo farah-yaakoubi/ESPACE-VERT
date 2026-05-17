@@ -4,7 +4,7 @@
  * Aucune donnée statique. Si aucune actualité publiée → section masquée.
  */
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Calendar, Newspaper } from "lucide-react";
@@ -67,6 +67,9 @@ export default function NewsCarousel() {
     return () => cancelAnimationFrame(raf);
   }, [paused, news.length]);
 
+  const headerRef = useRef<HTMLDivElement>(null);
+  const headerInView = useInView(headerRef, { once: false, margin: "-80px" });
+
   // Masquer si chargement terminé et aucune actualité
   if (!loading && news.length === 0) return null;
 
@@ -74,22 +77,41 @@ export default function NewsCarousel() {
 
   return (
     <section className="w-full overflow-hidden bg-[#f7faf5] py-0">
-      <div className="max-w-7xl mx-auto px-6 pt-14 pb-10">
-        <motion.div initial={{ opacity:0, y:16 }} whileInView={{ opacity:1, y:0 }} viewport={{ once:true }}
-          className="flex items-end justify-between">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-14 pb-10">
+        <div ref={headerRef} className="flex items-end justify-between">
           <div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-1 h-8 bg-[#2d5a1b] rounded-full" />
-              <Newspaper size={18} className="text-[#2d5a1b]" />
-              <h2 className="text-xl font-black text-gray-900 uppercase tracking-wide">Actualités</h2>
+            <motion.div
+              className="flex items-center gap-3 mb-3"
+              animate={{ opacity: headerInView ? 1 : 0, x: headerInView ? 0 : -40 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div className="w-1 h-8 rounded-full" style={{ background:"#1b5e38" }} />
+              <Newspaper size={18} style={{ color:"#2e7d4f" }} />
+              <p style={{ color:"#2e7d4f", fontSize:11, fontWeight:800, letterSpacing:"0.22em", textTransform:"uppercase" }}>Actualités</p>
+            </motion.div>
+            <motion.h2
+              animate={{ opacity: headerInView ? 1 : 0, x: headerInView ? 0 : -48 }}
+              transition={{ duration: 0.55, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+              style={{ color:"#0d1f0d", fontSize:"clamp(2rem,3.5vw,2.8rem)", fontWeight:900, letterSpacing:"-0.02em", lineHeight:1.1 }}
+            >
+              Nos dernières <span style={{ color:"#1b5e38" }}>nouvelles</span>
+            </motion.h2>
+            <div style={{ marginTop:10, width:48, height:4, borderRadius:4, overflow:"hidden", background:"#e8f5ee" }}>
+              <motion.div
+                animate={{ scaleX: headerInView ? 1 : 0 }}
+                transition={{ duration: 0.5, delay: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                style={{ height:"100%", borderRadius:4, background:"linear-gradient(90deg,#7dc040,#1b5e38)", transformOrigin:"left" }}
+              />
             </div>
-            <h2 className="text-4xl font-black text-gray-900">Nos dernières nouvelles</h2>
           </div>
           <Link href="/actualites"
-            className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 bg-[#0a6030] text-white text-sm font-bold rounded-xl hover:bg-[#2d5a1b] transition-colors">
+            className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-bold rounded-xl transition-colors"
+            style={{ background:"#1b5e38" }}
+            onMouseEnter={e => (e.currentTarget.style.background = "#0a6030")}
+            onMouseLeave={e => (e.currentTarget.style.background = "#1b5e38")}>
             Voir tout <ArrowRight className="w-4 h-4" />
           </Link>
-        </motion.div>
+        </div>
       </div>
 
       {loading ? (

@@ -6,6 +6,7 @@ export const CreateActiviteSchema = z.object({
   slug:        z.string().min(1).max(180).regex(/^[a-z0-9-]+$/),
   description: z.string().optional().nullable(),
   image:       z.string().url().max(500).optional().nullable(),
+  banniere:    z.string().url().max(500).optional().nullable(),
   ordre:       z.number().int().min(0).optional().default(0),
 });
 

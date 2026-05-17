@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { MarqueCard } from "@/components/cards/MarqueCard";
-import { PageHero } from "@/components/sections/Hero";
-import { SectionHeader } from "@/components/sections/SectionHeader";
+import { Hero } from "@/components/sections/Hero";
 import { marquesService } from "@/services";
 
 export const revalidate = 300;
@@ -16,11 +15,7 @@ export default async function MarquesPage() {
 
   return (
     <>
-      <PageHero
-        eyebrow="Catalogue"
-        title="Nos marques"
-        subtitle="Trois marques, une expertise : des solutions adaptées à chaque besoin agricole."
-      />
+      <Hero />
 
       <section className="section">
         <div className="container-ev">

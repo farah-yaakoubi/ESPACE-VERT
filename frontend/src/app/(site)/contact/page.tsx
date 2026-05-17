@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Phone, Mail, MapPin, Clock, ExternalLink } from "lucide-react";
-import { PageHero } from "@/components/sections/Hero";
+import { PageHeroStatic } from "@/components/sections/PageHeroStatic";
 import { ContactForm } from "@/components/forms/ContactForm";
 import { AGENCES } from "@/config/agences";
 
@@ -12,10 +12,13 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <>
-      <PageHero
+      {/* Hero image fixe + zoom-in */}
+      <PageHeroStatic
+        page="contact"
         eyebrow="Groupe Espace Vert"
         title="Contactez-nous"
         subtitle="Notre équipe vous répond dans les plus brefs délais."
+        fallbackImage="/images/hero/fertivert.webp"
       />
 
       <section className="section">

@@ -34,7 +34,7 @@ function toSlug(s: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }
-const EMPTY = { nom: "", slug: "", description: "", logo: "", actif: true };
+const EMPTY = { nom: "", slug: "", description: "", logo: "", banniere: "", actif: true };
 
 function ConfirmDialog({
   message,
@@ -378,6 +378,7 @@ export default function AdminMarquesPage() {
       slug: m.slug,
       description: m.description ?? "",
       logo: m.logo ?? "",
+      banniere: (m as any).banniere ?? "",
       actif: m.actif,
     });
     setEditing(m);
@@ -397,6 +398,7 @@ export default function AdminMarquesPage() {
         slug: form.slug,
         description: form.description || null,
         logo: form.logo || null,
+        banniere: (form as any).banniere || null,
         ...(modal === "edit" ? { actif: form.actif } : {}),
       };
       if (modal === "create") await adminMarques.create(p as any);
@@ -517,9 +519,28 @@ export default function AdminMarquesPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Logo
+                Logo <span className="font-normal text-gray-400">(navbar / dropdown)</span>
               </label>
               <ImageUploader onUpload={(v) => F("logo", v)} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                Bannière <span className="font-normal text-gray-400">(hero de la page marque)</span>
+              </label>
+              {(form as any).banniere && (
+                <div className="relative w-full h-24 rounded-xl overflow-hidden mb-2 bg-gray-100">
+                  <img src={(form as any).banniere} alt="" className="w-full h-full object-cover" />
+                </div>
+              )}
+              <ImageUploader onUpload={(v) => F("banniere", v)} />
+              <p className="text-xs text-gray-400 mt-1">Ou saisissez une URL :</p>
+              <input
+                type="text"
+                value={(form as any).banniere}
+                onChange={(e) => F("banniere", e.target.value)}
+                placeholder="/images/hero/fertivert.webp"
+                className="mt-1 w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
             {modal === "edit" && (
               <label className="flex items-center gap-2 text-sm cursor-pointer">

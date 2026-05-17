@@ -1,22 +1,28 @@
 // src/lib/auth.ts
-import jwt    from "jsonwebtoken";
-import bcrypt from "bcryptjs";
+import jwt      from "jsonwebtoken";
+import bcrypt   from "bcryptjs";
 import { JwtPayload } from "../types";
 
-const JWT_SECRET         = process.env.JWT_SECRET!;
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!;
+const JWT_SECRET         = process.env.JWT_SECRET         as string;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET as string;
 
-export const generateAccessToken  = (p: JwtPayload) => jwt.sign(p, JWT_SECRET,         { expiresIn: "30m" });
-export const generateRefreshToken = (p: JwtPayload) => jwt.sign(p, JWT_REFRESH_SECRET, { expiresIn: "7d"  });
+export const generateAccessToken  = (p: JwtPayload) =>
+  jwt.sign(p, JWT_SECRET,         { expiresIn: "30m" });
+
+export const generateRefreshToken = (p: JwtPayload) =>
+  jwt.sign(p, JWT_REFRESH_SECRET, { expiresIn: "7d" });
 
 export const verifyAccessToken = (token: string): JwtPayload | null => {
-  try { return jwt.verify(token, JWT_SECRET) as JwtPayload; } catch { return null; }
-};
-export const verifyRefreshToken = (token: string): JwtPayload | null => {
-  try { return jwt.verify(token, JWT_REFRESH_SECRET) as JwtPayload; } catch { return null; }
+  try { return jwt.verify(token, JWT_SECRET) as JwtPayload; }
+  catch { return null; }
 };
 
-export const hashPassword    = (password: string) => bcrypt.hash(password, 12);
+export const verifyRefreshToken = (token: string): JwtPayload | null => {
+  try { return jwt.verify(token, JWT_REFRESH_SECRET) as JwtPayload; }
+  catch { return null; }
+};
+
+export const hashPassword    = (password: string)              => bcrypt.hash(password, 12);
 export const comparePassword = (password: string, hash: string) => bcrypt.compare(password, hash);
 
 export const extractTokenFromHeader = (authHeader?: string): string | null => {

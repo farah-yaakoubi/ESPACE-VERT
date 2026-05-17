@@ -128,7 +128,7 @@ export function Footer() {
       <div className="absolute top-1/2 -right-32 w-72 h-72 rounded-full opacity-[0.07] blur-3xl pointer-events-none"
         style={{ background:"radial-gradient(circle,#8cc83f,transparent)" }} />
 
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-16 pb-8">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 pt-16 pb-8">
 
         {/* ── Carte agences ─────────────────────────────────────────── */}
         <motion.div {...fadeUp(0.05)} className="mb-14">
@@ -144,7 +144,7 @@ export function Footer() {
             {/* ── LOGO sur fond sombre : version light (verts + blancs naturels) ── */}
             <Link href="/" className="inline-block" style={{ lineHeight:0 }}>
               <Image
-                src="/logos/LOGO ESPACE VERT.png"
+                src="/logos/logo-espace-vert.png"
                 alt="Groupe Espace Vert"
                 width={400} height={120}
                 style={{
@@ -153,8 +153,6 @@ export function Footer() {
                   maxWidth: 360,
                   objectFit: "contain",
                   display: "block",
-                  /* Légère luminosité pour bien ressortir sur #0f2607 */
-                  filter: "brightness(1.15) drop-shadow(0 2px 12px rgba(140,200,63,0.25))",
                 }}
                 priority
               />

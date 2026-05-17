@@ -2,16 +2,22 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const ACCENT = "#3cb648";
+const G1 = "#0a6030";
+const G2 = "#7dc040";
 
 const IcoUp = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-    <path d="M12 19V5M5 12l7-7 7 7" />
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.8}
+    strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+    <polyline points="17 11 12 6 7 11"/>
+    <polyline points="17 18 12 13 7 18"/>
   </svg>
 );
+
 const IcoDown = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-    <path d="M12 5v14M5 12l7 7 7-7" />
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.8}
+    strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+    <polyline points="7 6 12 11 17 6"/>
+    <polyline points="7 13 12 18 17 13"/>
   </svg>
 );
 
@@ -20,8 +26,9 @@ function ProgressRing({ pct }: { pct: number }) {
   return (
     <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 36 36">
       <circle cx="18" cy="18" r={R} fill="none" stroke="#e5e7eb" strokeWidth="2" />
-      <circle cx="18" cy="18" r={R} fill="none" stroke={ACCENT} strokeWidth="2.5"
-        strokeLinecap="round" strokeDasharray={CIRC}
+      <circle cx="18" cy="18" r={R} fill="none"
+        stroke={G2} strokeWidth="2.5" strokeLinecap="round"
+        strokeDasharray={CIRC}
         strokeDashoffset={CIRC * (1 - pct / 100)}
         style={{ transition: "stroke-dashoffset 0.18s ease" }} />
     </svg>
@@ -29,10 +36,10 @@ function ProgressRing({ pct }: { pct: number }) {
 }
 
 export default function ScrollControls() {
-  const [pct, setPct]         = useState(0);
-  const [atTop, setAtTop]     = useState(true);
+  const [pct, setPct]           = useState(0);
+  const [atTop, setAtTop]       = useState(true);
   const [atBottom, setAtBottom] = useState(false);
-  const [show, setShow]       = useState(false);
+  const [show, setShow]         = useState(false);
 
   useEffect(() => {
     const onScroll = () => {
@@ -57,31 +64,46 @@ export default function ScrollControls() {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 40 }}
           transition={{ type: "spring", stiffness: 280, damping: 28 }}
-          className="fixed right-5 bottom-28 z-40 flex flex-col items-center gap-2"
+          className="hidden sm:flex fixed right-5 z-40 flex-col items-center gap-2"
+          style={{ bottom: "clamp(72px, 10vh, 88px)" }}
         >
+          {/* Badge % */}
           <AnimatePresence>
             {pct > 0 && pct < 100 && (
-              <motion.span initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
-                className="text-[10px] font-black tabular-nums bg-white text-gray-400 px-2 py-0.5 rounded-full shadow-sm border border-gray-100">
+              <motion.span
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="text-[10px] font-black tabular-nums bg-white text-gray-400 px-2 py-0.5 rounded-full shadow-sm border border-gray-100"
+              >
                 {pct}%
               </motion.span>
             )}
           </AnimatePresence>
 
+          {/* Bouton haut — dégradé vert plein */}
           <AnimatePresence>
             {!atTop && (
               <motion.button key="up"
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.7 }}
-                whileHover={{ scale: 1.12, y: -2 }} whileTap={{ scale: 0.9 }}
-                className="relative w-10 h-10 rounded-full shadow-lg flex items-center justify-center group"
-                style={{ background: `linear-gradient(135deg, #27942f, ${ACCENT})` }}
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.7 }}
+                whileHover={{ scale: 1.12, y: -2 }}
+                whileTap={{ scale: 0.9 }}
+                className="relative w-11 h-11 rounded-full shadow-lg flex items-center justify-center group"
+                style={{ background: `linear-gradient(135deg, ${G1}, ${G2})` }}
                 title="Haut de page"
               >
                 <span className="text-white relative z-10"><IcoUp /></span>
-                <motion.span className="absolute inset-0 rounded-full" style={{ background: "rgba(60,182,72,0.35)" }}
+                {/* Pulse */}
+                <motion.span
+                  className="absolute inset-0 rounded-full"
+                  style={{ background: "rgba(125,192,64,0.35)" }}
                   animate={{ scale: [1, 1.6], opacity: [0.4, 0] }}
-                  transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut" }} />
+                  transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut" }}
+                />
+                {/* Tooltip */}
                 <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-gray-900/95 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xl">
                   Haut de page
                   <span className="absolute left-full top-1/2 -translate-y-1/2 border-[5px] border-transparent border-l-gray-900/95" />
@@ -90,17 +112,24 @@ export default function ScrollControls() {
             )}
           </AnimatePresence>
 
+          {/* Bouton bas — cercle blanc + anneau de progression vert */}
           <AnimatePresence>
             {!atBottom && (
               <motion.button key="down"
                 onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" })}
-                initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.7 }}
-                whileHover={{ scale: 1.12, y: -2 }} whileTap={{ scale: 0.9 }}
-                className="relative w-10 h-10 rounded-full bg-white shadow-lg border border-gray-100 flex items-center justify-center group"
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.7 }}
+                whileHover={{ scale: 1.12, y: -2 }}
+                whileTap={{ scale: 0.9 }}
+                className="relative w-11 h-11 rounded-full bg-white shadow-lg border border-gray-100 flex items-center justify-center group"
                 title="Bas de page"
               >
                 <ProgressRing pct={pct} />
-                <span className="relative z-10 text-gray-500 group-hover:text-[#3cb648] transition-colors"><IcoDown /></span>
+                <span className="relative z-10 text-gray-500 group-hover:text-[#0a6030] transition-colors">
+                  <IcoDown />
+                </span>
+                {/* Tooltip */}
                 <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-gray-900/95 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xl">
                   Bas de page
                   <span className="absolute left-full top-1/2 -translate-y-1/2 border-[5px] border-transparent border-l-gray-900/95" />

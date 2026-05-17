@@ -2,8 +2,8 @@
 import { get, post, unwrapOrThrow } from "@/lib/api-client";
 import type {
   Marque, MarqueDetail,
-  Activite,
-  Categorie,
+  Activite, ActiviteDetail,
+  Categorie, CategorieDetail,
   Produit, ProduitCard,
   Actualite, ActualiteDetail,
   ApiMeta,
@@ -23,7 +23,9 @@ export const marquesService = {
 // ── Activites ─────────────────────────────────────────────────────────────────
 
 export const activitesService = {
-  list: () => unwrapOrThrow(get<Activite[]>("/activites", { revalidate: 300 })),
+  list:    () => unwrapOrThrow(get<Activite[]>("/activites", { revalidate: 300 })),
+  bySlug:  (slug: string) =>
+    unwrapOrThrow(get<ActiviteDetail>(`/activites/${slug}`, { revalidate: 300 })),
 };
 
 // ── Categories ────────────────────────────────────────────────────────────────
@@ -38,6 +40,8 @@ export const categoriesService = {
       get<Categorie[]>(`/categories${q ? `?${q}` : ""}`, { revalidate: 300 })
     );
   },
+  bySlug: (slug: string) =>
+    get<CategorieDetail>(`/categories/${slug}`, { revalidate: 60 }),
 };
 
 // ── Produits ──────────────────────────────────────────────────────────────────

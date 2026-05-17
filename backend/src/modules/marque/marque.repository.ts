@@ -1,4 +1,3 @@
-// src/modules/marque/marque.repository.ts
 import { prisma } from "../../lib/prisma";
 import { CreateMarqueDto, UpdateMarqueDto } from "./marque.schema";
 
@@ -8,7 +7,7 @@ export const marqueRepository = {
     return prisma.marque.findMany({
       where:   { actif: true },
       orderBy: { nom: "asc" },
-      select:  { id_marque: true, nom: true, slug: true, logo: true, description: true, actif: true },
+      select:  { id_marque: true, nom: true, slug: true, logo: true, banniere: true, description: true, actif: true },
     });
   },
 
@@ -17,9 +16,18 @@ export const marqueRepository = {
       where:   { slug },
       include: {
         categories: {
-          where:   { actif: true, parent_id: null }, // ← uniquement les catégories racines (niveau 1)
+          where:   { actif: true, parent_id: null }, // catégories racines (niveau 1)
           orderBy: { ordre: "asc" },
-          select:  { id_categorie: true, nom: true, slug: true, description: true, image: true, id_activite: true, parent_id: true },
+          select:  {
+            id_categorie: true, nom: true, slug: true, description: true,
+            image: true, id_activite: true, parent_id: true, ordre: true,
+            // ✅ FIX : inclure les sous-catégories (niveau 2)
+            sous_cats: {
+              where:   { actif: true },
+              orderBy: { ordre: "asc" },
+              select:  { id_categorie: true, nom: true, slug: true, parent_id: true, ordre: true },
+            },
+          },
         },
         produits: {
           where:   {

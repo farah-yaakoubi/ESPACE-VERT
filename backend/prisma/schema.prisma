@@ -13,6 +13,7 @@ enum NotifType {
   nouveau_devis
   nouveau_rdv
   nouveau_message
+  message_interne
   @@map("notif_type")
 }
 
@@ -56,6 +57,7 @@ model Admin {
   actif        Boolean  @default(true)
   id_role      Int      @default(2)
   avatar       String?  @db.VarChar(500)
+  permissions  Json     @default("[]")
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
   role              Role             @relation(fields: [id_role], references: [id_role])
@@ -66,6 +68,7 @@ model Admin {
   audit_logs        AuditLog[]
   sessions          SessionAdmin[]
   notifs_recues     AdminNotification[] @relation("NotifDestinataire")
+  notifs_emises     AdminNotification[] @relation("NotifEmetteur")
   messages_envoyes  ChatMessage[]       @relation("ChatEmetteur")
   messages_recus    ChatMessage[]       @relation("ChatRecepteur")
   @@index([id_role])
@@ -76,26 +79,34 @@ model Admin {
 model AdminNotification {
   id_notif   Int       @id @default(autoincrement())
   id_admin   Int
+  id_emetteur Int?
   type       NotifType
   titre      String    @db.VarChar(200)
   corps      String?   @db.VarChar(500)
   lien       String?   @db.VarChar(300)
+  source_label String? @db.VarChar(160)
   lu         Boolean   @default(false)
   created_at DateTime  @default(now())
-  admin Admin @relation("NotifDestinataire", fields: [id_admin], references: [id_admin], onDelete: Cascade)
+  admin    Admin  @relation("NotifDestinataire", fields: [id_admin], references: [id_admin], onDelete: Cascade)
+  emetteur Admin? @relation("NotifEmetteur", fields: [id_emetteur], references: [id_admin], onDelete: SetNull)
   @@index([id_admin, lu])
+  @@index([id_emetteur])
   @@index([created_at])
   @@map("admin_notifications")
 }
 
 // ─── CHAT INTER-ADMINS ────────────────────────────────────────────────────────
 model ChatMessage {
-  id_msg     Int      @id @default(autoincrement())
-  id_from    Int
-  id_to      Int
-  contenu    String   @db.Text
-  lu         Boolean  @default(false)
-  created_at DateTime @default(now())
+  id_msg        Int      @id @default(autoincrement())
+  id_from       Int
+  id_to         Int
+  contenu       String   @db.Text
+  type_message  String   @default("texte") @db.VarChar(20)
+  fichier_url   String?  @db.VarChar(500)
+  fichier_nom   String?  @db.VarChar(255)
+  fichier_size  Int?
+  lu            Boolean  @default(false)
+  created_at    DateTime @default(now())
   emetteur  Admin @relation("ChatEmetteur",  fields: [id_from], references: [id_admin], onDelete: Cascade)
   recepteur Admin @relation("ChatRecepteur", fields: [id_to],   references: [id_admin], onDelete: Cascade)
   @@index([id_from, id_to])
@@ -171,6 +182,7 @@ model Marque {
   id_marque   Int         @id @default(autoincrement())
   nom         String      @db.VarChar(120)
   logo        String?     @db.VarChar(500)
+  banniere    String?     @db.VarChar(500)
   description String?     @db.Text
   slug        String      @unique @db.VarChar(160)
   actif       Boolean     @default(true)
@@ -185,6 +197,7 @@ model Activite {
   nom         String      @db.VarChar(150)
   description String?     @db.Text
   image       String?     @db.VarChar(500)
+  banniere    String?     @db.VarChar(500)
   slug        String      @unique @db.VarChar(180)
   ordre       Int         @default(0)
   actif       Boolean     @default(true)
@@ -376,4 +389,19 @@ model AuditLog {
   @@index([entity_name])
   @@index([date_action])
   @@map("audit_logs")
+}
+
+model HeroSlide {
+  id_slide   Int      @id @default(autoincrement())
+  page       String   @default("home") @db.VarChar(60)   // ex: "home" | "contact" | "qui-sommes-nous" | "rendez-vous" | "activites" | "marques" | "produits"
+  image      String   @db.VarChar(500)
+  href       String?  @db.VarChar(300)
+  titre      String?  @db.VarChar(200)
+  sousTitre  String?  @db.VarChar(400)
+  ctaLabel   String?  @db.VarChar(80)
+  ordre      Int      @default(0)
+  actif      Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  @@map("hero_slides")
 }

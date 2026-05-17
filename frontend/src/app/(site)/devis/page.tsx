@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { FileText } from "lucide-react";
-import { PageHero } from "@/components/sections/Hero";
+import { PageHeroStatic } from "@/components/sections/PageHeroStatic";
 import { DevisForm } from "@/components/forms/DevisForm";
 
 export const metadata: Metadata = {
@@ -18,10 +18,12 @@ const STEPS = [
 export default function DevisPage() {
   return (
     <>
-      <PageHero
+      <PageHeroStatic
+        page="devis"
         eyebrow="Sans engagement"
         title="Demandez un devis"
         subtitle="Réponse sous 24–48h par un expert de notre équipe."
+        fallbackImage="/images/hero/fertivert.webp"
       />
 
       <section className="section">

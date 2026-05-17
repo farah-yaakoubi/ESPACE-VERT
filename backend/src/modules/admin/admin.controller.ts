@@ -1,10 +1,8 @@
 // src/modules/admin/admin.controller.ts
-// REMPLACE l'ancien fichier — ajoute updateMe
 import { Request, Response } from "express";
-import { adminService }      from "./admin.service";
+import { adminService } from "./admin.service";
 import { CreateAdminSchema, UpdateAdminSchema } from "./admin.schema";
 import { ok, created, badRequest, notFound, conflict, serverError } from "../../lib/response";
-import { z } from "zod";
 
 const parseId = (p: string) => { const n = Number(p); return isNaN(n) ? null : n; };
 const handle  = (res: Response, err: unknown) => {
@@ -16,12 +14,6 @@ const handle  = (res: Response, err: unknown) => {
   console.error("[admin.controller]", err);
   return serverError(res);
 };
-
-const UpdateMeSchema = z.object({
-  nom:    z.string().min(1).max(120).optional(),
-  email:  z.string().email().max(180).optional(),
-  avatar: z.string().max(500).optional().nullable(),
-});
 
 export const list     = async (_req: Request, res: Response) => { try { ok(res, await adminService.list()); } catch (e) { handle(res, e); } };
 export const getRoles = async (_req: Request, res: Response) => { try { ok(res, await adminService.getRoles()); } catch (e) { handle(res, e); } };
@@ -37,16 +29,6 @@ export const update   = async (req: Request, res: Response) => {
 export const remove   = async (req: Request, res: Response) => {
   try { const id = parseId(req.params.id); if (!id) return badRequest(res, "ID invalide"); await adminService.delete(id, req.admin!.id_admin); ok(res, { message: "Admin supprimé" }); } catch (e) { handle(res, e); }
 };
-
-// NOUVEAU — PATCH /api/admin/admins/me  (accessible par tout admin connecté)
 export const updateMe = async (req: Request, res: Response) => {
-  try {
-    const id_admin = req.admin!.id_admin;
-    const data     = UpdateMeSchema.parse(req.body);
-    ok(res, await adminService.updateMe(id_admin, {
-      nom:    data.nom,
-      email:  data.email,
-      avatar: data.avatar ?? undefined,
-    }));
-  } catch (e) { handle(res, e); }
+  try { ok(res, await adminService.updateMe(req.admin!.id_admin, UpdateAdminSchema.parse(req.body))); } catch (e) { handle(res, e); }
 };

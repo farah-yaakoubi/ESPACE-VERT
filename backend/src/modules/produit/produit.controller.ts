@@ -57,6 +57,8 @@ const handleError = (res: Response, err: unknown) => {
   if (e?.status === 404)       return notFound(res,    e.message);
   if (e?.status === 409)       return conflict(res,    e.message);
   if (e?.status === 400)       return badRequest(res,  e.message);
+  if (e?.status === 422)       return badRequest(res,  e.message); // ex: catégorie non-feuille
+  if (e?.name  === "ZodError") return badRequest(res,  JSON.stringify(e.errors));
   console.error("[Controller]", err);
   return serverError(res);
 };

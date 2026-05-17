@@ -94,7 +94,7 @@ const PALETTES: Record<string, Palette> = {
     border:        "#a8d5b8",
     metaBg:        "#f8fdf9",
     FamilyIcon:    Leaf,
-    famille:       "Fertilisant",
+    famille:       "",
   },
 };
 

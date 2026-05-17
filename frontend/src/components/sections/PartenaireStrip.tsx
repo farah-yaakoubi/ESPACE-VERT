@@ -42,7 +42,7 @@ export function PartenaireStrip() {
   }, []);
 
   return (
-    <section className="py-14 bg-white border-y border-sand-200 overflow-hidden">
+    <section className="py-14 border-y border-sand-200 overflow-hidden" style={{ background: "var(--bg-secondary, #fff)" }}>
       <div className="container-ev mb-8 text-center">
         <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.22em]">Nos Partenaires</p>
       </div>
@@ -51,10 +51,10 @@ export function PartenaireStrip() {
       <div className="relative overflow-hidden">
         {/* Fondu gauche */}
         <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
-          style={{ background: "linear-gradient(90deg, white, transparent)" }} />
+          style={{ background: "linear-gradient(90deg, var(--bg-secondary, white), transparent)" }} />
         {/* Fondu droit */}
         <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
-          style={{ background: "linear-gradient(270deg, white, transparent)" }} />
+          style={{ background: "linear-gradient(270deg, var(--bg-secondary, white), transparent)" }} />
 
         <div ref={trackRef} className="flex items-center gap-12 w-max will-change-transform">
           {ITEMS.map((p, i) => (

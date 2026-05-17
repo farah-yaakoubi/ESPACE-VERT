@@ -6,6 +6,7 @@ export const CreateMarqueSchema = z.object({
   slug:        z.string().min(1).max(160).regex(/^[a-z0-9-]+$/, "Slug invalide"),
   description: z.string().optional().nullable(),
   logo:        z.string().url().max(500).optional().nullable(),
+  banniere:    z.string().url().max(500).optional().nullable(),
 });
 
 export const UpdateMarqueSchema = CreateMarqueSchema.partial().extend({
