@@ -13,6 +13,35 @@ interface PageProps {
 
 export const revalidate = 300;
 
+function getActiviteHeroSettings(slug: string) {
+  switch (slug) {
+    case "irrigation":
+      return {
+        imagePosition: "center 34%",
+        imagePositionTablet: "center 28%",
+        imagePositionMobile: "center 22%",
+      };
+    case "semences-et-plants":
+      return {
+        imagePosition: "center 36%",
+        imagePositionTablet: "center 30%",
+        imagePositionMobile: "center 24%",
+      };
+    case "fertilisation":
+      return {
+        imagePosition: "center 38%",
+        imagePositionTablet: "center 34%",
+        imagePositionMobile: "center 27%",
+      };
+    default:
+      return {
+        imagePosition: "center 35%",
+        imagePositionTablet: "center 30%",
+        imagePositionMobile: "center 24%",
+      };
+  }
+}
+
 /* ── Static params ───────────────────────────────────────────────── */
 export async function generateStaticParams() {
   const acts = await activitesService.list();
@@ -52,6 +81,7 @@ export default async function ActiviteDetailPage({ params }: PageProps) {
   /* Règles spéciales */
   const isIrrigation = activite.slug === "irrigation";
   const isSemences = activite.slug === "semences-et-plants";
+  const heroSettings = getActiviteHeroSettings(activite.slug);
 
   return (
     <>
@@ -62,6 +92,8 @@ export default async function ActiviteDetailPage({ params }: PageProps) {
         title={activite.nom}
         subtitle={activite.description ?? undefined}
         fallbackImage={(activite as any).banniere || activite.image || "/images/hero/fertivert.webp"}
+        contentMaxWidth="44rem"
+        {...heroSettings}
       />
 
       {/* CTA Irrigation / Matar */}

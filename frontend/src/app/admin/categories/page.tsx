@@ -698,7 +698,7 @@ export default function AdminCategoriesPage() {
               {err && <Alert type="error">{err}</Alert>}
 
               {/* Nom + Slug */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">
                     Nom *
@@ -764,7 +764,7 @@ export default function AdminCategoriesPage() {
               </div>
 
               {/* Marque + Activité */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">
                     Marque

@@ -44,6 +44,7 @@ export default function NewsCarousel() {
   const [paused, setPaused] = useState(false);
   const [news,   setNews]   = useState<Actu[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     fetch(`${BASE}/actualites?limit=8&publiee=true`, { cache: "no-store" })
@@ -54,9 +55,24 @@ export default function NewsCarousel() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(max-width: 767px)");
+    const syncMobile = () => setIsMobile(media.matches);
+    syncMobile();
+    media.addEventListener?.("change", syncMobile);
+    return () => media.removeEventListener?.("change", syncMobile);
+  }, []);
+
+  useEffect(() => {
     const track = trackRef.current;
-    if (!track || news.length === 0) return;
-    const CARD_W = 360 + 20;
+    if (!track || news.length === 0 || isMobile) return;
+
+    const firstCard = track.querySelector<HTMLElement>("[data-news-card]");
+    if (!firstCard) return;
+
+    const gapValue = window.getComputedStyle(track).gap || window.getComputedStyle(track).columnGap || "0";
+    const gap = Number.parseFloat(gapValue) || 0;
+    const CARD_W = firstCard.offsetWidth + gap;
     const TOTAL  = news.length * CARD_W;
     let pos = 0, raf: number;
     const step = () => {
@@ -65,7 +81,7 @@ export default function NewsCarousel() {
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [paused, news.length]);
+  }, [isMobile, paused, news.length]);
 
   const headerRef = useRef<HTMLDivElement>(null);
   const headerInView = useInView(headerRef, { once: false, margin: "-80px" });
@@ -74,11 +90,12 @@ export default function NewsCarousel() {
   if (!loading && news.length === 0) return null;
 
   const doubled = news.length > 0 ? [...news, ...news] : [];
+  const items = isMobile ? news : doubled;
 
   return (
     <section className="w-full overflow-hidden bg-[#f7faf5] py-0">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-14 pb-10">
-        <div ref={headerRef} className="flex items-end justify-between">
+        <div ref={headerRef} className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <motion.div
               className="flex items-center gap-3 mb-3"
@@ -112,6 +129,11 @@ export default function NewsCarousel() {
             Voir tout <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
+        <Link href="/actualites"
+          className="inline-flex sm:hidden items-center gap-2 px-4 py-2.5 text-white text-sm font-bold rounded-xl transition-colors"
+          style={{ background:"#1b5e38" }}>
+          Voir tout <ArrowRight className="w-4 h-4" />
+        </Link>
       </div>
 
       {loading ? (
@@ -119,25 +141,32 @@ export default function NewsCarousel() {
           <div className="w-8 h-8 border-2 border-[#0a6030] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
-        <div className="w-full overflow-hidden relative"
+        <div className={`w-full relative ${isMobile ? "overflow-x-auto scrollbar-none snap-x snap-mandatory px-4 sm:px-6 pb-6" : "overflow-hidden"}`}
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}>
-          <div className="absolute left-0 top-0 bottom-0 w-16 z-10 pointer-events-none"
+          {!isMobile && <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-16 z-10 pointer-events-none"
             style={{ background: "linear-gradient(to right,#f7faf5,transparent)" }} />
-          <div className="absolute right-0 top-0 bottom-0 w-16 z-10 pointer-events-none"
+          }
+          {!isMobile && <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-16 z-10 pointer-events-none"
             style={{ background: "linear-gradient(to left,#f7faf5,transparent)" }} />
+          }
 
-          <div ref={trackRef} className="flex gap-5 pb-6"
-            style={{ width: "max-content", willChange: "transform", paddingLeft: 24 }}>
-            {doubled.map((item, i) => (
+          <div
+            ref={trackRef}
+            className={`flex ${isMobile ? "gap-4 w-max pr-4" : "gap-5 pb-6"}`}
+            style={{ width: "max-content", willChange: isMobile ? undefined : "transform", paddingLeft: isMobile ? 0 : 24 }}
+          >
+            {items.map((item, i) => (
               <Link key={`${item.id_actualite}-${i}`} href={`/actualites/${item.slug}`}
-                className="flex-shrink-0 w-[360px] group">
+                data-news-card
+                className={`group flex-shrink-0 ${isMobile ? "snap-start" : ""}`}
+                style={{ width: isMobile ? "min(86vw, 320px)" : "360px" }}>
                 <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: "spring", stiffness: 300, damping: 22 }}
                   className="rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow h-[220px] relative"
                   style={{ background: GRADS[i % GRADS.length] }}>
                   {/* Image de fond si disponible */}
                   {item.image && (
-                    <Image src={item.image} alt={item.titre} fill className="object-cover opacity-30" sizes="360px" />
+                    <Image src={item.image} alt={item.titre} fill className="object-cover opacity-30" sizes="(max-width: 767px) 84vw, 360px" />
                   )}
                   <div className="absolute inset-0 pointer-events-none"
                     style={{ backgroundImage: "radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px)", backgroundSize: "24px 24px" }} />

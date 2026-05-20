@@ -36,7 +36,7 @@ function AgencesMap() {
       <div className="flex bg-black/25 backdrop-blur-sm overflow-x-auto">
         {agences.map((a, i) => (
           <button key={i} onClick={() => setActive(i)}
-            className="flex-1 px-3 py-3 text-xs font-black transition-all whitespace-nowrap relative overflow-hidden"
+            className="min-w-[110px] flex-1 px-3 py-3 text-xs font-black transition-all whitespace-nowrap relative overflow-hidden"
             style={{ color: active===i ? "#fff" : "rgba(255,255,255,0.4)" }}>
             {active===i && (
               <motion.span layoutId="mapTab" className="absolute inset-0"
@@ -59,29 +59,29 @@ function AgencesMap() {
             className="w-full h-full absolute inset-0" />
         </AnimatePresence>
         {/* Badge agence */}
-        <div className="absolute top-3 left-3 bg-white/97 backdrop-blur-sm rounded-2xl px-3 py-2 shadow-xl border border-gray-100 max-w-[200px]">
+        <div className="absolute top-3 left-3 right-3 sm:right-auto bg-white/97 backdrop-blur-sm rounded-2xl px-3 py-2 shadow-xl border border-gray-100 max-w-none sm:max-w-[200px]">
           <p className="text-[11px] font-black text-[#1a3d0a] flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[#3cb648] animate-pulse inline-block" />{ag.nom}
           </p>
           <p className="text-[10px] text-gray-500 leading-snug mt-0.5">{ag.adresse}</p>
         </div>
         <a href={ag.maps} target="_blank" rel="noopener noreferrer"
-          className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-[#1a3d0a] hover:bg-[#3cb648] text-white text-[11px] font-black px-3 py-1.5 rounded-xl shadow-lg transition-colors">
+          className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-3 sm:w-auto flex items-center justify-center gap-1.5 bg-[#1a3d0a] hover:bg-[#3cb648] text-white text-[11px] font-black px-3 py-1.5 rounded-xl shadow-lg transition-colors">
           <ArrowTopRightOnSquare className="w-3.5 h-3.5" /> Ouvrir Maps
         </a>
       </div>
       {/* Infos contact */}
-      <div className="bg-black/20 px-5 py-3 flex flex-wrap gap-x-6 gap-y-2 items-center">
-        <a href={`tel:${ag.tel}`} className="flex items-center gap-2 text-white/80 hover:text-white text-xs font-semibold transition-colors">
+      <div className="bg-black/20 px-4 sm:px-5 py-3 flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:items-center">
+        <a href={`tel:${ag.tel}`} className="flex items-start gap-2 text-white/80 hover:text-white text-xs font-semibold transition-colors break-all text-left">
           <Phone className="w-3.5 h-3.5 text-[#8cc83f] shrink-0" />{ag.tel}
         </a>
         {"tel2" in ag && (ag as any).tel2 && (
-          <a href={`tel:${(ag as any).tel2}`} className="flex items-center gap-2 text-white/60 hover:text-white text-xs font-medium transition-colors">
+          <a href={`tel:${(ag as any).tel2}`} className="flex items-start gap-2 text-white/60 hover:text-white text-xs font-medium transition-colors break-all text-left">
             <Phone className="w-3.5 h-3.5 text-[#8cc83f]/60 shrink-0" />{(ag as any).tel2}
           </a>
         )}
         {"email" in ag && (ag as any).email && (
-          <a href={`mailto:${(ag as any).email}`} className="flex items-center gap-2 text-white/80 hover:text-white text-xs font-semibold transition-colors">
+          <a href={`mailto:${(ag as any).email}`} className="flex items-start gap-2 text-white/80 hover:text-white text-xs font-semibold transition-colors break-all text-left">
             <Mail className="w-3.5 h-3.5 text-[#8cc83f] shrink-0" />{(ag as any).email}
           </a>
         )}
@@ -148,9 +148,9 @@ export function Footer() {
                 alt="Groupe Espace Vert"
                 width={400} height={120}
                 style={{
-                  height: 90,
+                  height: "clamp(56px, 14vw, 90px)",
                   width:  "auto",
-                  maxWidth: 360,
+                  maxWidth: "min(100%, 360px)",
                   objectFit: "contain",
                   display: "block",
                 }}
@@ -235,7 +235,7 @@ export function Footer() {
         <motion.div {...fadeUp(0.26)}>
           <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-6" />
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-white/25 text-xs">
+            <p className="text-white/25 text-xs text-center sm:text-left">
               © {new Date().getFullYear()} Groupe Espace Vert. Tous droits réservés.
             </p>
            

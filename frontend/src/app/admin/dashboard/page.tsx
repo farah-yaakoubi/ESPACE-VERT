@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { adminStats, type DashboardStats } from "@/lib/admin-api";
+import { adminStats, tokenStore, type DashboardStats } from "@/lib/admin-api";
 import {
   Package, Tag, Layers, Activity, Newspaper, HelpCircle,
   FileText, Calendar, MessageSquare, ArrowUp, ArrowDown,
@@ -116,7 +116,52 @@ export default function AdminDashboard(){
   const [stats,setStats]=useState<DashboardStats|null>(null);
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState("");
-  useEffect(()=>{adminStats.dashboard().then(setStats).catch((e:Error)=>setError(e.message)).finally(()=>setLoading(false));},[]);
+  useEffect(()=>{
+    let active = true;
+    let es: EventSource | null = null;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const refreshStats = async (showLoader = false) => {
+      if (showLoader && active) setLoading(true);
+      try {
+        const data = await adminStats.dashboard();
+        if (!active) return;
+        setStats(data);
+        setError("");
+      } catch (e) {
+        if (!active) return;
+        if (showLoader) setError((e as Error).message);
+      } finally {
+        if (showLoader && active) setLoading(false);
+      }
+    };
+
+    const connect = () => {
+      try {
+        const token = tokenStore.get() ?? "";
+        const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+        const url = `${base}/admin/notifications/events${token ? `?token=${encodeURIComponent(token)}` : ""}`;
+        es = new EventSource(url);
+        es.onmessage = () => { void refreshStats(false); };
+        es.onerror = () => {
+          es?.close();
+          retryTimer = setTimeout(connect, 5000);
+        };
+      } catch {}
+    };
+
+    void refreshStats(true);
+    const polling = setInterval(() => { void refreshStats(false); }, 60000);
+    connect();
+
+    return () => {
+      active = false;
+      clearInterval(polling);
+      clearTimeout(retryTimer);
+      es?.close();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
 
   if(loading)return(
     <div className="flex items-center justify-center py-40">
@@ -221,43 +266,45 @@ export default function AdminDashboard(){
             <p className="text-xs text-gray-400 mt-0.5">{catalogTotal} éléments au total</p>
           </div>
         </div>
-        <table className="w-full text-sm">
-          <thead><tr style={{background:"#F8FAFC"}}>
-            <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Section</th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Éléments</th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Proportion</th>
-            <th className="text-right px-6 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Action</th>
-          </tr></thead>
-          <tbody className="divide-y" style={{borderColor:"#F8FAFC"}}>
-            {catalogItems.map(({label,val,icon:Icon,href,color,colorLt})=>{
-              const pct=catalogTotal>0?Math.round((val/catalogTotal)*100):0;
-              return(
-                <tr key={label} className="hover:bg-gray-50 transition-colors group">
-                  <td className="px-6 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{background:colorLt}}><Icon size={15} style={{color}}/></div>
-                      <span className="font-semibold text-gray-700">{label}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3.5"><span className="text-lg font-bold text-gray-800" style={{letterSpacing:"-0.04em"}}>{val}</span></td>
-                  <td className="px-4 py-3.5 min-w-[140px]">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full transition-all duration-700" style={{width:`${Math.max(pct,2)}%`,background:color}}/>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead><tr style={{background:"#F8FAFC"}}>
+              <th className="text-left px-6 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Section</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Éléments</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Proportion</th>
+              <th className="text-right px-6 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Action</th>
+            </tr></thead>
+            <tbody className="divide-y" style={{borderColor:"#F8FAFC"}}>
+              {catalogItems.map(({label,val,icon:Icon,href,color,colorLt})=>{
+                const pct=catalogTotal>0?Math.round((val/catalogTotal)*100):0;
+                return(
+                  <tr key={label} className="group transition-colors hover:bg-gray-50">
+                    <td className="px-6 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{background:colorLt}}><Icon size={15} style={{color}}/></div>
+                        <span className="font-semibold text-gray-700">{label}</span>
                       </div>
-                      <span className="text-xs text-gray-400 w-7 text-right">{pct}%</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-3.5 text-right">
-                    <Link href={href} className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors opacity-0 group-hover:opacity-100" style={{background:colorLt,color}}>
-                      Gérer <ArrowRight size={11}/>
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    </td>
+                    <td className="px-4 py-3.5"><span className="text-lg font-bold text-gray-800" style={{letterSpacing:"-0.04em"}}>{val}</span></td>
+                    <td className="px-4 py-3.5 min-w-[140px]">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all duration-700" style={{width:`${Math.max(pct,2)}%`,background:color}}/>
+                        </div>
+                        <span className="text-xs text-gray-400 w-7 text-right">{pct}%</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-3.5 text-right">
+                      <Link href={href} className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors opacity-0 group-hover:opacity-100" style={{background:colorLt,color}}>
+                        Gérer <ArrowRight size={11}/>
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Recent Activity */}

@@ -20,6 +20,10 @@ export default function RendezVousPage() {
         title="Prendre rendez-vous"
         subtitle="Un expert Matar se déplace ou vous reçoit en agence pour évaluer vos besoins en irrigation."
         fallbackImage="/images/hero/matar.webp"
+        imagePosition="center 34%"
+        imagePositionTablet="center 28%"
+        imagePositionMobile="center 22%"
+        contentMaxWidth="42rem"
       />
 
       <section className="section">
@@ -33,8 +37,8 @@ export default function RendezVousPage() {
               <div className="flex gap-3 p-5 rounded-2xl bg-sky-50 border border-sky-200 text-sm text-sky-900">
                 <Info size={18} className="shrink-0 text-sky-500 mt-px" />
                 <div>
-                  <p className="font-semibold mb-1">Service réservé à Matar Irrigation</p>
-                  <p className="text-sky-700 leading-relaxed text-xs">
+                  <p className="mb-1 text-[15px] font-semibold">Service réservé à Matar Irrigation</p>
+                  <p className="text-sm leading-7 text-sky-700">
                     Ce formulaire de prise de rendez-vous est exclusivement dédié aux
                     produits et solutions d&apos;irrigation de la marque <strong>Matar</strong>.
                     Pour toute autre demande, veuillez utiliser notre{" "}
@@ -48,7 +52,7 @@ export default function RendezVousPage() {
 
               {/* What to expect */}
               <div>
-                <h2 className="font-bold text-ev-900 text-lg mb-4 font-display">
+                <h2 className="site-subheading mb-4 text-[1.35rem]">
                   Ce que vous obtiendrez
                 </h2>
                 <ul className="space-y-3">
@@ -58,7 +62,7 @@ export default function RendezVousPage() {
                     "Devis détaillé sans engagement",
                     "Suivi post-installation par notre équipe SAV",
                   ].map((item) => (
-                    <li key={item} className="flex items-start gap-2.5 text-sm text-gray-600">
+                    <li key={item} className="flex items-start gap-2.5 text-[15px] leading-7 text-gray-600">
                       <span className="w-5 h-5 rounded-full bg-sky-100 flex items-center justify-center shrink-0 mt-px">
                         <CalendarDays size={11} className="text-sky-600" />
                       </span>
@@ -70,10 +74,10 @@ export default function RendezVousPage() {
 
               {/* Browse Matar link */}
               <div className="card p-5">
-                <p className="text-sm font-semibold text-ev-900 mb-2">
+                <p className="mb-2 text-[15px] font-semibold text-ev-900">
                   Découvrir les produits Matar
                 </p>
-                <p className="text-xs text-gray-500 mb-3">
+                <p className="mb-3 text-sm leading-7 text-gray-500">
                   Consultez notre gamme de solutions d&apos;irrigation avant votre rendez-vous.
                 </p>
                 <Link href="/marques/matar" className="btn-outline btn-sm w-full justify-center">
@@ -84,8 +88,8 @@ export default function RendezVousPage() {
 
             {/* ── Form ─────────────────────────────────────────── */}
             <div className="lg:col-span-3">
-              <div className="card p-8">
-                <h2 className="text-xl font-bold text-ev-900 mb-6 font-display">
+              <div className="card p-5 sm:p-8">
+                <h2 className="site-subheading mb-6 text-[1.35rem]">
                   Votre demande de rendez-vous
                 </h2>
                 <RdvForm />

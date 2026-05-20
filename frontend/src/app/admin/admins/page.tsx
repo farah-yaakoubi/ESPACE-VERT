@@ -8,7 +8,7 @@ import {
 import {
   Plus, Edit2, Trash2, RefreshCw, Shield, User,
   Eye, EyeOff, CheckCircle, XCircle, AlertTriangle,
-  Lock, Unlock, Key, Users, Search,
+  Lock, Unlock, Key, Users, Search, MessageSquare,
   X, Check,
 } from "lucide-react";
 import { toast } from "@/components/admin/Toast";
@@ -36,12 +36,14 @@ const ALL_PERMISSIONS = [
   { key:"visiteurs.read",   label:"Voir visiteurs",      group:"Système" },
   { key:"admins.read",      label:"Voir admins",         group:"Système" },
   { key:"admins.write",     label:"Gérer admins",        group:"Système" },
+  { key:"chat.hidden",      label:"Masquer chat interne", group:"Système" },
 ];
 
 const PERM_GROUPS = [...new Set(ALL_PERMISSIONS.map(p => p.group))];
 
 // Traduit une clé permission en label lisible
 const permLabel = (key: string) => ALL_PERMISSIONS.find(p => p.key === key)?.label ?? key;
+const hasHiddenChat = (admin: AdminUser) => Array.isArray(admin.permissions) && admin.permissions.includes("chat.hidden");
 
 function ConfirmDialog({ message, sub, onConfirm, onCancel }: {
   message: string; sub?: string; onConfirm: () => void; onCancel: () => void;
@@ -226,6 +228,20 @@ export default function AdminAdminsPage() {
     catch (e) { toast.error("Erreur", (e as Error).message); }
   };
 
+  const handleToggleChat = async (a: AdminUser) => {
+    const permissions = Array.isArray(a.permissions) ? [...a.permissions] : [];
+    const nextPermissions = permissions.includes("chat.hidden")
+      ? permissions.filter(p => p !== "chat.hidden")
+      : [...permissions, "chat.hidden"];
+    try {
+      await adminAdmins.update(a.id_admin, { permissions: nextPermissions } as any);
+      toast.success("Messagerie mise à jour", permissions.includes("chat.hidden") ? "Chat réactivé pour cet admin." : "Chat masqué pour cet admin.");
+      load();
+    } catch (e) {
+      toast.error("Erreur", (e as Error).message);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -316,6 +332,7 @@ export default function AdminAdminsPage() {
                               {isMe && <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500">vous</span>}
                             </p>
                             {isDup && <span className="flex items-center gap-1 text-[10px] text-amber-600 font-semibold"><AlertTriangle size={8}/>Doublon</span>}
+                            {hasHiddenChat(a) && <span className="flex items-center gap-1 text-[10px] text-purple-600 font-semibold"><MessageSquare size={8}/>Chat masqué</span>}
                           </div>
                         </div>
                       </td>
@@ -333,6 +350,7 @@ export default function AdminAdminsPage() {
                         <div className="flex items-center gap-1">
                           <button onClick={()=>openEdit(a)} title="Modifier" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors" style={{color:"var(--admin-text3)"}}><Edit2 size={13}/></button>
                           {!isSuper && <button onClick={()=>openPermissions(a)} title="Permissions" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-purple-50 hover:text-purple-600 transition-colors" style={{color:"var(--admin-text3)"}}><Key size={13}/></button>}
+                          {!isSuper && !isMe && <button onClick={()=>handleToggleChat(a)} title={hasHiddenChat(a)?"Réactiver le chat":"Masquer le chat"} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-emerald-50 hover:text-emerald-700 transition-colors" style={{color:hasHiddenChat(a)?"#7c3aed":"var(--admin-text3)"}}><MessageSquare size={13}/></button>}
                           {!isMe && <button onClick={()=>handleToggleActif(a)} title={a.actif?"Désactiver":"Activer"} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-amber-50 hover:text-amber-600 transition-colors" style={{color:"var(--admin-text3)"}}>{a.actif?<Lock size={13}/>:<Unlock size={13}/>}</button>}
                           {!isMe && <button onClick={()=>{setDeleteTarget(a);setModal("delete");}} title="Supprimer" className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors" style={{color:"var(--admin-text3)"}}><Trash2 size={13}/></button>}
                         </div>

@@ -24,6 +24,10 @@ export default function DevisPage() {
         title="Demandez un devis"
         subtitle="Réponse sous 24–48h par un expert de notre équipe."
         fallbackImage="/images/hero/fertivert.webp"
+        imagePosition="center 40%"
+        imagePositionTablet="center 35%"
+        imagePositionMobile="center 28%"
+        contentMaxWidth="40rem"
       />
 
       <section className="section">
@@ -32,7 +36,7 @@ export default function DevisPage() {
 
             {/* ── Left: Steps ──────────────────────────────────── */}
             <div className="lg:col-span-2 space-y-6">
-              <h2 className="text-2xl font-bold text-ev-900 font-display">Comment ça marche ?</h2>
+              <h2 className="site-subheading">Comment ça marche ?</h2>
 
               <div className="space-y-6">
                 {STEPS.map((s) => (
@@ -41,8 +45,8 @@ export default function DevisPage() {
                       {s.n}
                     </span>
                     <div>
-                      <p className="font-semibold text-ev-900 text-sm">{s.label}</p>
-                      <p className="text-sm text-gray-500 mt-0.5">{s.desc}</p>
+                      <p className="text-[15px] font-semibold text-ev-900">{s.label}</p>
+                      <p className="mt-1 text-sm leading-7 text-gray-500">{s.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -52,9 +56,9 @@ export default function DevisPage() {
               <div className="rounded-2xl bg-ev-50 border border-ev-100 p-5 mt-6">
                 <div className="flex items-center gap-2 mb-2">
                   <FileText size={16} className="text-ev-600" />
-                  <p className="font-semibold text-ev-800 text-sm">Devis gratuit & sans engagement</p>
+                  <p className="text-[15px] font-semibold text-ev-800">Devis gratuit & sans engagement</p>
                 </div>
-                <p className="text-xs text-ev-700 leading-relaxed">
+                <p className="text-sm leading-7 text-ev-700">
                   Vous pouvez également préciser le produit concerné dans le champ
                   &ldquo;Précisions&rdquo;, ou retrouver chaque produit depuis notre catalogue
                   et demander un devis directement depuis sa fiche.
@@ -64,8 +68,8 @@ export default function DevisPage() {
 
             {/* ── Right: Form ──────────────────────────────────── */}
             <div className="lg:col-span-3">
-              <div className="card p-8">
-                <h2 className="text-xl font-bold text-ev-900 mb-6 font-display">
+              <div className="card p-5 sm:p-8">
+                <h2 className="site-subheading mb-6 text-[1.35rem]">
                   Votre demande
                 </h2>
                 {/* No id_produit here — standalone form */}

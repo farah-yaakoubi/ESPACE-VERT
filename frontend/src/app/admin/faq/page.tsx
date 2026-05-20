@@ -134,7 +134,7 @@ export default function AdminFaqPage() {
                 <textarea value={form.reponse} onChange={e=>setForm({...form,reponse:e.target.value})} rows={5}
                   className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 resize-none"/>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Catégorie</label>
                   <input value={form.categorie} onChange={e=>setForm({...form,categorie:e.target.value})}

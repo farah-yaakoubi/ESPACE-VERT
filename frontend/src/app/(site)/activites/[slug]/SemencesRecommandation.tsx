@@ -12,7 +12,10 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Sparkles, Loader2, ChevronRight, Sprout, RotateCcw, AlertCircle } from "lucide-react";
+import {
+  Sparkles, Loader2, ChevronRight, Sprout, RotateCcw, AlertCircle,
+  SunMedium, CloudSun, CloudRain, Wind, Warehouse, CalendarDays, LandPlot,
+} from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
@@ -31,6 +34,12 @@ interface ApiResponse {
   message?: string | null;
 }
 
+interface SemencesRecommandationProps {
+  variant?: "section" | "panel";
+  title?: string;
+  subtitle?: string;
+}
+
 /* ── Listes de choix ─────────────────────────────────────────────────────── */
 const MOIS = [
   "Janvier","Février","Mars","Avril","Mai","Juin",
@@ -42,16 +51,29 @@ const SOLS = [
   "Calcaire", "Humifère / fertile", "Irrigué", "Sec / aride",
 ];
 
+const CLIMATS = [
+  { label: "Chaud et sec", icon: SunMedium, desc: "Fort ensoleillement, faible humidité" },
+  { label: "Tempéré", icon: CloudSun, desc: "Conditions équilibrées et stables" },
+  { label: "Humide", icon: CloudRain, desc: "Humidité élevée ou pluies fréquentes" },
+  { label: "Venteux", icon: Wind, desc: "Parcelles exposées aux vents" },
+  { label: "Sous serre", icon: Warehouse, desc: "Environnement protégé et maîtrisé" },
+];
+
 const SUGGESTIONS = [
   "Tomate", "Poivron", "Concombre", "Courgette", "Laitue",
   "Carotte", "Piment", "Pastèque", "Melon", "Oignon", "Haricot",
 ];
 
 /* ══════════════════════════════════════════════════════════════════════════ */
-export function SemencesRecommandation() {
+export function SemencesRecommandation({
+  variant = "section",
+  title = "Trouvez vos semences idéales",
+  subtitle = "Dites-nous ce que vous souhaitez cultiver — notre assistant agronomique sélectionne les semences adaptées depuis notre catalogue.",
+}: SemencesRecommandationProps) {
   const [culture, setCulture]       = useState("");
   const [mois, setMois]             = useState("");
   const [sol, setSol]               = useState("");
+  const [climat, setClimat]         = useState("");
   const [loading, setLoading]       = useState(false);
   const [results, setResults]       = useState<Recommendation[] | null>(null);
   const [message, setMessage]       = useState<string | null>(null);
@@ -76,6 +98,7 @@ export function SemencesRecommandation() {
           culture: culture.trim(),
           mois:    mois || undefined,
           sol:     sol || undefined,
+          climat:  climat || undefined,
         }),
       });
 
@@ -94,24 +117,29 @@ export function SemencesRecommandation() {
 
   /* ── Reset ───────────────────────────────────────────────────────────── */
   function handleReset() {
-    setCulture(""); setMois(""); setSol("");
+    setCulture(""); setMois(""); setSol(""); setClimat("");
     setResults(null); setMessage(null); setError(null);
     setShowForm(true);
   }
 
+  const isPanel = variant === "panel";
+  const Wrapper = isPanel ? "div" : "section";
+
   /* ══════════════════════════════════════════════════════════════════════ */
   return (
-    <section
+    <Wrapper
       aria-label="Recommandations semences IA"
       style={{
-        background: "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 40%, #f0fdf4 100%)",
-        borderBottom: "1px solid #bbf7d0",
+        background: isPanel
+          ? "transparent"
+          : "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 40%, #f0fdf4 100%)",
+        borderBottom: isPanel ? "none" : "1px solid #bbf7d0",
       }}
     >
-      <div className="container-ev py-10">
+      <div className={isPanel ? "py-1" : "container-ev py-10"}>
 
         {/* ── En-tête ───────────────────────────────────────────────── */}
-        <div className="flex items-start gap-4 mb-7">
+        <div className={`flex items-start gap-4 ${isPanel ? "mb-5" : "mb-7"}`}>
           <div
             className="shrink-0 flex items-center justify-center w-11 h-11 rounded-2xl shadow-sm"
             style={{ background: "linear-gradient(135deg, #16a34a, #15803d)" }}
@@ -120,7 +148,7 @@ export function SemencesRecommandation() {
           </div>
           <div>
             <div className="flex items-center gap-2 mb-0.5">
-              <h2 className="text-lg font-bold text-gray-900">Trouvez vos semences idéales</h2>
+              <h2 className={`${isPanel ? "text-base" : "text-lg"} font-bold text-gray-900`}>{title}</h2>
               <span
                 className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide"
                 style={{ background: "#dcfce7", color: "#15803d", border: "1px solid #bbf7d0" }}
@@ -129,10 +157,32 @@ export function SemencesRecommandation() {
               </span>
             </div>
             <p className="text-sm text-gray-500 leading-relaxed">
-              Dites-nous ce que vous souhaitez cultiver — notre assistant agronomique sélectionne les semences adaptées depuis notre catalogue.
+              {subtitle}
             </p>
           </div>
         </div>
+
+        {!isPanel && (
+          <div className="grid grid-cols-1 gap-3 mb-6 sm:grid-cols-3">
+          {[
+            { icon: CalendarDays, title: "Saison", text: "Tenez compte du mois de semis pour viser la meilleure fenêtre." },
+            { icon: LandPlot, title: "Sol", text: "Affinez la recommandation selon la nature de votre parcelle." },
+            { icon: CloudSun, title: "Climat", text: "Ajoutez les conditions climatiques pour une sélection plus précise." },
+          ].map(({ icon: Icon, title, text }) => (
+            <div key={title} className="rounded-2xl border border-green-100 bg-white/80 px-4 py-4 shadow-sm backdrop-blur-sm">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-50 text-green-700">
+                  <Icon size={18} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">{title}</p>
+                  <p className="mt-1 text-xs leading-5 text-gray-500">{text}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+          </div>
+        )}
 
         {/* ── Formulaire ────────────────────────────────────────────── */}
         {showForm && (
@@ -207,6 +257,68 @@ export function SemencesRecommandation() {
               </div>
             </div>
 
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                Climat / exposition <span className="font-normal text-gray-400">(optionnel)</span>
+              </label>
+              <div className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${isPanel ? "xl:grid-cols-1" : "xl:grid-cols-5"}`}>
+                {CLIMATS.map(({ label, icon: Icon, desc }) => {
+                  const active = climat === label;
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => setClimat(current => current === label ? "" : label)}
+                      className="rounded-2xl border px-4 py-4 text-left transition-all duration-200"
+                      style={active
+                        ? {
+                            background: "linear-gradient(135deg, #16a34a, #15803d)",
+                            borderColor: "#15803d",
+                            color: "#fff",
+                            boxShadow: "0 14px 30px rgba(21,128,61,0.18)",
+                          }
+                        : {
+                            background: "#fff",
+                            borderColor: "#d1fae5",
+                            color: "#1f2937",
+                          }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                          style={active
+                            ? { background: "rgba(255,255,255,0.14)", color: "#fff" }
+                            : { background: "#f0fdf4", color: "#15803d" }}
+                        >
+                          <Icon size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold leading-snug">{label}</p>
+                          <p className="mt-1 text-xs leading-5" style={{ color: active ? "rgba(255,255,255,0.82)" : "#6b7280" }}>
+                            {desc}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {(culture || mois || sol || climat) && (
+              <div className="rounded-2xl border border-green-100 bg-white/80 px-4 py-4 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-green-700 mb-3">
+                  Résumé de votre demande
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {culture && <span className="rounded-full bg-green-50 px-3 py-1.5 text-xs font-medium text-green-800 border border-green-100">Culture : {culture}</span>}
+                  {mois && <span className="rounded-full bg-green-50 px-3 py-1.5 text-xs font-medium text-green-800 border border-green-100">Mois : {mois}</span>}
+                  {sol && <span className="rounded-full bg-green-50 px-3 py-1.5 text-xs font-medium text-green-800 border border-green-100">Sol : {sol}</span>}
+                  {climat && <span className="rounded-full bg-green-50 px-3 py-1.5 text-xs font-medium text-green-800 border border-green-100">Climat : {climat}</span>}
+                </div>
+              </div>
+            )}
+
             {/* Bouton */}
             <button
               type="submit"
@@ -245,7 +357,7 @@ export function SemencesRecommandation() {
                 <Sprout size={16} className="text-green-600" />
                 <p className="text-sm font-semibold text-gray-800">
                   {results.length > 0
-                    ? <>Recommandations pour <span className="text-green-700">{culture}</span>{mois ? ` — ${mois}` : ""}</>
+                    ? <>Recommandations pour <span className="text-green-700">{culture}</span>{mois ? ` — ${mois}` : ""}{climat ? ` — ${climat}` : ""}</>
                     : "Aucun produit trouvé dans le catalogue"
                   }
                 </p>
@@ -267,7 +379,7 @@ export function SemencesRecommandation() {
 
             {/* Grille de produits recommandés */}
             {results.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${isPanel ? "" : "lg:grid-cols-3 xl:grid-cols-4"}`}>
                 {results.map((rec, idx) => {
                   const img = rec.images?.[0];
                   return (
@@ -343,6 +455,6 @@ export function SemencesRecommandation() {
         )}
 
       </div>
-    </section>
+    </Wrapper>
   );
 }

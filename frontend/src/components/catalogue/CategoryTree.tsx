@@ -4,7 +4,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
   ChevronRight, Search, SlidersHorizontal, X,
-  Grid2X2, LayoutList, ChevronLeft, ChevronsLeft, ChevronsRight, Layers, Package,
+  ChevronLeft, ChevronsLeft, ChevronsRight, Layers, Package,
 } from "lucide-react";
 import { ProduitCard }   from "@/components/cards/ProduitCard";
 import type { ProduitCard as ProduitCardType } from "@/types/api";
@@ -214,7 +214,7 @@ function SousCatGrid({
     <div>
       {/* Sous-catégories AVEC image → cartes cliquables */}
       {avecImage.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
           {avecImage.map(sc => (
             <button
               key={sc.id_categorie}
@@ -246,16 +246,16 @@ function SousCatGrid({
                 el.style.borderColor = "#f0f0f0";
               }}
             >
-              <div className="relative h-44 bg-gradient-to-br from-ev-50 to-ev-100 group-hover:from-[#e8f8e8] group-hover:to-[#f0faf0] overflow-hidden transition-all duration-300">
+              <div className="relative h-56 sm:h-64 bg-gradient-to-br from-ev-50 to-ev-100 group-hover:from-[#e8f8e8] group-hover:to-[#f0faf0] overflow-hidden transition-all duration-300">
                 <Image
                   src={sc.image!}
                   alt={sc.nom}
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  sizes="(max-width:640px)50vw,(max-width:1024px)33vw,220px"
+                  sizes="(max-width:640px)100vw,(max-width:1024px)50vw,50vw"
                 />
                 <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
-                <p className="absolute bottom-3 left-3 right-3 text-white font-bold text-sm leading-tight drop-shadow">
+                <p className="absolute bottom-4 left-4 right-4 text-white font-bold text-base leading-tight drop-shadow">
                   {sc.nom}
                 </p>
               </div>
@@ -277,7 +277,7 @@ function SousCatGrid({
                 {produits.length} produit{produits.length > 1 ? "s" : ""}
               </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
               {produits.map(({ produit }) => (
                 <ProduitCard
                   key={produit.id_produit}
@@ -308,7 +308,6 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
   const pageFromUrl = searchParams.get("page") ? Number(searchParams.get("page")) : 1;
 
   const [search,      setSearch]      = useState("");
-  const [gridCols,    setGridCols]    = useState<3 | 4>(3);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openIds,     setOpenIds]     = useState<Set<number>>(() => {
     const s = new Set<number>();
@@ -529,16 +528,6 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
             )}
           </div>
 
-          {/* Toggle grille */}
-          <div className="hidden sm:flex items-center gap-0.5 border border-stone-200 rounded-xl p-1 bg-white shadow-sm">
-            <button onClick={() => setGridCols(3)} className={cn("p-2 rounded-lg transition-all", gridCols===3 ? "bg-ev-700 text-white shadow-sm" : "text-gray-400 hover:text-gray-700 hover:bg-stone-50")}>
-              <Grid2X2 size={14}/>
-            </button>
-            <button onClick={() => setGridCols(4)} className={cn("p-2 rounded-lg transition-all", gridCols===4 ? "bg-ev-700 text-white shadow-sm" : "text-gray-400 hover:text-gray-700 hover:bg-stone-50")}>
-              <LayoutList size={14}/>
-            </button>
-          </div>
-
           {/* Compteur */}
           <span className="text-[12px] text-gray-400 font-medium whitespace-nowrap">
             <span className="text-gray-700 font-semibold">{allProduits.length}</span> produit{allProduits.length !== 1 ? "s" : ""}
@@ -567,7 +556,7 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
           </div>
         ) : (
           <>
-            <div className={cn("grid gap-5", gridCols===3 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4")}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
               {paginated.map(({ produit, catNom }) => (
                 <ProduitCard key={produit.id_produit} produit={toProduitCard(produit, catNom, tree.id_marque)} />
               ))}

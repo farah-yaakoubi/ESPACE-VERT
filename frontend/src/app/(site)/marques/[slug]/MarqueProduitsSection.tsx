@@ -156,7 +156,7 @@ export function MarqueProduitsSection({ id_marque, categories }: Props) {
           }
         />
 
-        <div className="flex gap-8">
+        <div className="flex flex-col gap-8 md:flex-row">
 
           {/* FilterPanel — sidebar desktop + drawer mobile */}
           <FilterPanel

@@ -165,7 +165,7 @@ function MessageBubble({ msg, onSuggestion }: { msg: Message; onSuggestion: (lab
         </div>
       )}
 
-      <div className="max-w-[82%]">
+      <div className="max-w-[90%] sm:max-w-[82%] min-w-0">
         <div
           className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
             isUser ? "text-white rounded-br-sm" : "text-gray-800 rounded-bl-sm border border-green-100"
@@ -174,7 +174,7 @@ function MessageBubble({ msg, onSuggestion }: { msg: Message; onSuggestion: (lab
             ? { background: "linear-gradient(135deg,#0a6030,#2e7d4f)" }
             : { background: "#f0fdf4" }}
         >
-          {msg.content}
+          <span className="break-words">{msg.content}</span>
         </div>
 
         {previews.length > 0 && (
@@ -306,7 +306,7 @@ export default function ChatWidget() {
   return (
     <>
       {/* ── Position : BAS GAUCHE ──────────────────────────────────────────── */}
-      <div className="fixed bottom-6 left-6 z-50 flex flex-col items-start gap-3">
+      <div className="fixed bottom-4 left-3 right-3 z-50 flex flex-col items-stretch gap-2 pb-[max(env(safe-area-inset-bottom),0px)] sm:bottom-6 sm:left-6 sm:right-auto sm:items-start sm:gap-3">
 
         {/* ── Fenêtre chat ── */}
         <AnimatePresence>
@@ -316,16 +316,16 @@ export default function ChatWidget() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 16, scale: 0.94 }}
               transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
-              className="w-[340px] sm:w-[390px] rounded-2xl overflow-hidden flex flex-col"
+              className="w-full max-w-[390px] rounded-2xl overflow-hidden flex flex-col"
               style={{
-                height:     540,
+                height:     "min(540px, calc(100dvh - 6.5rem))",
                 background: "#fff",
                 boxShadow:  "0 28px 72px rgba(0,0,0,0.16), 0 0 0 1px rgba(46,125,79,0.12)",
               }}
             >
               {/* ── Header avec vrai logo ── */}
               <div
-                className="flex items-center gap-3 px-4 py-3.5 flex-shrink-0 relative overflow-hidden"
+                className="flex items-center gap-3 px-3.5 py-3.5 sm:px-4 flex-shrink-0 relative overflow-hidden"
                 style={{ background: "linear-gradient(135deg,#0a6030 0%,#1a7a40 50%,#2e7d4f 100%)" }}
               >
                 <div className="absolute inset-0 opacity-10"
@@ -347,7 +347,7 @@ export default function ChatWidget() {
                 </div>
 
                 <div className="flex-1 min-w-0 relative">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <p className="text-white font-bold text-sm leading-none">Espace Vert</p>
                     <span
                       className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
@@ -370,10 +370,10 @@ export default function ChatWidget() {
               </div>
 
               {/* ── Messages ── */}
-              <div className="relative flex-1">
+              <div className="relative flex-1 min-h-0">
               <div
                 ref={scrollContainerRef}
-                className="h-full overflow-y-auto px-4 py-4"
+                className="h-full overflow-y-auto px-3 py-3 sm:px-4 sm:py-4"
                 style={{ scrollbarWidth: "none" }}
                 onScroll={() => {
                   const el = scrollContainerRef.current;
@@ -452,7 +452,7 @@ export default function ChatWidget() {
                   </button>
                 </div>
 
-                <div className="flex items-center justify-center gap-1.5 mt-2">
+                <div className="flex flex-wrap items-center justify-center gap-1.5 mt-2 text-center">
                   <span className="text-[10px] text-gray-400">Propulsé par Groq ·</span>
                   <span className="text-[10px] font-semibold" style={{ color: "#0a6030" }}>Espace Vert</span>
                 </div>
@@ -466,7 +466,7 @@ export default function ChatWidget() {
           onClick={() => setOpen(v => !v)}
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.92 }}
-          className="relative w-14 h-14 rounded-full flex items-center justify-center text-white"
+          className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-white"
           style={{
             background: "linear-gradient(135deg,#0a6030 0%,#7dc040 100%)",
             boxShadow:  "0 8px 32px rgba(10,96,48,0.45)",
@@ -488,7 +488,7 @@ export default function ChatWidget() {
                 animate={{ rotate: 0, opacity: 1 }}
                 exit={{ rotate: -90, opacity: 0 }}
                 transition={{ duration: 0.18 }}>
-                <div className="w-9 h-9 rounded-full overflow-hidden bg-white p-1">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-white p-1">
                   <Image src="/logos/logo-espace-vert.png" alt="Espace Vert" width={36} height={36}
                     className="w-full h-full object-contain" />
                 </div>

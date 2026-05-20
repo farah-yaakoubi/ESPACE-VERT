@@ -191,7 +191,7 @@ function MarqueDetail({
           </div>
         </div>
         {/* Stats */}
-        <div className="px-5 pb-5 grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 px-5 pb-5 sm:grid-cols-3">
           {[
             {
               label: "Produits",
@@ -406,6 +406,7 @@ export default function AdminMarquesPage() {
       setModal(null);
       pushToast({
         type: "success",
+        title: modal === "create" ? "Succes" : "Mise a jour",
         message: modal === "create" ? "Marque créée !" : "Marque mise à jour !",
       });
       load();
@@ -418,11 +419,11 @@ export default function AdminMarquesPage() {
   const remove = async (m: MarqueAdmin) => {
     try {
       await adminMarques.remove(m.id_marque);
-      pushToast({ type: "success", message: `Marque « ${m.nom} » supprimée` });
+      pushToast({ type: "success", title: "Suppression", message: `Marque « ${m.nom} » supprimée` });
       if (detail?.id_marque === m.id_marque) setDetail(null);
       load();
     } catch (e: any) {
-      pushToast({ type: "error", message: e.message });
+      pushToast({ type: "error", title: "Erreur", message: e.message });
     } finally {
       setConfirmDel(null);
     }
@@ -476,17 +477,20 @@ export default function AdminMarquesPage() {
                 {err}
               </div>
             )}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
                   Nom *
                 </label>
                 <input
                   value={form.nom}
-                  onChange={(e) =>
-                    F("nom", e.target.value) ||
-                    (modal === "create" && F("slug", toSlug(e.target.value)))
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    F("nom", value);
+                    if (modal === "create") {
+                      F("slug", toSlug(value));
+                    }
+                  }}
                   className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>

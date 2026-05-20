@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "clean": "node ./scripts/clean-next.mjs",
+    "typegen": "next typegen",
+    "dev": "npm run clean && next dev",
+    "build": "npm run clean && next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "npm run typegen && tsc --noEmit"
   },
   "dependencies": {
     "@heroicons/react": "^2.1.5",

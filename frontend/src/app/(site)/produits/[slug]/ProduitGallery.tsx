@@ -146,11 +146,11 @@ export function ProduitGallery({
   return (
     <>
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <span className="text-xs text-gray-400 font-medium">
             {displayImages.length > 1 ? `${safeActive + 1} / ${displayImages.length}` : "Photo produit"}
           </span>
-          <div className="flex items-center gap-1 p-1 bg-sand-100 rounded-xl">
+          <div className="flex flex-wrap items-center gap-1 p-1 bg-sand-100 rounded-xl sm:justify-end">
             {displayImages.length > 1 && (
               <>
                 <button onClick={() => setAutoplay(a => !a)} title={autoplay ? "Pause diaporama" : "Lancer le diaporama"}
@@ -207,7 +207,7 @@ export function ProduitGallery({
                     className="absolute inset-0"
                   >
                     <Image src={mainImg.url} alt={mainImg.alt ?? nomProduit} fill priority
-                      className="object-contain p-8"
+                      className="object-contain p-4 sm:p-8"
                       sizes="(max-width:1024px)100vw,50vw" />
                   </motion.div>
                 </AnimatePresence>
@@ -244,13 +244,13 @@ export function ProduitGallery({
                 )}
               </div>
               {displayImages.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto pb-1 mt-3">
+                <div className="flex gap-2 overflow-x-auto pb-1 pr-1 mt-3 scrollbar-none">
                   {displayImages.map((img, i) => (
                     <button key={i} onClick={() => setActive(i)}
                       className={`relative w-16 h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${i === safeActive ? "border-ev-600 shadow-md ring-2 ring-ev-200" : "border-sand-200 hover:border-ev-300"}`}>
-                      <Image src={img.url} alt={img.alt ?? `${nomProduit} ${i + 1}`} fill className="object-contain p-1.5" sizes="64px" />
-                    </button>
-                  ))}
+                    <Image src={img.url} alt={img.alt ?? `${nomProduit} ${i + 1}`} fill className="object-contain p-1.5" sizes="64px" />
+                  </button>
+                ))}
                 </div>
               )}
             </motion.div>
@@ -263,7 +263,7 @@ export function ProduitGallery({
                   <div key={i} onClick={() => { setActive(i); setView("main"); }}
                     className={`relative aspect-square rounded-2xl overflow-hidden cursor-pointer border-2 transition-all hover:shadow-lg ${i === safeActive ? "border-ev-600 ring-2 ring-ev-200" : "border-sand-200 hover:border-ev-300"}`}
                     style={{ background: "#fff" }}>
-                    <Image src={img.url} alt={img.alt ?? `${nomProduit} ${i + 1}`} fill className="object-contain p-4" sizes="(max-width:768px)50vw,25vw" />
+                    <Image src={img.url} alt={img.alt ?? `${nomProduit} ${i + 1}`} fill className="object-contain p-3 sm:p-4" sizes="(max-width:768px)50vw,25vw" />
                     {img.conditionnement && (
                       <div className="absolute bottom-1.5 left-1.5">
                         <span className="bg-ev-700/80 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full">{img.conditionnement}</span>
@@ -280,7 +280,7 @@ export function ProduitGallery({
             <motion.div key="3d" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <Viewer3D img={mainImg} nom={nomProduit} />
               {displayImages.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto pb-1 mt-3">
+                <div className="flex gap-2 overflow-x-auto pb-1 pr-1 mt-3 scrollbar-none">
                   {displayImages.map((img, i) => (
                     <button key={i} onClick={() => setActive(i)}
                       className={`relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${i === safeActive ? "border-ev-600" : "border-sand-200 hover:border-ev-300"}`}>
@@ -301,7 +301,7 @@ export function ProduitGallery({
             className="fixed inset-0 z-[100] bg-black/95 flex flex-col"
             onClick={() => { setLightbox(false); setZoom(1); }}
           >
-            <div className="flex items-center justify-between px-4 py-3 shrink-0" onClick={e => e.stopPropagation()}>
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 shrink-0" onClick={e => e.stopPropagation()}>
               <span className="text-white/60 text-sm">{nomProduit} · {safeActive + 1}/{displayImages.length}</span>
               <div className="flex items-center gap-2">
                 <button onClick={() => setZoom(z => Math.max(0.5, z - 0.25))} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg"><ZoomOut size={16} /></button>
@@ -310,7 +310,7 @@ export function ProduitGallery({
                 <button onClick={() => { setLightbox(false); setZoom(1); }} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg ml-2"><X size={18} /></button>
               </div>
             </div>
-            <div className="flex-1 flex items-center justify-center overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden px-4" onClick={e => e.stopPropagation()}>
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={`lb-${safeActive}`}
@@ -319,14 +319,14 @@ export function ProduitGallery({
                   animate="animate"
                   exit="exit"
                   transition={trans.transition}
-                  style={{ position: "relative", width: "min(900px, 90vw)", height: "min(700px, 80vh)", transform: `scale(${zoom})`, transformOrigin: "center" }}
+                  style={{ position: "relative", width: "min(900px, 92vw)", height: "min(700px, 68dvh)", transform: `scale(${zoom})`, transformOrigin: "center" }}
                 >
                   <Image src={mainImg.url} alt={mainImg.alt ?? nomProduit} fill className="object-contain" sizes="100vw" />
                 </motion.div>
               </AnimatePresence>
             </div>
             {displayImages.length > 1 && (
-              <div className="flex items-center justify-center gap-4 py-4 shrink-0" onClick={e => e.stopPropagation()}>
+              <div className="flex flex-wrap items-center justify-center gap-4 py-4 shrink-0" onClick={e => e.stopPropagation()}>
                 <button onClick={prev} className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full"><ChevronLeft size={24} /></button>
                 <div className="flex gap-1.5">
                   {displayImages.map((_, i) => (

@@ -51,6 +51,26 @@ function collectIds(node: CatNode): Set<number> {
   return ids;
 }
 
+function normalizeText(value: string | null | undefined) {
+  return (value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function shouldUseCatalogueView(node: CatNode | null) {
+  if (!node || (node.children ?? []).length === 0) return false;
+
+  const slug = normalizeText(node.slug);
+  const name = normalizeText(node.nom);
+
+  return (
+    slug.includes("semences-maraicher") ||
+    name.includes("semences maraicher")
+  );
+}
+
 /* ── CatalogueCoverGrid ─────────────────────────────────────────────────── */
 function CatalogueCoverGrid({
   node, allProduits, onSelectChild, onClose,
@@ -88,7 +108,7 @@ function CatalogueCoverGrid({
         </span>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
         {children.map(child => {
           const count = childCount(child);
           const preview = childPreview(child);
@@ -100,13 +120,13 @@ function CatalogueCoverGrid({
                 hover:border-ev-400 hover:shadow-lg transition-all duration-250 overflow-hidden text-left
                 focus:outline-none focus:ring-2 focus:ring-ev-400"
             >
-              <div className="relative overflow-hidden bg-gradient-to-br from-ev-50 to-ev-100" style={{ aspectRatio: "4/3" }}>
+              <div className="relative overflow-hidden bg-gradient-to-br from-ev-50 to-ev-100 min-h-[220px] sm:min-h-[250px]" style={{ aspectRatio: "16/10" }}>
                 {child.image ? (
                   <Image src={child.image} alt={child.nom} fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 25vw" />
+                    sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 50vw" />
                 ) : preview.length > 0 ? (
-                  <div className="absolute inset-0 grid grid-cols-2 gap-px p-3">
+                  <div className="absolute inset-0 grid grid-cols-2 gap-2 p-4">
                     {preview.map(p => {
                       const img = p.images?.[0];
                       return (
@@ -121,27 +141,27 @@ function CatalogueCoverGrid({
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-5xl opacity-15 select-none">🌿</div>
                 )}
-                <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/65 to-transparent" />
                 <div className="absolute bottom-2 right-2">
                   <span className="bg-black/50 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
                     {count > 0 ? `${count} produit${count > 1 ? "s" : ""}` : "Voir"}
                   </span>
                 </div>
               </div>
-              <div className="px-3 py-3 flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-gray-800 leading-tight line-clamp-2 group-hover:text-ev-700 transition-colors">
+              <div className="px-4 py-4 flex items-center justify-between gap-2">
+                <p className="text-[15px] sm:text-base font-semibold text-gray-800 leading-tight line-clamp-2 group-hover:text-ev-700 transition-colors">
                   {child.nom}
                 </p>
                 <ChevronRight size={14} className="text-gray-300 group-hover:text-ev-500 flex-shrink-0 transition-colors" />
               </div>
               {child.image && preview.length > 0 && (
-                <div className="px-3 pb-3 flex items-center gap-1.5 border-t border-gray-50 pt-2">
+                <div className="px-4 pb-4 flex items-center gap-2 border-t border-gray-50 pt-3">
                   {preview.slice(0, 5).map(p => {
                     const img = p.images?.[0];
                     return (
-                      <div key={p.id_produit} className="relative w-7 h-7 rounded-md bg-gray-50 border border-gray-100 overflow-hidden flex-shrink-0">
+                      <div key={p.id_produit} className="relative w-8 h-8 rounded-md bg-gray-50 border border-gray-100 overflow-hidden flex-shrink-0">
                         {img
-                          ? <Image src={img.url} alt={p.nom} fill className="object-contain p-0.5" sizes="28px" />
+                          ? <Image src={img.url} alt={p.nom} fill className="object-contain p-0.5" sizes="32px" />
                           : <div className="absolute inset-0 flex items-center justify-center text-xs opacity-20">🌱</div>}
                       </div>
                     );
@@ -204,7 +224,7 @@ function ActiviteProduitsSection({ id_activite, categories }: Props) {
     if (!catParam) return null;
     const id   = parseInt(catParam, 10);
     const node = findNode(buildTree(categories), id);
-    if (node && (node.children ?? []).length > 0) return id;
+    if (shouldUseCatalogueView(node)) return id;
     return null;
   });
 
@@ -214,7 +234,7 @@ function ActiviteProduitsSection({ id_activite, categories }: Props) {
     setPage(1);
     if (!id) { setCatalogueCatId(null); return; }
     const node = findNode(tree, id);
-    if (node && (node.children ?? []).length > 0) setCatalogueCatId(id);
+    if (shouldUseCatalogueView(node)) setCatalogueCatId(id);
     else setCatalogueCatId(null);
   }, [catParam, tree]);
 
@@ -236,7 +256,7 @@ function ActiviteProduitsSection({ id_activite, categories }: Props) {
   const handleCategorySelect = useCallback((id: number | null) => {
     if (!id) { setCatalogueCatId(null); handleFiltersChange({ ...filters, categoryId: null }); return; }
     const node = findNode(tree, id);
-    if (node && (node.children ?? []).length > 0) {
+    if (shouldUseCatalogueView(node)) {
       setCatalogueCatId(id); handleFiltersChange({ ...filters, categoryId: id });
     } else {
       setCatalogueCatId(null); handleFiltersChange({ ...filters, categoryId: id });
@@ -256,7 +276,7 @@ function ActiviteProduitsSection({ id_activite, categories }: Props) {
     /* Même style que les pages marques : bg-sand-50, produits directs sans grand titre */
     <section className="bg-sand-50 border-b border-sand-200">
       <div className="container-ev py-8">
-        <div className="flex gap-6 lg:gap-8">
+        <div className="flex flex-col gap-6 lg:gap-8 md:flex-row">
 
           {/* FilterPanel */}
           <FilterPanel
@@ -342,7 +362,7 @@ function ActiviteProduitsSection({ id_activite, categories }: Props) {
                   </div>
                 ) : (
                   <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
                       {paginated.map(p => <ProduitCard key={p.id_produit} produit={p}/>)}
                     </div>
                     <div className="mt-2">

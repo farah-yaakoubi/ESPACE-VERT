@@ -132,7 +132,7 @@ export default function AdminContactPage() {
               <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-700 text-xl font-light">✕</button>
             </div>
             <div className="p-6 space-y-5">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                 <div><p className="text-gray-400 text-xs mb-0.5">Email</p><a href={"mailto:" + selected.email} className="font-medium text-ev-600 hover:underline">{selected.email}</a></div>
                 <div><p className="text-gray-400 text-xs mb-0.5">Date</p><p className="font-medium">{fmt(selected.created_at)}</p></div>
                 {selected.sujet && <div className="col-span-2"><p className="text-gray-400 text-xs mb-0.5">Sujet</p><p className="font-medium">{selected.sujet}</p></div>}

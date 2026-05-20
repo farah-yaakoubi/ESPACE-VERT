@@ -1,6 +1,7 @@
 // src/middleware/authMiddleware.ts
 import { Request, Response, NextFunction } from "express";
 import { verifyAccessToken, extractTokenFromHeader } from "../lib/auth";
+import { mergePermissions } from "../lib/permissions";
 import { unauthorized, forbidden } from "../lib/response";
 import { prisma } from "../lib/prisma";
 
@@ -19,15 +20,40 @@ function extractToken(req: Request): string | null {
   return null;
 }
 
-export function authenticate(req: Request, res: Response, next: NextFunction): void {
+export async function authenticate(req: Request, res: Response, next: NextFunction): Promise<void> {
   const token = extractToken(req);
   if (!token) { unauthorized(res, "Token manquant"); return; }
 
   const payload = verifyAccessToken(token);
   if (!payload) { unauthorized(res, "Token invalide ou expiré"); return; }
 
-  req.admin = payload;
-  next();
+  try {
+    const admin = await prisma.admin.findUnique({
+      where: { id_admin: payload.id_admin },
+      select: {
+        id_admin: true,
+        email: true,
+        id_role: true,
+        nom: true,
+        actif: true,
+      },
+    });
+
+    if (!admin || !admin.actif) {
+      unauthorized(res, "Compte administrateur inactif ou introuvable");
+      return;
+    }
+
+    req.admin = {
+      id_admin: admin.id_admin,
+      email: admin.email,
+      id_role: admin.id_role,
+      nom: admin.nom,
+    };
+    next();
+  } catch {
+    unauthorized(res, "Impossible de vérifier la session");
+  }
 }
 
 export function requireSuperAdmin(req: Request, res: Response, next: NextFunction): void {
@@ -55,15 +81,17 @@ export function requirePermission(permission: string) {
     if (req.admin.id_role === 1) { next(); return; }
 
     try {
-      const role = await prisma.role.findUnique({
-        where: { id_role: req.admin.id_role },
+      const admin = await prisma.admin.findUnique({
+        where: { id_admin: req.admin.id_admin },
+        include: { role: { select: { permissions: true } } },
       });
 
-      if (!role) { forbidden(res, "Rôle introuvable"); return; }
+      if (!admin || !admin.actif) {
+        forbidden(res, "Administrateur introuvable ou inactif");
+        return;
+      }
 
-      const perms: string[] = Array.isArray(role.permissions)
-        ? role.permissions as string[]
-        : JSON.parse(String(role.permissions) || "[]");
+      const perms = mergePermissions(admin.role?.permissions, admin.permissions);
 
       if (!perms.includes(permission)) {
         forbidden(res, `Permission manquante : ${permission}`);

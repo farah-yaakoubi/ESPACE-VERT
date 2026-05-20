@@ -296,11 +296,11 @@ function HeatmapChart({ data }: { data: HeatmapCell[] }) {
 
   return (
     <div className="overflow-x-auto">
-      <div className="min-w-[640px]">
+      <div className="min-w-[520px] sm:min-w-[640px]">
         {/* Heures */}
-        <div className="flex gap-0.5 ml-10 mb-1">
+        <div className="mb-1 ml-8 flex gap-0.5 sm:ml-10">
           {Array.from({ length: 24 }, (_, h) => (
-            <div key={h} className="flex-1 text-center text-[9px] text-gray-400">
+            <div key={h} className="flex-1 text-center text-[8px] text-gray-400 sm:text-[9px]">
               {h % 4 === 0 ? `${h}h` : ""}
             </div>
           ))}
@@ -308,7 +308,7 @@ function HeatmapChart({ data }: { data: HeatmapCell[] }) {
         {/* Grille */}
         {JOURS.map((jour, ji) => (
           <div key={ji} className="flex items-center gap-0.5 mb-0.5">
-            <span className="w-10 text-[10px] text-gray-500 text-right pr-2 shrink-0">{jour}</span>
+            <span className="w-8 shrink-0 pr-2 text-right text-[9px] text-gray-500 sm:w-10 sm:text-[10px]">{jour}</span>
             {Array.from({ length: 24 }, (_, h) => {
               const nb = grid[ji][h];
               return (
@@ -328,7 +328,7 @@ function HeatmapChart({ data }: { data: HeatmapCell[] }) {
           </div>
         ))}
         {/* Légende */}
-        <div className="flex items-center gap-2 mt-3 ml-10">
+        <div className="ml-8 mt-3 flex items-center gap-2 sm:ml-10">
           <span className="text-[10px] text-gray-400">Moins</span>
           {["#F8FAFC", "#DCFCE7", "#86EFAC", "#22C55E", "#15803D"].map((c, i) => (
             <div key={i} className="w-4 h-4 rounded-sm" style={{ background: c }} />
@@ -613,29 +613,31 @@ export default function AnalyticsPage() {
               <h3 className="font-semibold text-gray-800">Pages les plus visitées</h3>
             </div>
             {loading ? <Skeleton className="h-64 m-6" /> : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>
-                    <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Page</th>
-                    <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Vues</th>
-                    <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Durée moy.</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(data?.top_pages ?? []).map((p, i) => (
-                    <tr key={i} className="border-t border-gray-50 hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-3.5 text-gray-400 font-mono text-xs">{String(i + 1).padStart(2, "0")}</td>
-                      <td className="px-6 py-3.5">
-                        <div className="font-medium text-gray-800 truncate max-w-xs">{p.titre}</div>
-                        <div className="text-xs text-gray-400 truncate max-w-xs">{p.url}</div>
-                      </td>
-                      <td className="px-6 py-3.5 text-right font-bold text-gray-700">{fmtNum(p.vues)}</td>
-                      <td className="px-6 py-3.5 text-right text-gray-500">{fmtSec(p.duree)}</td>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[620px] text-sm">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Page</th>
+                      <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Vues</th>
+                      <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Durée moy.</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {(data?.top_pages ?? []).map((p, i) => (
+                      <tr key={i} className="border-t border-gray-50 transition-colors hover:bg-gray-50">
+                        <td className="px-6 py-3.5 font-mono text-xs text-gray-400">{String(i + 1).padStart(2, "0")}</td>
+                        <td className="px-6 py-3.5">
+                          <div className="max-w-xs truncate font-medium text-gray-800">{p.titre}</div>
+                          <div className="max-w-xs truncate text-xs text-gray-400">{p.url}</div>
+                        </td>
+                        <td className="px-6 py-3.5 text-right font-bold text-gray-700">{fmtNum(p.vues)}</td>
+                        <td className="px-6 py-3.5 text-right text-gray-500">{fmtSec(p.duree)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
 

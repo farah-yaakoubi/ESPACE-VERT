@@ -1,0 +1,16 @@
+
+> espace-vert-frontend@1.0.0 dev
+> next dev -p 3001
+
+   ▲ Next.js 15.5.18
+   - Local:        http://localhost:3001
+   - Network:      http://172.16.0.2:3001
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 2.1s
+ ○ Compiling /marques/[slug] ...
+ ✓ Compiled /marques/[slug] in 2.2s (1566 modules)
+ GET /admin/compte 200 in 2685ms
+ GET /marques/fertivert 200 in 3617ms
+[?25h

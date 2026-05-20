@@ -1,98 +1,252 @@
 "use client";
-// Adapté depuis le frontend de référence
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+
+import { useMemo, useState } from "react";
 import Image from "next/image";
-import { MapPin, Phone, Mail, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Mail, MapPin, Phone } from "lucide-react";
 
-const C = { forest:"#10693B", leaf:"#4CAF50", foam:"#F1FDF4", mist:"#E8F5E9", mint:"#C8E6C9", text:"#1B3A2F", soft:"#5A8A6A", white:"#FFFFFF" };
-
-const AG_STYLE=`@keyframes agPulse{0%,100%{opacity:.45;transform:scale(1)}50%{opacity:.1;transform:scale(1.65)}}.ag-pulse{animation:agPulse 1.6s ease-in-out infinite}`;
-
-type Agence = { id:string; name:string; region:string; color:string; pinX:number; pinY:number; tel:string; tel2?:string; email?:string };
+type Agence = {
+  id: string;
+  ville: string;
+  region: string;
+  adresse: string;
+  tel: string;
+  tel2?: string;
+  email?: string;
+  principal?: boolean;
+  image: string;
+  pinX: number;
+  pinY: number;
+};
 
 const AGENCES: Agence[] = [
-  { id:"borj",    name:"Borj El Amri", region:"Grand Tunis — Nord-Ouest", color:"#7C3AED", pinX:44, pinY:12, tel:"(+216) 71 234 567" },
-  { id:"tunis",   name:"Tunis Centre", region:"Capitale — Grand Tunis",   color:"#10693B", pinX:50, pinY:14, tel:"(+216) 71 333 858", tel2:"(+216) 71 348 404", email:"secretariat.groupeev@planet.tn" },
-  { id:"soliman", name:"Soliman",      region:"Cap Bon — Nord-Est",       color:"#0277BD", pinX:62, pinY:17, tel:"(+216) 72 333 143" },
-  { id:"sfax",    name:"Sfax",         region:"Sud — 2ème ville",         color:"#F59E0B", pinX:60, pinY:38, tel:"(+216) 74 000 000" },
+  {
+    id: "tunis",
+    ville: "Tunis — Siège",
+    region: "Grand Tunis",
+    adresse: "69, rue Abderrazak Chraibi, 1001 Tunis",
+    tel: "(+216) 71 333 858",
+    tel2: "(+216) 71 348 404",
+    email: "secretariat.groupeev@planet.tn",
+    principal: true,
+    image: "/images/agence-tunis.webp",
+    pinX: 50,
+    pinY: 14,
+  },
+  {
+    id: "soliman",
+    ville: "Soliman",
+    region: "Cap Bon",
+    adresse: "Route R43, Soliman",
+    tel: "(+216) 72 333 143",
+    image: "/images/agence-sol.webp",
+    pinX: 62,
+    pinY: 17,
+  },
+  {
+    id: "borj",
+    ville: "Borj Amri",
+    region: "Nord-Ouest",
+    adresse: "Sidi Ali El Hattab, Borj Amri",
+    tel: "(+216) 71 234 567",
+    image: "/images/agence-borj.webp",
+    pinX: 44,
+    pinY: 12,
+  },
+  {
+    id: "sfax",
+    ville: "Sfax",
+    region: "Centre-Est",
+    adresse: "Route de Gabes, Sfax 3049",
+    tel: "(+216) 74 000 000",
+    image: "/images/agence-sfax.webp",
+    pinX: 60,
+    pinY: 38,
+  },
 ];
 
-function AgencePopup({ agence, onClose }: { agence: Agence; onClose:()=>void }) {
+function AgencePreview({ agence }: { agence: Agence }) {
   return (
-    <motion.div initial={{opacity:0,scale:.92,y:8}} animate={{opacity:1,scale:1,y:0}} exit={{opacity:0,scale:.92,y:8}} transition={{duration:.22}}
-      style={{position:"absolute",left:`${agence.pinX}%`,top:`${agence.pinY}%`,transform:"translate(-50%,calc(-100% - 22px))",zIndex:20,
-        background:C.white,borderRadius:14,boxShadow:"0 8px 40px rgba(0,0,0,.17)",border:`2px solid ${agence.color}2a`,width:234,overflow:"hidden"}}>
-      <div style={{width:"100%",height:80,background:`${agence.color}0d`,display:"flex",alignItems:"center",justifyContent:"center",position:"relative"}}>
-        <MapPin size={24} color={agence.color} opacity={0.4}/>
-        <button onClick={e=>{e.stopPropagation();onClose();}}
-          style={{position:"absolute",top:8,right:8,width:24,height:24,borderRadius:"50%",background:"rgba(255,255,255,.92)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <X size={12} color="#555"/>
-        </button>
-      </div>
-      <div style={{padding:"11px 14px 14px"}}>
-        <div style={{fontSize:".6rem",fontWeight:800,color:agence.color,textTransform:"uppercase",letterSpacing:".1em",marginBottom:3}}>{agence.region}</div>
-        <div style={{fontSize:".95rem",fontWeight:700,color:C.text,marginBottom:9}}>Agence {agence.name}</div>
-        <div style={{display:"flex",flexDirection:"column",gap:4}}>
-          <div style={{display:"flex",alignItems:"center",gap:7,fontSize:".74rem",color:C.soft}}><Phone size={11} style={{color:agence.color,flexShrink:0}}/>{agence.tel}</div>
-          {agence.tel2&&<div style={{display:"flex",alignItems:"center",gap:7,fontSize:".74rem",color:C.soft}}><Phone size={11} style={{color:agence.color,flexShrink:0}}/>{agence.tel2}</div>}
-          {agence.email&&<div style={{display:"flex",alignItems:"center",gap:7,fontSize:".74rem",color:C.soft}}><Mail size={11} style={{color:agence.color,flexShrink:0}}/><span style={{wordBreak:"break-all"}}>{agence.email}</span></div>}
+    <motion.div
+      initial={{ opacity: 0, y: 10, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 8, scale: 0.96 }}
+      transition={{ duration: 0.18 }}
+      className="pointer-events-none absolute z-20 hidden w-[220px] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/70 bg-white shadow-[0_16px_42px_rgba(0,0,0,0.18)] sm:block"
+      style={{ left: `${agence.pinX}%`, top: `calc(${agence.pinY}% - 14px)`, transform: "translate(-50%, -100%)" }}
+    >
+      <div className="relative h-28 w-full">
+        <Image src={agence.image} alt={agence.ville} fill className="object-cover" sizes="220px" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-3">
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ev-200">{agence.region}</p>
+          <p className="mt-1 text-sm font-bold text-white">{agence.ville}</p>
         </div>
       </div>
-      <div style={{position:"absolute",bottom:-9,left:"50%",transform:"translateX(-50%)",width:0,height:0,borderLeft:"9px solid transparent",borderRight:"9px solid transparent",borderTop:`9px solid ${C.white}`,filter:"drop-shadow(0 2px 2px rgba(0,0,0,.08))"}}/>
+      <div className="p-3">
+        <p className="text-xs leading-6 text-gray-600">{agence.adresse}</p>
+      </div>
+      <div className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-l-[10px] border-r-[10px] border-t-[10px] border-l-transparent border-r-transparent border-t-white" />
     </motion.div>
   );
 }
 
 export default function AgenceSection() {
-  const[activeId,setActiveId]=useState<string|null>(null);
-  const activeAgence=AGENCES.find(a=>a.id===activeId)??null;
+  const [activeId, setActiveId] = useState("tunis");
+
+  const activeAgence = useMemo(
+    () => AGENCES.find((agence) => agence.id === activeId) ?? AGENCES[0],
+    [activeId],
+  );
+
   return (
-    <section style={{padding:"72px 24px",background:C.foam,borderTop:`1.5px solid ${C.mist}`}}>
-      <style>{AG_STYLE}</style>
-      <div style={{maxWidth:1080,margin:"0 auto"}}>
-        <motion.div initial={{opacity:0,y:28}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:.6}} style={{textAlign:"center",marginBottom:"2.5rem"}}>
-          <span style={{display:"inline-flex",alignItems:"center",gap:7,background:C.forest,color:C.white,padding:"5px 16px",borderRadius:99,fontSize:10.5,fontWeight:700,letterSpacing:".1em",textTransform:"uppercase",marginBottom:14}}>
-            <MapPin size={11} strokeWidth={2.5}/> Présence Nationale
-          </span>
-          <h2 style={{fontSize:"clamp(1.4rem,3.5vw,2.2rem)",fontWeight:900,color:C.text}}>
-            4 Agences sur tout le <span style={{color:C.forest}}>territoire tunisien</span>
-          </h2>
-          <p style={{color:C.soft,marginTop:8,fontSize:".88rem"}}>Cliquez sur un pin pour découvrir l&apos;agence</p>
-        </motion.div>
-        <motion.div initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:.6,delay:.1}} style={{position:"relative",maxWidth:440,margin:"0 auto"}}>
-          <Image src="/images/maptunisie .png" alt="Carte Tunisie — Espace Vert" width={1092} height={2058}
-            style={{width:"100%",height:"auto",display:"block",borderRadius:16,border:`1px solid rgba(15,96,53,.12)`}} priority/>
-          {activeId&&<div onClick={()=>setActiveId(null)} style={{position:"absolute",inset:0,zIndex:5,cursor:"pointer"}}/>}
-          {AGENCES.map(ag=>{
-            const isActive=activeId===ag.id;
-            return (
-              <button key={ag.id} onClick={e=>{e.stopPropagation();setActiveId(prev=>prev===ag.id?null:ag.id);}}
-                style={{position:"absolute",left:`${ag.pinX}%`,top:`${ag.pinY}%`,transform:"translate(-50%,-50%)",background:"none",border:"none",padding:0,cursor:"pointer",zIndex:10}}>
-                {isActive&&<span className="ag-pulse" style={{position:"absolute",inset:-10,borderRadius:"50%",background:`${ag.color}22`,display:"block"}}/>}
-                <span style={{display:"flex",alignItems:"center",justifyContent:"center",width:isActive?30:22,height:isActive?30:22,borderRadius:"50%",background:isActive?ag.color:C.white,border:`2.5px solid ${ag.color}`,boxShadow:isActive?`0 4px 16px ${ag.color}55`:`0 2px 8px ${ag.color}38`,transition:"all .2s",position:"relative"}}>
-                  <span style={{width:isActive?12:9,height:isActive?12:9,borderRadius:"50%",background:isActive?C.white:ag.color,display:"block",transition:"all .2s"}}/>
-                </span>
-              </button>
-            );
-          })}
-          <AnimatePresence>{activeAgence&&<AgencePopup key={activeAgence.id} agence={activeAgence} onClose={()=>setActiveId(null)}/>}</AnimatePresence>
-        </motion.div>
-        <motion.div initial={{opacity:0,y:16}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:.5,delay:.2}}
-          style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center",marginTop:"2rem"}}>
-          {AGENCES.map(ag=>(
-            <motion.button key={ag.id} onClick={()=>setActiveId(prev=>prev===ag.id?null:ag.id)} whileHover={{y:-2}}
-              style={{display:"flex",alignItems:"center",gap:8,padding:"9px 17px",borderRadius:11,border:`1.5px solid ${activeId===ag.id?ag.color:C.mint}`,background:activeId===ag.id?`${ag.color}0e`:C.white,color:activeId===ag.id?ag.color:C.soft,fontWeight:600,fontSize:".8rem",cursor:"pointer",transition:"all .2s",boxShadow:activeId===ag.id?`0 4px 14px ${ag.color}22`:"none"}}>
-              <div style={{width:9,height:9,borderRadius:"50%",background:ag.color,flexShrink:0}}/>{ag.name}
-            </motion.button>
-          ))}
-        </motion.div>
-        <motion.div initial={{opacity:0,y:16}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{duration:.5,delay:.25}} style={{display:"flex",justifyContent:"center",marginTop:"1.5rem"}}>
-          <div style={{background:`linear-gradient(135deg,${C.forest} 0%,${C.leaf} 100%)`,borderRadius:13,padding:".9rem 2.4rem",textAlign:"center"}}>
-            <div style={{fontSize:"1rem",color:C.white}}>4 Points de Vente Espace Vert</div>
-            <div style={{fontSize:".7rem",color:"rgba(255,255,255,.7)",marginTop:3}}>innovation · qualité · rentabilité</div>
-          </div>
-        </motion.div>
+    <section className="bg-white border-b border-sand-200">
+      <div className="container-ev py-12 sm:py-16 lg:py-20">
+        <div className="max-w-3xl">
+          <p className="eyebrow mb-4">Nos agences</p>
+          <h2 className="site-heading">Une présence de proximité à l&apos;échelle nationale</h2>
+          <p className="site-copy mt-4">
+            Survolez la carte ou sélectionnez une agence pour afficher rapidement ses coordonnées.
+          </p>
+        </div>
+
+        <div className="mt-10 grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.5 }}
+            className="rounded-[28px] border border-sand-200 bg-sand-50 p-4 sm:p-5"
+          >
+            <div className="relative mx-auto max-w-[420px] overflow-visible rounded-[22px] border border-sand-200 bg-white">
+              <Image
+                src="/images/maptunisie .png"
+                alt="Carte de Tunisie avec implantation des agences Espace Vert"
+                width={1092}
+                height={2058}
+                className="h-auto w-full"
+                priority
+              />
+
+              <AnimatePresence>{activeAgence ? <AgencePreview key={activeAgence.id} agence={activeAgence} /> : null}</AnimatePresence>
+
+              {AGENCES.map((agence) => {
+                const active = agence.id === activeId;
+                return (
+                  <button
+                    key={agence.id}
+                    type="button"
+                    onClick={() => setActiveId(agence.id)}
+                    onMouseEnter={() => setActiveId(agence.id)}
+                    className="absolute -translate-x-1/2 -translate-y-1/2"
+                    style={{ left: `${agence.pinX}%`, top: `${agence.pinY}%` }}
+                    aria-label={`Afficher ${agence.ville}`}
+                  >
+                    <span
+                      className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-white shadow-md transition-all duration-200 sm:h-7 sm:w-7"
+                      style={{ background: active ? "#15803d" : "#ffffff" }}
+                    >
+                      <span
+                        className="block rounded-full transition-all duration-200"
+                        style={{
+                          width: active ? 10 : 8,
+                          height: active ? 10 : 8,
+                          background: active ? "#ffffff" : "#15803d",
+                        }}
+                      />
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.5, delay: 0.08 }}
+            className="space-y-4"
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              {AGENCES.map((agence) => {
+                const active = agence.id === activeId;
+                return (
+                  <button
+                    key={agence.id}
+                    type="button"
+                    onClick={() => setActiveId(agence.id)}
+                    onMouseEnter={() => setActiveId(agence.id)}
+                    className={`rounded-2xl border p-4 text-left transition-all duration-200 ${
+                      active
+                        ? "border-ev-300 bg-ev-50 shadow-sm"
+                        : "border-sand-200 bg-white hover:border-ev-200 hover:bg-sand-50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="h-2.5 w-2.5 rounded-full bg-ev-600" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-ev-950">{agence.ville}</p>
+                        <p className="mt-1 text-xs text-gray-500">{agence.region}</p>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="rounded-[28px] border border-sand-200 bg-sand-50 p-6 sm:p-7">
+              <div className="relative mb-5 h-40 overflow-hidden rounded-2xl border border-sand-200">
+                <Image
+                  src={activeAgence.image}
+                  alt={activeAgence.ville}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 420px"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ev-200">{activeAgence.region}</p>
+                  <p className="mt-1 text-lg font-bold text-white">{activeAgence.ville}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <h3 className="text-2xl font-bold text-ev-950">{activeAgence.ville}</h3>
+                {activeAgence.principal && (
+                  <span className="rounded-full bg-ev-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-ev-800">
+                    Siège
+                  </span>
+                )}
+              </div>
+
+              <p className="mt-2 text-sm font-medium text-ev-700">{activeAgence.region}</p>
+              <p className="site-copy-sm mt-5">{activeAgence.adresse}</p>
+
+              <div className="mt-6 space-y-3">
+                <div className="flex items-start gap-3 text-sm text-gray-600">
+                  <Phone size={16} className="mt-0.5 shrink-0 text-ev-600" />
+                  <div>
+                    <p>{activeAgence.tel}</p>
+                    {activeAgence.tel2 && <p className="mt-1">{activeAgence.tel2}</p>}
+                  </div>
+                </div>
+
+                {activeAgence.email && (
+                  <div className="flex items-start gap-3 text-sm text-gray-600">
+                    <Mail size={16} className="mt-0.5 shrink-0 text-ev-600" />
+                    <p className="break-all">{activeAgence.email}</p>
+                  </div>
+                )}
+
+                <div className="flex items-start gap-3 text-sm text-gray-600">
+                  <MapPin size={16} className="mt-0.5 shrink-0 text-ev-600" />
+                  <p>Conseil, suivi et orientation commerciale.</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </section>
   );

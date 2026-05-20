@@ -41,17 +41,24 @@ function buildTree(flat: CatFlat[]): CatNode[] {
   const roots: CatNode[] = [];
   map.forEach(node => {
     if (node.parent_id !== null && map.has(node.parent_id)) {
-      map.get(node.parent_id)!.sous_cats.push(node);
+      const parent = map.get(node.parent_id);
+      if (parent) parent.sous_cats.push(node);
     } else {
       roots.push(node);
     }
   });
 
   // Tri récursif par ordre à chaque niveau
-  const sort = (nodes: CatNode[]): CatNode[] =>
-    nodes.sort((a, b) => a.ordre - b.ordre).map(n => ({ ...n, sous_cats: sort(n.sous_cats) }));
+  function sortNodesByOrder(nodesList: CatNode[]): CatNode[] {
+    return nodesList
+      .sort((first, second) => first.ordre - second.ordre)
+      .map(node => ({
+        ...node,
+        sous_cats: sortNodesByOrder(node.sous_cats),
+      }));
+  }
 
-  return sort(roots);
+  return sortNodesByOrder(roots);
 }
 
 // ─── Sélecteur partagé ───────────────────────────────────────────────────────
@@ -108,11 +115,12 @@ export const categorieRepository = {
         },
       });
       // Collecter récursivement les descendants
-      const collectDesc = (parentId: number): typeof allFlat => {
+      function collectDescendants(parentId: number): typeof allFlat {
         const children = allFlat.filter(c => (c as any).parent_id === parentId && !directIds.has(c.id_categorie));
-        return [...children, ...children.flatMap(c => collectDesc(c.id_categorie))];
-      };
-      const descendants = [...directIds].flatMap(id => collectDesc(id));
+        const allDescendants = children.flatMap(c => collectDescendants(c.id_categorie));
+        return [...children, ...allDescendants];
+      }
+      const descendants = [...directIds].flatMap(id => collectDescendants(id));
       descendants.forEach(d => { if (!directIds.has(d.id_categorie)) { (rows as any[]).push(d); directIds.add(d.id_categorie); } });
       (rows as any[]).sort((a: any, b: any) => (a.ordre - b.ordre) || a.nom.localeCompare(b.nom, "fr"));
     }
@@ -177,16 +185,17 @@ export const categorieRepository = {
       produitsByCategorie.set(p.id_categorie, list);
     });
 
-    const attachProduits = (nodes: CatNode[]): (CatNode & { produits: typeof produits })[] =>
-      nodes.map(node => ({
+    function attachProductsToNodes(nodesList: CatNode[]): (CatNode & { produits: typeof produits })[] {
+      return nodesList.map(node => ({
         ...node,
-        produits:  produitsByCategorie.get(node.id_categorie) ?? [],
-        sous_cats: attachProduits(node.sous_cats as CatNode[]),
+        produits: produitsByCategorie.get(node.id_categorie) ?? [],
+        sous_cats: attachProductsToNodes(node.sous_cats),
       }));
+    }
 
     return {
       ...marque,
-      categories: attachProduits(tree),
+      categories: attachProductsToNodes(tree),
     };
   },
 

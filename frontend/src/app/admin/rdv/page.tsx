@@ -136,7 +136,7 @@ export default function AdminRdvPage() {
               <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-700 text-xl font-light">✕</button>
             </div>
             <div className="p-6 space-y-5">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                 <div><p className="text-gray-400 text-xs mb-0.5">Email</p><p className="font-medium">{selected.email}</p></div>
                 {selected.telephone && <div><p className="text-gray-400 text-xs mb-0.5">Téléphone</p><p className="font-medium">{selected.telephone}</p></div>}
                 <div><p className="text-gray-400 text-xs mb-0.5">Date souhaitée</p><p className="font-medium">{fmtDate(selected.date_souhaitee)}{selected.heure && " " + selected.heure}</p></div>

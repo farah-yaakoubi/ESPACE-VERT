@@ -173,7 +173,7 @@ export function NotificationsDropdown({ isDark, pollInterval = 60000 }: { isDark
       {/* Dropdown */}
       {open && (
         <div style={{
-          position: "absolute", top: "calc(100% + 8px)", right: 0, width: 360,
+          position: "absolute", top: "calc(100% + 8px)", right: 0, width: "min(360px, calc(100vw - 24px))",
           background: bg, borderRadius: 16, border: `1px solid ${bdr}`,
           boxShadow: "0 8px 32px rgba(0,0,0,0.15)", zIndex: 100, overflow: "hidden",
         }}>

@@ -25,8 +25,8 @@ export default {
         forest: "#0a5c2e",
       },
       fontFamily: {
-        display: ["var(--font-display)", "Syne", "sans-serif"],
-        body:    ["var(--font-body)",    "DM Sans", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "Cairo", "sans-serif"],
+        body:    ["var(--font-body)", "Cairo", "system-ui", "sans-serif"],
       },
       maxWidth: {
         "container": "1200px",

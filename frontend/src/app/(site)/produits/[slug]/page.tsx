@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight, Tag, Layers, Activity, Package, Home } from "lucide-react";
+import {
+  ChevronRight, Tag, Layers, Activity, Package, Home,
+  Truck, Microscope, Handshake, Sun,
+} from "lucide-react";
 import { produitsService } from "@/services";
 import { ProduitGallery } from "./ProduitGallery";
 import { ProduitFicheSection } from "./ProduitFicheSection";
 import { ProduitTechTable } from "./ProduitTechTable";
+import { ProduitsSimilaires } from "@/components/ProduitsSimilaires";
+import { ProduitSemencesAssistant } from "./ProduitSemencesAssistant";
 
 export const revalidate = 0;
 
@@ -35,6 +40,12 @@ const DIV = {
   standard: { label: "Standard",     bg: "bg-gray-50",   text: "text-gray-600",  border: "border-gray-200",  dot: "bg-gray-400"  },
 };
 
+const TRUST = [
+  { Icon: Truck,      title: "Livraison rapide", sub: "partout au Maroc" },
+  { Icon: Microscope, title: "Certifié Bio",     sub: "Norme internationale" },
+  { Icon: Handshake,  title: "Support expert",   sub: "Conseil agronomique" },
+];
+
 export default async function ProduitDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   let produit: Awaited<ReturnType<typeof produitsService.bySlug>>;
@@ -49,6 +60,11 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
       .filter(Boolean) as string[]
   )];
 
+  const isSemenceProduct =
+    produit.activite?.slug === "semences-et-plants" ||
+    produit.categorie?.slug?.includes("semence") ||
+    produit.categorie?.nom?.toLowerCase().includes("semence");
+
   // Liens de retour : activité > marque > catégorie parent (en fonction de ce qui est disponible)
   const backHref = produit.activite
     ? `/activites/${produit.activite.slug}`
@@ -61,6 +77,8 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
     : produit.marque
     ? produit.marque.nom
     : "Accueil";
+
+  const condAvailable = conditionnements.length > 0 ? conditionnements.join(" · ") : null;
 
   return (
     <div className="min-h-screen" style={{ background: "#f8faf8" }}>
@@ -163,12 +181,42 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
             </div>
 
             {/* Titre */}
-            <h1
-              className="text-3xl md:text-4xl font-black text-ev-950 leading-tight"
-              style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.025em" }}
-            >
-              {produit.nom}
-            </h1>
+            <div>
+              <h1
+                className="text-3xl md:text-4xl font-black text-ev-950 leading-tight"
+                style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.025em" }}
+              >
+                {produit.nom}
+              </h1>
+              {condAvailable && (
+                <p className="mt-1.5 text-sm text-gray-400 font-medium">
+                  Disponible en{" "}
+                  <span className="font-semibold text-gray-600">{condAvailable}</span>
+                </p>
+              )}
+            </div>
+
+            {/* Catégorie pill enrichie */}
+            {produit.categorie && (
+              <div className="inline-flex w-fit items-center gap-2 rounded-xl border border-green-100 bg-green-50 px-4 py-2">
+                <Layers size={15} className="text-green-600 shrink-0" />
+                <span className="text-sm font-semibold text-green-800">{produit.categorie.nom}</span>
+                {(produit as any).nature && (
+                  <>
+                    <span className="mx-0.5 text-green-300">·</span>
+                    <span className="text-sm text-green-600">{(produit as any).nature}</span>
+                  </>
+                )}
+                {(produit as any).biologique && (
+                  <>
+                    <span className="mx-0.5 text-green-300">·</span>
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700">
+                      <Sun size={11} /> 100% Bio
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Description */}
             {produit.description && (
@@ -191,6 +239,7 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
               conditionnement={(produit as any).conditionnement}
               slug={produit.slug}
               categorie={produit.categorie?.nom}
+              tags={Array.isArray(produit.tags) ? produit.tags as string[] : []}
             />
 
             {/* Fiche technique HTML */}
@@ -211,6 +260,25 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
               </details>
             )}
 
+            {/* Trust badges */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {TRUST.map(({ Icon, title, sub }) => (
+                <div
+                  key={title}
+                  className="flex flex-col items-center gap-2 rounded-xl border border-green-100 bg-green-50 p-3 text-center"
+                >
+                  <div
+                    className="flex h-9 w-9 items-center justify-center rounded-full text-white"
+                    style={{ background: "#1a5c2e" }}
+                  >
+                    <Icon size={16} />
+                  </div>
+                  <p className="text-[11px] font-bold text-green-900">{title}</p>
+                  <p className="text-[10px] text-gray-400 -mt-1">{sub}</p>
+                </div>
+              ))}
+            </div>
+
             {/* Bouton retour */}
             <div className="mt-2">
               <Link
@@ -225,6 +293,17 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
           </div>
         </div>
       </div>
+
+      {/* ── Produits similaires ──────────────────────────────── */}
+      <div className="container-ev pb-14">
+        <ProduitsSimilaires
+          idCategorie={produit.id_categorie}
+          idProduitActuel={produit.id_produit}
+          idMarque={produit.id_marque}
+        />
+      </div>
+
+      {isSemenceProduct && <ProduitSemencesAssistant productName={produit.nom} />}
     </div>
   );
 }

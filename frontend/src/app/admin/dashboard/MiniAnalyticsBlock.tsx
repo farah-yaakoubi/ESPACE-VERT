@@ -36,7 +36,7 @@ export function MiniAnalyticsBlock({
           Voir Analytics →
         </a>
       </div>
-      <div className="grid grid-cols-3 divide-x" style={{ divideColor: "#F1F5F9" }}>
+      <div className="grid grid-cols-3 divide-x divide-slate-100">
         {[
           { label: "Visiteurs actifs", value: data.visiteurs_actifs, color: "#3C50E0", spark: sparkVals },
           { label: "Pages vues",       value: data.page_views,       color: "#8B5CF6", spark: null     },

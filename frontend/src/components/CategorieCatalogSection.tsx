@@ -158,31 +158,15 @@ function ProduitsGrid({ sousCat, onBack, parentNom }: {
         <span className="text-gray-800 font-semibold">{sousCat.nom}</span>
       </div>
 
-      {sousCat.image && (
-        <div className="relative h-36 rounded-2xl overflow-hidden mb-8">
-          <Image src={sousCat.image} alt={sousCat.nom} fill className="object-cover" sizes="100vw" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/30 to-transparent" />
-          <div className="absolute inset-0 flex items-center px-7 gap-3">
-            <Layers size={18} className="text-white/80 shrink-0" />
-            <h2 className="text-xl font-bold text-white drop-shadow">{sousCat.nom}</h2>
-            {sousCat.description && (
-              <p className="hidden sm:block text-sm text-white/70 ml-2 line-clamp-1">— {sousCat.description}</p>
-            )}
-          </div>
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-1">
+          <Layers size={18} className="text-ev-600" />
+          <h2 className="text-xl font-bold text-gray-900">{sousCat.nom}</h2>
         </div>
-      )}
-
-      {!sousCat.image && (
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-1">
-            <Layers size={18} className="text-ev-600" />
-            <h2 className="text-xl font-bold text-gray-900">{sousCat.nom}</h2>
-          </div>
-          {sousCat.description && (
-            <p className="text-gray-500 text-sm leading-relaxed max-w-xl">{sousCat.description}</p>
-          )}
-        </div>
-      )}
+        {sousCat.description && (
+          <p className="text-gray-500 text-sm leading-relaxed max-w-xl">{sousCat.description}</p>
+        )}
+      </div>
 
       {produits.length === 0 ? (
         <div className="flex flex-col items-center py-20 text-gray-400 gap-3">

@@ -135,7 +135,7 @@ export function ProduitCard({
         }}
       >
         {/* ── Zone image ── */}
-        <div className="relative bg-[#f0f0f0] shrink-0 overflow-hidden" style={{ height: 300 }}>
+        <div className="relative bg-[#f0f0f0] shrink-0 overflow-hidden h-[280px] sm:h-[300px] lg:h-[340px]">
 
           {divBadge && (
             <span className={cn("absolute top-3 left-3 z-10 px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wide uppercase", divBadge.cls)}>
@@ -187,24 +187,24 @@ export function ProduitCard({
         </div>
 
         {/* ── Texte ── */}
-        <div className="flex flex-col flex-1 px-5 py-4 gap-1">
+        <div className="flex flex-col flex-1 px-5 py-4 sm:px-6 sm:py-5 gap-1.5">
           <h3
-            className="text-[15px] font-bold leading-snug text-gray-900 group-hover:text-ev-700 transition-colors line-clamp-2"
+            className="text-[1rem] sm:text-[1.05rem] font-bold leading-snug text-gray-900 group-hover:text-ev-700 transition-colors line-clamp-2"
             style={{ fontFamily: "var(--font-display)" }}
           >
             {produit.nom}
           </h3>
           {produit.description && (
-            <p className="text-[13px] text-gray-500 leading-relaxed line-clamp-2 mt-0.5">
+            <p className="text-[13.5px] text-gray-500 leading-relaxed line-clamp-3 mt-0.5">
               {produit.description}
             </p>
           )}
         </div>
 
         {/* ── CTA ── */}
-        <div className="px-5 pb-4">
+        <div className="px-5 pb-5 sm:px-6">
           <span
-            className="block text-center text-[12px] font-semibold text-ev-700 border border-ev-200 rounded-xl py-2 transition-all duration-200 group-hover:bg-ev-700 group-hover:text-white group-hover:border-ev-700"
+            className="block text-center text-[12.5px] font-semibold text-ev-700 border border-ev-200 rounded-xl py-2.5 transition-all duration-200 group-hover:bg-ev-700 group-hover:text-white group-hover:border-ev-700"
             style={{ fontFamily: "var(--font-display)" }}
           >
             Voir le produit →

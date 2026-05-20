@@ -299,11 +299,26 @@ export const adminNotifs = {
 // ── Chat inter-admins ─────────────────────────────────────────────────────────
 // MODIFIÉ v2.1 : ajout pièces jointes (sendFile), markRead, SSE
 export const adminChat = {
+  availableAdmins: () =>
+    request<ChatAdminSummary[]>("/admin/chat/available-admins"),
+
   conversations: () =>
     request<ChatConversation[]>("/admin/chat/conversations"),
 
+  groups: () =>
+    request<ChatGroupConversation[]>("/admin/chat/groups"),
+
+  createGroup: (data: { nom: string; description?: string | null; member_ids: number[] }) =>
+    request<ChatGroupConversation>("/admin/chat/groups", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
   messages: (id: number, page = 1) =>
     request<{ messages: ChatMsg[]; total: number; pages: number }>(`/admin/chat/${id}?page=${page}`),
+
+  groupMessages: (id_group: number, page = 1) =>
+    request<{ messages: ChatMsg[]; total: number; pages: number }>(`/admin/chat/groups/${id_group}?page=${page}`),
 
   send: (id: number, contenu: string) =>
     request<ChatMsg>(`/admin/chat/${id}`, {
@@ -330,11 +345,65 @@ export const adminChat = {
     return json.data ?? json;
   },
 
+  sendGroup: (id_group: number, contenu: string) =>
+    request<ChatMsg>(`/admin/chat/groups/${id_group}/messages`, {
+      method: "POST",
+      body: JSON.stringify({ contenu, type_message: "texte" }),
+    }),
+
+  sendGroupFile: async (id_group: number, file: File, contenu = ""): Promise<ChatMsg> => {
+    const form = new FormData();
+    form.append("fichier", file);
+    if (contenu.trim()) form.append("contenu", contenu.trim());
+    const token = tokenStore.get();
+    const res = await fetch(`${BASE}/admin/chat/groups/${id_group}/messages/upload`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error ?? `Erreur upload ${res.status}`);
+    }
+    const json = await res.json();
+    return json.data ?? json;
+  },
+
   markRead: (id: number) =>
     request(`/admin/chat/${id}/read`, { method: "PATCH" }),
 
+  markGroupRead: (id_group: number) =>
+    request(`/admin/chat/groups/${id_group}/read`, { method: "PATCH" }),
+
+  updateMessage: (id_msg: number, contenu: string) =>
+    request<ChatMsg>(`/admin/chat/message/${id_msg}`, {
+      method: "PATCH",
+      body: JSON.stringify({ contenu }),
+    }),
+
+  updateGroupMessage: (id_msg: number, contenu: string) =>
+    request<ChatMsg>(`/admin/chat/group-message/${id_msg}`, {
+      method: "PATCH",
+      body: JSON.stringify({ contenu }),
+    }),
+
+  removeMessage: (id_msg: number) =>
+    request<ChatMsg>(`/admin/chat/message/${id_msg}`, { method: "DELETE" }),
+
+  removeGroupMessage: (id_msg: number) =>
+    request<ChatMsg>(`/admin/chat/group-message/${id_msg}`, { method: "DELETE" }),
+
+  toggleThumb: (id_msg: number) =>
+    request<ChatMsg>(`/admin/chat/message/${id_msg}/thumb`, { method: "POST" }),
+
+  toggleGroupThumb: (id_msg: number) =>
+    request<ChatMsg>(`/admin/chat/group-message/${id_msg}/thumb`, { method: "POST" }),
+
   unread: () =>
     request<{ unread: number }>("/admin/chat/unread"),
+
+  trace: () =>
+    request<ChatTraceItem[]>("/admin/chat/trace"),
 };
 
 // ── Compte admin ──────────────────────────────────────────────────────────────
@@ -482,6 +551,7 @@ export interface AdminUser {
   id_role:    number;
   created_at: string;
   role:       { nom: string };
+  permissions?: string[];
 }
 
 export interface Role {
@@ -596,25 +666,63 @@ export interface AdminNotif {
 }
 
 // ── Chat — MODIFIÉ v2.1 (pièces jointes) ─────────────────────────────────────
+export interface ChatThumbAdmin {
+  id_admin: number;
+  nom: string;
+  avatar?: string | null;
+}
+
+export interface ChatAdminSummary {
+  id_admin: number;
+  nom: string;
+  email: string;
+  avatar?: string | null;
+}
+
 export interface ChatMsg {
   id_msg:        number;
   id_from:       number;
-  id_to:         number;
+  id_to:         number | null;
   contenu:       string;
-  // Nouveau : type de message
   type_message:  "texte" | "image" | "pdf" | "fichier";
-  // Nouveau : pièce jointe
   fichier_url?:  string | null;
   fichier_nom?:  string | null;
   fichier_size?: number | null;
+  thumbs?:       number[];
+  thumb_admins?: ChatThumbAdmin[];
   lu:            boolean;
   created_at:    string;
+  edited_at?:    string | null;
+  deleted_at?:   string | null;
+  deleted_by?:   number | null;
+  scope?:        "direct" | "group";
+  id_group?:     number | null;
+  group_name?:   string | null;
   emetteur:      { id_admin: number; nom: string; avatar?: string };
-  recepteur:     { id_admin: number; nom: string; avatar?: string };
+  recepteur:     { id_admin: number; nom: string; avatar?: string } | null;
 }
 
 export interface ChatConversation {
-  admin:        { id_admin: number; nom: string; email: string; avatar?: string };
+  admin:        ChatAdminSummary;
   last_message: ChatMsg | null;
   unread:       number;
+}
+
+export interface ChatGroupConversation {
+  id_group:      number;
+  nom:           string;
+  description?:  string | null;
+  created_by:    number;
+  created_at:    string;
+  updated_at:    string;
+  last_message:  ChatMsg | null;
+  unread:        number;
+  members:       ChatAdminSummary[];
+}
+
+export interface ChatTraceItem {
+  trace_id:            string;
+  scope:               "direct" | "group";
+  conversation_label:  string;
+  message:             ChatMsg;
 }

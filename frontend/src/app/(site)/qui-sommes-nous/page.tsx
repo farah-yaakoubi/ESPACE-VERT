@@ -1,160 +1,414 @@
-"use client";
-import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { CalendarDays, Mail, ChevronRight, Leaf, Building2, Target, Star } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  Calendar,
+  CheckCircle2,
+  Compass,
+  Leaf,
+  ShieldCheck,
+  Sprout,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 import { TimelineEV } from "@/components/qui-sommes-nous/TimelineEV";
-import { PageHeroStatic } from "@/components/sections/PageHeroStatic";
-import AgenceSection  from "@/components/qui-sommes-nous/AgenceSection";
-
-const C = { forest:"#10693B", leaf:"#4CAF50", sage:"#66BB6A", foam:"#F1FDF4", cream:"#FAFFF8", mint:"#C8E6C9", mist:"#E8F5E9", text:"#1B3A2F", mid:"#2E7D52", soft:"#5A8A6A", white:"#FFFFFF" };
-const FADE=(delay=0)=>({ initial:{opacity:0,y:28}, whileInView:{opacity:1,y:0}, viewport:{once:true}, transition:{duration:0.6,ease:[0.22,1,0.36,1] as const,delay} });
+import { AnimatedCount } from "@/components/qui-sommes-nous/AnimatedCount";
+import AgenceSection from "@/components/qui-sommes-nous/AgenceSection";
 
 const STATS = [
-  { value:"1995", label:"Fondation",       color:C.forest  },
-  { value:"30+",  label:"Ans d'expérience",color:"#D97706" },
-  { value:"100",  label:"Collaborateurs",  color:"#0277BD" },
-  { value:"30+",  label:"Marques intl.",   color:"#7C3AED" },
-  { value:"6",    label:"Marques propres", color:"#C2410C" },
-  { value:"4",    label:"Agences Tunisie", color:C.leaf    },
+  { value: 1995, label: "Fondé en", icon: Calendar },
+  { value: 30, suffix: "+", label: "Ans d'expérience", icon: TrendingUp },
+  { value: 100, label: "Collaborateurs", icon: Users },
+  { value: 5, label: "Sociétés du groupe", icon: Building2 },
 ];
 
 const SOCIETES = [
-  { name:"Espace Vert SARL",    tag:"Maison mère · depuis 1995",    desc:"Semences, plants, irrigation, matériels agricoles, fertilisants, jardinage et animalerie.",                                 logo:"/logos/LOGO ESPACE VERT.png", accent:C.forest, bg:C.cream,    border:C.mint    },
-  { name:"STAJAP",              tag:"Espaces verts & Sport",         desc:"Matériels pour parcs, stades, golfs et installations sportives. Animalerie et semences.",                                    logo:"/logosPartenaires/logo-stajap.png",          accent:"#1B6B7A", bg:"#EFF8FF", border:"#BAE6FD" },
-  { name:"Mondiale Irrigation", tag:"Fabrication de tuyaux",         desc:"Tuyaux PEHD Ø25–110mm, tubes lisses et tubes à goutteur pour agriculture et jardins.",                                      logo:"/logosPartenaires/logo mendial irrigation.png", accent:"#1565C0", bg:"#EFF6FF", border:"#BFDBFE" },
-  { name:"BADDAR AGRICOLE",     tag:"Pépinière & Semences",          desc:"Plants francs et greffés, semences maraîchères et florales. Horticulture ornementale.",                                     logo:"/logosPartenaires/logo baddar agricole.png",    accent:"#C2410C", bg:"#FFF7ED", border:"#FED7AA" },
+  {
+    name: "Espace Vert SARL",
+    tag: "Maison mère",
+    desc: "Semences, irrigation, matériel agricole et conseil terrain.",
+    image: "/logos/logo-espace-vert.png",
+    color: "#10693B",
+  },
+  {
+    name: "STAJAP",
+    tag: "Espaces verts & sport",
+    desc: "Parcs, stades, jardins et équipements professionnels.",
+    image: "/logosPartenaires/logo stajap.png",
+    color: "#1565C0",
+  },
+  {
+    name: "Mondiale Irrigation",
+    tag: "Fabrication",
+    desc: "Tuyaux et solutions techniques pour l'irrigation.",
+    image: "/logosPartenaires/logo mendial irrigation.png",
+    color: "#006064",
+  },
+  {
+    name: "Baddar Agricole",
+    tag: "Pépinière & semences",
+    desc: "Plants, pépinière et semences spécialisées.",
+    image: "/logosPartenaires/logo baddar agricole.png",
+    color: "#558B2F",
+  },
+  {
+    name: "Fertivert",
+    tag: "Fertilisation",
+    desc: "Engrais, fertilisants et biostimulants formulés localement.",
+    image: "/logos/FERTIVERT LOGO.png",
+    color: "#6B21A8",
+  },
+];
+
+const DOMAINES = [
+  "Semences",
+  "Irrigation",
+  "Matériel agricole",
+  "Fertilisation",
+  "Jardinage",
 ];
 
 const VALEURS = [
-  { title:"Qualité & Fiabilité", text:"30 ans de confiance bâtie sur la qualité de nos produits et la fiabilité de nos services.", color:"#D97706", bg:"#FFFBEB", border:"#FDE68A" },
-  { title:"Innovation",          text:"3 départements dédiés : R&D semences hybrides, irrigation goutte-à-goutte, service après-vente.", color:"#1565C0", bg:"#EFF6FF", border:"#BFDBFE" },
-  { title:"Partenariat",         text:"30+ marques internationales de premier rang, représentées exclusivement sur le marché tunisien.", color:C.forest, bg:C.cream, border:C.mint },
-  { title:"Présence nationale",  text:"4 agences : Borj El Amri, Tunis, Soliman et Sfax — couvrant tout le territoire.", color:"#7C3AED", bg:"#F5F3FF", border:"#DDD6FE" },
+  { text: "Qualité produit et service fiable", icon: ShieldCheck },
+  { text: "Conseil technique de proximité", icon: Compass },
+  { text: "Partenariats solides", icon: CheckCircle2 },
+  { text: "Vision durable de la performance agricole", icon: Sprout },
 ];
 
-function StatCard({ stat, i }:{ stat:typeof STATS[0]; i:number }) {
-  const ref=useRef<HTMLDivElement>(null);
-  const inView=useInView(ref,{once:true,margin:"-40px"});
+function GreenDivider() {
   return (
-    <motion.div ref={ref} initial={{opacity:0,y:32}} animate={inView?{opacity:1,y:0}:{}} transition={{duration:0.55,ease:[0.22,1,0.36,1],delay:i*0.07}}
-      whileHover={{y:-5}} style={{background:C.white,borderRadius:20,padding:"1.4rem 1rem",textAlign:"center",border:`1px solid ${C.mist}`,cursor:"default"}}>
-      <div style={{width:44,height:44,borderRadius:12,background:`${stat.color}12`,border:`1.5px solid ${stat.color}22`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px"}}>
-        <span style={{fontSize:"1.2rem",fontWeight:800,color:stat.color}}>{stat.value[0]}</span>
+    <div className="flex items-center gap-3 py-1">
+      <div className="h-px flex-1 rounded-full bg-gradient-to-r from-transparent to-ev-200" />
+      <Leaf size={15} className="text-ev-400" />
+      <div className="h-px flex-1 rounded-full bg-gradient-to-l from-transparent to-ev-200" />
+    </div>
+  );
+}
+
+function SectionFrame({
+  eyebrow,
+  title,
+  subtitle,
+  center = false,
+}: {
+  eyebrow: string;
+  title: string;
+  subtitle?: string;
+  center?: boolean;
+}) {
+  return (
+    <div className={center ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
+      <div className={`inline-flex rounded-full border border-ev-200 bg-white px-4 py-2 shadow-sm ${center ? "" : ""}`}>
+        <p className="eyebrow !mb-0">{eyebrow}</p>
       </div>
-      <div style={{fontSize:"clamp(1.5rem,3.5vw,2.4rem)",fontWeight:900,color:stat.color,lineHeight:1,marginBottom:5,letterSpacing:"-0.02em"}}>{stat.value}</div>
-      <div style={{fontSize:"0.68rem",fontWeight:700,color:C.soft,textTransform:"uppercase",letterSpacing:"0.08em"}}>{stat.label}</div>
-    </motion.div>
+      <div className={`mt-4 border-l-4 border-ev-200 pl-4 sm:pl-5 ${center ? "mx-auto max-w-2xl border-l-0 border-t-4 pt-5 pl-0" : ""}`}>
+        <h2 className="site-heading qsn-title-reveal text-[2rem] sm:text-[2.45rem] lg:text-[3.1rem]">{title}</h2>
+        {subtitle && <p className="site-copy mt-4">{subtitle}</p>}
+      </div>
+    </div>
+  );
+}
+
+function SocietesMarquee() {
+  const items = [...SOCIETES, ...SOCIETES];
+
+  return (
+    <>
+      <style>{`
+        @keyframes aboutSocietesMarquee {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+        .about-societes-track {
+          animation: aboutSocietesMarquee 28s linear infinite;
+        }
+        .about-societes-wrap:hover .about-societes-track {
+          animation-play-state: paused;
+        }
+      `}</style>
+
+      <div className="about-societes-wrap relative overflow-hidden">
+        <div
+          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 sm:w-24"
+          style={{ background: "linear-gradient(90deg, white, transparent)" }}
+        />
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 sm:w-24"
+          style={{ background: "linear-gradient(270deg, white, transparent)" }}
+        />
+
+        <div className="about-societes-track flex w-max items-center gap-4 pr-4">
+          {items.map((societe, index) => (
+            <div key={`${societe.name}-${index}`} className="shrink-0">
+              <Image
+                src={societe.image}
+                alt={societe.name}
+                width={960}
+                height={640}
+                className="h-[88px] w-auto object-contain sm:h-[108px] lg:h-[124px]"
+                sizes="(max-width: 640px) 40vw, 240px"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
 
 export default function QuiSommesNousPage() {
   return (
-    <div style={{background:C.white,minHeight:"100vh"}}>
-      {/* Hero image fixe + zoom-in */}
-      <PageHeroStatic
-        page="qui-sommes-nous"
-        eyebrow="Groupe Espace Vert · Fondé en 1995"
-        title="Qui sommes-nous ?"
-        subtitle="30 ans d'expertise au service de l'agriculture tunisienne."
-        fallbackImage="/images/hero/Untitled-4.webp"
-        height="52vh"
-      />
-      {/* STATS */}
-      <section style={{padding:"4rem 0",background:C.white}}>
-        <div className="container-ev" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:14}}>
-          {STATS.map((s,i)=><StatCard key={i} stat={s} i={i}/>)}
-        </div>
-      </section>
+    <div className="min-h-screen bg-white">
+      <style>{`
+        @keyframes qsnTitleReveal {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes qsnSoftFade {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .qsn-title-reveal {
+          animation: qsnTitleReveal .7s cubic-bezier(.22,1,.36,1) both;
+        }
+        .qsn-soft-fade {
+          animation: qsnSoftFade .55s cubic-bezier(.22,1,.36,1) both;
+        }
+      `}</style>
 
-      {/* TIMELINE */}
-      <TimelineEV/>
+      <section className="relative overflow-hidden bg-ev-950">
+        <Image
+          src="/images/hero/Untitled-4.webp"
+          alt="Groupe Espace Vert"
+          fill
+          priority
+          className="object-cover"
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(4,31,20,.88)_0%,rgba(9,65,38,.78)_45%,rgba(18,105,59,.45)_100%)]" />
+        <div className="absolute -right-20 top-14 h-64 w-64 rounded-full border border-white/10" />
+        <div className="absolute -left-16 bottom-0 h-56 w-56 rounded-full border border-ev-300/20" />
 
-      {/* SOCIÉTÉS */}
-      <section style={{padding:"5.5rem 0",background:C.white}}>
-        <div className="container-ev">
-          <motion.div {...FADE()} style={{textAlign:"center",marginBottom:"3.5rem"}}>
-            <span style={{display:"inline-flex",alignItems:"center",gap:7,background:C.forest,color:C.white,padding:"5px 18px",borderRadius:99,fontSize:11,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:16}}>
-              <Building2 size={11} strokeWidth={2.5}/> Structure du Groupe
-            </span>
-            <h2 style={{fontSize:"clamp(1.6rem,3.5vw,2.4rem)",fontWeight:900,color:C.text,letterSpacing:"-0.02em"}}>4 sociétés, 1 vision commune</h2>
-          </motion.div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:18}}>
-            {SOCIETES.map((s,i)=>(
-              <motion.div key={i} {...FADE(i*0.1)} whileHover={{y:-6}} style={{background:s.bg,borderRadius:22,padding:"1.8rem",border:`1.5px solid ${s.border}`,cursor:"default"}}>
-                <div style={{width:58,height:58,borderRadius:14,background:`${s.accent}14`,border:`1.5px solid ${s.border}`,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:18,overflow:"hidden"}}>
-                  <Image src={s.logo} alt={s.name} width={34} height={34} style={{objectFit:"contain"}} onError={()=>{}}/>
-                </div>
-                <div style={{fontSize:"0.62rem",fontWeight:800,color:s.accent,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:8}}>{s.tag}</div>
-                <h3 style={{fontSize:"1.05rem",fontWeight:900,color:C.text,marginBottom:10,lineHeight:1.2}}>{s.name}</h3>
-                <p style={{fontSize:"0.84rem",color:C.soft,lineHeight:1.72}}>{s.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+        <div className="relative container-ev pb-14 pt-28 sm:pb-16 sm:pt-32 lg:pb-20">
+          <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+            <div className="max-w-3xl">
+              <p className="eyebrow mb-5 text-ev-200">Groupe Espace Vert · Depuis 1995</p>
+              <h1
+                className="qsn-title-reveal text-4xl font-black leading-[1.04] tracking-tight text-white sm:text-[3.7rem] lg:text-[4.5rem]"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                Qui sommes-nous
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-white/82 sm:text-lg">
+                Un groupe tunisien qui réunit expertise terrain, réseau d&apos;agences et solutions agricoles
+                complètes.
+              </p>
 
-      {/* MISSION */}
-      <section style={{padding:"4rem 0",background:C.foam}}>
-        <div className="container-ev" style={{maxWidth:900}}>
-          <motion.div {...FADE()} style={{background:`linear-gradient(135deg,${C.forest} 0%,${C.sage} 100%)`,borderRadius:26,padding:"3rem",position:"relative",overflow:"hidden"}}>
-            <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(rgba(255,255,255,0.05) 1px,transparent 1px)",backgroundSize:"22px 22px",pointerEvents:"none"}}/>
-            <div style={{position:"relative",display:"flex",alignItems:"flex-start",gap:22,flexWrap:"wrap"}}>
-              <div style={{width:52,height:52,borderRadius:15,background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.25)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                <Target size={24} color="white" strokeWidth={1.7}/>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <a href="#groupe" className="btn-primary">
+                  Découvrir le groupe
+                </a>
+                <a
+                  href="#agences"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/20"
+                >
+                  Voir nos agences
+                  <ArrowRight size={16} />
+                </a>
               </div>
-              <div>
-                <h2 style={{fontSize:"1.55rem",fontWeight:900,marginBottom:14,color:C.white}}>Notre Mission</h2>
-                <p style={{fontSize:"0.97rem",color:"rgba(255,255,255,0.88)",lineHeight:1.82,maxWidth:680}}>
-                  Véritable partenaire de nos clients, notre mission est de les accompagner dans toutes les phases du processus de la production agricole en leur guidant sur la voie des bonnes pratiques culturales et en leur offrant des produits modernes et des services personnalisés d&apos;assistance technique et d&apos;expertise.
+
+              <div className="mt-8 flex flex-wrap gap-2.5">
+                {DOMAINES.map((domaine) => (
+                  <span
+                    key={domaine}
+                    className="rounded-full border border-white/18 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-white/88 backdrop-blur-sm"
+                  >
+                    {domaine}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="lg:justify-self-end">
+              <div className="rounded-[30px] border border-white/12 bg-white/10 p-6 text-white backdrop-blur-md sm:p-7">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/14">
+                    <Leaf size={28} className="text-ev-200" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-black">ESPACE VERT</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ev-200">
+                      Innovation · Qualité · Rentabilité
+                    </p>
+                  </div>
+                </div>
+
+                <p className="mt-6 text-sm leading-7 text-white/78">
+                  Cinq sociétés, quatre agences et une même volonté d&apos;accompagner durablement les
+                  professionnels de l&apos;agriculture en Tunisie.
                 </p>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* VALEURS */}
-      <section style={{padding:"5.5rem 0",background:C.white}}>
-        <div className="container-ev">
-          <motion.div {...FADE()} style={{textAlign:"center",marginBottom:"3rem"}}>
-            <span style={{display:"inline-flex",alignItems:"center",gap:7,background:C.forest,color:C.white,padding:"5px 18px",borderRadius:99,fontSize:11,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:16}}>
-              <Star size={11} strokeWidth={2.5}/> Nos Valeurs
-            </span>
-            <h2 style={{fontSize:"clamp(1.6rem,3.5vw,2.4rem)",fontWeight:900,color:C.text,letterSpacing:"-0.02em"}}>Ce qui nous définit</h2>
-          </motion.div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:18}}>
-            {VALEURS.map((v,i)=>(
-              <motion.div key={i} {...FADE(i*0.1)} whileHover={{y:-5}} style={{background:v.bg,borderRadius:20,padding:"1.7rem",border:`1.5px solid ${v.border}`,cursor:"default"}}>
-                <div style={{width:52,height:52,borderRadius:14,background:`${v.color}12`,border:`1.5px solid ${v.color}22`,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:16,fontSize:"1.5rem"}}>
-                  {i===0?"🏆":i===1?"💡":i===2?"🤝":"📍"}
+      <section id="groupe" className="border-b border-sand-200 bg-white">
+        <div className="container-ev py-10 sm:py-14 lg:py-16">
+          <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
+            <SectionFrame
+              eyebrow="Présentation"
+              title="Un groupe structuré au service de l’agriculture tunisienne"
+              subtitle="Fondé en 1995, Espace Vert s’est développé autour des semences, de l’irrigation, du matériel agricole et de la fertilisation."
+            />
+
+            <div className="space-y-5">
+              <div className="rounded-[24px] border border-ev-100 bg-ev-50/60 p-5 sm:p-6">
+                <p className="text-sm leading-7 text-ev-900">
+                  Le groupe s&apos;appuie aujourd&apos;hui sur des agences régionales, des filiales spécialisées
+                  et <strong>trois marques mères</strong> qui structurent son offre sur le marché.
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+              {STATS.map((stat) => {
+                const Icon = stat.icon;
+
+                return (
+                  <div
+                    key={stat.label}
+                    className="rounded-[24px] border border-sand-200 bg-sand-50 px-5 py-5 shadow-[0_18px_40px_rgba(17,24,39,0.04)] sm:px-6"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-3xl font-black text-ev-950 sm:text-[2.65rem]">
+                          <AnimatedCount value={stat.value} suffix={stat.suffix} />
+                        </p>
+                        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
+                          {stat.label}
+                        </p>
+                      </div>
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-ev-700 shadow-sm">
+                        <Icon size={18} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-sand-200 bg-white">
+        <div className="container-ev py-10 sm:py-12 lg:py-14">
+          <SectionFrame
+            eyebrow="Nos sociétés"
+            title="Des activités complémentaires, une même exigence"
+            subtitle="Une lecture visuelle du groupe à travers ses principales entités."
+          />
+
+          <div className="mt-8">
+            <SocietesMarquee />
+          </div>
+        </div>
+      </section>
+
+      <TimelineEV />
+
+      <section className="border-b border-sand-200 bg-ev-950 text-white">
+        <div className="container-ev py-12 sm:py-16 lg:py-20">
+          <div className="grid gap-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-start">
+            <div>
+              <div className="inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ev-300">Notre mission</p>
+              </div>
+              <h2 className="qsn-title-reveal mt-4 text-[2rem] font-bold leading-tight sm:text-[2.6rem]">
+                Accompagner les projets agricoles avec conseil, technique et proximité
+              </h2>
+              <div className="qsn-soft-fade mt-6 max-w-2xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 sm:p-7">
+                <p className="text-[15px] leading-8 text-white/82 sm:text-base">
+                  Nous proposons des solutions fiables et un accompagnement concret, depuis le choix produit
+                  jusqu&apos;au suivi terrain.
+                </p>
+
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  <div className="qsn-soft-fade rounded-2xl border border-white/8 bg-black/10 px-4 py-4 transition-transform duration-200 hover:-translate-y-0.5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/8">
+                        <Compass size={18} className="text-ev-300" />
+                      </div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ev-300">Conseil</p>
+                    </div>
+                    <p className="mt-2 text-sm leading-7 text-white/78">
+                      Une lecture terrain et des recommandations adaptées aux besoins réels des exploitations.
+                    </p>
+                  </div>
+                  <div className="qsn-soft-fade rounded-2xl border border-white/8 bg-black/10 px-4 py-4 transition-transform duration-200 hover:-translate-y-0.5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/8">
+                        <Sprout size={18} className="text-ev-300" />
+                      </div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ev-300">Suivi</p>
+                    </div>
+                    <p className="mt-2 text-sm leading-7 text-white/78">
+                      Un accompagnement durable, du choix de la solution jusqu&apos;à la mise en oeuvre.
+                    </p>
+                  </div>
                 </div>
-                <h3 style={{fontWeight:800,color:v.color,marginBottom:8,fontSize:"1rem"}}>{v.title}</h3>
-                <p style={{color:C.soft,fontSize:"0.84rem",lineHeight:1.68}}>{v.text}</p>
-              </motion.div>
-            ))}
+              </div>
+            </div>
+
+            <div className="qsn-soft-fade rounded-[30px] border border-white/10 bg-white/5 p-6 shadow-[0_18px_40px_rgba(0,0,0,0.10)] sm:p-7">
+              <div className="flex items-center gap-3 border-b border-white/8 pb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/8">
+                  <Leaf size={18} className="text-ev-300" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ev-300">Nos principes</p>
+                  <p className="mt-1 text-sm text-white/60">Les bases de notre manière de travailler</p>
+                </div>
+              </div>
+
+              <ul className="mt-5 space-y-3">
+                {VALEURS.map((value) => {
+                  const Icon = value.icon;
+
+                  return (
+                  <li key={value.text} className="qsn-soft-fade rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3.5 transition-transform duration-200 hover:-translate-y-0.5">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white/8">
+                        <Icon size={16} className="text-ev-300" />
+                      </div>
+                      <p className="text-sm leading-7 text-white/84">{value.text}</p>
+                    </div>
+                  </li>
+                )})}
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* AGENCES MAP */}
-      <AgenceSection/>
+      <div id="agences">
+        <AgenceSection />
+      </div>
 
-      {/* CTA FINAL */}
-      <section style={{padding:"5rem 0",background:C.white,textAlign:"center"}}>
-        <div className="container-ev">
-          <motion.div {...FADE()}>
-          <h2 style={{fontSize:"clamp(1.2rem,2.5vw,1.55rem)",fontWeight:900,color:C.text,marginBottom:10}}>Vous souhaitez en savoir plus&nbsp;?</h2>
-          <p style={{color:C.soft,marginBottom:32,fontSize:"clamp(0.85rem,1.5vw,0.97rem)"}}>Notre équipe d&apos;experts est à votre disposition.</p>
-          <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap"}}>
-            <motion.div whileHover={{scale:1.03,y:-2}} whileTap={{scale:0.97}}>
-              <Link href="/contact" style={{display:"inline-flex",alignItems:"center",gap:8,background:C.forest,color:C.white,padding:"0.85rem 1.9rem",borderRadius:13,fontWeight:700,fontSize:"0.92rem",textDecoration:"none",boxShadow:`0 4px 18px ${C.forest}35`}}>
-                <Mail size={15} strokeWidth={2}/> Nous contacter
-              </Link>
-            </motion.div>
+      <section className="bg-white">
+        <div className="container-ev py-14 text-center sm:py-16">
+          <h2 className="site-subheading qsn-title-reveal text-[2rem] sm:text-[2.5rem]">
+            Vous souhaitez échanger avec notre équipe ?
+          </h2>
+          <p className="site-copy mx-auto mt-4 max-w-2xl">
+            Nous sommes à votre disposition pour vous orienter vers la solution la plus adaptée à votre projet.
+          </p>
+          <div className="mt-8 flex justify-center">
+            <Link href="/contact" className="btn-primary">
+              Nous contacter
+            </Link>
           </div>
-          </motion.div>
         </div>
       </section>
     </div>

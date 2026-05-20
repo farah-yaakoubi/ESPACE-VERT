@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   IMPORTANT : Les polices Syne et DM Sans sont chargées via next/font dans
+   IMPORTANT : La police Cairo est chargée via next/font dans
    src/app/layout.tsx — NE PAS ajouter @import Google Fonts ici.
    ───────────────────────────────────────────────────────────────────────────── */
 
@@ -9,8 +9,8 @@
 
 /* ── Design tokens ──────────────────────────────────────────────────────────── */
 :root {
-  --font-display: "Syne";
-  --font-body:    "DM Sans";
+  --font-display: "Cairo";
+  --font-body:    "Cairo";
 
   --ev-50:  #f0fdf4;
   --ev-100: #dcfce7;
@@ -64,7 +64,7 @@
   }
 
   html {
-    font-family: var(--font-body), "DM Sans", system-ui, sans-serif;
+    font-family: var(--font-body), "Cairo", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     scroll-behavior: smooth;
   }
@@ -79,7 +79,7 @@
   ::-webkit-scrollbar-thumb  { background: #86d988; border-radius: 99px; }
 
   h1, h2, h3, h4 {
-    font-family: var(--font-display), "Syne", sans-serif;
+    font-family: var(--font-display), "Cairo", sans-serif;
     letter-spacing: -0.025em;
     line-height: 1.1;
   }
@@ -120,6 +120,26 @@
   .h-card {
     font-family: var(--font-display), sans-serif;
     @apply text-lg font-semibold leading-snug;
+  }
+
+  .site-heading {
+    font-family: var(--font-display), sans-serif;
+    @apply text-2xl sm:text-3xl lg:text-[2.45rem] font-bold text-ev-950 leading-tight;
+    letter-spacing: -0.03em;
+  }
+
+  .site-subheading {
+    font-family: var(--font-display), sans-serif;
+    @apply text-xl sm:text-2xl font-bold text-ev-950 leading-tight;
+    letter-spacing: -0.025em;
+  }
+
+  .site-copy {
+    @apply text-[15px] sm:text-[16px] leading-8 text-gray-600;
+  }
+
+  .site-copy-sm {
+    @apply text-sm sm:text-[15px] leading-7 text-gray-600;
   }
 
   /* ── Buttons ──────────────────────────────────────────────────────────────── */
@@ -249,6 +269,7 @@ html:not([data-theme="dark"]) {
 }
 
 html[data-theme="dark"] {
+  color-scheme: dark;
   --ab:   #0d1810;
   --as:   #162117;
   --as2:  #1e2d22;
@@ -342,8 +363,21 @@ html[data-theme="dark"] .bg-gray-100 {
   background-color: #1a2a1e !important;
 }
 
+html[data-theme="dark"] .bg-stone-50,
+html[data-theme="dark"] .bg-stone-100,
+html[data-theme="dark"] .bg-stone-200 {
+  background-color: #162117 !important;
+}
+
 html[data-theme="dark"] .bg-ev-50 {
   background-color: #142019 !important;
+}
+
+html[data-theme="dark"] .bg-white\/97,
+html[data-theme="dark"] .bg-white\/95,
+html[data-theme="dark"] .bg-white\/90,
+html[data-theme="dark"] .bg-white\/80 {
+  background-color: rgba(30,45,34,0.92) !important;
 }
 
 /* Sections avec background blanc inline */
@@ -377,6 +411,16 @@ html[data-theme="dark"] .text-ev-900 {
   color: #c8e6d0 !important;
 }
 
+html[data-theme="dark"] .text-ev-950,
+html[data-theme="dark"] .text-ev-800 {
+  color: #e8f0ea !important;
+}
+
+html[data-theme="dark"] .text-ev-700,
+html[data-theme="dark"] .text-ev-600 {
+  color: #9fd46a !important;
+}
+
 /* Textes inline hardcodés courants */
 html[data-theme="dark"] [style*="color: #111"],
 html[data-theme="dark"] [style*="color:#111"],
@@ -392,6 +436,11 @@ html[data-theme="dark"] .border-sand-200,
 html[data-theme="dark"] .border-sand-100,
 html[data-theme="dark"] .border-gray-200,
 html[data-theme="dark"] .border-gray-100 {
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+html[data-theme="dark"] .border-stone-100,
+html[data-theme="dark"] .border-stone-200 {
   border-color: rgba(255,255,255,0.08) !important;
 }
 
@@ -521,7 +570,11 @@ html[data-theme="dark"] [style*="background: #FFFBEB"],
 html[data-theme="dark"] [style*="background: #EFF6FF"],
 html[data-theme="dark"] [style*="background: #F5F3FF"],
 html[data-theme="dark"] [style*="background: #FFF7ED"],
-html[data-theme="dark"] [style*="background: #EFF8FF"] {
+html[data-theme="dark"] [style*="background: #EFF8FF"],
+html[data-theme="dark"] [style*="background: #fafafa"],
+html[data-theme="dark"] [style*="background:#fafafa"],
+html[data-theme="dark"] [style*="background: #f5f5f5"],
+html[data-theme="dark"] [style*="background:#f5f5f5"] {
   background-color: #1e2d22 !important;
   background: #1e2d22 !important;
 }

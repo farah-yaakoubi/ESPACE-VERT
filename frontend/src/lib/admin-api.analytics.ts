@@ -1,14 +1,13 @@
+import { type DashboardStats } from "@/lib/admin-api";
+import { adminAnalytics, adminStats as baseAdminStats } from "@/lib/admin-api";
+
 export const adminStats = {
-  // Existant (INCHANGÉ)
-  dashboard: () => request<DashboardStats>("/admin/stats"),
+  dashboard: (): Promise<DashboardStats> => baseAdminStats.dashboard(),
 
-  // ── Nouveaux endpoints analytics ──────────────────────────────
-  analytics:  (days = 30) => request<AdvancedAnalytics>(`/admin/stats/analytics?days=${days}`),
-  heatmap:    (days = 30) => request<HeatmapCell[]>(`/admin/stats/heatmap?days=${days}`),
-  entonnoir:  (days = 30) => request<EntonnoirStep[]>(`/admin/stats/entonnoir?days=${days}`),
+  analytics:  (days = 30): Promise<AdvancedAnalytics> => adminAnalytics.advanced(days),
+  heatmap:    (days = 30): Promise<HeatmapCell[]> => adminAnalytics.heatmap(days),
+  entonnoir:  (days = 30): Promise<EntonnoirStep[]> => adminAnalytics.entonnoir(days),
 };
-
-// ── Nouveaux types à ajouter dans la section types du fichier ─────
 export interface AdvancedAnalytics {
   kpis: {
     visiteurs_actifs:   number;

@@ -105,13 +105,18 @@ model ChatMessage {
   fichier_url   String?  @db.VarChar(500)
   fichier_nom   String?  @db.VarChar(255)
   fichier_size  Int?
+  thumbs        Json     @default("[]")
   lu            Boolean  @default(false)
+  edited_at     DateTime?
+  deleted_at    DateTime?
+  deleted_by    Int?
   created_at    DateTime @default(now())
   emetteur  Admin @relation("ChatEmetteur",  fields: [id_from], references: [id_admin], onDelete: Cascade)
   recepteur Admin @relation("ChatRecepteur", fields: [id_to],   references: [id_admin], onDelete: Cascade)
   @@index([id_from, id_to])
   @@index([id_to, lu])
   @@index([created_at])
+  @@index([deleted_at])
   @@map("chat_messages")
 }
 

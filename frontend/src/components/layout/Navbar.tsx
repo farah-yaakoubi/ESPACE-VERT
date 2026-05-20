@@ -13,6 +13,7 @@ const BASE   = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 const C = {
   sage:"#2e7d4f",sageDk:"#1b5e38",sageMd:"#5bab79",sageLt:"#dff2e8",
+  logo:"#7dc040",logoDk:"#5f972d",logoLt:"#eef8e4",logoBorder:"#cfe5b5",
   sagePastel:"#e8f5ee",sagePastel2:"#c8eada",sageIcon:"#a8d5b8",
   stone:"#f6f4f0",stone2:"#ede9e3",line:"rgba(46,125,79,0.12)",
   ink:"#111816",ink2:"#3d5248",ink3:"#8da898",ink4:"#bbd4c4",
@@ -68,7 +69,15 @@ function useHover(delay=180) {
 }
 
 /* ── ActivitesDropdown — style minimaliste vert/blanc/noir ─────────────────── */
-function ActivitesDropdown({ activites, onClose }: { activites:Activite[]; onClose:()=>void }) {
+function ActivitesDropdown({
+  activites,
+  onClose,
+  isDark,
+}: {
+  activites: Activite[];
+  onClose: () => void;
+  isDark: boolean;
+}) {
   const [hovAct, setHovAct] = useState<number|null>(activites[0]?.id_activite ?? null);
   const [hovCat, setHovCat] = useState<string|null>(null);
 
@@ -89,28 +98,39 @@ function ActivitesDropdown({ activites, onClose }: { activites:Activite[]; onClo
   const col1W = 172;
   const col2W = 192;
   const col3W = 176;
+  const panelBg = isDark ? "#162117" : "#fff";
+  const panelAltBg = isDark ? "#1e2d22" : "#fafafa";
+  const panelBorder = isDark ? "rgba(255,255,255,0.08)" : "#111816";
+  const mutedBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(17,24,22,0.1)";
+  const titleColor = isDark ? C.darkInk3 : C.ink3;
+  const textColor = isDark ? C.darkInk : C.ink;
+  const softTextColor = isDark ? C.darkInk2 : C.ink2;
+  const rowHoverBg = isDark ? "#243520" : "#f5f5f5";
+  const shadow = isDark
+    ? "0 24px 60px rgba(0,0,0,0.38),0 0 0 1px rgba(255,255,255,0.03)"
+    : "4px 4px 0px #111816";
 
   return (
     <div style={{
       display:"flex",
       width: hasSousCats ? col1W+col2W+col3W : col1W+col2W,
       transition:"width 0.18s cubic-bezier(.4,0,.2,1)",
-      background:"#fff",
+      background: panelBg,
       borderRadius:14,
       overflow:"hidden",
-      border:"1.5px solid #111816",
-      boxShadow:"4px 4px 0px #111816",
+      border:`1.5px solid ${panelBorder}`,
+      boxShadow: shadow,
     }}>
 
       {/* ── Col 1 — activités ── */}
-      <div style={{ width:col1W, flexShrink:0, borderRight:"1.5px solid #111816", display:"flex", flexDirection:"column" }}>
+      <div style={{ width:col1W, flexShrink:0, borderRight:`1.5px solid ${panelBorder}`, display:"flex", flexDirection:"column" }}>
         {/* header */}
-        <div style={{ padding:"10px 14px 8px", borderBottom:"1px solid rgba(17,24,22,0.1)" }}>
+        <div style={{ padding:"10px 14px 8px", borderBottom:`1px solid ${mutedBorder}` }}>
           <span style={{ ...TY.secLabel, color:C.sage, letterSpacing:"0.12em" }}>Activités</span>
         </div>
         <div style={{ flex:1, overflowY:"auto", padding:"4px 0" }}>
           {activites.length === 0 ? (
-            <p style={{ padding:"10px 14px", ...TY.ddItemDesc, color:C.ink3 }}>Chargement…</p>
+            <p style={{ padding:"10px 14px", ...TY.ddItemDesc, color:titleColor }}>Chargement…</p>
           ) : activites.map((a, i) => {
             const on = hovAct === a.id_activite;
             return (
@@ -124,11 +144,11 @@ function ActivitesDropdown({ activites, onClose }: { activites:Activite[]; onClo
                     transition:"background 0.12s",
                   }}
                 >
-                  <p style={{ ...TY.ddItemName, fontSize:13, color: on ? "#fff" : C.ink, margin:0, transition:"color 0.12s", flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                    {a.nom}
-                  </p>
+                    <p style={{ ...TY.ddItemName, fontSize:13, color: on ? "#fff" : textColor, margin:0, transition:"color 0.12s", flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                      {a.nom}
+                    </p>
                   {a.categories && a.categories.length > 0 && (
-                    <Ico.ChevR style={{ width:11, height:11, color: on ? "rgba(255,255,255,0.7)" : C.ink3, flexShrink:0 }}/>
+                    <Ico.ChevR style={{ width:11, height:11, color: on ? "rgba(255,255,255,0.7)" : titleColor, flexShrink:0 }}/>
                   )}
                 </div>
               </motion.div>
@@ -138,13 +158,13 @@ function ActivitesDropdown({ activites, onClose }: { activites:Activite[]; onClo
       </div>
 
       {/* ── Col 2 — catégories ── */}
-      <div style={{ width:col2W, flexShrink:0, borderRight: hasSousCats ? "1.5px solid #111816" : "none", display:"flex", flexDirection:"column", background:"#fff" }}>
+      <div style={{ width:col2W, flexShrink:0, borderRight: hasSousCats ? `1.5px solid ${panelBorder}` : "none", display:"flex", flexDirection:"column", background:panelBg }}>
         <AnimatePresence mode="wait">
           {act ? (
             <motion.div key={act.id_activite} initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.11 }} style={{ display:"flex", flexDirection:"column", flex:1 }}>
               {/* header */}
-              <div style={{ padding:"10px 14px 8px", borderBottom:"1px solid rgba(17,24,22,0.1)" }}>
-                <span style={{ ...TY.secLabel, color:C.ink3, letterSpacing:"0.12em" }}>{act.nom}</span>
+              <div style={{ padding:"10px 14px 8px", borderBottom:`1px solid ${mutedBorder}` }}>
+                <span style={{ ...TY.secLabel, color:titleColor, letterSpacing:"0.12em" }}>{act.nom}</span>
               </div>
               <div style={{ flex:1, overflowY:"auto", padding:"4px 0" }}>
                 {act.categories && act.categories.length > 0 ? act.categories.map(c => {
@@ -156,7 +176,7 @@ function ActivitesDropdown({ activites, onClose }: { activites:Activite[]; onClo
                       style={{
                         display:"flex", alignItems:"center", justifyContent:"space-between",
                         padding:"8px 10px 8px 14px", cursor:"default",
-                        background: onC ? "#f5f5f5" : "transparent",
+                        background: onC ? rowHoverBg : "transparent",
                         borderLeft:`2.5px solid ${onC ? C.sage : "transparent"}`,
                         transition:"all 0.1s",
                       }}
@@ -164,19 +184,19 @@ function ActivitesDropdown({ activites, onClose }: { activites:Activite[]; onClo
                       <Link
                         href={`/activites/${act.slug}?cat=${c.id_categorie}`}
                         onClick={onClose}
-                        style={{ ...TY.ddItemName, fontSize:13, color: onC ? C.sage : C.ink, textDecoration:"none", transition:"color 0.1s", flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}
+                        style={{ ...TY.ddItemName, fontSize:13, color: onC ? C.sage : textColor, textDecoration:"none", transition:"color 0.1s", flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}
                       >
                         {c.nom}
                       </Link>
                       {c.sous_cats && c.sous_cats.length > 0 && (
-                        <Ico.ChevR style={{ width:10, height:10, color: onC ? C.sage : C.ink3, flexShrink:0 }}/>
+                        <Ico.ChevR style={{ width:10, height:10, color: onC ? C.sage : titleColor, flexShrink:0 }}/>
                       )}
                     </div>
                   );
                 }) : (
                   <Link href={`/activites/${act.slug}`} onClick={onClose}
                     style={{ display:"flex", alignItems:"center", padding:"10px 14px", textDecoration:"none" }}>
-                    <span style={{ ...TY.ddItemDesc, color:C.ink3 }}>Voir tous les produits →</span>
+                    <span style={{ ...TY.ddItemDesc, color:titleColor }}>Voir tous les produits →</span>
                   </Link>
                 )}
               </div>
@@ -194,10 +214,10 @@ function ActivitesDropdown({ activites, onClose }: { activites:Activite[]; onClo
             animate={{ opacity:1, width:col3W }}
             exit={{ opacity:0, width:0 }}
             transition={{ duration:0.15, ease:[.4,0,.2,1] }}
-            style={{ flexShrink:0, display:"flex", flexDirection:"column", background:"#fafafa", overflow:"hidden" }}
+            style={{ flexShrink:0, display:"flex", flexDirection:"column", background:panelAltBg, overflow:"hidden", marginTop:14, marginBottom:10, borderTop:`1px solid ${mutedBorder}` }}
           >
-            <div style={{ padding:"10px 14px 8px", borderBottom:"1px solid rgba(17,24,22,0.1)" }}>
-              <span style={{ ...TY.secLabel, color:C.ink3, letterSpacing:"0.12em", whiteSpace:"nowrap" }}>{cat.nom}</span>
+            <div style={{ padding:"10px 14px 8px", borderBottom:`1px solid ${mutedBorder}` }}>
+              <span style={{ ...TY.secLabel, color:titleColor, letterSpacing:"0.12em", whiteSpace:"nowrap" }}>{cat.nom}</span>
             </div>
             <div style={{ flex:1, overflowY:"auto", padding:"4px 0" }}>
               {cat.sous_cats!.map((sc, i) => (
@@ -205,9 +225,9 @@ function ActivitesDropdown({ activites, onClose }: { activites:Activite[]; onClo
                   <Link
                     href={`/activites/${act.slug}?cat=${sc.id_categorie}`}
                     onClick={onClose}
-                    style={{ display:"flex", alignItems:"center", gap:8, padding:"7px 12px 7px 14px", textDecoration:"none", color:C.ink2, transition:"all 0.1s" }}
-                    onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = C.sageLt; el.style.color = C.sageDk; }}
-                    onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "transparent"; el.style.color = C.ink2; }}
+                    style={{ display:"flex", alignItems:"center", gap:8, padding:"7px 12px 7px 14px", textDecoration:"none", color:softTextColor, transition:"all 0.1s" }}
+                    onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = isDark ? "#243520" : C.sageLt; el.style.color = C.sage; }}
+                    onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "transparent"; el.style.color = softTextColor; }}
                   >
                     <span style={{ width:4, height:4, borderRadius:"50%", background:C.sageMd, flexShrink:0, display:"inline-block" }}/>
                     <span style={{ fontSize:12, fontWeight:500, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{sc.nom}</span>
@@ -223,7 +243,15 @@ function ActivitesDropdown({ activites, onClose }: { activites:Activite[]; onClo
 }
 
 /* ── MarquesDropdown — style minimaliste vert/blanc/noir ───────────────────── */
-function MarquesDropdown({ marques, onClose }: { marques:Marque[]; onClose:()=>void }) {
+function MarquesDropdown({
+  marques,
+  onClose,
+  isDark,
+}: {
+  marques: Marque[];
+  onClose: () => void;
+  isDark: boolean;
+}) {
   const [brand, setBrand] = useState<Marque|null>(marques[0] ?? null);
   const [hovCat, setHovCat] = useState<string|null>(null);
 
@@ -241,27 +269,37 @@ function MarquesDropdown({ marques, onClose }: { marques:Marque[]; onClose:()=>v
   const col1W = 172;
   const col2W = 192;
   const col3W = 176;
+  const panelBg = isDark ? "#162117" : "#fff";
+  const panelAltBg = isDark ? "#1e2d22" : "#fafafa";
+  const panelBorder = isDark ? "rgba(255,255,255,0.08)" : "#111816";
+  const mutedBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(17,24,22,0.1)";
+  const titleColor = isDark ? C.darkInk3 : C.ink3;
+  const textColor = isDark ? C.darkInk : C.ink;
+  const rowHoverBg = isDark ? "#243520" : "#f5f5f5";
+  const shadow = isDark
+    ? "0 24px 60px rgba(0,0,0,0.38),0 0 0 1px rgba(255,255,255,0.03)"
+    : "4px 4px 0px #111816";
 
   return (
     <div style={{
       display:"flex",
       width: hasSousCats ? col1W+col2W+col3W : col1W+col2W,
       transition:"width 0.18s cubic-bezier(.4,0,.2,1)",
-      background:"#fff",
+      background:panelBg,
       borderRadius:14,
       overflow:"hidden",
-      border:"1.5px solid #111816",
-      boxShadow:"4px 4px 0px #111816",
+      border:`1.5px solid ${panelBorder}`,
+      boxShadow:shadow,
     }}>
 
       {/* ── Col 1 — marques ── */}
-      <div style={{ width:col1W, flexShrink:0, borderRight:"1.5px solid #111816", display:"flex", flexDirection:"column" }}>
-        <div style={{ padding:"10px 14px 8px", borderBottom:"1px solid rgba(17,24,22,0.1)" }}>
+      <div style={{ width:col1W, flexShrink:0, borderRight:`1.5px solid ${panelBorder}`, display:"flex", flexDirection:"column" }}>
+        <div style={{ padding:"10px 14px 8px", borderBottom:`1px solid ${mutedBorder}` }}>
           <span style={{ ...TY.secLabel, color:C.sage, letterSpacing:"0.12em" }}>Marques</span>
         </div>
         <div style={{ flex:1, overflowY:"auto", padding:"4px 0" }}>
           {marques.length === 0 ? (
-            <p style={{ padding:"10px 14px", ...TY.ddItemDesc, color:C.ink3 }}>Chargement…</p>
+            <p style={{ padding:"10px 14px", ...TY.ddItemDesc, color:titleColor }}>Chargement…</p>
           ) : marques.map((m, i) => {
             const on = brand?.id_marque === m.id_marque;
             return (
@@ -278,8 +316,8 @@ function MarquesDropdown({ marques, onClose }: { marques:Marque[]; onClose:()=>v
                   {/* logo */}
                   <div style={{
                     width:26, height:26, borderRadius:6, flexShrink:0,
-                    background: on ? "rgba(255,255,255,0.15)" : "#f5f5f5",
-                    border:`1.5px solid ${on ? "rgba(255,255,255,0.3)" : "rgba(17,24,22,0.12)"}`,
+                    background: on ? "rgba(255,255,255,0.15)" : rowHoverBg,
+                    border:`1.5px solid ${on ? "rgba(255,255,255,0.3)" : mutedBorder}`,
                     display:"flex", alignItems:"center", justifyContent:"center",
                     overflow:"hidden", transition:"all 0.12s",
                   }}>
@@ -288,11 +326,11 @@ function MarquesDropdown({ marques, onClose }: { marques:Marque[]; onClose:()=>v
                       : <Ico.Leaf style={{ width:11, height:11, color: on ? "#fff" : C.sageMd }}/>
                     }
                   </div>
-                  <p style={{ ...TY.ddItemName, fontSize:13, color: on ? "#fff" : C.ink, margin:0, flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", transition:"color 0.12s" }}>
+                  <p style={{ ...TY.ddItemName, fontSize:13, color: on ? "#fff" : textColor, margin:0, flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", transition:"color 0.12s" }}>
                     {m.nom}
                   </p>
                   {m.categories && m.categories.length > 0 && (
-                    <Ico.ChevR style={{ width:11, height:11, color: on ? "rgba(255,255,255,0.7)" : C.ink3 }}/>
+                    <Ico.ChevR style={{ width:11, height:11, color: on ? "rgba(255,255,255,0.7)" : titleColor }}/>
                   )}
                 </div>
               </motion.div>
@@ -302,12 +340,12 @@ function MarquesDropdown({ marques, onClose }: { marques:Marque[]; onClose:()=>v
       </div>
 
       {/* ── Col 2 — catégories ── */}
-      <div style={{ width:col2W, flexShrink:0, borderRight: hasSousCats ? "1.5px solid #111816" : "none", display:"flex", flexDirection:"column", background:"#fff" }}>
+      <div style={{ width:col2W, flexShrink:0, borderRight: hasSousCats ? `1.5px solid ${panelBorder}` : "none", display:"flex", flexDirection:"column", background:panelBg }}>
         <AnimatePresence mode="wait">
           {brand ? (
             <motion.div key={brand.id_marque} initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.11 }} style={{ display:"flex", flexDirection:"column", flex:1 }}>
-              <div style={{ padding:"10px 14px 8px", borderBottom:"1px solid rgba(17,24,22,0.1)" }}>
-                <span style={{ ...TY.secLabel, color:C.ink3, letterSpacing:"0.12em" }}>{brand.nom}</span>
+              <div style={{ padding:"10px 14px 8px", borderBottom:`1px solid ${mutedBorder}` }}>
+                <span style={{ ...TY.secLabel, color:titleColor, letterSpacing:"0.12em" }}>{brand.nom}</span>
               </div>
               <div style={{ flex:1, overflowY:"auto", padding:"4px 0" }}>
                 {brand.categories && brand.categories.length > 0 ? brand.categories.map(c => {
@@ -319,7 +357,7 @@ function MarquesDropdown({ marques, onClose }: { marques:Marque[]; onClose:()=>v
                       style={{
                         display:"flex", alignItems:"center", justifyContent:"space-between",
                         padding:"8px 10px 8px 14px", cursor:"default",
-                        background: onC ? "#f5f5f5" : "transparent",
+                        background: onC ? rowHoverBg : "transparent",
                         borderLeft:`2.5px solid ${onC ? C.sage : "transparent"}`,
                         transition:"all 0.1s",
                       }}
@@ -327,19 +365,19 @@ function MarquesDropdown({ marques, onClose }: { marques:Marque[]; onClose:()=>v
                       <Link
                         href={`/marques/${brand.slug}?cat=${c.id_categorie}`}
                         onClick={onClose}
-                        style={{ ...TY.ddItemName, fontSize:13, color: onC ? C.sage : C.ink, textDecoration:"none", transition:"color 0.1s", flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}
+                        style={{ ...TY.ddItemName, fontSize:13, color: onC ? C.sage : textColor, textDecoration:"none", transition:"color 0.1s", flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}
                       >
                         {c.nom}
                       </Link>
                       {c.sous_cats && c.sous_cats.length > 0 && (
-                        <Ico.ChevR style={{ width:10, height:10, color: onC ? C.sage : C.ink3, flexShrink:0 }}/>
+                        <Ico.ChevR style={{ width:10, height:10, color: onC ? C.sage : titleColor, flexShrink:0 }}/>
                       )}
                     </div>
                   );
                 }) : (
                   <Link href={`/marques/${brand.slug}`} onClick={onClose}
                     style={{ display:"flex", alignItems:"center", padding:"10px 14px", textDecoration:"none" }}>
-                    <span style={{ ...TY.ddItemDesc, color:C.ink3 }}>Voir tous les produits →</span>
+                    <span style={{ ...TY.ddItemDesc, color:titleColor }}>Voir tous les produits →</span>
                   </Link>
                 )}
               </div>
@@ -357,10 +395,10 @@ function MarquesDropdown({ marques, onClose }: { marques:Marque[]; onClose:()=>v
             animate={{ opacity:1, width:col3W }}
             exit={{ opacity:0, width:0 }}
             transition={{ duration:0.15, ease:[.4,0,.2,1] }}
-            style={{ flexShrink:0, display:"flex", flexDirection:"column", background:"#fafafa", overflow:"hidden" }}
+            style={{ flexShrink:0, display:"flex", flexDirection:"column", background:panelAltBg, overflow:"hidden", marginTop:14, marginBottom:10, borderTop:`1px solid ${mutedBorder}` }}
           >
-            <div style={{ padding:"10px 14px 8px", borderBottom:"1px solid rgba(17,24,22,0.1)" }}>
-              <span style={{ ...TY.secLabel, color:C.ink3, letterSpacing:"0.12em", whiteSpace:"nowrap" }}>{cat.nom}</span>
+            <div style={{ padding:"10px 14px 8px", borderBottom:`1px solid ${mutedBorder}` }}>
+              <span style={{ ...TY.secLabel, color:titleColor, letterSpacing:"0.12em", whiteSpace:"nowrap" }}>{cat.nom}</span>
             </div>
             <div style={{ flex:1, overflowY:"auto", padding:"4px 0" }}>
               {cat.sous_cats!.map((sc, i) => (
@@ -368,9 +406,9 @@ function MarquesDropdown({ marques, onClose }: { marques:Marque[]; onClose:()=>v
                   <Link
                     href={`/marques/${brand.slug}?cat=${sc.id_categorie}`}
                     onClick={onClose}
-                    style={{ display:"flex", alignItems:"center", gap:8, padding:"7px 12px 7px 14px", textDecoration:"none", color:C.ink2, transition:"all 0.1s" }}
-                    onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = C.sageLt; el.style.color = C.sageDk; }}
-                    onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "transparent"; el.style.color = C.ink2; }}
+                    style={{ display:"flex", alignItems:"center", gap:8, padding:"7px 12px 7px 14px", textDecoration:"none", color:isDark ? C.darkInk2 : C.ink2, transition:"all 0.1s" }}
+                    onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.background = isDark ? "#243520" : C.sageLt; el.style.color = C.sage; }}
+                    onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.background = "transparent"; el.style.color = isDark ? C.darkInk2 : C.ink2; }}
                   >
                     <span style={{ width:4, height:4, borderRadius:"50%", background:C.sageMd, flexShrink:0, display:"inline-block" }}/>
                     <span style={{ fontSize:12, fontWeight:500, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{sc.nom}</span>
@@ -479,18 +517,16 @@ export function Navbar() {
   const HERO_PATHS = ["/marques", "/activites", "/contact", "/qui-sommes-nous", "/rendez-vous"];
   const hasPageHero = HERO_PATHS.some(p => pathname?.startsWith(p));
   const onHero         = (isHome || hasPageHero) && !scrolled;
-  const navTextColor   = onHero ? "#a8d97a" : isDark ? C.darkInk2 : C.ink;
+  const navTextColor   = onHero ? "#ffffff" : isDark ? C.darkInk2 : C.ink;
   const navActiveColor = onHero ? "#ffffff" : C.sage;
   const navBorderActive= onHero ? "#7dc040" : C.sage;
-  const navTextShadow  = onHero ? "0 1px 8px rgba(0,0,0,0.75), 0 0 24px rgba(0,0,0,0.45)" : "none";
-
   const mobileMenuBg     = isDark ? C.darkMenuBg : "#ffffff";
   const mobileMenuBorder = isDark ? C.darkMenuBorder : C.line;
   const mobileLinkColor  = isDark ? C.darkInk : C.ink;
   const mobileHoverClass = isDark ? "hover:bg-[#1e2d22]" : "hover:bg-[#edf8f3]";
   const mobileSubHover   = isDark ? "hover:bg-[#243520]" : "hover:bg-[#dff2e8]";
 
-  const nlBase: React.CSSProperties = { ...TY.navLink, color:navTextColor, padding:"8px 14px", borderRadius:0, cursor:"pointer", display:"flex", alignItems:"center", gap:5, textDecoration:"none", transition:"color 0.15s, text-shadow 0.3s", border:"none", background:"transparent", borderBottom:"2.5px solid transparent", textShadow:navTextShadow };
+  const nlBase: React.CSSProperties = { ...TY.navLink, color:navTextColor, padding:"8px 14px", borderRadius:0, cursor:"pointer", display:"flex", alignItems:"center", gap:5, textDecoration:"none", transition:"color 0.15s", border:"none", background:"transparent", borderBottom:"2.5px solid transparent" };
   const nlOn: React.CSSProperties   = { ...nlBase, ...TY.navLinkOn, color:navActiveColor, borderBottom:`2.5px solid ${navBorderActive}` };
   const nlBtn: React.CSSProperties  = { ...nlBase, fontFamily:"inherit" };
 
@@ -526,7 +562,7 @@ export function Navbar() {
               )}
             </Link>
 
-            <div className="hidden lg:flex" style={{ flex:1, alignItems:"center", justifyContent:"center", gap:0, height:"100%" }}>
+            <div className="hidden xl:flex" style={{ flex:1, alignItems:"center", justifyContent:"center", gap:0, height:"100%" }}>
               <Link href="/qui-sommes-nous" style={isActive("/qui-sommes-nous") ? nlOn : nlBase}>Qui sommes-nous</Link>
 
               {/* Activités */}
@@ -547,7 +583,7 @@ export function Navbar() {
                         marginTop:10, zIndex:60,
                         maxWidth:"calc(100vw - 32px)",
                       }}>
-                      <ActivitesDropdown activites={activites} onClose={acts.hide}/>
+                      <ActivitesDropdown activites={activites} onClose={acts.hide} isDark={isDark}/>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -571,7 +607,7 @@ export function Navbar() {
                         marginTop:10, zIndex:60,
                         maxWidth:"calc(100vw - 32px)",
                       }}>
-                      <MarquesDropdown marques={marques} onClose={marquesH.hide}/>
+                      <MarquesDropdown marques={marques} onClose={marquesH.hide} isDark={isDark}/>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -581,8 +617,8 @@ export function Navbar() {
             </div>
 
             {/* Right CTAs */}
-            <div className="hidden lg:flex" style={{ alignItems:"center", gap:8, marginLeft:"auto" }}>
-              <ProduitSearch onHero={onHero} navTextColor={navTextColor} navTextShadow={navTextShadow} />
+            <div className="hidden xl:flex" style={{ alignItems:"center", gap:8, marginLeft:"auto" }}>
+              <ProduitSearch onHero={onHero} navTextColor={navTextColor} />
 
               <motion.button
                 onClick={toggle}
@@ -593,10 +629,10 @@ export function Navbar() {
                   width: 40, height: 40,
                   borderRadius: 10,
                   border: onHero ? "1.5px solid rgba(255,255,255,0.3)" : `1.5px solid ${C.border}`,
-                  background: onHero ? "rgba(255,255,255,0.12)" : C.sageLt,
+                  background: onHero ? "rgba(255,255,255,0.12)" : C.logoLt,
                   cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  color: onHero ? "#fff" : C.sage,
+                  color: onHero ? "#fff" : C.logo,
                   transition: "all 0.3s",
                   flexShrink: 0,
                 }}
@@ -625,14 +661,14 @@ export function Navbar() {
                 display: "flex", alignItems: "center", gap: 6,
                 padding: "10px 18px",
                 borderRadius: 10,
-                background: onHero ? "rgba(255,255,255,0.18)" : `linear-gradient(135deg,${C.gradA},${C.gradB})`,
+                background: onHero ? "rgba(255,255,255,0.18)" : `linear-gradient(135deg,${C.logoDk},${C.logo})`,
                 border: onHero ? "1.5px solid rgba(255,255,255,0.35)" : "none",
                 color: "#fff",
                 fontWeight: 700,
                 fontSize: 13.5,
                 letterSpacing: "-0.01em",
                 textDecoration: "none",
-                boxShadow: onHero ? "none" : `0 3px 10px rgba(46,125,79,0.3)`,
+                boxShadow: onHero ? "none" : `0 3px 10px rgba(125,192,64,0.3)`,
                 transition: "all 0.3s",
                 whiteSpace: "nowrap",
               }}>
@@ -641,7 +677,7 @@ export function Navbar() {
             </div>
 
             {/* Burger */}
-            <button onClick={() => setMobileOpen(v => !v)} className="lg:hidden ml-auto p-2.5 rounded-xl"
+            <button onClick={() => setMobileOpen(v => !v)} className="xl:hidden ml-auto p-2.5 rounded-xl"
               style={{
                 background: onHero ? "rgba(255,255,255,0.15)" : isDark ? "rgba(255,255,255,0.08)" : C.sageLt,
                 color: onHero ? "#fff" : isDark ? C.darkInk : C.sage,
@@ -663,14 +699,14 @@ export function Navbar() {
       <AnimatePresence>
         {mobileOpen && (
           <motion.div initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:"auto" }} exit={{ opacity:0, height:0 }} transition={{ duration:0.22 }}
-            className="fixed inset-x-0 z-40 overflow-hidden"
+            className="fixed inset-x-0 z-40 overflow-hidden xl:hidden"
             style={{
               top:NAV_H+2.5,
               borderTop:`1.5px solid ${mobileMenuBorder}`,
               boxShadow:"0 24px 48px rgba(0,0,0,0.12)",
               background: mobileMenuBg,
             }}>
-            <div className="p-4 max-h-[80vh] overflow-y-auto flex flex-col gap-2">
+            <div className="p-4 max-h-[calc(100dvh-5.5rem)] overflow-y-auto flex flex-col gap-2">
 
               <Link href="/qui-sommes-nous" onClick={() => setMobileOpen(false)}
                 style={{ ...TY.mobileLink, color:mobileLinkColor, padding:"11px 16px", borderRadius:10, display:"block", textDecoration:"none" }}
@@ -704,7 +740,7 @@ export function Navbar() {
                           <div style={{ width:32, height:32, borderRadius:9, background:C.sagePastel, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, border:`1.5px solid ${C.sageIcon}`, overflow:"hidden" }}>
                             {a.image ? <Image src={a.image} alt={a.nom} width={32} height={32} style={{ objectFit:"cover", width:"100%", height:"100%" }}/> : <Ico.Leaf style={{ width:14, height:14, color:C.sageMd }}/>}
                           </div>
-                          <p style={{ ...TY.mobileLink, fontSize:14, color:mobileLinkColor }}>{a.nom}</p>
+                          <p style={{ ...TY.mobileLink, fontSize:14, color:mobileLinkColor, margin:0, minWidth:0 }}>{a.nom}</p>
                         </Link>
                       ))}
                     </motion.div>
@@ -736,9 +772,9 @@ export function Navbar() {
                           <div style={{ width:36, height:36, borderRadius:9, background:C.sagePastel, border:`1.5px solid ${C.sageIcon}`, display:"flex", alignItems:"center", justifyContent:"center", overflow:"hidden" }}>
                             {m.logo ? <Image src={m.logo} alt={m.nom} width={36} height={36} style={{ objectFit:"contain", padding:4 }}/> : <Ico.Leaf style={{ width:16, height:16, color:C.sageMd }}/>}
                           </div>
-                          <div>
-                            <p style={{ ...TY.mobileLink, fontSize:14, color:mobileLinkColor }}>{m.nom}</p>
-                            {m.description && <p style={{ fontSize:11.5, color:isDark ? C.darkInk3 : C.ink3 }}>{m.description.substring(0,40)}</p>}
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <p style={{ ...TY.mobileLink, fontSize:14, color:mobileLinkColor, margin:0 }}>{m.nom}</p>
+                            {m.description && <p style={{ fontSize:11.5, color:isDark ? C.darkInk3 : C.ink3, margin:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{m.description.substring(0,40)}</p>}
                           </div>
                         </Link>
                       ))}
@@ -753,11 +789,11 @@ export function Navbar() {
                 Contact
               </Link>
               <Link href="/rendez-vous" onClick={() => setMobileOpen(false)}
-                style={{ ...TY.cta, color:"#fff", background:`linear-gradient(135deg,${C.gradA},${C.gradB})`, padding:"12px 16px", borderRadius:10, display:"flex", alignItems:"center", gap:8, marginTop:4, textDecoration:"none" }}>
+                style={{ ...TY.cta, color:"#fff", background:`linear-gradient(135deg,${C.logoDk},${C.logo})`, padding:"12px 16px", borderRadius:10, display:"flex", alignItems:"center", gap:8, marginTop:4, textDecoration:"none" }}>
                 <Ico.Cal style={{ width:16, height:16 }}/>Prendre RDV
               </Link>
               <Link href="/devis" onClick={() => setMobileOpen(false)}
-                style={{ ...TY.cta, color:C.sage, background:C.sageLt, padding:"12px 16px", borderRadius:10, display:"flex", alignItems:"center", gap:8, textDecoration:"none", border:`1.5px solid ${C.border}` }}>
+                style={{ ...TY.cta, color:C.logoDk, background:C.logoLt, padding:"12px 16px", borderRadius:10, display:"flex", alignItems:"center", gap:8, textDecoration:"none", border:`1.5px solid ${C.logoBorder}` }}>
                 Demander un devis
               </Link>
             </div>

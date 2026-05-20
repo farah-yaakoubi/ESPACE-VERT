@@ -159,7 +159,7 @@ export default function AdminDevisPage() {
             </div>
             <div className="p-6 space-y-5">
               {/* Infos client */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                 <div><p className="text-gray-400 text-xs mb-0.5">Nom</p><p className="font-medium">{selected.nom}</p></div>
                 <div><p className="text-gray-400 text-xs mb-0.5">Email</p><p className="font-medium">{selected.email}</p></div>
                 {selected.telephone && <div><p className="text-gray-400 text-xs mb-0.5">Téléphone</p><p className="font-medium">{selected.telephone}</p></div>}

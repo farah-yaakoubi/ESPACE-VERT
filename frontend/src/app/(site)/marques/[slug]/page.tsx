@@ -11,6 +11,35 @@ interface PageProps {
 
 export const revalidate = 300;
 
+function getMarqueHeroSettings(slug: string) {
+  switch (slug) {
+    case "matar":
+      return {
+        imagePosition: "center 34%",
+        imagePositionTablet: "center 28%",
+        imagePositionMobile: "center 22%",
+      };
+    case "fertivert":
+      return {
+        imagePosition: "center 39%",
+        imagePositionTablet: "center 34%",
+        imagePositionMobile: "center 27%",
+      };
+    case "pulvert":
+      return {
+        imagePosition: "center 36%",
+        imagePositionTablet: "center 31%",
+        imagePositionMobile: "center 25%",
+      };
+    default:
+      return {
+        imagePosition: "center 35%",
+        imagePositionTablet: "center 30%",
+        imagePositionMobile: "center 24%",
+      };
+  }
+}
+
 /* ── Static params ───────────────────────────────────────────────── */
 export async function generateStaticParams() {
   const marques = await marquesService.list();
@@ -44,6 +73,7 @@ export default async function MarqueDetailPage({ params }: PageProps) {
 
   const tree    = await fetchMarqueTree(slug);
   const isMatar = marque.slug === "matar";
+  const heroSettings = getMarqueHeroSettings(marque.slug);
 
   return (
     <>
@@ -54,6 +84,8 @@ export default async function MarqueDetailPage({ params }: PageProps) {
         title={marque.nom}
         subtitle={marque.description ?? undefined}
         fallbackImage="/images/hero/fertivert.webp"
+        contentMaxWidth="44rem"
+        {...heroSettings}
       />
 
       {/* CTA Matar RDV — affiché sous le hero si besoin */}

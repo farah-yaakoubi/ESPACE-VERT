@@ -5,30 +5,31 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
+import { useTheme } from "@/components/ThemeProvider";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 const C = {
-  sage:    "#2e7d4f",
-  sageDk:  "#1b5e38",
-  sageLt:  "#dff2e8",
-  sageMd:  "#5bab79",
-  leaf:    "#4a9e68",
-  border:  "#b8d9c6",
+  sage:    "#7dc040",
+  sageDk:  "#5f972d",
+  sageLt:  "#eef8e4",
+  sageMd:  "#98cb67",
+  leaf:    "#7dc040",
+  border:  "#cfe5b5",
   // Fond semi-transparent — laisse voir la page en dessous
-  overlayBg:    "rgba(236, 248, 241, 0.82)",
-  overlayTop:   "rgba(220, 242, 231, 0.88)",
-  overlayFoot:  "rgba(210, 238, 224, 0.88)",
-  overlayBorder:"rgba(180, 220, 200, 0.5)",
-  textPrimary:  "#1a4a30",
-  textSecondary:"#4a7a60",
-  textMuted:    "#8ab89e",
-  inputCaret:   "#4a9e68",
+  overlayBg:    "rgba(246, 252, 239, 0.86)",
+  overlayTop:   "rgba(239, 249, 229, 0.92)",
+  overlayFoot:  "rgba(233, 246, 218, 0.90)",
+  overlayBorder:"rgba(189, 220, 151, 0.58)",
+  textPrimary:  "#234110",
+  textSecondary:"#5f972d",
+  textMuted:    "#92b86d",
+  inputCaret:   "#7dc040",
   tagBg:        "rgba(255,255,255,0.6)",
-  tagBorder:    "rgba(150,210,180,0.6)",
-  resultHover:  "rgba(200,235,215,0.5)",
-  resultActive: "rgba(180,225,205,0.6)",
-  highlight:    "rgba(100,190,140,0.25)",
+  tagBorder:    "rgba(189,220,151,0.7)",
+  resultHover:  "rgba(226,243,196,0.58)",
+  resultActive: "rgba(214,238,173,0.72)",
+  highlight:    "rgba(125,192,64,0.24)",
 };
 
 interface Resultat {
@@ -44,7 +45,6 @@ interface Resultat {
 interface SearchProps {
   onHero?:        boolean;
   navTextColor?:  string;
-  navTextShadow?: string;
   logoSrc?:       string;
   logoAlt?:       string;
 }
@@ -52,10 +52,11 @@ interface SearchProps {
 export function ProduitSearch({
   onHero        = false,
   navTextColor  = "#2e7d4f",
-  navTextShadow = "none",
   logoSrc       = "/logos/logo-espace-vert.png",
   logoAlt       = "Logo",
 }: SearchProps) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const [open,    setOpen]    = useState(false);
   const [query,   setQuery]   = useState("");
   const [results, setResults] = useState<Resultat[]>([]);
@@ -123,9 +124,38 @@ export function ProduitSearch({
   };
 
   const QUICK_TAGS = [ "Biostimulant", "Semences"];
+  const palette = isDark
+    ? {
+        sage: "#7dc040",
+        sageDk: "#94cf5b",
+        sageLt: "#1c2a17",
+        sageMd: "#9fca69",
+        leaf: "#7dc040",
+        border: "rgba(125,192,64,0.24)",
+        overlayBg: "rgba(13, 24, 16, 0.92)",
+        overlayTop: "rgba(22, 33, 23, 0.96)",
+        overlayFoot: "rgba(18, 29, 20, 0.96)",
+        overlayBorder: "rgba(125, 192, 64, 0.16)",
+        textPrimary: "#e8f0ea",
+        textSecondary: "#a7db73",
+        textMuted: "rgba(232,240,234,0.58)",
+        inputCaret: "#7dc040",
+        tagBg: "rgba(255,255,255,0.05)",
+        tagBorder: "rgba(125,192,64,0.18)",
+        resultHover: "rgba(125,192,64,0.08)",
+        resultActive: "rgba(125,192,64,0.12)",
+        highlight: "rgba(125,192,64,0.18)",
+        chipBg: "rgba(255,255,255,0.06)",
+        chipBorder: "rgba(255,255,255,0.08)",
+      }
+    : {
+        ...C,
+        chipBg: "rgba(255,255,255,0.6)",
+        chipBorder: "rgba(160,210,185,0.5)",
+      };
 
-  const iconBorder = onHero ? "1.5px solid rgba(255,255,255,0.3)" : `1.5px solid ${C.border}`;
-  const iconBg     = onHero ? "rgba(255,255,255,0.12)"            : C.sageLt;
+  const iconBorder = onHero ? "1.5px solid rgba(255,255,255,0.3)" : `1.5px solid ${palette.border}`;
+  const iconBg     = onHero ? "rgba(255,255,255,0.12)"            : palette.sageLt;
 
   return (
     <>
@@ -139,10 +169,10 @@ export function ProduitSearch({
           width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
           borderRadius: 10, cursor: "pointer", flexShrink: 0,
           border: iconBorder, background: iconBg,
-          color: onHero ? "#fff" : C.sage,
+          color: onHero ? "#fff" : palette.sage,
         }}
       >
-        <SearchIcon color={onHero ? "#fff" : C.sage} size={17} />
+        <SearchIcon color={onHero ? "#fff" : palette.sage} size={17} />
       </motion.button>
 
       {/* ── Panel demi-écran (portal) ── */}
@@ -178,7 +208,7 @@ export function ProduitSearch({
                   top: 0, left: 0, right: 0,
                   height: "clamp(400px, 55vh, 660px)",
                   zIndex: 9999,
-                  background: C.overlayBg,
+                  background: palette.overlayBg,
                   backdropFilter: "blur(24px)",
                   WebkitBackdropFilter: "blur(24px)",
                   display: "flex",
@@ -186,7 +216,7 @@ export function ProduitSearch({
                   borderBottomLeftRadius: 24,
                   borderBottomRightRadius: 24,
                   boxShadow: "0 16px 56px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.6)",
-                  border: `1px solid ${C.overlayBorder}`,
+                  border: `1px solid ${palette.overlayBorder}`,
                   borderTop: "none",
                   overflow: "hidden",
                 }}
@@ -196,8 +226,8 @@ export function ProduitSearch({
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "14px 40px",
                   flexShrink: 0,
-                  background: C.overlayTop,
-                  borderBottom: `1px solid ${C.overlayBorder}`,
+                  background: palette.overlayTop,
+                  borderBottom: `1px solid ${palette.overlayBorder}`,
                 }}>
                   <motion.div
                     initial={{ opacity: 0, x: -12 }}
@@ -224,7 +254,7 @@ export function ProduitSearch({
                     animate={{ opacity: 1, x: 0 }}
                     style={{
                       background: "none", border: "none", cursor: "pointer",
-                      color: C.textSecondary, display: "flex",
+                      color: palette.textSecondary, display: "flex",
                       alignItems: "center", justifyContent: "center",
                       padding: 4,
                     }}
@@ -256,11 +286,11 @@ export function ProduitSearch({
                     {/* Barre de saisie */}
                     <div style={{
                       position: "relative",
-                      borderBottom: `1.5px solid ${C.border}`,
+                      borderBottom: `1.5px solid ${palette.border}`,
                       display: "flex", alignItems: "center", gap: 16,
                       paddingBottom: 14,
                     }}>
-                      <SearchIcon color={C.textMuted} size={22} />
+                      <SearchIcon color={palette.textMuted} size={22} />
                       <input
                         ref={inputRef}
                         value={query}
@@ -272,7 +302,7 @@ export function ProduitSearch({
                         style={{
                           flex: 1, background: "transparent", border: "none", outline: "none",
                           fontSize: 26, fontWeight: 300, letterSpacing: "-0.02em",
-                          color: C.textPrimary, caretColor: C.inputCaret,
+                          color: palette.textPrimary, caretColor: palette.inputCaret,
                           fontFamily: "inherit",
                         }}
                       />
@@ -281,7 +311,7 @@ export function ProduitSearch({
                           <motion.span key="spin"
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             style={{ display: "flex", alignItems: "center" }}>
-                            <SpinnerPine color={C.textMuted} />
+                            <SpinnerPine color={palette.textMuted} />
                           </motion.span>
                         ) : query ? (
                           <motion.button key="clear"
@@ -290,7 +320,7 @@ export function ProduitSearch({
                             exit={{ opacity: 0, scale: 0.7 }} whileTap={{ scale: 0.85 }}
                             style={{
                               background: "none", border: "none", cursor: "pointer",
-                              display: "flex", alignItems: "center", color: C.textMuted,
+                              display: "flex", alignItems: "center", color: palette.textMuted,
                             }}>
                             <XIcon size={18} />
                           </motion.button>
@@ -300,9 +330,9 @@ export function ProduitSearch({
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             style={{
                               background: "none", border: "none", cursor: "pointer",
-                              display: "flex", alignItems: "center", color: C.textMuted,
+                              display: "flex", alignItems: "center", color: palette.textMuted,
                             }}>
-                            <SearchIcon color={C.textMuted} size={20} />
+                            <SearchIcon color={palette.textMuted} size={20} />
                           </motion.button>
                         )}
                       </AnimatePresence>
@@ -317,7 +347,7 @@ export function ProduitSearch({
                         >
                           <span style={{
                             fontSize: 11, fontWeight: 700, letterSpacing: "0.14em",
-                            textTransform: "uppercase", color: C.textMuted,
+                            textTransform: "uppercase", color: palette.textMuted,
                             alignSelf: "center", marginRight: 4,
                           }}>
                             Tendances :
@@ -333,8 +363,8 @@ export function ProduitSearch({
                               whileTap={{ scale: 0.96 }}
                               style={{
                                 fontSize: 13, fontWeight: 500, padding: "6px 14px", borderRadius: 100,
-                                border: `1px solid ${C.tagBorder}`, background: C.tagBg,
-                                color: C.textSecondary, cursor: "pointer",
+                                border: `1px solid ${palette.tagBorder}`, background: palette.tagBg,
+                                color: palette.textSecondary, cursor: "pointer",
                                 backdropFilter: "blur(4px)",
                               }}
                             >
@@ -353,8 +383,8 @@ export function ProduitSearch({
                           style={{ marginTop: 32, textAlign: "center" }}
                         >
                           <div style={{ fontSize: 36, marginBottom: 10, opacity: 0.2 }}>🌿</div>
-                          <p style={{ fontSize: 15, color: C.textMuted }}>
-                            Aucun résultat pour <span style={{ color: C.textPrimary, fontWeight: 600 }}>« {query} »</span>
+                          <p style={{ fontSize: 15, color: palette.textMuted }}>
+                            Aucun résultat pour <span style={{ color: palette.textPrimary, fontWeight: 600 }}>« {query} »</span>
                           </p>
                         </motion.div>
                       )}
@@ -369,7 +399,7 @@ export function ProduitSearch({
                         >
                           <p style={{
                             fontSize: 10, fontWeight: 800, letterSpacing: "0.14em",
-                            textTransform: "uppercase", color: C.textMuted, marginBottom: 10,
+                            textTransform: "uppercase", color: palette.textMuted, marginBottom: 10,
                           }}>
                             {results.length} résultat{results.length > 1 ? "s" : ""}
                           </p>
@@ -384,21 +414,21 @@ export function ProduitSearch({
                                   initial={{ opacity: 0, x: -8 }}
                                   animate={{ opacity: 1, x: 0 }}
                                   transition={{ delay: i * 0.04 }}
-                                  whileHover={{ x: 6, backgroundColor: C.resultHover }}
+                                  whileHover={{ x: 6, backgroundColor: palette.resultHover }}
                                   whileTap={{ scale: 0.99 }}
                                   style={{
                                     width: "100%", display: "flex", alignItems: "center", gap: 14,
                                     padding: "10px 14px", border: "none", borderRadius: 10,
-                                    background: isActive ? C.resultActive : "transparent",
+                                    background: isActive ? palette.resultActive : "transparent",
                                     cursor: "pointer", textAlign: "left",
-                                    borderLeft: isActive ? `3px solid ${C.leaf}` : "3px solid transparent",
+                                    borderLeft: isActive ? `3px solid ${palette.leaf}` : "3px solid transparent",
                                     transition: "border-color 0.12s",
                                   }}
                                 >
                                   <div style={{
                                     width: 40, height: 40, borderRadius: 8,
-                                    background: "rgba(255,255,255,0.8)",
-                                    border: `1px solid ${C.border}`,
+                                    background: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.8)",
+                                    border: `1px solid ${palette.border}`,
                                     overflow: "hidden", position: "relative", flexShrink: 0,
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                   }}>
@@ -409,13 +439,13 @@ export function ProduitSearch({
                                   </div>
                                   <div style={{ flex: 1, minWidth: 0 }}>
                                     <p style={{
-                                      fontSize: 14, fontWeight: 600, color: C.textPrimary,
+                                      fontSize: 14, fontWeight: 600, color: palette.textPrimary,
                                       letterSpacing: "-0.01em", whiteSpace: "nowrap",
                                       overflow: "hidden", textOverflow: "ellipsis",
                                     }}>
-                                      {highlight(p.nom, query)}
+                                      {highlight(p.nom, query, isDark)}
                                     </p>
-                                    <p style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>
+                                    <p style={{ fontSize: 11, color: palette.textMuted, marginTop: 2 }}>
                                       {[p.categorie?.nom, p.marque?.nom].filter(Boolean).join(" · ")}
                                     </p>
                                   </div>
@@ -423,13 +453,13 @@ export function ProduitSearch({
                                     fontSize: 9, fontWeight: 800, letterSpacing: "0.1em",
                                     textTransform: "uppercase", borderRadius: 5,
                                     padding: "3px 8px", flexShrink: 0,
-                                    background: C.sageLt, color: C.sage,
-                                    border: `1px solid ${C.border}`,
+                                    background: palette.sageLt, color: palette.sage,
+                                    border: `1px solid ${palette.border}`,
                                   }}>
                                     {p.division}
                                   </span>
                                   <svg width={14} height={14} viewBox="0 0 24 24" fill="none"
-                                    stroke={C.textMuted} strokeWidth={2} strokeLinecap="round">
+                                    stroke={palette.textMuted} strokeWidth={2} strokeLinecap="round">
                                     <path d="M9 18l6-6-6-6" />
                                   </svg>
                                 </motion.button>
@@ -441,7 +471,7 @@ export function ProduitSearch({
                             onClick={() => { close(); router.push(`/produits?search=${encodeURIComponent(query)}`); }}
                             whileHover={{ x: 4 }}
                             style={{
-                              marginTop: 12, fontSize: 13, fontWeight: 700, color: C.leaf,
+                              marginTop: 12, fontSize: 13, fontWeight: 700, color: palette.leaf,
                               background: "none", border: "none", cursor: "pointer",
                               display: "flex", alignItems: "center", gap: 6, padding: "6px 14px",
                             }}
@@ -459,19 +489,19 @@ export function ProduitSearch({
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
                   style={{
                     padding: "10px 40px",
-                    borderTop: `1px solid ${C.overlayBorder}`,
-                    background: C.overlayFoot,
+                    borderTop: `1px solid ${palette.overlayBorder}`,
+                    background: palette.overlayFoot,
                     display: "flex", alignItems: "center", gap: 12, flexShrink: 0,
                   }}
                 >
-                  <Kbd>↑↓</Kbd>
-                  <span style={{ fontSize: 11, color: C.textMuted }}>naviguer</span>
-                  <Kbd>↵</Kbd>
-                  <span style={{ fontSize: 11, color: C.textMuted }}>sélectionner</span>
-                  <Kbd>esc</Kbd>
-                  <span style={{ fontSize: 11, color: C.textMuted }}>fermer</span>
+                  <Kbd isDark={isDark}>↑↓</Kbd>
+                  <span style={{ fontSize: 11, color: palette.textMuted }}>naviguer</span>
+                  <Kbd isDark={isDark}>↵</Kbd>
+                  <span style={{ fontSize: 11, color: palette.textMuted }}>sélectionner</span>
+                  <Kbd isDark={isDark}>esc</Kbd>
+                  <span style={{ fontSize: 11, color: palette.textMuted }}>fermer</span>
                   <div style={{ flex: 1 }} />
-                  <span style={{ fontSize: 10, color: C.textMuted, fontWeight: 600 }}>
+                  <span style={{ fontSize: 10, color: palette.textMuted, fontWeight: 600 }}>
                     ⌘K pour ouvrir rapidement
                   </span>
                 </motion.div>
@@ -487,15 +517,15 @@ export function ProduitSearch({
 
 /* ── Helpers ──────────────────────────────────────────────────── */
 
-function Kbd({ children }: { children: React.ReactNode }) {
+function Kbd({ children, isDark = false }: { children: React.ReactNode; isDark?: boolean }) {
   return (
     <kbd style={{
       fontSize: 10,
-      background: "rgba(255,255,255,0.6)",
-      color: "#4a7a60",
+      background: isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.6)",
+      color: isDark ? "rgba(232,240,234,0.8)" : "#4a7a60",
       borderRadius: 5,
       padding: "2px 7px",
-      border: "1px solid rgba(160,210,185,0.5)",
+      border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid rgba(160,210,185,0.5)",
       fontFamily: "monospace",
     }}>
       {children}
@@ -503,20 +533,20 @@ function Kbd({ children }: { children: React.ReactNode }) {
   );
 }
 
-function highlight(text: string, query: string) {
+function highlight(text: string, query: string, isDark = false) {
   if (!query.trim()) return <>{text}</>;
   const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
   const parts = text.split(regex);
   return (
     <>{parts.map((part, i) =>
       regex.test(part)
-        ? <mark key={i} style={{ background: "rgba(125,192,64,0.25)", color: "#4a9e68", borderRadius: 3, padding: "0 1px" }}>{part}</mark>
+        ? <mark key={i} style={{ background: isDark ? "rgba(125,192,64,0.18)" : "rgba(125,192,64,0.24)", color: isDark ? "#b8e27f" : "#5f972d", borderRadius: 3, padding: "0 1px" }}>{part}</mark>
         : part
     )}</>
   );
 }
 
-function SearchIcon({ color = "#2e7d4f", size = 15 }: { color?: string; size?: number }) {
+function SearchIcon({ color = "#7dc040", size = 15 }: { color?: string; size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
       stroke={color} strokeWidth={2.2} strokeLinecap="round">
@@ -535,7 +565,7 @@ function XIcon({ size = 12 }: { size?: number }) {
   );
 }
 
-function SpinnerPine({ color = "#2e7d4f" }: { color?: string }) {
+function SpinnerPine({ color = "#7dc040" }: { color?: string }) {
   return (
     <motion.svg width={20} height={20} viewBox="0 0 24 24" fill="none"
       stroke={color} strokeWidth={2} strokeLinecap="round"

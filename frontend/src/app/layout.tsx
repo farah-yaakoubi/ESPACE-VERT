@@ -1,19 +1,19 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
-import { Syne, DM_Sans } from "next/font/google";
+import { Cairo } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
-const fontDisplay = Syne({
-  subsets: ["latin"],
-  weight: ["400", "600", "700", "800"],
+
+const fontDisplay = Cairo({
+  subsets: ["latin", "arabic"],
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-display",
   display: "swap",
 });
 
-const fontBody = DM_Sans({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  style: ["normal", "italic"],
+const fontBody = Cairo({
+  subsets: ["latin", "arabic"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-body",
   display: "swap",
 });

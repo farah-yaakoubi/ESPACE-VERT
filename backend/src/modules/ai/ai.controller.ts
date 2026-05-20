@@ -186,8 +186,8 @@ export async function aiRecommendSemences(req: Request, res: Response): Promise<
     return;
   }
 
-  const { culture, mois, sol } = req.body as {
-    culture: string; mois?: string; sol?: string;
+  const { culture, mois, sol, climat } = req.body as {
+    culture: string; mois?: string; sol?: string; climat?: string;
   };
 
   if (!culture?.trim()) {
@@ -196,6 +196,14 @@ export async function aiRecommendSemences(req: Request, res: Response): Promise<
   }
 
   try {
+    const climateHints: Record<string, string> = {
+      "Chaud et sec": "Privilégier les variétés tolérantes au stress hydrique, à la chaleur et à l'ensoleillement élevé.",
+      "Tempéré": "Conditions globalement équilibrées avec peu d'excès thermiques ou hydriques.",
+      "Humide": "Privilégier les variétés supportant l'humidité et limitant les risques liés aux maladies favorisées par l'eau.",
+      "Venteux": "Prendre en compte la résistance mécanique des plantes et la sensibilité des jeunes pousses.",
+      "Sous serre": "Contexte protégé avec microclimat maîtrisé, croissance plus régulière et semis plus sécurisés.",
+    };
+
     // ── 1. Données agronomiques OpenFarm (API publique, sans clé) ────────────
     let cropData = "";
     try {
@@ -221,10 +229,7 @@ export async function aiRecommendSemences(req: Request, res: Response): Promise<
         }
       }
     } catch {
-      // OpenFarm inaccessible → on continue sans données externes
     }
-
-    // ── 2. Catalogue semences depuis la DB ────────────────────────────────────
     const semencesActivite = await prisma.activite.findFirst({
      where: { slug: "semences-et-plants", actif: true },
       select: { id_activite: true },
@@ -266,11 +271,15 @@ export async function aiRecommendSemences(req: Request, res: Response): Promise<
       )
       .join("\n");
 
+    const climateHint = climat ? climateHints[climat] : "";
+
     // ── 3. Prompt Groq ────────────────────────────────────────────────────────
     const userPrompt =
       `Un agriculteur souhaite cultiver : "${culture.trim()}".` +
       (mois ? `\nMois de semis prévu : ${mois}.` : "") +
       (sol  ? `\nType de sol : ${sol}.` : "") +
+      (climat ? `\nContexte climatique : ${climat}.` : "") +
+      (climateHint ? `\nConsigne climatique : ${climateHint}` : "") +
       (cropData ? `\n\nDONNÉES AGRONOMIQUES OPENFARM :\n${cropData}` : "") +
       `\n\nCATALOGUE DISPONIBLE (semences) :\n${catalogueTxt}` +
       `\n\nSélectionne entre 3 et 5 produits du catalogue ci-dessus qui sont les mieux adaptés à la culture de "${culture.trim()}" selon les conditions indiquées. Si aucun produit ne correspond, retourne un tableau vide.\n` +

@@ -4,6 +4,7 @@ import {
   comparePassword, hashPassword,
   generateAccessToken, generateRefreshToken, verifyRefreshToken,
 } from "../../lib/auth";
+import { mergePermissions } from "../../lib/permissions";
 import { logAudit } from "../../lib/audit";
 import { LoginDto, RefreshDto, ChangePasswordDto } from "./auth.schema";
 
@@ -44,10 +45,7 @@ export const authService = {
       ip_address:  ip,
     });
 
-    // Inclure les permissions du rôle dans la réponse
-    const rolePerms = Array.isArray((admin as any).role?.permissions)
-      ? (admin as any).role.permissions
-      : [];
+    const permissions = mergePermissions((admin as any).role?.permissions, (admin as any).permissions);
     return {
       access_token,
       refresh_token,
@@ -55,8 +53,14 @@ export const authService = {
         id_admin: admin.id_admin,
         nom:      admin.nom,
         email:    admin.email,
-        role:     admin.role.nom,
+        actif:    admin.actif,
+        avatar:   admin.avatar ?? null,
+        role:     {
+          nom: admin.role.nom,
+          permissions: mergePermissions((admin as any).role?.permissions, []),
+        },
         id_role:  admin.id_role,
+        permissions,
       },
     };
   },
@@ -97,13 +101,10 @@ export const authService = {
   async me(id_admin: number) {
     const admin = await authRepository.findAdminById(id_admin);
     if (!admin) throw { status: 404, message: "Admin introuvable" };
-    const { mot_de_passe, ...rest } = admin;
-    // Attacher les permissions du rôle directement sur l'objet admin
+    const { mot_de_passe, permissions: adminPermissions, ...rest } = admin as any;
     const safe = {
       ...rest,
-      permissions: Array.isArray((admin as any).role?.permissions)
-        ? (admin as any).role.permissions
-        : [],
+      permissions: mergePermissions((admin as any).role?.permissions, adminPermissions),
     };
     return safe;
   },

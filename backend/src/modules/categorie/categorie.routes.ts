@@ -1,6 +1,6 @@
 // src/modules/categorie/categorie.routes.ts
 import { Router } from "express";
-import { authenticate } from "../../middleware/authMiddleware";
+import { authenticate, requirePermission } from "../../middleware/authMiddleware";
 import * as ctrl from "./categorie.controller";
 
 // ── Public ───────────────────────────────────────────────────────────────────
@@ -23,8 +23,8 @@ marqueTreeRouter.get("/tree", ctrl.getMarqueTree);
 export const categorieAdminRouter = Router();
 categorieAdminRouter.use(authenticate);
 
-categorieAdminRouter.get("/",     ctrl.list);
-categorieAdminRouter.post("/",    ctrl.create);
-categorieAdminRouter.get("/:id",  ctrl.getById);
-categorieAdminRouter.put("/:id",  ctrl.update);
-categorieAdminRouter.delete("/:id", ctrl.remove);
+categorieAdminRouter.get("/",       requirePermission("produits.read"),    ctrl.list);
+categorieAdminRouter.post("/",      requirePermission("categories.write"), ctrl.create);
+categorieAdminRouter.get("/:id",    requirePermission("produits.read"),    ctrl.getById);
+categorieAdminRouter.put("/:id",    requirePermission("categories.write"), ctrl.update);
+categorieAdminRouter.delete("/:id", requirePermission("categories.write"), ctrl.remove);

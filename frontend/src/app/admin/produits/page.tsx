@@ -694,7 +694,7 @@ export default function AdminProduitsPage() {
             <div className="p-5 space-y-4">
               {err && <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl flex items-start gap-2"><AlertCircle size={14} className="shrink-0 mt-0.5"/>{err}</div>}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Nom *</label>
                   <input value={form.nom} onChange={e=>setForm({...form,nom:e.target.value,slug:modal==="create"?toSlug(e.target.value):form.slug})}
@@ -707,7 +707,7 @@ export default function AdminProduitsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Marque <span className="text-gray-400 normal-case font-normal">(ou activité)</span></label>
                   <select value={form.id_marque} onChange={e=>setForm({...form,id_marque:e.target.value,id_categorie:""})}
@@ -742,7 +742,7 @@ export default function AdminProduitsPage() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Division</label>
                   <select value={form.division} onChange={e=>setForm({...form,division:e.target.value})}
@@ -782,7 +782,7 @@ export default function AdminProduitsPage() {
                 </div>
 
                 {/* Ligne 1 : SKU + Poids + Nature */}
-                <div className="grid grid-cols-3 gap-2 mb-2">
+                <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
                   <div>
                     <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#1a6b3a"}}>
                       SKU / Référence
