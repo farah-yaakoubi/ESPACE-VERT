@@ -453,8 +453,8 @@ export default function ChatWidget() {
                 </div>
 
                 <div className="flex flex-wrap items-center justify-center gap-1.5 mt-2 text-center">
-                  <span className="text-[10px] text-gray-400">Propulsé par Groq ·</span>
-                  <span className="text-[10px] font-semibold" style={{ color: "#0a6030" }}>Espace Vert</span>
+                  <span className="text-[10px] text-gray-400">Assistant virtuel ·</span>
+                  <span className="text-[10px] font-semibold" style={{ color: "#0a5c2e" }}>Espace Vert</span>
                 </div>
               </div>
             </motion.div>

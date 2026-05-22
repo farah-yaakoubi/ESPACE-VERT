@@ -18,7 +18,7 @@ async function fetchContext(): Promise<string> {
     const faqs = await prisma.faq.findMany({
       where:   { active: true },
       select:  { question: true, reponse: true, categorie: true },
-      take:    30,
+      take:    50,  // toutes les FAQs actives
       orderBy: [{ ordre: "asc" }, { nb_consultations: "desc" }],
     });
     if (faqs.length > 0) {
@@ -63,20 +63,23 @@ async function fetchContext(): Promise<string> {
 
 // ─── System prompt ─────────────────────────────────────────────────────────────
 function buildSystem(context: string): string {
-  return `Tu es l'assistant virtuel d'Espace Vert, entreprise tunisienne spécialisée dans les produits agricoles et horticoles : irrigation, fertilisation, semences, machinisme agricole, espace vert et jardinage.
+  // LANGUAGE FIX: Instructions in English at top to ensure model reads them first
+  return `You are the virtual assistant for Espace Vert, a Tunisian company specializing in agricultural/horticultural products.
 
-Ton rôle est d'aider les visiteurs à :
+⚠️ MANDATORY LANGUAGE RULE: You MUST respond ONLY in FRENCH (français). This is non-negotiable. Even if the user writes in Arabic, Darija, or any other language, you ALWAYS reply in French. Never use Arabic script in your response.
+
+Votre rôle est d'aider les visiteurs à :
 - Trouver des produits et des informations techniques
 - Répondre aux questions fréquentes (FAQ)
 - Les orienter vers les bonnes pages du site
 - Les inciter à prendre contact ou demander un devis
 
 RÈGLES STRICTES :
-- Réponds TOUJOURS en français, de façon concise et professionnelle
+- Répondre TOUJOURS en FRANÇAIS uniquement — OBLIGATOIRE sans exception
 - Ne jamais inventer de prix, références ou disponibilités produits
-- Si tu ne sais pas, propose de contacter l'équipe Espace Vert
-- Réponds UNIQUEMENT avec ce JSON valide (pas de markdown, pas de texte avant/après) :
-{"reply":"ta réponse ici","actions":[{"label":"Texte bouton","href":"/chemin","type":"link"}]}
+- Si incertain, proposer de contacter l'équipe Espace Vert
+- Répondre UNIQUEMENT avec ce JSON valide (pas de markdown, pas de texte avant/après) :
+{"reply":"réponse en français ici","actions":[{"label":"Texte bouton","href":"/chemin","type":"link"}]}
 
 ACTIONS DISPONIBLES (utilise si pertinent) :
 - /produits → Voir tous les produits
@@ -107,16 +110,39 @@ export async function aiChat(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  // Incrémenter nb_consultations FAQ (non bloquant)
-  prisma.faq.findFirst({
-    where: { active: true, question: { contains: message.substring(0, 50) } },
-    select: { id_faq: true },
-  }).then(faq => {
-    if (faq) prisma.faq.update({
-      where: { id_faq: faq.id_faq },
-      data:  { nb_consultations: { increment: 1 } },
-    }).catch(() => {});
-  }).catch(() => {});
+  // Apprentissage auto : tracker les questions fréquentes des visiteurs
+  // On cherche la FAQ dont la question ressemble le plus (mots-clés)
+  void (async () => {
+    try {
+      const keywords = message.toLowerCase()
+        .split(/\s+/)
+        .filter(w => w.length > 3)
+        .slice(0, 6);
+      if (keywords.length === 0) return;
+
+      // Chercher une FAQ existante qui contient au moins un mot-clé
+      const faqs = await prisma.faq.findMany({
+        where: { active: true },
+        select: { id_faq: true, question: true },
+        take: 50,
+      });
+      // Score par nombre de mots-clés en commun
+      let best: { id_faq: number; score: number } | null = null;
+      for (const f of faqs) {
+        const q = f.question.toLowerCase();
+        const score = keywords.filter(k => q.includes(k)).length;
+        if (score > 0 && (!best || score > best.score)) {
+          best = { id_faq: f.id_faq, score };
+        }
+      }
+      if (best) {
+        await prisma.faq.update({
+          where: { id_faq: best.id_faq },
+          data:  { nb_consultations: { increment: 1 } },
+        });
+      }
+    } catch {}
+  })();
 
   try {
     const context      = await fetchContext();

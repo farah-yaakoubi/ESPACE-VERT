@@ -11,14 +11,22 @@ const NAV_H = 80;
    Géré depuis /admin/hero dans le backoffice.
    ───────────────────────────────────────────────────────────────────────────── */
 export interface HeroSlide {
-  id:          number;
-  image:       string;   // URL ou chemin /public — ex: "/images/hero/slide.webp"
-  href?:       string;   // Lien cliquable (optionnel)
-  titre?:      string;   // Titre affiché sur l'image
-  sousTitre?:  string;   // Sous-titre
-  ctaLabel?:   string;   // Texte du bouton CTA
-  ordre:       number;
-  actif:       boolean;
+  id:           number;
+  image:        string;   // URL desktop — 1920×1080px recommandé
+  imageMobile?: string;   // URL mobile — 768×960px portrait (optionnel)
+  imageTablet?: string;   // URL tablette — 1200×900px (optionnel)
+  href?:        string;   // Lien cliquable (optionnel)
+  titre?:       string;   // Titre affiché sur l'image
+  sousTitre?:   string;   // Sous-titre
+  ctaLabel?:    string;   // Texte du bouton CTA
+  /**
+   * Position du sujet dans l'image. Utilise la syntaxe CSS object-position.
+   * Exemples : "center 30%", "center bottom", "60% center"
+   * Si non défini, fallback par breakpoint : mobile→bottom, tablet→28%, desktop→32%
+   */
+  objectPosition?: string;
+  ordre:        number;
+  actif:        boolean;
 }
 
 /* ── Fallback statique — utilisé si le fetch backend échoue ── */
@@ -46,6 +54,28 @@ function useHeroSlides() {
   return slides;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   Helpers — srcSet & sizes pour charger la bonne résolution selon l'écran
+   ───────────────────────────────────────────────────────────────────────────── */
+function buildSrcSet(slide: HeroSlide): string {
+  const mobile  = slide.imageMobile ?? slide.image;
+  const tablet  = slide.imageTablet ?? slide.image;
+  const desktop = slide.image;
+  // Évite les doublons si une seule image est fournie
+  const entries = new Map<string, number>([
+    [mobile,  768],
+    [tablet,  1200],
+    [desktop, 1920],
+  ]);
+  return [...entries.entries()].map(([url, w]) => `${url} ${w}w`).join(", ");
+}
+
+const HERO_SIZES = [
+  "(max-width: 640px) 100vw",
+  "(max-width: 1024px) 100vw",
+  "100vw",
+].join(", ");
+
 export function Hero() {
   const slides  = useHeroSlides();
   const [current, setCurrent] = useState(0);
@@ -55,12 +85,20 @@ export function Hero() {
     return () => clearInterval(t);
   }, [slides.length]);
 
+  /* Précharge le slide suivant (toutes résolutions) */
   useEffect(() => {
     const nextIdx = (current + 1) % slides.length;
-    const link = document.createElement("link");
-    link.rel = "preload"; link.as = "image"; link.href = slides[nextIdx].image;
-    document.head.appendChild(link);
-    return () => { document.head.removeChild(link); };
+    const next    = slides[nextIdx];
+    const urls    = [next.image, next.imageMobile, next.imageTablet].filter(Boolean) as string[];
+    const links: HTMLLinkElement[] = urls.map(href => {
+      const link = document.createElement("link");
+      link.rel  = "preload";
+      link.as   = "image";
+      link.href = href;
+      document.head.appendChild(link);
+      return link;
+    });
+    return () => links.forEach(l => document.head.removeChild(l));
   }, [current, slides]);
 
   const slide = slides[current];
@@ -68,8 +106,10 @@ export function Hero() {
   return (
     <>
       <style>{`
+        /* ── Hero section ─────────────────────────────────────────────────── */
         .hero-section {
-          position: relative; width: 100%;
+          position: relative;
+          width: 100%;
           height: 100vh;
           height: 100dvh;
           min-height: 520px;
@@ -77,10 +117,22 @@ export function Hero() {
           overflow: hidden;
           isolation: isolate;
         }
+
+        /* ── Image de fond ────────────────────────────────────────────────── */
         .hero-image {
-          width: 100%; height: 100%; object-fit: cover;
-          object-position: center 32%; display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          /*
+           * Valeur par défaut (desktop) : sujet principal visible entre 24-40%
+           * depuis le haut. Surchargé par breakpoints ci-dessous.
+           * Si le slide fournit objectPosition, il est appliqué via style inline.
+           */
+          object-position: center 32%;
+          display: block;
         }
+
+        /* ── Texte & CTA ──────────────────────────────────────────────────── */
         .hero-copy {
           position: absolute;
           left: 0;
@@ -92,56 +144,112 @@ export function Hero() {
         .hero-copy-inner {
           width: min(100%, 780px);
         }
+
+        /* ── Mobile ≤ 640px ───────────────────────────────────────────────── */
         @media (max-width: 640px) {
-          .hero-section  { min-height: 560px; }
-          .hero-image    { object-position: center 24%; }
-          .hero-copy     { bottom: 88px; padding: 0 16px; }
+          .hero-section {
+            min-height: 560px;
+            /* Sur mobile le hero = 100dvh. Pour une image 16:9 ça dépasse
+               la hauteur native → fort zoom. On garde le sujet visible
+               en forçant object-position vers le bas (produits, personnages…). */
+          }
+          .hero-image {
+            /*
+             * "center bottom" : priorité au bas de l'image (produits, sol).
+             * Si ton visuel a le sujet en haut, utilise "center top".
+             * Peut être surchargé par slide.objectPosition via style inline.
+             */
+            object-position: center bottom;
+          }
+          .hero-copy {
+            bottom: 88px;
+            padding: 0 16px;
+          }
         }
+
+        /* ── Tablette 641–1024px ──────────────────────────────────────────── */
         @media (min-width: 641px) and (max-width: 1024px) {
-          .hero-section { min-height: 640px; }
-          .hero-image   { object-position: center 28%; }
+          .hero-section {
+            min-height: 640px;
+          }
+          .hero-image {
+            /* Légèrement plus haut que desktop car le ratio écran est plus serré */
+            object-position: center 28%;
+          }
         }
+
+        /* ── Desktop ≥ 1025px ─────────────────────────────────────────────── */
         @media (min-width: 1025px) {
-          .hero-section { height: 100vh; height: 100dvh; max-height: 920px; }
+          .hero-section {
+            height: 100vh;
+            height: 100dvh;
+            max-height: 920px;
+          }
+          /* object-position: center 32% appliqué dans .hero-image par défaut */
         }
-        @media (min-width: 1920px) { .hero-section { max-height: 1080px; } }
+
+        /* ── Très grand écran ≥ 1920px ────────────────────────────────────── */
+        @media (min-width: 1920px) {
+          .hero-section { max-height: 1080px; }
+        }
+
+        /* ── Animations ───────────────────────────────────────────────────── */
         @keyframes heroFadeUp {
           from { opacity: 0; transform: translateY(18px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         .hero-text-enter { animation: heroFadeUp 0.7s cubic-bezier(.22,1,.36,1) both; }
-        .hero-cta:hover { background: #6aaf30 !important; transform: translateY(-1px); }
+        .hero-cta:hover  { background: #6aaf30 !important; transform: translateY(-1px); }
       `}</style>
 
       <section className="hero-section">
 
-        {/* Images en couches avec cross-fade */}
+        {/* ── Images en couches avec cross-fade ── */}
         {slides.map((s, i) => (
-          <div key={s.id} style={{
-            position: "absolute", inset: 0,
-            opacity: i === current ? 1 : 0,
-            transition: "opacity 1.5s ease-in-out",
-            zIndex: i === current ? 1 : 0,
-          }}>
-            <img src={s.image} alt="" className="hero-image" style={{
-              transform: i === current ? "scale(1.07)" : "scale(1)",
-              transition: "transform 6s ease-in-out",
-            }} />
+          <div
+            key={s.id}
+            style={{
+              position: "absolute", inset: 0,
+              opacity: i === current ? 1 : 0,
+              transition: "opacity 1.5s ease-in-out",
+              zIndex: i === current ? 1 : 0,
+            }}
+          >
+            <img
+              src={s.image}
+              srcSet={buildSrcSet(s)}
+              sizes={HERO_SIZES}
+              alt=""
+              className="hero-image"
+              style={{
+                /*
+                 * objectPosition inline — prioritaire sur le CSS breakpoint.
+                 * Permet de personnaliser la position par slide depuis le backoffice.
+                 * Si non défini, le CSS breakpoint s'applique (mobile: bottom, desktop: 32%).
+                 */
+                ...(s.objectPosition ? { objectPosition: s.objectPosition } : {}),
+                transform:  i === current ? "scale(1.07)" : "scale(1)",
+                transition: "transform 6s ease-in-out",
+              }}
+            />
           </div>
         ))}
 
-        {/* Overlay gradient double — navbar + bas de page */}
-        <div aria-hidden style={{
-          position: "absolute", inset: 0, zIndex: 4, pointerEvents: "none",
-          background: `linear-gradient(to bottom,
-            rgba(0,0,0,0.42) 0%,
-            rgba(0,0,0,0.10) 25%,
-            rgba(0,0,0,0.04) 55%,
-            rgba(0,0,0,0.55) 80%,
-            rgba(0,0,0,0.72) 100%)`,
-        }} />
+        {/* ── Overlay gradient double — navbar + bas de page ── */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute", inset: 0, zIndex: 4, pointerEvents: "none",
+            background: `linear-gradient(to bottom,
+              rgba(0,0,0,0.42) 0%,
+              rgba(0,0,0,0.10) 25%,
+              rgba(0,0,0,0.04) 55%,
+              rgba(0,0,0,0.55) 80%,
+              rgba(0,0,0,0.72) 100%)`,
+          }}
+        />
 
-        {/* Texte du slide actif */}
+        {/* ── Texte du slide actif ── */}
         {(slide.titre || slide.sousTitre || slide.ctaLabel) && (
           <div key={`text-${slide.id}`} className="hero-text-enter hero-copy">
             <div className="hero-copy-inner">
@@ -178,32 +286,45 @@ export function Hero() {
                   transition: "background 0.15s, transform 0.12s",
                 }}>
                   {slide.ctaLabel}
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
                 </Link>
               )}
             </div>
           </div>
         )}
 
-        {/* Dots navigation */}
+        {/* ── Dots navigation ── */}
         <div style={{
           position: "absolute", bottom: 28, left: "50%",
           transform: "translateX(-50%)",
           display: "flex", gap: 8, zIndex: 10,
         }}>
           {slides.map((_, i) => (
-            <button key={i} onClick={() => setCurrent(i)} aria-label={`Slide ${i + 1}`} style={{
-              width: i === current ? 28 : 8, height: 8,
-              borderRadius: 9999,
-              background: i === current ? "#7dc040" : "rgba(255,255,255,0.45)",
-              border: "none", cursor: "pointer", padding: 0,
-              transition: "all 0.35s cubic-bezier(.4,0,.2,1)",
-            }} />
+            <button
+              key={i}
+              onClick={() => setCurrent(i)}
+              aria-label={`Slide ${i + 1}`}
+              style={{
+                width: i === current ? 28 : 8, height: 8,
+                borderRadius: 9999,
+                background: i === current ? "#7dc040" : "rgba(255,255,255,0.45)",
+                border: "none", cursor: "pointer", padding: 0,
+                transition: "all 0.35s cubic-bezier(.4,0,.2,1)",
+              }}
+            />
           ))}
         </div>
-        {/* Lien zone si pas de CTA */}
+
+        {/* ── Lien zone si pas de CTA ── */}
         {slide.href && !slide.ctaLabel && (
-          <Link href={slide.href} style={{ position: "absolute", inset: 0, zIndex: 3 }} tabIndex={-1} aria-hidden />
+          <Link
+            href={slide.href}
+            style={{ position: "absolute", inset: 0, zIndex: 3 }}
+            tabIndex={-1}
+            aria-hidden
+          />
         )}
       </section>
     </>
@@ -214,8 +335,13 @@ export function Hero() {
    PageHero — Bannière pour les pages intérieures (inchangée)
    ───────────────────────────────────────────────────────────────────────────── */
 interface PageHeroProps {
-  eyebrow?: string; title: string; subtitle?: string; image?: string; minHeight?: string | number;
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  image?: string;
+  minHeight?: string | number;
 }
+
 export function PageHero({ eyebrow, title, subtitle, image, minHeight }: PageHeroProps) {
   return (
     <section style={{
@@ -227,16 +353,52 @@ export function PageHero({ eyebrow, title, subtitle, image, minHeight }: PageHer
     }}>
       {image && (
         <>
-          <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${image})`, backgroundSize: "cover", backgroundPosition: "center", zIndex: 0 }} />
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(10,92,46,0.88), rgba(21,128,61,0.78))", zIndex: 1 }} />
+          <div style={{
+            position: "absolute", inset: 0,
+            backgroundImage: `url(${image})`,
+            backgroundSize: "cover", backgroundPosition: "center",
+            zIndex: 0,
+          }} />
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "linear-gradient(135deg, rgba(10,92,46,0.88), rgba(21,128,61,0.78))",
+            zIndex: 1,
+          }} />
         </>
       )}
-      <div aria-hidden style={{ position: "absolute", top: -60, right: -60, width: 280, height: 280, borderRadius: "50%", background: "rgba(125,192,64,0.12)", zIndex: image ? 2 : 0, pointerEvents: "none" }} />
-      <div aria-hidden style={{ position: "absolute", bottom: -40, left: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(125,192,64,0.08)", zIndex: image ? 2 : 0, pointerEvents: "none" }} />
+      <div aria-hidden style={{
+        position: "absolute", top: -60, right: -60,
+        width: 280, height: 280, borderRadius: "50%",
+        background: "rgba(125,192,64,0.12)",
+        zIndex: image ? 2 : 0, pointerEvents: "none",
+      }} />
+      <div aria-hidden style={{
+        position: "absolute", bottom: -40, left: -40,
+        width: 200, height: 200, borderRadius: "50%",
+        background: "rgba(125,192,64,0.08)",
+        zIndex: image ? 2 : 0, pointerEvents: "none",
+      }} />
       <div className="container-ev" style={{ position: "relative", zIndex: image ? 3 : 1 }}>
-        {eyebrow && <p style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.22em", textTransform: "uppercase", color: "#86efac", marginBottom: 12 }}>{eyebrow}</p>}
-        <h1 className="h-display" style={{ color: "#ffffff", maxWidth: 700, textShadow: "0 2px 16px rgba(0,0,0,0.25)" }}>{title}</h1>
-        {subtitle && <p style={{ marginTop: 16, fontSize: "clamp(0.95rem, 1.4vw, 1.1rem)", color: "rgba(255,255,255,0.80)", maxWidth: 560, lineHeight: 1.65 }}>{subtitle}</p>}
+        {eyebrow && (
+          <p style={{
+            fontSize: 11, fontWeight: 800, letterSpacing: "0.22em",
+            textTransform: "uppercase", color: "#86efac", marginBottom: 12,
+          }}>
+            {eyebrow}
+          </p>
+        )}
+        <h1 className="h-display" style={{ color: "#ffffff", maxWidth: 700, textShadow: "0 2px 16px rgba(0,0,0,0.25)" }}>
+          {title}
+        </h1>
+        {subtitle && (
+          <p style={{
+            marginTop: 16,
+            fontSize: "clamp(0.95rem, 1.4vw, 1.1rem)",
+            color: "rgba(255,255,255,0.80)", maxWidth: 560, lineHeight: 1.65,
+          }}>
+            {subtitle}
+          </p>
+        )}
       </div>
     </section>
   );

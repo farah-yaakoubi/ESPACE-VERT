@@ -13,16 +13,16 @@ export default {
     extend: {
       colors: {
         ev: {
-          50:  "#f0fdf4", 100: "#dcfce7", 200: "#bbf7d0", 300: "#86efac",
-          400: "#4ade80", 500: "#22c55e", 600: "#16a34a", 700: "#15803d",
-          800: "#166534", 900: "#14532d", 950: "#052e16",
+          50:  "#f2faf0", 100: "#e0f5d8", 200: "#c0ebb1", 300: "#95d97e",
+          400: "#7dc040", 500: "#5ea832", 600: "#3d8a22", 700: "#2e6e1a",
+          800: "#1a5210", 900: "#0a3c08", 950: "#062504",
         },
         sand: {
           50: "#faf9f7", 100: "#f5f2ed", 200: "#ede8e0",
           300: "#ddd6ca", 400: "#c9bfae", 500: "#b5a795",
         },
-        leaf:   "#7dc040",
-        forest: "#0a5c2e",
+        leaf:   "#7dc040",   /* lime-green from logo */
+        forest: "#0a5c2e",   /* deep forest from logo */
       },
       fontFamily: {
         display: ["var(--font-display)", "Cairo", "sans-serif"],

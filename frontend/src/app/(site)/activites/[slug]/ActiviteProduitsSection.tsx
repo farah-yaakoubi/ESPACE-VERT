@@ -87,14 +87,16 @@ function CatalogueCoverGrid({
     const ids = collectIds(n);
     return allProduits.filter(p => ids.has((p as any).id_categorie)).length;
   }
-  function childPreview(n: CatNode) {
+  function childFirstImage(n: CatNode) {
     const ids = collectIds(n);
-    return allProduits.filter(p => ids.has((p as any).id_categorie)).slice(0, 4);
+    const first = allProduits.find(p => ids.has((p as any).id_categorie) && p.images?.[0]);
+    return first?.images?.[0] ?? null;
   }
 
   return (
     <div className="mb-8">
-      <div className="flex items-center justify-between mb-5">
+      {/* Breadcrumb */}
+      <div className="flex items-center justify-between mb-7">
         <div className="flex items-center gap-3">
           <button onClick={onClose}
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-ev-700 transition-colors">
@@ -108,68 +110,63 @@ function CatalogueCoverGrid({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+      {/* Grille — images flottantes sans fond */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-8">
         {children.map(child => {
-          const count = childCount(child);
-          const preview = childPreview(child);
+          const count    = childCount(child);
+          const fallback = childFirstImage(child);
+          const imgSrc   = child.image || fallback?.url || null;
+
           return (
-            <button
-              key={child.id_categorie}
-              onClick={() => onSelectChild(child.id_categorie)}
-              className="group flex flex-col rounded-2xl border border-gray-200 bg-white
-                hover:border-ev-400 hover:shadow-lg transition-all duration-250 overflow-hidden text-left
-                focus:outline-none focus:ring-2 focus:ring-ev-400"
-            >
-              <div className="relative overflow-hidden bg-gradient-to-br from-ev-50 to-ev-100 min-h-[220px] sm:min-h-[250px]" style={{ aspectRatio: "16/10" }}>
-                {child.image ? (
-                  <Image src={child.image} alt={child.nom} fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 50vw" />
-                ) : preview.length > 0 ? (
-                  <div className="absolute inset-0 grid grid-cols-2 gap-2 p-4">
-                    {preview.map(p => {
-                      const img = p.images?.[0];
-                      return (
-                        <div key={p.id_produit} className="relative bg-white rounded-lg overflow-hidden">
-                          {img
-                            ? <Image src={img.url} alt={p.nom} fill className="object-contain p-1" sizes="80px" />
-                            : <div className="absolute inset-0 flex items-center justify-center text-lg opacity-20">🌱</div>}
-                        </div>
-                      );
-                    })}
-                  </div>
+            <div key={child.id_categorie} className="group flex flex-col items-start">
+
+              {/* Image sans fond, flottante */}
+              <button
+                onClick={() => onSelectChild(child.id_categorie)}
+                className="relative w-full h-[140px] sm:h-[160px] flex items-center justify-center
+                  mb-4 focus:outline-none"
+                aria-label={`Voir ${child.nom}`}
+              >
+                {imgSrc ? (
+                  <Image
+                    src={imgSrc}
+                    alt={child.nom}
+                    fill
+                    className="object-contain drop-shadow-md
+                      group-hover:-translate-y-2 transition-transform duration-300 ease-out"
+                    sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 25vw"
+                  />
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-5xl opacity-15 select-none">🌿</div>
+                  <div className="w-16 h-16 rounded-full bg-ev-50 flex items-center
+                    justify-center text-3xl text-ev-200 select-none">
+                    🌿
+                  </div>
                 )}
-                <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/65 to-transparent" />
-                <div className="absolute bottom-2 right-2">
-                  <span className="bg-black/50 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                    {count > 0 ? `${count} produit${count > 1 ? "s" : ""}` : "Voir"}
-                  </span>
-                </div>
-              </div>
-              <div className="px-4 py-4 flex items-center justify-between gap-2">
-                <p className="text-[15px] sm:text-base font-semibold text-gray-800 leading-tight line-clamp-2 group-hover:text-ev-700 transition-colors">
+              </button>
+
+              {/* Nom avec séparateur */}
+              <div className="flex items-center gap-2 mb-2.5 w-full">
+                <span className="w-0.5 h-[1.1em] bg-ev-700 rounded-full shrink-0" />
+                <p className="text-[13px] font-bold text-gray-800 uppercase tracking-wider
+                  leading-snug line-clamp-2 group-hover:text-ev-700 transition-colors">
                   {child.nom}
                 </p>
-                <ChevronRight size={14} className="text-gray-300 group-hover:text-ev-500 flex-shrink-0 transition-colors" />
               </div>
-              {child.image && preview.length > 0 && (
-                <div className="px-4 pb-4 flex items-center gap-2 border-t border-gray-50 pt-3">
-                  {preview.slice(0, 5).map(p => {
-                    const img = p.images?.[0];
-                    return (
-                      <div key={p.id_produit} className="relative w-8 h-8 rounded-md bg-gray-50 border border-gray-100 overflow-hidden flex-shrink-0">
-                        {img
-                          ? <Image src={img.url} alt={p.nom} fill className="object-contain p-0.5" sizes="32px" />
-                          : <div className="absolute inset-0 flex items-center justify-center text-xs opacity-20">🌱</div>}
-                      </div>
-                    );
-                  })}
-                  {count > 5 && <span className="text-[10px] text-ev-600 font-semibold">+{count - 5}</span>}
-                </div>
-              )}
-            </button>
+
+              {/* Bouton outline + flèche */}
+              <button
+                onClick={() => onSelectChild(child.id_categorie)}
+                className="inline-flex items-center gap-1.5
+                  border border-ev-700 text-ev-700 text-[11px] font-semibold
+                  uppercase tracking-widest px-3.5 py-1.5 rounded
+                  hover:bg-ev-700 hover:text-white
+                  transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ev-400"
+              >
+                Voir produits
+                <ChevronRight size={11} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+              </button>
+
+            </div>
           );
         })}
       </div>

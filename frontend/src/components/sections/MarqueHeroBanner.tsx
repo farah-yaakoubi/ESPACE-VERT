@@ -1,19 +1,5 @@
 "use client";
 
-/**
- * MarqueHeroBanner
- * ─────────────────────────────────────────────────────────────────
- * Hero spécifique à une page marque.
- *
- * - Si `banniere` est fournie → image pleine largeur (effet Ken Burns)
- *   avec dégradé + titre/description superposés.
- * - Sinon → fallback dégradé vert de marque (comportement d'origine).
- *
- * Le LOGO de la marque n'est PAS affiché ici : il appartient à la
- * navbar (dropdown menu). On affiche uniquement le nom et la
- * description dans le hero.
- */
-
 import Link from "next/link";
 
 interface MarqueHeroBannerProps {

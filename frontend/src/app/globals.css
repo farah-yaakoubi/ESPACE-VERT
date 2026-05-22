@@ -12,21 +12,22 @@
   --font-display: "Cairo";
   --font-body:    "Cairo";
 
-  --ev-50:  #f0fdf4;
-  --ev-100: #dcfce7;
-  --ev-200: #bbf7d0;
-  --ev-300: #86efac;
-  --ev-400: #4ade80;
-  --ev-500: #22c55e;
-  --ev-600: #16a34a;
-  --ev-700: #15803d;
-  --ev-800: #166534;
-  --ev-900: #14532d;
-  --ev-950: #052e16;
+  /* ── Espace Vert Brand Palette (logo: forest #0a5c2e + leaf #7dc040) ── */
+  --ev-50:  #f2faf0;
+  --ev-100: #e0f5d8;
+  --ev-200: #c0ebb1;
+  --ev-300: #95d97e;
+  --ev-400: #7dc040;   /* leaf green — logo accent */
+  --ev-500: #5ea832;
+  --ev-600: #3d8a22;
+  --ev-700: #2e6e1a;
+  --ev-800: #1a5210;
+  --ev-900: #0a3c08;
+  --ev-950: #062504;
 
-  --leaf:      #7dc040;
-  --forest:    #0a5c2e;
-  --forest-dk: #073d1e;
+  --leaf:      #7dc040;   /* lime-green from logo */
+  --forest:    #0a5c2e;   /* deep forest from logo */
+  --forest-dk: #074021;
 
   --sand-50:  #faf9f7;
   --sand-100: #f5f2ed;
@@ -598,3 +599,51 @@ html[data-theme="dark"] .text-sky-900 {
 html[data-theme="dark"] .text-sky-700 {
   color: rgba(186,230,253,0.7) !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HERO RESPONSIVE — Règles complémentaires au composant Hero.tsx.
+   Le composant gère déjà object-position via CSS inline + <style> interne.
+   Ces règles permettent un override global depuis le CSS si nécessaire,
+   sans toucher au composant.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * Zone sûre de l'image Hero — guide de cadrage pour les visuels.
+ *
+ * Résolution source recommandée : 1920 × 1080px (16:9)
+ * Zone toujours visible sur tous les appareils : centre horizontal,
+ * entre 20% et 75% depuis le haut de l'image.
+ *
+ * Breakpoints hero (définis dans Hero.tsx) :
+ *   Mobile  ≤ 640px   → height: 100dvh, min 560px, object-position: center bottom
+ *   Tablet  641–1024px → height: 100dvh, min 640px, object-position: center 28%
+ *   Desktop ≥ 1025px  → height: 100dvh, max 920px, object-position: center 32%
+ *   Large   ≥ 1920px  → height: 100dvh, max 1080px
+ *
+ * Pour surcharger l'object-position d'un slide précis sans passer
+ * par le backoffice, cibler l'index du slide :
+ */
+
+/* Exemple : forcer le slide Pulvert (produits en bas) à rester visible sur mobile */
+/* .hero-image[data-slide="pulvert"] { object-position: center bottom; } */
+
+/*
+ * Si tu veux forcer un comportement global différent du défaut du composant,
+ * décommente et adapte les règles ci-dessous.
+ * Elles ont la même spécificité que les règles dans Hero.tsx — ajoute
+ * !important si nécessaire.
+ */
+
+/*
+@media (max-width: 640px) {
+  .hero-image { object-position: center bottom; }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .hero-image { object-position: center 28%; }
+}
+
+@media (min-width: 1025px) {
+  .hero-image { object-position: center 32%; }
+}
+*/

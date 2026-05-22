@@ -1,16 +1,4 @@
 "use client";
-
-/**
- * ActiviteHeroBanner
- * ─────────────────────────────────────────────────────────────────
- * Hero spécifique à une page activité.
- *
- * Priorité d'image :
- *   1. `banniere` (champ dédié uploadé depuis l'admin — pleine largeur)
- *   2. `image`    (miniature de l'activité — utilisée en background flou)
- *   3. Fallback   (dégradé sombre sans image)
- */
-
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 
