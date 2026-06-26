@@ -7,41 +7,76 @@ export const activiteRepository = {
     return prisma.activite.findMany({
       where:   { actif: true },
       orderBy: { ordre: "asc" },
-      select:  { id_activite: true, nom: true, slug: true, description: true, image: true, banniere: true, ordre: true, actif: true },
+      select:  { id_activite: true, nom: true, slug: true, description: true, translations: true, image: true, banniere: true, ordre: true, actif: true },
     });
   },
 
   async findAll() {
     return prisma.activite.findMany({
       orderBy: { ordre: "asc" },
-      include: { _count: { select: { categories: true, produits: true } } },
+      include: { _count: { select: { categories: true } } },
     });
   },
 
-  // Retourne l'activité avec ses catégories ET ses produits directs
+  // Retourne l'activité avec ses catégories ET ses produits (via les catégories
+  // directement liées + les catégories des marques liées via activiteMarque)
   async findBySlugPublic(slug: string) {
-    return prisma.activite.findUnique({
-      where: { slug, actif: true } as any,
+    const activite = await (prisma as any).activite.findUnique({
+      where: { slug, actif: true },
       include: {
         categories: {
           where:   { actif: true },
           orderBy: { ordre: "asc" },
-          select:  { id_categorie: true, nom: true, slug: true, description: true, image: true, parent_id: true, id_marque: true },
+          select:  { id_categorie: true, nom: true, slug: true, description: true, translations: true, image: true, parent_id: true, id_marque: true },
         },
-        // ← Produits directement liés via id_activite
-        produits: {
-          where:   { actif: true },
-          orderBy: [{ ordre: "asc" }, { nom: "asc" }],
-          select:  {
-            id_produit: true, nom: true, slug: true, description: true,
-            division: true, tags: true, created_at: true,
-            marque:    { select: { nom: true, slug: true, logo: true } },
-            categorie: { select: { nom: true, slug: true } },
-            images:    { where: { is_principale: true }, take: 1, select: { url: true, alt: true } },
-          },
+        // Marques liées à cette activité via la table de jonction
+        marques: {
+          select: { marque: { select: { id_marque: true, nom: true, slug: true, logo: true, translations: true } } },
         },
       },
     });
+    if (!activite) return null;
+
+    // Catégories directement liées à l'activité
+    const directCatIds = new Set<number>(activite.categories.map((c: any) => c.id_categorie));
+
+    // Marques liées via activiteMarque → récupérer aussi leurs catégories
+    const marqueIds: number[] = (activite.marques ?? []).map((am: any) => am.marque.id_marque);
+    let extraCatIds: number[] = [];
+    if (marqueIds.length > 0) {
+      const marqueCats = await (prisma as any).categorie.findMany({
+        where:  { id_marque: { in: marqueIds }, actif: true },
+        select: { id_categorie: true },
+      });
+      extraCatIds = marqueCats
+        .map((c: any) => c.id_categorie)
+        .filter((id: number) => !directCatIds.has(id));
+    }
+
+    const allCatIds = [...directCatIds, ...extraCatIds];
+
+    const PRODUIT_SELECT = {
+      id_produit: true, nom: true, slug: true, description: true, translations: true,
+      fiche_technique: true, division: true, tags: true, created_at: true,
+      id_categorie: true,
+      categorie: { select: { nom: true, slug: true, translations: true, marque: { select: { nom: true, slug: true, logo: true, translations: true } } } },
+      images:    { where: { is_principale: true }, take: 1, select: { url: true, alt: true } },
+    };
+
+    const produits = allCatIds.length > 0 ? await (prisma as any).produit.findMany({
+      where:   { id_categorie: { in: allCatIds }, actif: true },
+      orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+      select:  PRODUIT_SELECT,
+    }) : [];
+
+    // Marques présentes (pour le frontend)
+    const marques = (activite.marques ?? []).map((am: any) => am.marque);
+
+    return {
+      ...activite,
+      produits: produits.map((p: any) => ({ ...p, marque: p.categorie?.marque ?? null })),
+      marques,
+    };
   },
 
   async findById(id_activite: number) {

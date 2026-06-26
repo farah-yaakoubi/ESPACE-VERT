@@ -1,24 +1,36 @@
 import { prisma } from "../../lib/prisma";
-import { CreateFaqDto, UpdateFaqDto, FaqQueryDto } from "./faq.schema";
+import { CreateFaqDto, FaqQueryDto, UpdateFaqDto } from "./faq.schema";
 
 export const faqRepository = {
 
   async findAllPublic(params: FaqQueryDto) {
-    const where: Record<string, unknown> = { active: true };
-    if (params.categorie) where.categorie = params.categorie;
-    return prisma.faq.findMany({
+    const where: any = { active: true };
+    if ((params as any).rubrique) where.rubrique = (params as any).rubrique;
+    const rows = await prisma.faq.findMany({
       where,
-      orderBy: [{ categorie: "asc" }, { ordre: "asc" }],
+      orderBy: { ordre: "asc" },
+    });
+    // Tri secondaire par rubrique côté applicatif (rubrique est nullable)
+    return rows.sort((a: any, b: any) => {
+      const ra = a.rubrique ?? "";
+      const rb = b.rubrique ?? "";
+      return ra.localeCompare(rb) || a.ordre - b.ordre;
     });
   },
 
   async findAll(params: FaqQueryDto) {
-    const where: Record<string, unknown> = {};
+    const where: any = {};
     if (params.active !== undefined) where.active = params.active === "true";
-    if (params.categorie) where.categorie = params.categorie;
-    return prisma.faq.findMany({
+    if ((params as any).rubrique) where.rubrique = (params as any).rubrique;
+    const rows = await prisma.faq.findMany({
       where,
-      orderBy: [{ categorie: "asc" }, { ordre: "asc" }],
+      orderBy: { ordre: "asc" },
+    });
+    // Tri secondaire par rubrique côté applicatif
+    return rows.sort((a: any, b: any) => {
+      const ra = a.rubrique ?? "";
+      const rb = b.rubrique ?? "";
+      return ra.localeCompare(rb) || a.ordre - b.ordre;
     });
   },
 
@@ -26,7 +38,6 @@ export const faqRepository = {
     return prisma.faq.findUnique({ where: { id_faq } });
   },
 
-  // Incrémenter nb_consultations à chaque lecture publique
   async incrementConsultation(id_faq: number) {
     return prisma.faq.update({
       where: { id_faq },
@@ -48,15 +59,17 @@ export const faqRepository = {
 
   async getCategories() {
     const rows = await prisma.faq.findMany({
-      where:    { active: true, categorie: { not: null } },
-      distinct: ["categorie"],
-      select:   { categorie: true },
-      orderBy:  { categorie: "asc" },
+      where:    { active: true, rubrique: { not: null } },
+      distinct: ["rubrique"],
+      select:   { rubrique: true },
+      orderBy:  { ordre: "asc" },
     });
-    return rows.map((r: { categorie: string | null }) => r.categorie).filter(Boolean);
+    return rows
+      .map((r: { rubrique: string | null }) => r.rubrique)
+      .filter(Boolean)
+      .sort();
   },
 
-  // Top FAQs les plus consultées
   async getTopConsulted(limit = 10) {
     return prisma.faq.findMany({
       where:   { active: true, nb_consultations: { gt: 0 } },

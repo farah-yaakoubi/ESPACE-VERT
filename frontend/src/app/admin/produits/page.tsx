@@ -12,6 +12,7 @@ import {
   ToggleLeft, ToggleRight, Trash2, Upload, X, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import Image from "next/image";
+import { LogoObtenteurUploader } from "@/components/admin/LogoObtenteurUploader";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
@@ -24,8 +25,41 @@ function toSlug(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
     .replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 }
-const EMPTY = { nom:"",slug:"",id_categorie:"",id_marque:"",id_activite:"",division:"standard",description:"",fiche_technique:"",ordre:0,actif:true,
-  sku:"",poids:"",nature:"",composition_chimique:"",usage:"",biologique:false,conditionnement:"" };
+const EMPTY = { nom:"",slug:"",id_categorie:"",division:"standard",description:"",fiche_technique:"",ordre:0,actif:true,
+  sku:"",poids:"",nature:"",composition_chimique:"",usage:"",biologique:false,conditionnement:"",
+  saison:"",obtenteur:"",obtenteur_logo:"",type_semence:"",productivite:"",longueur_fruit:"",resistance:"",descriptif_var:"",
+  calendrier_semis:"000000000000",calendrier_recolte:"000000000000" };
+
+const MOIS_ABBR = ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
+
+function CalendrierEditor({ label, color, value, onChange }: {
+  label: string; color: string; value: string; onChange: (v: string) => void;
+}) {
+  const arr = (value || "000000000000").padEnd(12,"0").split("");
+  const toggle = (i: number) => {
+    const next = [...arr]; next[i] = next[i]==="1"?"0":"1";
+    onChange(next.join(""));
+  };
+  return (
+    <div>
+      <p className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{color}}>{label}</p>
+      <div className="flex gap-1 flex-wrap">
+        {arr.map((v,i) => (
+          <button key={i} type="button" onClick={() => toggle(i)}
+            className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg text-[9px] font-bold transition-all border"
+            style={{
+              background: v==="1" ? color : "#f3f4f6",
+              color: v==="1" ? "#fff" : "#9ca3af",
+              borderColor: v==="1" ? color : "#e5e7eb",
+              minWidth: 30,
+            }}>
+            {MOIS_ABBR[i]}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 /* ─── Confirm Dialog ────────────────────────────────────────────── */
 function ConfirmDialog({ message, onConfirm, onCancel }: { message: string; onConfirm: () => void; onCancel: () => void }) {
@@ -419,31 +453,15 @@ export default function AdminProduitsPage() {
   const [err,      setErr]      = useState("");
   const [confirmDel, setConfirmDel] = useState<number|null>(null);
 
-  /* smart category filtering */
-  const catsFiltrees = (() => {
-    const hasM=!!form.id_marque, hasA=!!form.id_activite;
-    if(!hasM&&!hasA) return categories;
-    return categories.filter(c => {
-      const cM=c.id_marque?String(c.id_marque):null;
-      const cA=c.id_activite?String(c.id_activite):null;
-      const unlinked=!cM&&!cA;
-      if(hasM&&hasA) return unlinked||cM===form.id_marque||cA===form.id_activite;
-      if(hasM) return unlinked||cM===form.id_marque;
-      return unlinked||cA===form.id_activite;
-    });
-  })();
-
   interface CatNode extends CategorieAdmin { children:CatNode[]; depth:number }
   const catsFlat = (() => {
     const map=new Map<number,CatNode>();
-    catsFiltrees.forEach(c=>map.set(c.id_categorie,{...c,children:[],depth:0}));
+    categories.forEach(c=>map.set(c.id_categorie,{...c,children:[],depth:0}));
     const roots:CatNode[]=[];
     map.forEach(node=>{
       if(node.parent_id&&map.has(node.parent_id)){map.get(node.parent_id)!.children.push(node);}
       else roots.push(node);
     });
-    // Tri + depth récursifs (le depth inline via parent.depth+1 est incorrect
-    // car Map.forEach n'est pas garantie dans l'ordre parent→enfant)
     const sort=(arr:CatNode[])=>arr.sort((a,b)=>a.ordre-b.ordre||a.nom.localeCompare(b.nom,"fr"));
     const assignDepth=(nodes:CatNode[],d:number)=>{sort(nodes);nodes.forEach(n=>{n.depth=d;assignDepth(n.children,d+1);});};
     assignDepth(roots,0);
@@ -451,15 +469,12 @@ export default function AdminProduitsPage() {
     walk(roots); return flat;
   })();
 
-  const catFilterInfo = (() => {
-    if(!form.id_marque&&!form.id_activite) return null;
-    const shown=catsFiltrees.length, total=categories.length;
-    if(shown===total) return null;
-    const parts:string[]=[];
-    if(form.id_marque){const m=marques.find(m=>String(m.id_marque)===form.id_marque);if(m)parts.push(`🏷 ${m.nom}`);}
-    if(form.id_activite){const a=activites.find(a=>String(a.id_activite)===form.id_activite);if(a)parts.push(`⚡ ${a.nom}`);}
-    return `${shown}/${total} catégories pour ${parts.join(" + ")}`;
-  })();
+  // Catégorie sélectionnée → marque/activité héritées en lecture seule
+  const selectedCat = form.id_categorie
+    ? categories.find(c=>String(c.id_categorie)===form.id_categorie)
+    : null;
+  const inheritedMarque   = selectedCat?.id_marque   ? marques.find(m=>m.id_marque===selectedCat.id_marque)     : null;
+  const inheritedActivite = selectedCat?.id_activite ? activites.find(a=>a.id_activite===selectedCat.id_activite) : null;
 
   const loadRefs = useCallback(async () => {
     const [mrqs,cats,acts]=await Promise.all([adminMarques.list(),adminCategories.list(),adminActivites.list()]);
@@ -482,17 +497,12 @@ export default function AdminProduitsPage() {
 
   const openCreate = () => { setForm(EMPTY); setEditing(null); setErr(""); setModal("create"); };
   const openEdit   = (p: ProduitAdmin) => {
-    // Priorité aux champs scalaires renvoyés directement par le backend.
-    // Fallback par slug/nom pour compatibilité si l'ancien endpoint est utilisé.
-    const catId  = p.id_categorie ?? p.categorie?.id_categorie
-                   ?? categories.find(c => c.slug === p.categorie?.slug)?.id_categorie;
-    const marqId = p.id_marque
-                   ?? marques.find(m => m.slug === p.marque?.slug)?.id_marque;
+    const catId = p.id_categorie ?? p.categorie?.id_categorie
+                  ?? categories.find(c => c.slug === p.categorie?.slug)?.id_categorie;
     setForm({
       nom:p.nom, slug:p.slug,
       id_categorie:catId ? String(catId) : "",
-      id_marque:   marqId ? String(marqId) : "",
-      id_activite:String(p.id_activite??""), division:p.division,
+      division:p.division,
       description:(p as any).description??"", fiche_technique:(p as any).fiche_technique??"",
       ordre:p.ordre, actif:p.actif,
       sku:(p as any).sku??"",
@@ -502,18 +512,25 @@ export default function AdminProduitsPage() {
       usage:(p as any).usage??"",
       biologique:!!(p as any).biologique,
       conditionnement:(p as any).conditionnement??"",
+      saison:(p as any).saison??"",
+      obtenteur:(p as any).obtenteur??"",
+      obtenteur_logo:(p as any).obtenteur_logo??"",
+      type_semence:(p as any).type_semence??"",
+      productivite:(p as any).productivite??"",
+      longueur_fruit:(p as any).longueur_fruit??"",
+      resistance:(p as any).resistance??"",
+      descriptif_var:(p as any).descriptif_var??"",
+      calendrier_semis:(p as any).calendrier_semis??"000000000000",
+      calendrier_recolte:(p as any).calendrier_recolte??"000000000000",
     });
     setEditing(p); setErr(""); setModal("edit");
   };
 
   const handleSave = async () => {
     if(!form.nom.trim()||!form.slug.trim()||!form.id_categorie){setErr("Nom, slug et catégorie requis.");return;}
-    if(!form.id_marque&&!form.id_activite){setErr("Choisir au moins une marque ou une activité.");return;}
     setSaving(true); setErr("");
     try {
       const base={ nom:form.nom, slug:form.slug, id_categorie:Number(form.id_categorie),
-        id_marque:form.id_marque?Number(form.id_marque):null,
-        id_activite:form.id_activite?Number(form.id_activite):null,
         division:form.division, ordre:form.ordre,
         description:form.description||null, fiche_technique:form.fiche_technique||null,
         sku:(form as any).sku||null,
@@ -523,6 +540,16 @@ export default function AdminProduitsPage() {
         usage:(form as any).usage||null,
         biologique:!!(form as any).biologique,
         conditionnement:(form as any).conditionnement||null,
+        saison:(form as any).saison||null,
+        obtenteur:(form as any).obtenteur||null,
+        obtenteur_logo:(form as any).obtenteur_logo||null,
+        type_semence:(form as any).type_semence||null,
+        productivite:(form as any).productivite||null,
+        longueur_fruit:(form as any).longueur_fruit||null,
+        resistance:(form as any).resistance||null,
+        descriptif_var:(form as any).descriptif_var||null,
+        calendrier_semis:(form as any).calendrier_semis||null,
+        calendrier_recolte:(form as any).calendrier_recolte||null,
       };
       if(modal==="create") await adminProduitsCreate.create(base as any);
       else if(editing) await adminProduitsCreate.update(editing.id_produit,{...base,actif:form.actif});
@@ -707,40 +734,34 @@ export default function AdminProduitsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Marque <span className="text-gray-400 normal-case font-normal">(ou activité)</span></label>
-                  <select value={form.id_marque} onChange={e=>setForm({...form,id_marque:e.target.value,id_categorie:""})}
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white">
-                    <option value="">— Aucune —</option>
-                    {marques.map(m=><option key={m.id_marque} value={m.id_marque}>{m.nom}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Catégorie *</label>
-                    {catFilterInfo && <span className="flex items-center gap-1 text-[10px] text-blue-600"><Info size={10}/>{catFilterInfo}</span>}
-                  </div>
-                  <select value={form.id_categorie} onChange={e=>{
-                    const cat=categories.find(c=>String(c.id_categorie)===e.target.value);
-                    setForm({...form,id_categorie:e.target.value,id_activite:cat?.id_activite?String(cat.id_activite):form.id_activite});
-                  }} className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white">
-                    <option value="">— Choisir —</option>
-                    {catsFlat.map(c=><option key={c.id_categorie} value={c.id_categorie}>
-                      {"　".repeat(c.depth)}{c.depth>0?"└ ":""}{c.nom}{c.marque?.nom?` 🏷 ${(c.marque as any).nom}`:""}{c.activite?.nom?` ⚡ ${(c.activite as any).nom}`:""}
-                    </option>)}
-                  </select>
-                </div>
-              </div>
-
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Activité</label>
-                <select value={form.id_activite} onChange={e=>setForm({...form,id_activite:e.target.value})}
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Catégorie *</label>
+                <select value={form.id_categorie} onChange={e=>setForm({...form,id_categorie:e.target.value})}
                   className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white">
-                  <option value="">— Aucune —</option>
-                  {activites.map(a=><option key={a.id_activite} value={a.id_activite}>{a.nom}</option>)}
+                  <option value="">— Choisir —</option>
+                  {catsFlat.map(c=><option key={c.id_categorie} value={c.id_categorie}>
+                    {"　".repeat(c.depth)}{c.depth>0?"└ ":""}{c.nom}{c.marque?.nom?` 🏷 ${(c.marque as any).nom}`:""}{c.activite?.nom?` ⚡ ${(c.activite as any).nom}`:""}
+                  </option>)}
                 </select>
               </div>
+
+              {/* Marque & Activité héritées de la catégorie — lecture seule */}
+              {form.id_categorie && (inheritedMarque || inheritedActivite) && (
+                <div className="flex gap-3 flex-wrap">
+                  {inheritedMarque && (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-blue-100 bg-blue-50 text-xs text-blue-700">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-blue-400">Marque héritée</span>
+                      <span className="font-semibold">🏷 {inheritedMarque.nom}</span>
+                    </div>
+                  )}
+                  {inheritedActivite && (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-purple-100 bg-purple-50 text-xs text-purple-700">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-purple-400">Activité héritée</span>
+                      <span className="font-semibold">⚡ {inheritedActivite.nom}</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
@@ -782,7 +803,7 @@ export default function AdminProduitsPage() {
                 </div>
 
                 {/* Ligne 1 : SKU + Poids + Nature */}
-                <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-3" style={{gridTemplateColumns:"1fr 2fr 1fr"}}>
                   <div>
                     <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#1a6b3a"}}>
                       SKU / Référence
@@ -860,6 +881,124 @@ export default function AdminProduitsPage() {
                   <label htmlFor="biologique" className="text-sm font-bold cursor-pointer" style={{color:"#1a6b3a"}}>
                     Certifié biologique / 100% végétal
                   </label>
+                </div>
+              </div>
+
+              {/* ══════════════════════════════════════════════
+                  DONNÉES SEMENCES — style catalogue Espace Vert
+                  ══════════════════════════════════════════════ */}
+              <div className="pt-2">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="h-px flex-1" style={{background:"linear-gradient(to right,transparent,#16803c,transparent)"}}/>
+                  <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border"
+                    style={{color:"#14532d",background:"#dcfce7",borderColor:"#16803c"}}>
+                    🌱 Données Semences
+                  </span>
+                  <div className="h-px flex-1" style={{background:"linear-gradient(to right,transparent,#16803c,transparent)"}}/>
+                </div>
+                <p className="text-[10px] text-gray-400 mb-3 -mt-2">
+                  Remplir uniquement pour les produits semences (haricot, fenouil, piment, tomate…)
+                </p>
+
+                {/* Saison + Obtenteur + Type */}
+                <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>
+                      Saison
+                    </label>
+                    <input value={(form as any).saison||""} onChange={e=>setForm({...form,saison:e.target.value} as any)}
+                      placeholder="Printemps / Automne-Hiver"
+                      className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
+                      style={{borderColor:"#86efac"}}/>
+                  </div>
+                  <div className="col-span-1 sm:col-span-2">
+                    <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>
+                      Obtenteur
+                    </label>
+                    <input value={(form as any).obtenteur||""} onChange={e=>setForm({...form,obtenteur:e.target.value} as any)}
+                      placeholder="NEXEEDS / CORASEEDS (Italie)…"
+                      className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2 mb-2"
+                      style={{borderColor:"#86efac"}}/>
+                    <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{color:"#15803d"}}>
+                      Logo obtenteur
+                    </p>
+                    <LogoObtenteurUploader
+                      value={(form as any).obtenteur_logo||""}
+                      onChange={v=>setForm({...form,obtenteur_logo:v} as any)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>
+                      Type / Variété
+                    </label>
+                    <input value={(form as any).type_semence||""} onChange={e=>setForm({...form,type_semence:e.target.value} as any)}
+                      placeholder="Hybride / Borlotto / Anaheim…"
+                      className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
+                      style={{borderColor:"#86efac"}}/>
+                  </div>
+                </div>
+
+                {/* Productivité + Longueur fruit */}
+                <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>
+                      Productivité / Rendement
+                    </label>
+                    <input value={(form as any).productivite||""} onChange={e=>setForm({...form,productivite:e.target.value} as any)}
+                      placeholder="Productivité élevée / Rendement élevé…"
+                      className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
+                      style={{borderColor:"#86efac"}}/>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>
+                      Longueur / Taille du fruit
+                    </label>
+                    <input value={(form as any).longueur_fruit||""} onChange={e=>setForm({...form,longueur_fruit:e.target.value} as any)}
+                      placeholder="13 à 16 cm / 18-22cm…"
+                      className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
+                      style={{borderColor:"#86efac"}}/>
+                  </div>
+                </div>
+
+                {/* Descriptif variétal */}
+                <div className="mb-2">
+                  <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>
+                    Descriptif variétal
+                  </label>
+                  <textarea value={(form as any).descriptif_var||""} onChange={e=>setForm({...form,descriptif_var:e.target.value} as any)}
+                    rows={2} placeholder="Couleur rose dominante / Forme ronde, Couleur Blanche Attractive / Fruit Blanche Très Attractive…"
+                    className="w-full px-3 py-2 text-xs border rounded-xl focus:outline-none focus:ring-2 resize-none"
+                    style={{borderColor:"#86efac"}}/>
+                </div>
+
+                {/* Résistances / Tolérances */}
+                <div className="mb-3">
+                  <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>
+                    Résistances / Tolérances (HR)
+                  </label>
+                  <input value={(form as any).resistance||""} onChange={e=>setForm({...form,resistance:e.target.value} as any)}
+                    placeholder="Mosaïque commune et anthracnose / TMV…"
+                    className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
+                    style={{borderColor:"#86efac"}}/>
+                </div>
+
+                {/* Calendrier */}
+                <div className="p-3 rounded-xl border space-y-3" style={{background:"#f0fdf4",borderColor:"#86efac"}}>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-green-800">
+                    📅 Calendrier cultural — cliquer sur les mois actifs
+                  </p>
+                  <CalendrierEditor
+                    label="🟢 Semis / Repiquage"
+                    color="#16a34a"
+                    value={(form as any).calendrier_semis||"000000000000"}
+                    onChange={v=>setForm({...form,calendrier_semis:v} as any)}
+                  />
+                  <CalendrierEditor
+                    label="🔴 Récolte"
+                    color="#dc2626"
+                    value={(form as any).calendrier_recolte||"000000000000"}
+                    onChange={v=>setForm({...form,calendrier_recolte:v} as any)}
+                  />
                 </div>
               </div>
 

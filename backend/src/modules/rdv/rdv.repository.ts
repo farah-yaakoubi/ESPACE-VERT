@@ -72,7 +72,7 @@ export const rdvRepository = {
   },
 
   async update(id_rdv: number, data: UpdateRdvPayload) {
-    const payload: Prisma.RendezVousUncheckedUpdateInput = {};
+    const payload: Record<string, unknown> = {};
     if (data.statut !== undefined) payload.statut = data.statut;
     if (data.note_interne !== undefined) payload.note_interne = data.note_interne;
     if (data.heure !== undefined) payload.heure = data.heure;

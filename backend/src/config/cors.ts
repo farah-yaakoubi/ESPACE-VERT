@@ -3,7 +3,10 @@ import { CorsOptions } from "cors";
 
 export const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
-    const allowed = (process.env.FRONTEND_URL ?? "http://localhost:3000")
+    const configured = process.env.FRONTEND_URL?.trim();
+    const allowed = (configured && configured.length > 0
+      ? configured
+      : "http://localhost:3000,http://localhost:3001")
       .split(",")
       .map(u => u.trim());
 

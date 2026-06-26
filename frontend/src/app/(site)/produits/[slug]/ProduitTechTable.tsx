@@ -144,7 +144,7 @@ export function ProduitTechTable({
   sku, poids, nature, composition_chimique, usage,
   biologique, conditionnement, slug, categorie, tags,
 }: TechTableProps) {
-  const hasData = !!(sku || poids || nature || composition_chimique || usage || conditionnement || biologique != null);
+  const hasData = !!(sku || poids || nature || composition_chimique || usage || conditionnement || biologique === true);
   if (!hasData) return null;
 
   const pal = getPalette(slug, nature, categorie);

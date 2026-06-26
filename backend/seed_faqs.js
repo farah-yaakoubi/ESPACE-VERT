@@ -10,7 +10,7 @@ const faqs = [
   // GROUPE & CONTACT
   // ══════════════════════════════════════════════════════════════════════════
   {
-    categorie: "À propos",
+    rubrique: "À propos",
     ordre: 1,
     question: "Qu'est-ce qu'Espace Vert ?",
     reponse:
@@ -22,7 +22,7 @@ const faqs = [
       "Notre mission : accompagner les agriculteurs dans toutes les phases de la production agricole avec des produits modernes et un service d'assistance technique personnalisé.",
   },
   {
-    categorie: "À propos",
+    rubrique: "À propos",
     ordre: 2,
     question: "Où se trouvent vos agences ?",
     reponse:
@@ -34,7 +34,7 @@ const faqs = [
       "Horaires : Lun–Ven 08h–17h · Sam 08h–12h",
   },
   {
-    categorie: "À propos",
+    rubrique: "À propos",
     ordre: 3,
     question: "Comment contacter Espace Vert ?",
     reponse:
@@ -46,14 +46,14 @@ const faqs = [
       "• Rendez-vous avec un commercial → /rendez-vous",
   },
   {
-    categorie: "À propos",
+    rubrique: "À propos",
     ordre: 4,
     question: "Quels sont vos horaires d'ouverture ?",
     reponse:
       "Toutes nos agences sont ouvertes du Lundi au Vendredi de 08h à 17h, et le Samedi de 08h à 12h. Fermées les dimanches et jours fériés tunisiens.",
   },
   {
-    categorie: "À propos",
+    rubrique: "À propos",
     ordre: 5,
     question: "Quelles sont vos marques propres ?",
     reponse:
@@ -67,7 +67,7 @@ const faqs = [
   // DEVIS & COMMANDES
   // ══════════════════════════════════════════════════════════════════════════
   {
-    categorie: "Devis & Commandes",
+    rubrique: "Devis & Commandes",
     ordre: 10,
     question: "Comment obtenir un devis ?",
     reponse:
@@ -78,21 +78,21 @@ const faqs = [
       "Le devis est gratuit et sans engagement.",
   },
   {
-    categorie: "Devis & Commandes",
+    rubrique: "Devis & Commandes",
     ordre: 11,
     question: "Livrez-vous partout en Tunisie ?",
     reponse:
       "Oui, nous livrons dans toute la Tunisie depuis nos agences de Tunis, Soliman, Borj Amri et Sfax. Pour les grandes commandes, une livraison directe sur exploitation peut être organisée. Contactez-nous pour les détails et tarifs de livraison selon votre localisation.",
   },
   {
-    categorie: "Devis & Commandes",
+    rubrique: "Devis & Commandes",
     ordre: 12,
     question: "Proposez-vous des tarifs professionnels pour les agriculteurs et coopératives ?",
     reponse:
       "Oui. Nous proposons des conditions commerciales adaptées aux agriculteurs professionnels, coopératives agricoles, paysagistes et revendeurs. Contactez notre équipe commerciale au (+216) 71 333 858 ou via le formulaire /contact pour discuter d'un partenariat.",
   },
   {
-    categorie: "Devis & Commandes",
+    rubrique: "Devis & Commandes",
     ordre: 13,
     question: "Puis-je prendre un rendez-vous avec un commercial ?",
     reponse:
@@ -103,7 +103,7 @@ const faqs = [
   // ACTIVITÉS / DOMAINES
   // ══════════════════════════════════════════════════════════════════════════
   {
-    categorie: "Activités",
+    rubrique: "Activités",
     ordre: 20,
     question: "Quelles sont vos activités et domaines d'expertise ?",
     reponse:
@@ -119,14 +119,14 @@ const faqs = [
   // FERTILISATION — FERTIVERT
   // ══════════════════════════════════════════════════════════════════════════
   {
-    categorie: "Fertivert — Fertilisation",
+    rubrique: "Fertivert — Fertilisation",
     ordre: 30,
     question: "Qu'est-ce que la gamme Fertivert ?",
     reponse:
       "Fertivert est la marque d'engrais biologiques et biostimulants d'Espace Vert. Tous les produits Fertivert sont d'origine organique, certifiés biologiques, et adaptés à toutes les cultures (maraîchères, arboricoles, grandes cultures, gazon). Voir la gamme complète → /marques/fertivert",
   },
   {
-    categorie: "Fertivert — Fertilisation",
+    rubrique: "Fertivert — Fertilisation",
     ordre: 31,
     question: "Quels sont les engrais Fertivert disponibles ?",
     reponse:
@@ -139,21 +139,21 @@ const faqs = [
       "Pour connaître les tarifs et disponibilités, contactez-nous ou consultez /produits",
   },
   {
-    categorie: "Fertivert — Fertilisation",
+    rubrique: "Fertivert — Fertilisation",
     ordre: 32,
     question: "Qu'est-ce que Fertiactif et comment l'utiliser ?",
     reponse:
       "Fertiactif (SKU: FV-FA-1L) est un engrais organique complet riche en acides aminés totaux (34%) et libres (15%), NPK 5-2-2,5, avec acides humiques (5%) et fulviques (1,2%). Il convient aux cultures horticoles, grandes cultures et arboricoles. Application en pré-floraison, près-maturation et post-récolte. Dose racinaire : 8–10 L/ha, foliaire : 300–500 ml/hl. Compatible avec tous les produits phytosanitaires.",
   },
   {
-    categorie: "Fertivert — Fertilisation",
+    rubrique: "Fertivert — Fertilisation",
     ordre: 33,
     question: "Qu'est-ce que Fertifruit et pour quelles cultures ?",
     reponse:
       "Fertifruit (SKU: FV-FF-1L) est un engrais organique spécial qualité des fruits. Composition : N:3%, P₂O₅:4%, K₂O:5%, acides humiques 10%. Idéal pour vigne, pommier, poirier, agrume, olivier, cultures maraîchères. Il augmente le taux de sucre (Brix) et le poids spécifique du fruit. Dose racinaire : 7–10 L/ha, foliaire : 250–400 ml/hl.",
   },
   {
-    categorie: "Fertivert — Fertilisation",
+    rubrique: "Fertivert — Fertilisation",
     ordre: 34,
     question: "Quels sont vos biostimulants Fertivert ?",
     reponse:
@@ -164,7 +164,7 @@ const faqs = [
       "• Poussroots (FV-PR-1L) : enracineur biostimulant riche en acides aminés — favorise l'enracinement",
   },
   {
-    categorie: "Fertivert — Fertilisation",
+    rubrique: "Fertivert — Fertilisation",
     ordre: 35,
     question: "Avez-vous des correcteurs de carences ?",
     reponse:
@@ -175,7 +175,7 @@ const faqs = [
       "• Sweeter (FV-SW-1L) : correcteur de salinité du sol — idéal en sol salin",
   },
   {
-    categorie: "Fertivert — Fertilisation",
+    rubrique: "Fertivert — Fertilisation",
     ordre: 36,
     question: "Les engrais Fertivert sont-ils utilisables en agriculture biologique ?",
     reponse:
@@ -186,14 +186,14 @@ const faqs = [
   // IRRIGATION — MATAR
   // ══════════════════════════════════════════════════════════════════════════
   {
-    categorie: "Matar — Irrigation",
+    rubrique: "Matar — Irrigation",
     ordre: 40,
     question: "Que propose la marque Matar en irrigation ?",
     reponse:
       "Matar est notre marque spécialisée en irrigation. La gamme comprend : tuyaux goutte-à-goutte, rampes d'aspersion, tuyaux PEHD (fabriqués par Mondiale Irrigation en Ø25 à 110mm), filtres, raccords, programmateurs et pompes (surface, immergées, solaires). Voir les solutions irrigation → /activites/irrigation ou /marques/matar",
   },
   {
-    categorie: "Matar — Irrigation",
+    rubrique: "Matar — Irrigation",
     ordre: 41,
     question: "Quelle différence entre le goutte-à-goutte et l'aspersion ?",
     reponse:
@@ -202,14 +202,14 @@ const faqs = [
       "Pour choisir, contactez nos techniciens Matar via /rendez-vous.",
   },
   {
-    categorie: "Matar — Irrigation",
+    rubrique: "Matar — Irrigation",
     ordre: 42,
     question: "Proposez-vous des systèmes d'irrigation solaire ?",
     reponse:
       "Oui. Matar distribue des kits d'irrigation solaire complets (pompe solaire + panneau + régulateur) adaptés aux zones sans réseau électrique. Très utilisés dans les régions intérieures de Tunisie. Contactez-nous pour un dimensionnement selon votre surface et votre culture.",
   },
   {
-    categorie: "Matar — Irrigation",
+    rubrique: "Matar — Irrigation",
     ordre: 43,
     question: "Mes goutteurs sont bouchés, que faire ?",
     reponse:
@@ -221,7 +221,7 @@ const faqs = [
       "Si le problème persiste, contactez notre service technique → /contact",
   },
   {
-    categorie: "Matar — Irrigation",
+    rubrique: "Matar — Irrigation",
     ordre: 44,
     question: "Comment dimensionner mon installation d'irrigation ?",
     reponse:
@@ -232,14 +232,14 @@ const faqs = [
   // PULVÉRISATION — PULVERT
   // ══════════════════════════════════════════════════════════════════════════
   {
-    categorie: "Pulvert — Pulvérisation",
+    rubrique: "Pulvert — Pulvérisation",
     ordre: 50,
     question: "Que propose la marque Pulvert ?",
     reponse:
       "Pulvert est notre marque de pulvérisateurs agricoles, conçus pour résister aux produits phytosanitaires et au soleil tunisien. Gamme disponible : pulvérisateurs à dos de 8L, 12L, 16L et 20L, pulvérisateurs à roue, atomiseurs et pulvérisateurs à moteur pour grandes surfaces. Voir la gamme → /marques/pulvert ou /activites/pulverisation",
   },
   {
-    categorie: "Pulvert — Pulvérisation",
+    rubrique: "Pulvert — Pulvérisation",
     ordre: 51,
     question: "Quelle contenance de pulvérisateur Pulvert choisir ?",
     reponse:
@@ -250,7 +250,7 @@ const faqs = [
       "Pour les professionnels, nous recommandons le 16L à pression constante pour un débit régulier.",
   },
   {
-    categorie: "Pulvert — Pulvérisation",
+    rubrique: "Pulvert — Pulvérisation",
     ordre: 52,
     question: "Comment entretenir mon pulvérisateur Pulvert ?",
     reponse:
@@ -266,7 +266,7 @@ const faqs = [
   // SEMENCES
   // ══════════════════════════════════════════════════════════════════════════
   {
-    categorie: "Semences",
+    rubrique: "Semences",
     ordre: 60,
     question: "Quelles semences proposez-vous ?",
     reponse:
@@ -277,14 +277,14 @@ const faqs = [
       "Voir l'activité semences → /activites/semences",
   },
   {
-    categorie: "Semences",
+    rubrique: "Semences",
     ordre: 61,
     question: "Proposez-vous des semences de gazon adaptées à la Tunisie ?",
     reponse:
       "Oui. La gamme Matar propose des mélanges gazon résistants à la chaleur et à la sécheresse tunisiennes, pour jardins particuliers, espaces verts municipaux et stades sportifs (également via notre filiale STAJAP spécialisée stades et golfs). Nous proposons aussi du gazon en rouleau pour une installation rapide.",
   },
   {
-    categorie: "Semences",
+    rubrique: "Semences",
     ordre: 62,
     question: "Comment conserver des semences non utilisées ?",
     reponse:
@@ -295,14 +295,14 @@ const faqs = [
   // JARDINAGE & ESPACE VERT
   // ══════════════════════════════════════════════════════════════════════════
   {
-    categorie: "Jardinage",
+    rubrique: "Jardinage",
     ordre: 70,
     question: "Proposez-vous des produits pour le jardinage amateur ?",
     reponse:
       "Oui. Notre gamme jardinage comprend : substrats et terres de rempotage, engrais Fertivert Garden pour plantes ornementales et potager, outils de jardinage, systèmes d'arrosage automatique, semences Matar pour potager, et animalerie. Idéal pour les jardiniers amateurs et les particuliers.",
   },
   {
-    categorie: "Jardinage",
+    rubrique: "Jardinage",
     ordre: 71,
     question: "Comment arroser une pelouse en été en Tunisie ?",
     reponse:
@@ -313,7 +313,7 @@ const faqs = [
       "• Un système d'arrosage automatique Matar avec programmateur est la solution la plus économique.",
   },
   {
-    categorie: "Jardinage",
+    rubrique: "Jardinage",
     ordre: 72,
     question: "Proposez-vous des équipements pour les stades et espaces verts municipaux ?",
     reponse:
@@ -324,7 +324,7 @@ const faqs = [
   // NAVIGATION SITE
   // ══════════════════════════════════════════════════════════════════════════
   {
-    categorie: "Navigation",
+    rubrique: "Navigation",
     ordre: 80,
     question: "Comment trouver un produit sur votre site ?",
     reponse:
@@ -336,14 +336,14 @@ const faqs = [
       "Si vous ne trouvez pas ce que vous cherchez, posez-moi votre question directement !",
   },
   {
-    categorie: "Navigation",
+    rubrique: "Navigation",
     ordre: 81,
     question: "Où puis-je voir les actualités et conseils agricoles d'Espace Vert ?",
     reponse:
       "Notre blog d'actualités et conseils agricoles est disponible sur → /actualites. Vous y trouverez des guides techniques, des conseils de saison et les dernières nouvelles du groupe Espace Vert.",
   },
   {
-    categorie: "Navigation",
+    rubrique: "Navigation",
     ordre: 82,
     question: "Qui sont vos partenaires ?",
     reponse:

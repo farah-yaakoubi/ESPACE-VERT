@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ChevronRight, Wheat } from "lucide-react";
 import { produitsService } from "@/services";
+import { getProductHref } from "@/lib/product-url";
 import type { ProduitCard } from "@/types/api";
 
 const DIVISION_BADGE: Record<string, { label: string; bg: string; text: string }> = {
@@ -14,7 +15,7 @@ function SimilaireCard({ produit }: { produit: ProduitCard }) {
   const badge   = DIVISION_BADGE[produit.division];
 
   return (
-    <Link href={`/produits/${produit.slug}`} className="group block">
+    <Link href={getProductHref(produit)} className="group block">
       <article
         className="rounded-2xl border border-gray-200 bg-white overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-green-300"
         style={{ boxShadow: "0 1px 4px rgba(0,0,0,.06)" }}
@@ -82,25 +83,37 @@ function SimilaireCard({ produit }: { produit: ProduitCard }) {
 export async function ProduitsSimilaires({
   idCategorie,
   idProduitActuel,
-  idMarque,
+  idCategorieParent,
+  idActivite,
 }: {
   idCategorie: number;
   idProduitActuel: number;
-  idMarque?: number;
+  idCategorieParent?: number | null;
+  idActivite?: number | null;
 }) {
   let produits: ProduitCard[] = [];
   try {
-    const res = await produitsService.list({
-      id_categorie: idCategorie,
-      limit: 10,
-    });
+    // 1. Même catégorie directe
+    const res = await produitsService.list({ id_categorie: idCategorie, limit: 10 });
     produits = res.data.filter(p => p.id_produit !== idProduitActuel).slice(0, 3);
 
-    /* Si moins de 3, compléter avec la même marque */
-    if (produits.length < 3 && idMarque) {
-      const res2 = await produitsService.list({ id_marque: idMarque, limit: 10 });
+    // 2. Si moins de 3 → catégorie parente (même famille)
+    if (produits.length < 3 && idCategorieParent) {
+      const res2 = await produitsService.list({ id_categorie: idCategorieParent, limit: 20 });
       const ids = new Set([idProduitActuel, ...produits.map(p => p.id_produit)]);
-      const extra = res2.data.filter(p => !ids.has(p.id_produit)).slice(0, 3 - produits.length);
+      const extra = res2.data
+        .filter(p => !ids.has(p.id_produit))
+        .slice(0, 3 - produits.length);
+      produits = [...produits, ...extra];
+    }
+
+    // 3. Si toujours moins de 3 → même activité
+    if (produits.length < 3 && idActivite) {
+      const res3 = await produitsService.list({ id_activite: idActivite, limit: 20 });
+      const ids = new Set([idProduitActuel, ...produits.map(p => p.id_produit)]);
+      const extra = res3.data
+        .filter(p => !ids.has(p.id_produit))
+        .slice(0, 3 - produits.length);
       produits = [...produits, ...extra];
     }
   } catch { /* silencieux */ }

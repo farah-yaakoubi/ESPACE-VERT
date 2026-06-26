@@ -1,29 +1,31 @@
 "use client";
+
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 
 interface ActiviteHeroBannerProps {
-  nom:            string;
-  description?:   string;
-  /** Bannière dédiée (champ `banniere` du modèle Activite) */
-  banniere?:      string;
-  /** Image miniature de l'activité (champ `image`) — fallback */
-  image?:         string;
-  /** Affiche le bloc RDV Matar-Irrigation */
-  isIrrigation?:  boolean;
+  nom:             string;
+  description?:    string;
+  banniere?:       string;
+  /** Variantes responsive de la bannière */
+  banniereTablet?: string;
+  banniereMobile?: string;
+  /** Image miniature fallback */
+  image?:          string;
+  isIrrigation?:   boolean;
 }
 
 export function ActiviteHeroBanner({
   nom,
   description,
   banniere,
+  banniereTablet,
+  banniereMobile,
   image,
   isIrrigation = false,
 }: ActiviteHeroBannerProps) {
-  /* Image affichée : bannière en priorité, sinon image miniature */
   const bgImage = banniere || image;
 
-  /* ── Avec bannière dédiée : pleine largeur, effet Ken Burns ── */
   if (banniere) {
     return (
       <>
@@ -41,10 +43,19 @@ export function ActiviteHeroBanner({
             max-height: 760px;
             isolation: isolate;
           }
+          /* ✅ FIX */
+          .ahb-picture {
+            display: block;
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+          }
           .ahb-img {
-            position: absolute; inset: 0;
-            width: 100%; height: 100%;
-            object-fit: cover; object-position: center 34%;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 34%;
             animation: ahbZoom 12s ease-in-out forwards;
             will-change: transform;
           }
@@ -80,7 +91,16 @@ export function ActiviteHeroBanner({
         `}</style>
 
         <section className="ahb-section">
-          <img src={banniere} alt={nom} className="ahb-img" />
+          {/* ✅ FIX : <picture> responsive */}
+          <picture className="ahb-picture">
+            {banniereMobile && (
+              <source media="(max-width: 640px)" srcSet={banniereMobile} />
+            )}
+            {banniereTablet && (
+              <source media="(max-width: 1024px)" srcSet={banniereTablet} />
+            )}
+            <img src={banniere} alt={nom} className="ahb-img" />
+          </picture>
 
           {/* Gradient overlay */}
           <div
@@ -153,7 +173,7 @@ export function ActiviteHeroBanner({
     );
   }
 
-  /* ── Avec image miniature en background flou (comportement d'origine) ── */
+  /* ── Fallback avec image miniature floue ── */
   return (
     <section
       className="relative bg-ev-950 overflow-hidden"
@@ -192,7 +212,6 @@ export function ActiviteHeroBanner({
             {description}
           </p>
         )}
-
         {isIrrigation && (
           <div className="mt-8 inline-flex items-center gap-4 bg-sky-900/60 border border-sky-700/50 rounded-2xl px-6 py-4">
             <CalendarDays size={24} className="text-sky-400 shrink-0" />

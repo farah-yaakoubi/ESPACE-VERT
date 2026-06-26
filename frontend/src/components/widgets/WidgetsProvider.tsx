@@ -60,7 +60,7 @@ export function WidgetsProvider() {
  *   return (
  *     <>
  *       <h1>Notre catalogue</h1>
- *       {/* ... votre contenu ... */}
+ *       // ... votre contenu ...
  *       <RecommendationWidget triggerIcon="/logos/recommendation.png" />
  *       <SeedCalculatorWidget triggerIcon="/logos/seed-calculator.png" />
  *     </>

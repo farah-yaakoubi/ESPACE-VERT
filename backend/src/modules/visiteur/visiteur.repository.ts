@@ -1,7 +1,7 @@
-import { prisma }  from "../../lib/prisma";
-import { VisiteurQueryDto, StatsVisiteurQueryDto, TrackDto } from "./visiteur.schema";
-import crypto      from "crypto";
-import https       from "https";
+import crypto from "crypto";
+import https from "https";
+import { prisma } from "../../lib/prisma";
+import { StatsVisiteurQueryDto, VisiteurQueryDto } from "./visiteur.schema";
 
 // ── Géolocalisation IP ────────────────────────────────────────────────────────
 async function resolveGeo(ip: string): Promise<{ pays: string | null; region: string | null }> {
@@ -212,7 +212,7 @@ export const visiteurRepository = {
         where:   { nb_consultations: { gt: 0 } },
         orderBy: { nb_consultations: "desc" },
         take:    10,
-        select:  { id_faq: true, question: true, categorie: true, nb_consultations: true },
+        select:  { id_faq: true, question: true, rubrique: true, nb_consultations: true },
       }),
 
       // NOUVEAU — stats appareils
@@ -241,8 +241,10 @@ export const visiteurRepository = {
           where:  { id_produit: { in: produitIds } },
           select: { id_produit: true, nom: true, slug: true },
         })
-      : [];
-    const produitMap = new Map(produits.map(p => [p.id_produit, p]));
+      : ([] as { id_produit: number; nom: string; slug: string }[]);
+    const produitMap = new Map<number, { id_produit: number; nom: string; slug: string }>(
+      (produits as { id_produit: number; nom: string; slug: string }[]).map(p => [p.id_produit, p])
+    );
 
     return {
       totalVisiteurs,

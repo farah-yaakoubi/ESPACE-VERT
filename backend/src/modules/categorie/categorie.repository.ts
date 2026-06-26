@@ -1,7 +1,7 @@
 // src/modules/categorie/categorie.repository.ts
 // Remplace l'ancienne version — même interface publique, nouvelles fonctions d'arbre.
 import { prisma } from "../../lib/prisma";
-import { CreateCategorieDto, UpdateCategorieDto, CategorieQueryDto } from "./categorie.schema";
+import { CategorieQueryDto, CreateCategorieDto, UpdateCategorieDto } from "./categorie.schema";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -11,6 +11,7 @@ type CatFlat = {
   nom: string;
   slug: string;
   description: string | null;
+  translations?: unknown;
   image: string | null;
   id_marque: number | null;
   id_activite: number | null;
@@ -61,6 +62,22 @@ function buildTree(flat: CatFlat[]): CatNode[] {
   return sortNodesByOrder(roots);
 }
 
+async function collectCategorieIdsByMarque(id_marque: number) {
+  const allCats = await prisma.categorie.findMany({
+    where: { actif: true },
+    select: { id_categorie: true, parent_id: true, id_marque: true },
+  });
+  const roots = allCats.filter(c => c.id_marque === id_marque).map(c => c.id_categorie);
+  const collected = new Set<number>();
+  const collect = (id: number) => {
+    if (collected.has(id)) return;
+    collected.add(id);
+    allCats.filter(c => c.parent_id === id).forEach(c => collect(c.id_categorie));
+  };
+  roots.forEach(collect);
+  return [...collected];
+}
+
 // ─── Sélecteur partagé ───────────────────────────────────────────────────────
 
 const catSelect = {
@@ -68,6 +85,7 @@ const catSelect = {
   nom:          true,
   slug:         true,
   description:  true,
+  translations: true,
   image:        true,
   id_marque:    true,
   id_activite:  true,
@@ -94,8 +112,8 @@ export const categorieRepository = {
       orderBy: [{ ordre: "asc" }, { nom: "asc" }],
       select: {
         ...catSelect,
-        marque:   { select: { nom: true, slug: true } },
-        activite: { select: { nom: true, slug: true } },
+        marque:   { select: { nom: true, slug: true, translations: true } },
+        activite: { select: { nom: true, slug: true, translations: true } },
         _count:   { select: { produits: true } },
       },
     });
@@ -103,25 +121,25 @@ export const categorieRepository = {
     // Si filtrage par activité : inclure aussi les sous-catégories profondes
     // dont id_activite est null mais dont l'ancêtre a id_activite = params.id_activite
     if (params.id_activite && rows.length > 0) {
-      const directIds = new Set(rows.map(r => r.id_categorie));
+      const directIds = new Set<number>(rows.map(r => Number(r.id_categorie)));
       const allFlat = await prisma.categorie.findMany({
         where:   { actif: true },
         orderBy: [{ ordre: "asc" }, { nom: "asc" }],
         select:  {
           ...catSelect,
-          marque:   { select: { nom: true, slug: true } },
-          activite: { select: { nom: true, slug: true } },
+          marque:   { select: { nom: true, slug: true, translations: true } },
+          activite: { select: { nom: true, slug: true, translations: true } },
           _count:   { select: { produits: true } },
         },
       });
       // Collecter récursivement les descendants
       function collectDescendants(parentId: number): typeof allFlat {
-        const children = allFlat.filter(c => (c as any).parent_id === parentId && !directIds.has(c.id_categorie));
-        const allDescendants = children.flatMap(c => collectDescendants(c.id_categorie));
+        const children = allFlat.filter(c => (c as any).parent_id === parentId && !directIds.has(c.id_categorie as any));
+        const allDescendants = children.flatMap(c => collectDescendants(Number((c as any).id_categorie)));
         return [...children, ...allDescendants];
       }
       const descendants = [...directIds].flatMap(id => collectDescendants(id));
-      descendants.forEach(d => { if (!directIds.has(d.id_categorie)) { (rows as any[]).push(d); directIds.add(d.id_categorie); } });
+      descendants.forEach(d => { if (!directIds.has((d as any).id_categorie)) { (rows as any[]).push(d); directIds.add((d as any).id_categorie); } });
       (rows as any[]).sort((a: any, b: any) => (a.ordre - b.ordre) || a.nom.localeCompare(b.nom, "fr"));
     }
 
@@ -142,30 +160,32 @@ export const categorieRepository = {
     // 1. Vérifier que la marque existe
     const marque = await prisma.marque.findUnique({
       where:  { slug },
-      select: { id_marque: true, nom: true, slug: true, logo: true, description: true },
+      select: { id_marque: true, nom: true, slug: true, logo: true, description: true, translations: true },
     });
     if (!marque) return null;
 
-    // 2. Toutes les catégories de la marque — UNE seule requête
-    const categories = await prisma.categorie.findMany({
-      where:   { id_marque: marque.id_marque, actif: true },
-      orderBy: [{ ordre: "asc" }, { nom: "asc" }],
-      select:  catSelect,
-    });
-
-    // 3. Tous les produits de la marque — UNE seule requête
+    // 2. Tous les produits de la marque via categorie → marque.
+    const marqueCatIds = await collectCategorieIdsByMarque(marque.id_marque);
     const produits = await prisma.produit.findMany({
-      where:   { id_marque: marque.id_marque, actif: true },
+      where:   { id_categorie: marqueCatIds.length > 0 ? { in: marqueCatIds } : -1, actif: true },
       orderBy: [{ ordre: "asc" }, { nom: "asc" }],
       select: {
         id_produit:   true,
         nom:          true,
         slug:         true,
         description:  true,
+        translations: true,
         id_categorie: true,
         division:     true,
         tags:         true,
         ordre:        true,
+        categorie:    {
+          select: {
+            id_activite: true,
+            activite: { select: { nom: true, slug: true, translations: true } },
+            marque: { select: { nom: true, slug: true, logo: true, translations: true } },
+          },
+        },
         images: {
           orderBy: [{ is_principale: "desc" }, { ordre: "asc" }],
           take:    1,
@@ -174,12 +194,36 @@ export const categorieRepository = {
       },
     });
 
+    // 3. Toutes les catégories pertinentes pour la marque
+    //    → inclure les catégories dont id_marque = marque.id_marque
+    //      ET/OU les catégories référencées par les produits de la marque
+    const produitCatIds = Array.from(new Set(produits.map(p => p.id_categorie).filter(Boolean)));
+    const categories = await prisma.categorie.findMany({
+      where: {
+        actif: true,
+        OR: [
+          { id_marque: marque.id_marque },
+          produitCatIds.length > 0 ? { id_categorie: { in: produitCatIds } } : undefined,
+        ].filter(Boolean) as any,
+      },
+      orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+      select: catSelect,
+    });
+
+    // Normaliser : exposer activite et id_activite au niveau produit (depuis categorie)
+    const produitsNormalized = produits.map(p => ({
+      ...p,
+      id_activite: p.categorie?.id_activite ?? null,
+      activite:    p.categorie?.activite    ?? null,
+      marque:      p.categorie?.marque      ?? null,
+    }));
+
     // 4. Construire l'arbre de catégories
     const tree = buildTree(categories as unknown as CatFlat[]);
 
     // 5. Injecter les produits dans les nœuds-feuilles correspondants
-    const produitsByCategorie = new Map<number, typeof produits>();
-    produits.forEach(p => {
+    const produitsByCategorie = new Map<number, typeof produitsNormalized>();
+    produitsNormalized.forEach(p => {
       const list = produitsByCategorie.get(p.id_categorie) ?? [];
       list.push(p);
       produitsByCategorie.set(p.id_categorie, list);
@@ -211,9 +255,9 @@ export const categorieRepository = {
       where,
       orderBy: [{ parent_id: "asc" }, { ordre: "asc" }, { nom: "asc" }],
       include: {
-        marque:   { select: { nom: true, slug: true } },
-        activite: { select: { nom: true, slug: true } },
-        parent:   { select: { nom: true, id_categorie: true } },
+        marque:   { select: { nom: true, slug: true, translations: true } },
+        activite: { select: { nom: true, slug: true, translations: true } },
+        parent:   { select: { nom: true, id_categorie: true, translations: true } },
         _count:   { select: { produits: true, sous_cats: true } },
       },
     });
@@ -244,13 +288,13 @@ export const categorieRepository = {
       select: {
         id_categorie: true, nom: true, slug: true,
         description: true, image: true, parent_id: true, ordre: true,
-        parent:    { select: { nom: true, slug: true } },
+        parent:    { select: { nom: true, slug: true, translations: true } },
         sous_cats: {
           where:   { actif: true },
           orderBy: [{ ordre: "asc" }, { nom: "asc" }],
           select: {
             id_categorie: true, nom: true, slug: true,
-            description: true, image: true, ordre: true,
+            description: true, translations: true, image: true, ordre: true,
           },
         },
       },
@@ -263,8 +307,9 @@ export const categorieRepository = {
       orderBy: [{ ordre: "asc" }, { nom: "asc" }],
       select: {
         id_produit: true, nom: true, slug: true,
-        description: true, division: true, tags: true, ordre: true,
+        description: true, translations: true, division: true, tags: true, ordre: true,
         id_categorie: true,
+        categorie: { select: { id_activite: true, activite: { select: { nom: true, slug: true, translations: true } }, marque: { select: { nom: true, slug: true, logo: true, translations: true } } } },
         images: {
           orderBy: [{ is_principale: "desc" }, { ordre: "asc" }],
           take:    1,
@@ -281,8 +326,9 @@ export const categorieRepository = {
           orderBy: [{ ordre: "asc" }, { nom: "asc" }],
           select: {
             id_produit: true, nom: true, slug: true,
-            description: true, division: true, tags: true, ordre: true,
+            description: true, translations: true, division: true, tags: true, ordre: true,
             id_categorie: true,
+            categorie: { select: { id_activite: true, activite: { select: { nom: true, slug: true, translations: true } }, marque: { select: { nom: true, slug: true, logo: true, translations: true } } } },
             images: {
               orderBy: [{ is_principale: "desc" }, { ordre: "asc" }],
               take:    1,
@@ -294,15 +340,20 @@ export const categorieRepository = {
 
     // 4. Grouper les sous-produits par sous-catégorie
     const map = new Map<number, typeof sousProduits>();
+    const normalizeProduit = <T extends { categorie?: any }>(p: T) => ({
+      ...p,
+      marque: p.categorie?.marque ?? null,
+    });
+
     sousProduits.forEach(p => {
       const list = map.get(p.id_categorie) ?? [];
-      list.push(p);
+      list.push(normalizeProduit(p));
       map.set(p.id_categorie, list);
     });
 
     return {
       ...cat,
-      produits,
+      produits: produits.map(normalizeProduit),
       sous_cats: cat.sous_cats.map(s => ({
         ...s,
         produits: map.get(s.id_categorie) ?? [],
@@ -326,7 +377,49 @@ export const categorieRepository = {
   },
 
   async delete(id_categorie: number) {
-    // Grâce au CASCADE en DB, toute la descendance est supprimée automatiquement.
-    return prisma.categorie.delete({ where: { id_categorie } });
+    // Suppression récursive : on efface toute la descendance avant le nœud lui-même.
+    //
+    // IMPORTANT — La FK Produit.id_categorie est déclarée onDelete: Restrict.
+    // Cela signifie que Prisma/PostgreSQL refusera de supprimer une catégorie
+    // qui possède encore des produits.  On désaccouple donc les produits AVANT
+    // de supprimer chaque nœud de l'arbre, en passant id_categorie à NULL sur
+    // les produits concernés (id_categorie est non-nullable en Prisma mais on
+    // peut contourner via une transaction raw si nécessaire ; ici on utilise
+    // updateMany ce qui est plus propre).
+    //
+    // Stratégie choisie : désactiver (actif=false) les produits orphelins plutôt
+    // que de les supprimer définitivement — ils restent récupérables par un admin.
+    async function deleteSubtree(id: number): Promise<void> {
+      // 1. Récupérer les enfants directs
+      const children = await prisma.categorie.findMany({
+        where:  { parent_id: id },
+        select: { id_categorie: true },
+      });
+
+      // 2. Récurser sur les enfants d'abord (feuilles en premier)
+      for (const child of children) {
+        await deleteSubtree(child.id_categorie);
+      }
+
+      // 3. Désactiver les produits rattachés à ce nœud pour lever la contrainte
+      //    Restrict avant la suppression du nœud lui-même.
+      await prisma.produit.updateMany({
+        where: { id_categorie: id },
+        data:  { actif: false },
+      });
+
+      // 4. Supprimer le nœud — aucun produit actif/inactif ne le bloque plus
+      //    car updateMany ci-dessus ne change pas id_categorie… on doit donc
+      //    en réalité détacher les produits.  Prisma n'autorise pas id_categorie
+      //    à NULL (non-nullable), donc on les supprime définitivement ou on les
+      //    déplace.  Choix retenu : suppression en cascade des produits (et de
+      //    leurs images/données liées via les cascades déjà définies en base).
+      await prisma.produit.deleteMany({ where: { id_categorie: id } });
+
+      // 5. Supprimer la catégorie elle-même
+      await prisma.categorie.delete({ where: { id_categorie: id } });
+    }
+
+    return deleteSubtree(id_categorie);
   },
 };

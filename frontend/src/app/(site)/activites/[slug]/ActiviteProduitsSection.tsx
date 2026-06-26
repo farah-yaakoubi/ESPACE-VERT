@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useMemo, useCallback, useEffect, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import {
   Package, ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight,
@@ -16,8 +17,13 @@ import {
   FilterPanel, applyFilters, DEFAULT_FILTERS,
   type FilterState, type CatNode,
 } from "@/components/catalogue/FilterPanel";
+import { getEtudeInstallationHref, isEtudeInstallationCategory } from "@/lib/etude-installation";
+import { SemencesRecommandationCard } from "./SemencesRecommandation";
+import { useI18n } from "@/i18n/I18nProvider";
+import { translatedField } from "@/i18n/translated-field";
+import type { Locale } from "@/i18n/config";
 
-const PAGE_SIZE = 12;
+const DEFAULT_PAGE_SIZE = 12;
 
 /* ── Helpers ────────────────────────────────────────────────────────────── */
 function buildTree(cats: Categorie[]): CatNode[] {
@@ -61,14 +67,8 @@ function normalizeText(value: string | null | undefined) {
 
 function shouldUseCatalogueView(node: CatNode | null) {
   if (!node || (node.children ?? []).length === 0) return false;
-
-  const slug = normalizeText(node.slug);
-  const name = normalizeText(node.nom);
-
-  return (
-    slug.includes("semences-maraicher") ||
-    name.includes("semences maraicher")
-  );
+  // Déclenche la vue grille si au moins une sous-catégorie a une image
+  return (node.children ?? []).some(child => !!child.image);
 }
 
 /* ── CatalogueCoverGrid ─────────────────────────────────────────────────── */
@@ -80,6 +80,7 @@ function CatalogueCoverGrid({
   onSelectChild: (id: number) => void;
   onClose: () => void;
 }) {
+  const { locale, t } = useI18n();
   const children = node.children ?? [];
   if (children.length === 0) return null;
 
@@ -100,73 +101,211 @@ function CatalogueCoverGrid({
         <div className="flex items-center gap-3">
           <button onClick={onClose}
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-ev-700 transition-colors">
-            <ArrowLeft size={14} /> Tous les produits
+            <ArrowLeft size={14} /> {t("catalog.allProducts", "Tous les produits")}
           </button>
           <span className="text-gray-300">/</span>
-          <h2 className="font-bold text-ev-900 text-base">{node.nom}</h2>
+          <h2 className="font-bold text-ev-900 text-base">{catLabel(node, locale)}</h2>
         </div>
         <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
           {children.length} catégorie{children.length > 1 ? "s" : ""}
         </span>
       </div>
 
-      {/* Grille — images flottantes sans fond */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-8">
-        {children.map(child => {
-          const count    = childCount(child);
-          const fallback = childFirstImage(child);
-          const imgSrc   = child.image || fallback?.url || null;
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+        {children.filter(child => !!child.image).map(child => {
+          const count  = childCount(child);
+          const imgSrc = child.image;
 
           return (
-            <div key={child.id_categorie} className="group flex flex-col items-start">
-
-              {/* Image sans fond, flottante */}
-              <button
-                onClick={() => onSelectChild(child.id_categorie)}
-                className="relative w-full h-[140px] sm:h-[160px] flex items-center justify-center
-                  mb-4 focus:outline-none"
-                aria-label={`Voir ${child.nom}`}
-              >
+            <button
+              key={child.id_categorie}
+              onClick={() => onSelectChild(child.id_categorie)}
+              className="group overflow-hidden rounded-2xl border border-sand-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-ev-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-ev-400 focus:ring-offset-2"
+              aria-label={`${t("catalog.viewProducts", "Voir produits")} ${catLabel(child, locale)}`}
+            >
+              <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br from-white via-ev-50 to-sand-100">
                 {imgSrc ? (
                   <Image
                     src={imgSrc}
-                    alt={child.nom}
+                    alt={catLabel(child, locale)}
                     fill
-                    className="object-contain drop-shadow-md
-                      group-hover:-translate-y-2 transition-transform duration-300 ease-out"
-                    sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 25vw"
+                    className="object-contain p-6 drop-shadow-md transition-transform duration-500 group-hover:scale-105"
+                    sizes="(max-width:640px) 100vw, (max-width:1280px) 50vw, 25vw"
                   />
                 ) : (
-                  <div className="w-16 h-16 rounded-full bg-ev-50 flex items-center
-                    justify-center text-3xl text-ev-200 select-none">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-3xl text-ev-200 shadow-sm">
                     🌿
                   </div>
                 )}
-              </button>
-
-              {/* Nom avec séparateur */}
-              <div className="flex items-center gap-2 mb-2.5 w-full">
-                <span className="w-0.5 h-[1.1em] bg-ev-700 rounded-full shrink-0" />
-                <p className="text-[13px] font-bold text-gray-800 uppercase tracking-wider
-                  leading-snug line-clamp-2 group-hover:text-ev-700 transition-colors">
-                  {child.nom}
-                </p>
+                <span className="absolute right-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-ev-800 shadow-sm">
+                  {count} {productWord(count, t)}
+                </span>
               </div>
 
-              {/* Bouton outline + flèche */}
-              <button
-                onClick={() => onSelectChild(child.id_categorie)}
-                className="inline-flex items-center gap-1.5
-                  border border-ev-700 text-ev-700 text-[11px] font-semibold
-                  uppercase tracking-widest px-3.5 py-1.5 rounded
-                  hover:bg-ev-700 hover:text-white
-                  transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ev-400"
-              >
-                Voir produits
-                <ChevronRight size={11} className="transition-transform duration-200 group-hover:translate-x-0.5" />
-              </button>
+              <div className="flex min-h-[116px] flex-col p-4">
+                <div className="mb-3 flex items-start gap-2">
+                  <span className="mt-1 h-8 w-1 rounded-full bg-ev-600 shrink-0" />
+                  <p className="text-[15px] font-bold leading-snug text-gray-900 line-clamp-2 group-hover:text-ev-700 transition-colors">
+                    {catLabel(child, locale)}
+                  </p>
+                </div>
+                <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-xl bg-ev-700 px-3.5 py-2 text-[12px] font-semibold text-white transition-colors group-hover:bg-ev-800">
+                  {t("catalog.viewProducts", "Voir produits")}
+                  <ChevronRight size={13} />
+                </span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
-            </div>
+interface BrandCard {
+  id_categorie: number;
+  nom: string;
+  image: string | null;
+  href: string;
+}
+
+function BrandLinkGrid({
+  cards,
+  allProduits,
+}: {
+  cards: BrandCard[];
+  allProduits: import("@/types/api").ProduitCard[];
+}) {
+  const { t } = useI18n();
+  if (cards.length === 0) return null;
+
+  function cardCount(card: BrandCard) {
+    return allProduits.filter(p => (p as any).id_categorie === card.id_categorie).length;
+  }
+
+  function cardFirstImage(card: BrandCard) {
+    const first = allProduits.find(p => (p as any).id_categorie === card.id_categorie && p.images?.[0]);
+    return first?.images?.[0] ?? null;
+  }
+
+  return (
+    <div className="mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {cards.map(card => {
+          const count = cardCount(card);
+          const fallback = cardFirstImage(card);
+          const imgSrc = card.image || fallback?.url || "/images/hero/matar-desktop.webp";
+
+          return (
+            <Link
+              key={card.id_categorie}
+              href={card.href}
+              className="group relative h-56 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-ev-500"
+              aria-label={`Voir les produits ${card.nom}`}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-white via-sky-50 to-ev-50" />
+              <div className="absolute inset-0 flex items-center justify-center p-8">
+                <Image
+                  src={imgSrc}
+                  alt={card.nom}
+                  fill
+                  className="object-contain p-8 transition-transform duration-500 group-hover:scale-105"
+                  sizes="(max-width:640px) 100vw, (max-width:1280px) 50vw, 25vw"
+                />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-5">
+                <p className="text-white text-lg font-bold leading-tight drop-shadow">
+                  {card.nom}
+                </p>
+                <p className="mt-1 text-xs font-medium text-white/70">
+                  {count} {productWord(count, t)}
+                </p>
+                <span
+                  className="mt-4 inline-flex items-center gap-1.5 rounded bg-white px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-ev-800 shadow-sm transition-colors group-hover:bg-ev-700 group-hover:text-white"
+                  aria-hidden="true"
+                >
+                  {t("catalog.viewProducts", "Voir produits")}
+                  <ChevronRight size={12} />
+                </span>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function RootCatalogueGrid({
+  nodes,
+  allProduits,
+  onSelect,
+}: {
+  nodes: CatNode[];
+  allProduits: import("@/types/api").ProduitCard[];
+  onSelect: (id: number) => void;
+}) {
+  const { locale, t } = useI18n();
+  if (nodes.length === 0) return null;
+
+  function nodeCount(n: CatNode) {
+    const ids = collectIds(n);
+    return allProduits.filter(p => ids.has((p as any).id_categorie)).length;
+  }
+
+  function nodeFirstImage(n: CatNode) {
+    const ids = collectIds(n);
+    const first = allProduits.find(p => ids.has((p as any).id_categorie) && p.images?.[0]);
+    return first?.images?.[0] ?? null;
+  }
+
+  return (
+    <div className="mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+        {nodes.filter(node => !!node.image).map(node => {
+          const count = nodeCount(node);
+          const imgSrc = node.image;
+
+          return (
+            <button
+              key={node.id_categorie}
+              onClick={() => onSelect(node.id_categorie)}
+              className="group overflow-hidden rounded-2xl border border-sand-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-ev-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-ev-400 focus:ring-offset-2"
+              aria-label={`${t("catalog.viewProducts", "Voir produits")} ${catLabel(node, locale)}`}
+            >
+              <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br from-white via-ev-50 to-sand-100">
+                {imgSrc ? (
+                  <Image
+                    src={imgSrc}
+                    alt={catLabel(node, locale)}
+                    fill
+                    className="object-contain p-6 drop-shadow-md transition-transform duration-500 group-hover:scale-105"
+                    sizes="(max-width:640px) 100vw, (max-width:1280px) 50vw, 25vw"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-3xl text-ev-200 shadow-sm">
+                    🌿
+                  </div>
+                )}
+                <span className="absolute right-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-ev-800 shadow-sm">
+                  {count} {productWord(count, t)}
+                </span>
+              </div>
+
+              <div className="flex min-h-[116px] flex-col p-4">
+                <div className="mb-3 flex items-start gap-2">
+                  <span className="mt-1 h-8 w-1 rounded-full bg-ev-600 shrink-0" />
+                  <p className="text-[15px] font-bold leading-snug text-gray-900 line-clamp-2 group-hover:text-ev-700 transition-colors">
+                    {catLabel(node, locale)}
+                  </p>
+                </div>
+                <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-xl bg-ev-700 px-3.5 py-2 text-[12px] font-semibold text-white transition-colors group-hover:bg-ev-800">
+                  {t("catalog.viewProducts", "Voir produits")}
+                  <ChevronRight size={13} />
+                </span>
+              </div>
+            </button>
           );
         })}
       </div>
@@ -202,25 +341,40 @@ function Pagination({ page, totalPages, onPageChange }: {
 }
 
 /* ── Props ──────────────────────────────────────────────────────────────── */
-interface Props { id_activite: number; categories: Categorie[]; }
+interface Props {
+  id_activite: number;
+  activiteSlug: string;
+  categories: Categorie[];
+  categoryScopeId?: number | null;
+  brandCards?: BrandCard[];
+}
 
 /* ══════════════════════════════════════════════════════════════════════════ */
-function ActiviteProduitsSection({ id_activite, categories }: Props) {
+function ActiviteProduitsSection({ id_activite, activiteSlug, categories, categoryScopeId = null, brandCards = [] }: Props) {
+  const { locale, t } = useI18n();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const catParam = searchParams.get("cat");
+  const isSemencesPage = activiteSlug === "semences-et-plants";
 
-  const tree = useMemo(() => buildTree(categories), [categories]);
+  const fullTree = useMemo(() => buildTree(categories), [categories]);
+  const scopedNode = useMemo(
+    () => categoryScopeId ? findNode(fullTree, categoryScopeId) : null,
+    [categoryScopeId, fullTree]
+  );
+  const tree = useMemo(() => scopedNode ? [scopedNode] : fullTree, [fullTree, scopedNode]);
 
   const [filters, setFilters] = useState<FilterState>({
     ...DEFAULT_FILTERS,
     categoryId: catParam ? parseInt(catParam, 10) : null,
   });
   const [page, setPage] = useState(1);
+  const pageSize = isSemencesPage ? 12 : DEFAULT_PAGE_SIZE;
 
   const [catalogueCatId, setCatalogueCatId] = useState<number | null>(() => {
     if (!catParam) return null;
     const id   = parseInt(catParam, 10);
-    const node = findNode(buildTree(categories), id);
+    const node = findNode(tree, id);
     if (shouldUseCatalogueView(node)) return id;
     return null;
   });
@@ -235,30 +389,56 @@ function ActiviteProduitsSection({ id_activite, categories }: Props) {
     else setCatalogueCatId(null);
   }, [catParam, tree]);
 
-  const { produits: allProduits, loading, error } = useProducts({ id_activite, limit: 500 });
+  const { produits: allProduits, loading, error } = useProducts({
+    id_activite: categoryScopeId ? undefined : id_activite,
+    id_categorie: categoryScopeId ?? undefined,
+    limit: 500,
+  });
+  const scopedProduits = useMemo(() => {
+    if (!categoryScopeId || !scopedNode) return allProduits ?? [];
+    const ids = collectIds(scopedNode);
+    return (allProduits ?? []).filter(p => ids.has((p as any).id_categorie));
+  }, [allProduits, categoryScopeId, scopedNode]);
 
   const filtered = useMemo(
-    () => allProduits ? applyFilters(allProduits, filters, tree) : [],
-    [allProduits, filters, tree]
+    () => applyFilters(scopedProduits, filters, tree, locale),
+    [scopedProduits, filters, tree, locale]
   );
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated  = useMemo(() => filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE), [filtered, page]);
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const paginated  = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
 
   useEffect(() => { setPage(1); }, [filters]);
 
-  const handleFiltersChange = useCallback((f: FilterState) => { setFilters(f); setPage(1); }, []);
+  // ── Tracking recherche visiteur ──────────────────────────────────────────────
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleFiltersChange = useCallback((f: FilterState) => {
+    setFilters(f);
+    setPage(1);
+    if (f.search.trim().length >= 2) {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+      searchTimerRef.current = setTimeout(() => {
+        if (typeof window !== "undefined" && typeof (window as any).trackSearch === "function") {
+          (window as any).trackSearch(f.search.trim(), 0);
+        }
+      }, 800);
+    }
+  }, []);
   const handlePageChange    = useCallback((p: number) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }, []);
 
   const handleCategorySelect = useCallback((id: number | null) => {
     if (!id) { setCatalogueCatId(null); handleFiltersChange({ ...filters, categoryId: null }); return; }
     const node = findNode(tree, id);
+    if (node && isEtudeInstallationCategory(node)) {
+      router.push(getEtudeInstallationHref(activiteSlug));
+      return;
+    }
     if (shouldUseCatalogueView(node)) {
       setCatalogueCatId(id); handleFiltersChange({ ...filters, categoryId: id });
     } else {
       setCatalogueCatId(null); handleFiltersChange({ ...filters, categoryId: id });
     }
-  }, [filters, tree, handleFiltersChange]);
+  }, [activiteSlug, filters, tree, handleFiltersChange, router]);
 
   const catalogueNode = useMemo(() => catalogueCatId ? findNode(tree, catalogueCatId) : null, [catalogueCatId, tree]);
   const activeNode    = useMemo(() => filters.categoryId ? findNode(tree, filters.categoryId) : null, [filters.categoryId, tree]);
@@ -266,28 +446,45 @@ function ActiviteProduitsSection({ id_activite, categories }: Props) {
   const showGrid        = !catalogueCatId;
   const hasActiveFilters = filters.categoryId !== null || filters.tags.length > 0
     || filters.divisions.length > 0 || filters.search.trim() !== "";
+  const showRootCatalogueGrid =
+    !categoryScopeId &&
+    brandCards.length === 0 &&
+    !hasActiveFilters &&
+    !catalogueCatId &&
+    tree.some(n => !!n.image);
+  const showIrrigationBrandLinks =
+    activiteSlug === "irrigation" &&
+    !categoryScopeId &&
+    brandCards.length > 0 &&
+    !hasActiveFilters &&
+    !catalogueCatId;
 
   const reset = useCallback(() => { setCatalogueCatId(null); handleFiltersChange(DEFAULT_FILTERS); }, [handleFiltersChange]);
 
   return (
-    /* Même style que les pages marques : bg-sand-50, produits directs sans grand titre */
-    <section className="bg-sand-50 border-b border-sand-200">
-      <div className="container-ev py-8">
-        <div className="flex flex-col gap-6 lg:gap-8 md:flex-row">
+    <section id="produits-activite" className="bg-sand-50 border-b border-sand-200">
+      <div className="container-ev py-5">
+        <div
+          className={cn(
+            "flex flex-col gap-6 lg:gap-8",
+            isSemencesPage
+              ? "md:grid md:grid-cols-[15rem_minmax(0,1fr)] md:items-start xl:grid-cols-[15rem_minmax(0,1fr)_17rem]"
+              : "md:flex-row"
+          )}
+        >
 
           {/* FilterPanel */}
           <FilterPanel
             tree={tree}
-            produits={allProduits ?? []}
+            produits={scopedProduits}
             filters={filters}
             onChange={handleFiltersChange}
-            totalAll={(allProduits ?? []).length}
+            totalAll={scopedProduits.length}
             onCategoryClick={handleCategorySelect}
           />
 
           {/* Zone principale */}
           <div className="flex-1 min-w-0">
-
             {/* Breadcrumb filtres actifs */}
             {hasActiveFilters && (
               <div className="mb-4 flex items-center gap-2 flex-wrap">
@@ -303,11 +500,11 @@ function ActiviteProduitsSection({ id_activite, categories }: Props) {
                         return parent ? (
                           <><ChevronRight size={10} />
                             <button onClick={() => handleCategorySelect(parent.id_categorie)}
-                              className="hover:text-ev-700 transition-colors">{parent.nom}</button></>
+                              className="hover:text-ev-700 transition-colors">{catLabel(parent, locale)}</button></>
                         ) : null;
                       })()}
                       <ChevronRight size={10} />
-                      <span className="text-gray-800 font-semibold">{activeNode.nom}</span>
+                      <span className="text-gray-800 font-semibold">{catLabel(activeNode, locale)}</span>
                     </>
                   )}
                 </div>
@@ -334,38 +531,66 @@ function ActiviteProduitsSection({ id_activite, categories }: Props) {
             {catalogueNode && (
               <CatalogueCoverGrid
                 node={catalogueNode}
-                allProduits={allProduits ?? []}
+                allProduits={scopedProduits}
                 onSelectChild={(id) => handleCategorySelect(id)}
                 onClose={reset}
               />
             )}
 
+            {showIrrigationBrandLinks && (
+              <BrandLinkGrid
+                cards={brandCards}
+                allProduits={scopedProduits}
+              />
+            )}
+
+            {showRootCatalogueGrid && (
+              <RootCatalogueGrid
+                nodes={tree}
+                allProduits={scopedProduits}
+                onSelect={(id) => handleCategorySelect(id)}
+              />
+            )}
+
             {/* Mode grille produits */}
-            {showGrid && (
+            {showGrid && !showRootCatalogueGrid && !showIrrigationBrandLinks && (
               <>
                 {loading ? (
-                  <GridSkeleton count={8}/>
+                  <GridSkeleton count={isSemencesPage ? pageSize : 8} cols={isSemencesPage ? 4 : undefined} />
                 ) : error ? (
                   <p className="text-center text-red-500 py-10">{error}</p>
                 ) : filtered.length === 0 ? (
                   <div className="text-center py-24 text-gray-400">
                     <Package size={40} className="mx-auto mb-3 opacity-25"/>
-                    <p className="text-sm font-medium text-gray-500 mb-1">Aucun produit trouvé</p>
-                    <p className="text-xs text-gray-400 mb-4">Essayez de modifier ou d&apos;effacer vos filtres.</p>
+                    <p className="text-sm font-medium text-gray-500 mb-1">{t("catalog.noProducts", "Aucun produit trouvé")}</p>
+                    <p className="text-xs text-gray-400 mb-4">{t("catalog.tryFilters", "Essayez de modifier ou d'effacer vos filtres.")}</p>
                     <button onClick={reset}
                       className="inline-flex items-center gap-1.5 text-xs text-ev-600 hover:text-ev-800 font-medium transition-colors">
-                      <SlidersHorizontal size={12}/> Réinitialiser les filtres
+                      <SlidersHorizontal size={12}/> {t("catalog.resetFilters", "Réinitialiser les filtres")}
                     </button>
                   </div>
                 ) : (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-                      {paginated.map(p => <ProduitCard key={p.id_produit} produit={p}/>)}
+                    <div
+                      className={cn(
+                        "grid gap-5 sm:gap-6",
+                        isSemencesPage
+                          ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
+                          : "grid-cols-1 md:grid-cols-2"
+                      )}
+                    >
+                      {paginated.map((p) => (
+                        <ProduitCard
+                          key={p.id_produit}
+                          produit={p}
+                          variant={isSemencesPage ? "seed" : "default"}
+                        />
+                      ))}
                     </div>
                     <div className="mt-2">
                       {totalPages > 1 && (
                         <p className="text-xs text-gray-400 text-center mb-1">
-                          Page {page} sur {totalPages} · {filtered.length} produit{filtered.length > 1 ? "s" : ""}
+                          Page {page} sur {totalPages} · {filtered.length} {productWord(filtered.length, t)}
                         </p>
                       )}
                       <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange}/>
@@ -375,16 +600,38 @@ function ActiviteProduitsSection({ id_activite, categories }: Props) {
               </>
             )}
           </div>
+
+          {isSemencesPage && (
+            <div className="md:col-span-2 xl:col-span-1 xl:pl-1">
+              <div className="xl:sticky xl:top-24">
+                <SemencesRecommandationCard products={scopedProduits} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </section>
   );
 }
 
-export function ActiviteProduitsSectionWrapper(props: { id_activite: number; categories: any[] }) {
+export function ActiviteProduitsSectionWrapper(props: {
+  id_activite: number;
+  activiteSlug: string;
+  categories: any[];
+  categoryScopeId?: number | null;
+  brandCards?: BrandCard[];
+}) {
   return (
     <Suspense fallback={null}>
       <ActiviteProduitsSection {...props} />
     </Suspense>
   );
+}
+
+function catLabel(cat: { nom: string; translations?: any }, locale: Locale) {
+  return translatedField(cat as any, "nom", locale) || cat.nom;
+}
+
+function productWord(count: number, t: (key: string, fallback?: string) => string) {
+  return count > 1 ? t("catalog.products", "produits") : t("catalog.product", "produit");
 }

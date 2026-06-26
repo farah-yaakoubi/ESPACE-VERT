@@ -41,8 +41,9 @@ import { notifRouter }            from "./modules/notifications/notifications.ro
 import { chatRouter }             from "./modules/chat/chat.routes";
 import { heroSlidePublicRouter, heroSlideAdminRouter } from "./modules/hero-slide/hero-slide.routes";
 
-// ── ✅ AJOUT : Route chatbot public ───────────────────────────────────────────
+// ── Routes IA ─────────────────────────────────────────────────────────────────
 import { aiRouter }               from "./modules/ai/ai.routes";
+import { aiAdminRouter }          from "./modules/ai/ai.routes";
 
 const app  = express();
 const PORT = process.env.PORT ?? 4000;
@@ -108,6 +109,7 @@ app.use("/api/admin/upload",      uploadRouter);
 app.use("/api/admin/notifications", notifRouter);
 app.use("/api/admin/chat",        chatRouter);
 app.use("/api/admin/hero-slides", heroSlideAdminRouter);
+app.use("/api/admin/ai",          aiAdminRouter);
 
 // ── Fallback ──────────────────────────────────────────────────────────────────
 app.use(notFoundHandler);

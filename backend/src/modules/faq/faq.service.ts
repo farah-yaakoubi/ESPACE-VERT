@@ -1,6 +1,6 @@
-import { faqRepository } from "./faq.repository";
 import { logAudit } from "../../lib/audit";
-import { CreateFaqDto, UpdateFaqDto, FaqQueryDto } from "./faq.schema";
+import { faqRepository } from "./faq.repository";
+import { CreateFaqDto, FaqQueryDto, UpdateFaqDto } from "./faq.schema";
 
 export const faqService = {
   async listPublic(params: FaqQueryDto) { return faqRepository.findAllPublic(params); },
@@ -30,6 +30,6 @@ export const faqService = {
     const before = await faqService.getById(id);
     await faqRepository.delete(id);
     await logAudit({ id_admin, action: "DELETE", entity_name: "faq", entity_id: id,
-      detail: { snapshot: { question: before.question.substring(0, 100), categorie: before.categorie } } });
+      detail: { snapshot: { question: before.question.substring(0, 100), rubrique: (before as any).rubrique ?? null } } });
   },
 };

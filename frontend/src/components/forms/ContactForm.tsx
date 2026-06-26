@@ -17,23 +17,46 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+const SUBJECT_OPTIONS = [
+  "Information produit",
+  "Disponibilité",
+  "Conseil technique",
+  "Service après-vente",
+  "Partenariat",
+  "Autre demande",
+];
+
 export function ContactForm({ defaultSujet }: { defaultSujet?: string }) {
   const [sent, setSent]   = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSubject, setSelectedSubject] = useState(
+    defaultSujet
+      ? SUBJECT_OPTIONS.includes(defaultSujet)
+        ? defaultSujet
+        : "Autre demande"
+      : SUBJECT_OPTIONS[0]
+  );
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } =
-    useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { sujet: defaultSujet } });
+    useForm<FormValues>({
+      resolver: zodResolver(schema),
+      defaultValues: {
+        sujet: defaultSujet && !SUBJECT_OPTIONS.includes(defaultSujet) ? defaultSujet : "",
+      },
+    });
 
   const onSubmit = async (values: FormValues) => {
     setError(null);
+    const customSujet = values.sujet?.trim();
+    const sujet = (selectedSubject === "Autre demande" ? customSujet : selectedSubject || customSujet)?.slice(0, 255);
     const res = await contactService.send({
       nom:             values.nom.trim(),
       email:           values.email.trim().toLowerCase(),
-      sujet:           values.sujet?.trim() || undefined,
+      sujet,
       message:         values.message.trim(),
       token_visiteur:  getVisitorToken(),   // ← lie le message au visiteur connu
     });
-    if (res.success) { setSent(true); reset(); }
+    if (res.success) { setSent(true); setSelectedSubject(""); reset(); }
     else setError(res.error ?? "Une erreur s'est produite.");
   };
 
@@ -66,8 +89,27 @@ export function ContactForm({ defaultSujet }: { defaultSujet?: string }) {
         </div>
       </div>
       <div>
-        <label className="field-label" htmlFor="cf-sujet">Sujet</label>
-        <input id="cf-sujet" {...register("sujet")} placeholder="Objet de votre message" className="field" />
+        <label className="field-label" htmlFor="cf-sujet-options">Sujet</label>
+        <select
+          id="cf-sujet-options"
+          value={selectedSubject}
+          onChange={(event) => setSelectedSubject(event.currentTarget.value)}
+          className="field"
+        >
+          {SUBJECT_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+        {selectedSubject === "Autre demande" && (
+          <input
+            id="cf-sujet"
+            {...register("sujet")}
+            placeholder="Précisez le sujet"
+            className="field mt-3"
+          />
+        )}
       </div>
       <div>
         <label className="field-label" htmlFor="cf-message">Message *</label>

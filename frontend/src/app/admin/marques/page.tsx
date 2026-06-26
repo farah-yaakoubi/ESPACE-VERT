@@ -34,7 +34,7 @@ function toSlug(s: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }
-const EMPTY = { nom: "", slug: "", description: "", logo: "", banniere: "", actif: true };
+const EMPTY = { nom: "", slug: "", description: "", logo: "", banniere: "", type_marque: "groupe" as "groupe" | "partenaire", actif: true };
 
 function ConfirmDialog({
   message,
@@ -64,6 +64,181 @@ function ConfirmDialog({
             className="flex-1 h-10 bg-red-600 text-white text-sm rounded-xl hover:bg-red-700"
           >
             Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MarqueModal({
+  modal,
+  editing,
+  form,
+  err,
+  saving,
+  onFieldChange,
+  onClose,
+  onSave,
+}: {
+  modal: "create" | "edit";
+  editing: MarqueAdmin | null;
+  form: typeof EMPTY;
+  err: string;
+  saving: boolean;
+  onFieldChange: (key: keyof typeof EMPTY, value: any) => void;
+  onClose: () => void;
+  onSave: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
+        <div className="p-5 border-b flex items-center justify-between sticky top-0 bg-white z-10">
+          <h2 className="font-bold text-gray-900">
+            {modal === "create" ? "Nouvelle marque" : `Modifier — ${editing?.nom}`}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-700"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="p-5 space-y-4">
+          {err && (
+            <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl flex items-start gap-2">
+              <AlertCircle size={14} className="shrink-0 mt-0.5" />
+              {err}
+            </div>
+          )}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                Nom *
+              </label>
+              <input
+                value={form.nom}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  onFieldChange("nom", value);
+                  if (modal === "create") onFieldChange("slug", toSlug(value));
+                }}
+                className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                Slug *
+              </label>
+              <input
+                value={form.slug}
+                onChange={(e) =>
+                  onFieldChange(
+                    "slug",
+                    e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+                  )
+                }
+                className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+              Description
+            </label>
+            <textarea
+              value={form.description}
+              onChange={(e) => onFieldChange("description", e.target.value)}
+              rows={2}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              Logo <span className="font-normal text-gray-400">(navbar / dropdown)</span>
+            </label>
+            {form.logo && (
+              <div className="relative w-24 h-16 rounded-xl overflow-hidden mb-2 bg-gray-100">
+                <img src={form.logo} alt="" className="w-full h-full object-contain p-2" />
+              </div>
+            )}
+            <ImageUploader onUpload={(v) => onFieldChange("logo", v)} />
+            <p className="text-xs text-gray-400 mt-1">Ou saisissez une URL :</p>
+            <input
+              type="text"
+              value={form.logo}
+              onChange={(e) => onFieldChange("logo", e.target.value)}
+              placeholder="/logos/ma-marque.png"
+              className="mt-1 w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              Bannière <span className="font-normal text-gray-400">(hero de la page marque)</span>
+            </label>
+            {form.banniere && (
+              <div className="relative w-full h-24 rounded-xl overflow-hidden mb-2 bg-gray-100">
+                <img src={form.banniere} alt="" className="w-full h-full object-cover" />
+              </div>
+            )}
+            <ImageUploader onUpload={(v) => onFieldChange("banniere", v)} />
+            <p className="text-xs text-gray-400 mt-1">Ou saisissez une URL :</p>
+            <input
+              type="text"
+              value={form.banniere}
+              onChange={(e) => onFieldChange("banniere", e.target.value)}
+              placeholder="/images/hero/fertivert.webp"
+              className="mt-1 w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          {modal === "edit" && (
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.actif}
+                onChange={(e) => onFieldChange("actif", e.target.checked)}
+                className="w-4 h-4 accent-blue-600"
+              />
+              Marque active
+            </label>
+          )}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+              Type de marque
+            </label>
+            <select
+              value={form.type_marque}
+              onChange={(e) => onFieldChange("type_marque", e.target.value)}
+              className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white"
+            >
+              <option value="groupe">Groupe (marque propre)</option>
+              <option value="partenaire">Partenaire</option>
+            </select>
+          </div>
+        </div>
+        <div className="p-5 pt-0 flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 h-10 border text-sm text-gray-600 rounded-xl hover:bg-gray-50"
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={saving}
+            className="flex-1 h-10 text-white text-sm rounded-xl disabled:opacity-60 flex items-center justify-center"
+            style={{ background: "linear-gradient(135deg,#3C50E0,#4F60E8)" }}
+          >
+            {saving ? (
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : modal === "create" ? (
+              "Créer"
+            ) : (
+              "Enregistrer"
+            )}
           </button>
         </div>
       </div>
@@ -351,7 +526,9 @@ export default function AdminMarquesPage() {
   const [err, setErr] = useState("");
   const [detail, setDetail] = useState<MarqueAdmin | null>(null);
   const [confirmDel, setConfirmDel] = useState<MarqueAdmin | null>(null);
-  const F = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
+  const handleFieldChange = (key: keyof typeof EMPTY, value: any) => {
+    setForm((f) => ({ ...f, [key]: value }));
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -379,6 +556,7 @@ export default function AdminMarquesPage() {
       description: m.description ?? "",
       logo: m.logo ?? "",
       banniere: (m as any).banniere ?? "",
+      type_marque: m.type_marque ?? "groupe",
       actif: m.actif,
     });
     setEditing(m);
@@ -399,6 +577,7 @@ export default function AdminMarquesPage() {
         description: form.description || null,
         logo: form.logo || null,
         banniere: (form as any).banniere || null,
+        type_marque: form.type_marque,
         ...(modal === "edit" ? { actif: form.actif } : {}),
       };
       if (modal === "create") await adminMarques.create(p as any);
@@ -448,142 +627,20 @@ export default function AdminMarquesPage() {
           }}
           onDelete={(m) => setConfirmDel(m)}
         />
-        {modal && <MarqueModal />}
+        {modal && (
+          <MarqueModal
+            modal={modal}
+            editing={editing}
+            form={form}
+            err={err}
+            saving={saving}
+            onFieldChange={handleFieldChange}
+            onClose={() => setModal(null)}
+            onSave={handleSave}
+          />
+        )}
       </>
     );
-
-  /* Modal component (shared for list and detail) */
-  function MarqueModal() {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg">
-          <div className="p-5 border-b flex items-center justify-between">
-            <h2 className="font-bold text-gray-900">
-              {modal === "create"
-                ? "Nouvelle marque"
-                : `Modifier — ${editing?.nom}`}
-            </h2>
-            <button
-              onClick={() => setModal(null)}
-              className="text-gray-400 hover:text-gray-700"
-            >
-              <X size={18} />
-            </button>
-          </div>
-          <div className="p-5 space-y-4">
-            {err && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl flex items-start gap-2">
-                <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                {err}
-              </div>
-            )}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                  Nom *
-                </label>
-                <input
-                  value={form.nom}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    F("nom", value);
-                    if (modal === "create") {
-                      F("slug", toSlug(value));
-                    }
-                  }}
-                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                  Slug *
-                </label>
-                <input
-                  value={form.slug}
-                  onChange={(e) =>
-                    F(
-                      "slug",
-                      e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
-                    )
-                  }
-                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                Description
-              </label>
-              <textarea
-                value={form.description}
-                onChange={(e) => F("description", e.target.value)}
-                rows={2}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Logo <span className="font-normal text-gray-400">(navbar / dropdown)</span>
-              </label>
-              <ImageUploader onUpload={(v) => F("logo", v)} />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Bannière <span className="font-normal text-gray-400">(hero de la page marque)</span>
-              </label>
-              {(form as any).banniere && (
-                <div className="relative w-full h-24 rounded-xl overflow-hidden mb-2 bg-gray-100">
-                  <img src={(form as any).banniere} alt="" className="w-full h-full object-cover" />
-                </div>
-              )}
-              <ImageUploader onUpload={(v) => F("banniere", v)} />
-              <p className="text-xs text-gray-400 mt-1">Ou saisissez une URL :</p>
-              <input
-                type="text"
-                value={(form as any).banniere}
-                onChange={(e) => F("banniere", e.target.value)}
-                placeholder="/images/hero/fertivert.webp"
-                className="mt-1 w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            {modal === "edit" && (
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.actif}
-                  onChange={(e) => F("actif", e.target.checked)}
-                  className="w-4 h-4 accent-blue-600"
-                />
-                Marque active
-              </label>
-            )}
-          </div>
-          <div className="p-5 pt-0 flex gap-3">
-            <button
-              onClick={() => setModal(null)}
-              className="flex-1 h-10 border text-sm text-gray-600 rounded-xl hover:bg-gray-50"
-            >
-              Annuler
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex-1 h-10 text-white text-sm rounded-xl disabled:opacity-60 flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg,#3C50E0,#4F60E8)" }}
-            >
-              {saving ? (
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : modal === "create" ? (
-                "Créer"
-              ) : (
-                "Enregistrer"
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-5">
@@ -752,7 +809,18 @@ export default function AdminMarquesPage() {
         </div>
       )}
 
-      {modal && <MarqueModal />}
+      {modal && (
+        <MarqueModal
+          modal={modal}
+          editing={editing}
+          form={form}
+          err={err}
+          saving={saving}
+          onFieldChange={handleFieldChange}
+          onClose={() => setModal(null)}
+          onSave={handleSave}
+        />
+      )}
     </div>
   );
 }

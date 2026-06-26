@@ -1,14 +1,28 @@
-import fs from "node:fs";
-import path from "node:path";
+#!/usr/bin/env node
+import { rm } from 'fs/promises';
+import { join } from 'path';
 
 const root = process.cwd();
-const targets = [
-  path.join(root, ".next"),
-  path.join(root, "tsconfig.tsbuildinfo"),
-];
+const targets = ['.next', 'node_modules/.cache', '.turbo', '.vercel', 'dist'];
 
-for (const target of targets) {
-  fs.rmSync(target, { recursive: true, force: true });
+async function removeTarget(rel) {
+  const p = join(root, rel);
+  try {
+    await rm(p, { recursive: true, force: true });
+    console.log(`Removed ${rel}`);
+  } catch (err) {
+    // intentionally ignore errors for non-existent paths
+  }
 }
 
-console.log("Cleaned Next.js cache artifacts.");
+async function main() {
+  for (const t of targets) {
+    await removeTarget(t);
+  }
+  console.log('Clean complete');
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

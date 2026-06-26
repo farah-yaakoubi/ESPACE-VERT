@@ -1,55 +1,76 @@
 import { prisma } from "../../lib/prisma";
 import { CreateMarqueDto, UpdateMarqueDto } from "./marque.schema";
 
+async function collectCategorieIdsByMarque(id_marque: number) {
+  const allCats = await prisma.categorie.findMany({
+    where: { actif: true },
+    select: { id_categorie: true, parent_id: true, id_marque: true },
+  });
+  const roots = allCats.filter(c => c.id_marque === id_marque).map(c => c.id_categorie);
+  const collected = new Set<number>();
+  const collect = (id: number) => {
+    if (collected.has(id)) return;
+    collected.add(id);
+    allCats.filter(c => c.parent_id === id).forEach(c => collect(c.id_categorie));
+  };
+  roots.forEach(collect);
+  return [...collected];
+}
+
 export const marqueRepository = {
 
   async findAllPublic() {
     return prisma.marque.findMany({
       where:   { actif: true },
       orderBy: { nom: "asc" },
-      select:  { id_marque: true, nom: true, slug: true, logo: true, banniere: true, description: true, actif: true },
+      select:  { id_marque: true, nom: true, slug: true, logo: true, banniere: true, description: true, translations: true, actif: true, type_marque: true },
     });
   },
 
   async findBySlugPublic(slug: string) {
-    return prisma.marque.findUnique({
+    const marque = await prisma.marque.findUnique({
       where:   { slug },
       include: {
         categories: {
-          where:   { actif: true, parent_id: null }, // catégories racines (niveau 1)
+          where:   { actif: true, parent_id: null },
           orderBy: { ordre: "asc" },
           select:  {
-            id_categorie: true, nom: true, slug: true, description: true,
+            id_categorie: true, nom: true, slug: true, description: true, translations: true,
             image: true, id_activite: true, parent_id: true, ordre: true,
-            // ✅ FIX : inclure les sous-catégories (niveau 2)
             sous_cats: {
               where:   { actif: true },
               orderBy: { ordre: "asc" },
-              select:  { id_categorie: true, nom: true, slug: true, parent_id: true, ordre: true },
+              select:  { id_categorie: true, nom: true, slug: true, translations: true, parent_id: true, ordre: true },
             },
-          },
-        },
-        produits: {
-          where:   {
-            actif: true,
-            categorie: { is: {} },
-          },
-          orderBy: { ordre: "asc" },
-          select:  {
-            id_produit: true, nom: true, slug: true, description: true,
-            fiche_technique: true, division: true, tags: true, created_at: true,
-            categorie: { select: { nom: true, slug: true } },
-            images: { where: { is_principale: true }, take: 1, select: { url: true, alt: true } },
           },
         },
       },
     });
+    if (!marque) return null;
+
+    const catIds = await collectCategorieIdsByMarque(marque.id_marque);
+    const produits = await prisma.produit.findMany({
+      where: { actif: true, id_categorie: catIds.length > 0 ? { in: catIds } : -1 },
+      orderBy: { ordre: "asc" },
+      select: {
+        id_produit: true, nom: true, slug: true, description: true, translations: true,
+        fiche_technique: true, division: true, tags: true, created_at: true,
+        id_categorie: true,
+        categorie: { select: { nom: true, slug: true, translations: true, marque: { select: { nom: true, slug: true, logo: true, translations: true } } } },
+        images: { where: { is_principale: true }, take: 1, select: { url: true, alt: true } },
+      },
+    });
+
+    return {
+      ...marque,
+      produits: produits.map((p) => ({ ...p, marque: p.categorie?.marque ?? null })),
+    };
   },
 
   async findAll() {
     return prisma.marque.findMany({
       orderBy: { nom: "asc" },
-      include: { _count: { select: { produits: true, categories: true } } },
+      include: { _count: { select: { categories: true } } },
     });
   },
 
@@ -58,11 +79,6 @@ export const marqueRepository = {
       where:   { id_marque },
       include: {
         categories: { orderBy: { ordre: "asc" } },
-        produits: {
-          where: { categorie: { is: {} } },
-          take: 10,
-          orderBy: { ordre: "asc" },
-        },
       },
     });
   },

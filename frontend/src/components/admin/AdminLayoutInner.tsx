@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -7,6 +8,7 @@ import {
   Package, Newspaper, LogOut, Menu, X, Users,
   Shield, ExternalLink, Tag, Layers, Activity, HelpCircle,
   ChevronRight, BarChart3, Globe, ImageIcon, Bot, Crown,
+  Sparkles,
 } from "lucide-react";
 import { tokenStore, adminAuth, isSuperAdmin, type Admin } from "@/lib/admin-api";
 import { hasPermission, hasAnyPermission, PERMISSIONS } from "@/lib/permissions";
@@ -15,6 +17,8 @@ import { ToastContainer } from "@/components/admin/Toast";
 import { NotificationsDropdown } from "@/components/admin/NotificationsDropDown";
 import { EspaceCompte } from "@/components/admin/EspaceCompte";
 import { useTheme } from "@/hooks/useTheme";
+import { AdminAIWidget } from "@/components/admin/AdminAIWidget";
+import { GlobalCommandPalette } from "@/components/admin/GlobalCommandPalette";
 
 const A = {
   bg: "#0f1a14", bg2: "#162117", accent: "#2e7d4f",
@@ -23,13 +27,13 @@ const A = {
   textMid: "rgba(255,255,255,0.45)", textDim: "rgba(255,255,255,0.22)",
 };
 
-// Navigation avec les permissions requises pour chaque item
 interface NavItem {
   href:       string;
   icon:       React.ComponentType<any>;
   label:      string;
   permission: string | null;
   superOnly?: boolean;
+  isAI?:      boolean;   // ← nouveau: badge IA spécial
 }
 interface NavGroup { label: string; items: NavItem[]; }
 
@@ -37,7 +41,6 @@ const NAV_GROUPS: NavGroup[] = [
   { label: "VUE D'ENSEMBLE", items: [
     { href: "/admin/dashboard",  icon: LayoutDashboard, label: "Dashboard",     permission: null },
     { href: "/admin/analytics",  icon: BarChart3,       label: "Analytiques",   permission: PERMISSIONS.ANALYTICS_READ },
-    { href: "/admin/chatbot",    icon: Bot,             label: "Assistant IA",  permission: null },
   ]},
   { label: "CATALOGUE", items: [
     { href: "/admin/marques",    icon: Tag,       label: "Marques",      permission: PERMISSIONS.PRODUITS_READ },
@@ -87,17 +90,43 @@ function LeafMark({ size = 18 }: { size?: number }) {
   );
 }
 
-function NavItem({ href, icon: Icon, label, active, onClick, superOnly }: {
-  href: string; icon: any; label: string; active: boolean; onClick: () => void; superOnly?: boolean;
+/**
+ * NavItem — Version étendue avec support du badge IA
+ */
+function NavItemComp({ href, icon: Icon, label, active, onClick, superOnly, isAI }: {
+  href: string; icon: any; label: string; active: boolean; onClick: () => void;
+  superOnly?: boolean; isAI?: boolean;
 }) {
   return (
     <Link href={href} onClick={onClick}
       className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-150 relative"
-      style={{ color: active ? "#fff" : A.textMid, background: active ? `linear-gradient(90deg,${A.accent},${A.accentLt})` : "transparent", boxShadow: active ? "0 3px 12px rgba(46,125,79,0.35)" : "none" }}>
+      style={{
+        color: active ? "#fff" : A.textMid,
+        background: active
+          ? isAI
+            ? `linear-gradient(90deg,#1d4ed8,#3b82f6)`
+            : `linear-gradient(90deg,${A.accent},${A.accentLt})`
+          : "transparent",
+        boxShadow: active
+          ? isAI ? "0 3px 12px rgba(59,130,246,0.35)" : "0 3px 12px rgba(46,125,79,0.35)"
+          : "none",
+      }}>
       {active && <span className="absolute top-2 bottom-2 w-0.5 rounded-full" style={{ background: "#fff", opacity: 0.5, left: "-1px" }} />}
       <Icon size={15} style={{ flexShrink: 0, opacity: active ? 1 : 0.7 }} />
       <span className="flex-1 leading-none">{label}</span>
       {superOnly && <Crown size={8} style={{ opacity: 0.5, color: A.gold }} />}
+      {isAI && !superOnly && (
+        <span style={{
+          fontSize: 8, fontWeight: 800, padding: "1px 5px",
+          borderRadius: 20, letterSpacing: "0.05em",
+          background: active ? "rgba(255,255,255,0.2)" : "rgba(59,130,246,0.2)",
+          color: active ? "#fff" : "#93c5fd",
+          border: `1px solid ${active ? "rgba(255,255,255,0.3)" : "rgba(59,130,246,0.3)"}`,
+          textTransform: "uppercase",
+        }}>
+          IA
+        </span>
+      )}
     </Link>
   );
 }
@@ -148,15 +177,11 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
-  // Filtrer la navigation selon les permissions réelles de l'admin
   const visibleGroups = NAV_GROUPS.map(group => ({
     ...group,
     items: group.items.filter(item => {
-      // Items réservés super admin
       if (item.superOnly && !superAdmin) return false;
-      // Items sans permission requise = visibles par tous
       if (!item.permission) return true;
-      // Vérification permission
       return hasPermission(admin, item.permission as any);
     }),
   })).filter(group => group.items.length > 0);
@@ -164,7 +189,7 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex admin-themed" style={{ background: "var(--admin-bg)" }}>
 
-      {/* ══ SIDEBAR (toujours sombre) ══ */}
+      {/* ══ SIDEBAR ══ */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex flex-col ${sideOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
         style={{ width: sideW, background: A.bg, boxShadow: "4px 0 24px rgba(0,0,0,0.3)", transition: "width 0.25s, transform 0.3s" }}
@@ -183,7 +208,18 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
           {!collapsed && (
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ color: "#fff", fontWeight: 800, fontSize: 15, letterSpacing: "-0.025em", lineHeight: 1 }}>EspaceVert</p>
-              <p style={{ color: A.accent, fontWeight: 600, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 3 }}>Administration</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 3 }}>
+                <p style={{ color: A.accent, fontWeight: 600, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase" }}>Administration</p>
+                {/* Badge SaaS */}
+                <span style={{
+                  fontSize: 8, fontWeight: 800, padding: "1px 4px",
+                  borderRadius: 4, letterSpacing: "0.04em",
+                  background: "rgba(59,130,246,0.2)", color: "#93c5fd",
+                  border: "1px solid rgba(59,130,246,0.25)", textTransform: "uppercase",
+                }}>
+                  SaaS
+                </span>
+              </div>
             </div>
           )}
           <button onClick={() => setSideOpen(false)} className="lg:hidden p-1 rounded-lg" style={{ color: A.textMid, background: "none", border: "none", cursor: "pointer" }}>
@@ -194,7 +230,7 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
           </button>
         </div>
 
-        {/* Badge Super Admin dans la sidebar */}
+        {/* Badge Super Admin */}
         {superAdmin && !collapsed && (
           <div style={{ margin: "8px 8px 0", padding: "6px 10px", background: "rgba(245,158,11,0.12)", borderRadius: 10, border: "1px solid rgba(245,158,11,0.25)", display: "flex", alignItems: "center", gap: 6 }}>
             <Crown size={11} style={{ color: A.gold, flexShrink: 0 }} />
@@ -202,7 +238,32 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        {/* Nav — filtrée selon permissions */}
+        {/* ── Bannière Agent IA (nouveau) ── */}
+        {!collapsed && (
+          <div style={{
+            margin: "8px 8px 0",
+            padding: "8px 10px",
+            background: "linear-gradient(135deg, rgba(37,99,235,0.15), rgba(59,130,246,0.08))",
+            borderRadius: 10,
+            border: "1px solid rgba(59,130,246,0.2)",
+            display: "flex", alignItems: "center", gap: 8,
+          }}>
+            <div style={{
+              width: 26, height: 26, borderRadius: 7,
+              background: "linear-gradient(135deg, #1d4ed8, #3b82f6)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+            }}>
+              <Sparkles size={12} style={{ color: "#fff" }} />
+            </div>
+            <div>
+              <p style={{ fontSize: 10.5, fontWeight: 700, color: "#93c5fd", lineHeight: 1 }}>Agent IA actif</p>
+              <p style={{ fontSize: 9, color: "rgba(147,197,253,0.6)", marginTop: 2 }}>Cliquez sur ✨ pour interagir</p>
+            </div>
+          </div>
+        )}
+
+        {/* Nav */}
         <nav style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "12px 8px", display: "flex", flexDirection: "column", gap: 16 }}>
           {visibleGroups.map(group => (
             <div key={group.label}>
@@ -212,11 +273,15 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                   const active = isActive(item.href);
                   if (collapsed) return (
                     <Link key={item.href} href={item.href} onClick={() => setSideOpen(false)} title={item.label}
-                      style={{ width: 48, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, margin: "0 auto", background: active ? `linear-gradient(135deg,${A.accent},${A.accentLt})` : "transparent", color: active ? "#fff" : A.textMid, transition: "all 0.15s" }}>
+                      style={{ width: 48, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, margin: "0 auto",
+                        background: active
+                          ? item.isAI ? "linear-gradient(135deg,#1d4ed8,#3b82f6)" : `linear-gradient(135deg,${A.accent},${A.accentLt})`
+                          : "transparent",
+                        color: active ? "#fff" : A.textMid, transition: "all 0.15s" }}>
                       <item.icon size={16} />
                     </Link>
                   );
-                  return <NavItem key={item.href} href={item.href} icon={item.icon} label={item.label} active={active} onClick={() => setSideOpen(false)} superOnly={(item as any).superOnly} />;
+                  return <NavItemComp key={item.href} href={item.href} icon={item.icon} label={item.label} active={active} onClick={() => setSideOpen(false)} superOnly={(item as any).superOnly} isAI={(item as any).isAI} />;
                 })}
               </div>
             </div>
@@ -263,7 +328,7 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         <style>{`@media(min-width:1024px){.admin-main{margin-left:${sideW}px}}`}</style>
         <div className="admin-main flex flex-col min-h-screen">
 
-          {/* Topbar — couleurs via CSS vars */}
+          {/* Topbar */}
           <header className="sticky top-0 z-30 flex items-center justify-between px-5 lg:px-7 admin-themed"
             style={{
               height: 56,
@@ -285,9 +350,14 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="flex items-center gap-1.5">
+              {/* ── GLOBAL SEARCH (nouveau) ─────────────────────────────────── */}
+              <div className="hidden sm:block">
+                <GlobalCommandPalette />
+              </div>
+
               {/* Voir le site */}
               <Link href="/" target="_blank"
-                className="hidden sm:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all border"
+                className="hidden md:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all border"
                 style={{ color: A.accent, borderColor: isDark ? "rgba(46,125,79,0.3)" : "#c9e0d3", background: isDark ? "rgba(46,125,79,0.1)" : "#f0faf4", textDecoration: "none" }}>
                 <Globe size={12} />
                 Site public
@@ -314,7 +384,6 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
               {/* Notifications */}
               <NotificationsDropdown isDark={isDark} />
 
-              {/* Divider */}
               <span style={{ width: 1, height: 24, background: "var(--admin-border)", margin: "0 4px", display: "inline-block" }} />
 
               {/* Compte admin */}
@@ -337,8 +406,13 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
           {/* Footer */}
           <footer className="px-7 py-3 flex items-center justify-between admin-themed"
             style={{ borderTop: "1px solid var(--admin-border)", background: "var(--admin-header)" }}>
-            <p style={{ fontSize: 11, color: "var(--admin-text3)" }}>EspaceVert Admin — v2.0</p>
+            <p style={{ fontSize: 11, color: "var(--admin-text3)" }}>EspaceVert Admin — v3.0 SaaS</p>
             <div className="flex items-center gap-4">
+              {/* Indicateur Agent IA */}
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
+                <span style={{ fontSize: 10, color: "var(--admin-text3)", fontWeight: 500 }}>Agent IA actif</span>
+              </div>
               <Link href="/" target="_blank" style={{ fontSize: 11, color: "var(--admin-text3)", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
                 <Globe size={10} /> espace-vert.com.tn
               </Link>
@@ -347,6 +421,8 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
           </footer>
         </div>
       </div>
+<AdminAIWidget />
+
       <ToastContainer />
     </div>
   );

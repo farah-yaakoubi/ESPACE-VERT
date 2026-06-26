@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { categorieService }    from "./categorie.service";
 import { categorieRepository } from "./categorie.repository";
 import { CreateCategorieSchema, UpdateCategorieSchema, CategorieQuerySchema } from "./categorie.schema";
+import { z } from "zod";
 import { ok, created, badRequest, notFound, conflict, serverError } from "../../lib/response";
 const parseId = (p: string) => { const n = Number(p); return isNaN(n) ? null : n; };
 const handle  = (res: Response, err: unknown) => {
@@ -24,10 +25,6 @@ export const listPublic = async (req: Request, res: Response) => {
   } catch (e) { handle(res, e); }
 };
 
-/**
- * GET /api/public/marques/:slug/tree
- * Retourne l'arbre complet : Marque → Catégories (récursif) → Produits
- */
 export const getMarqueTree = async (req: Request, res: Response) => {
   try {
     const { slug } = req.params;
@@ -76,11 +73,47 @@ export const update = async (req: Request, res: Response) => {
   } catch (e) { handle(res, e); }
 };
 
+export const getDeleteImpact = async (req: Request, res: Response) => {
+  try {
+    const id = parseId(req.params.id);
+    if (!id) return badRequest(res, "ID invalide");
+    ok(res, await categorieService.getDeleteImpact(id));
+  } catch (e) { handle(res, e); }
+};
+
 export const remove = async (req: Request, res: Response) => {
   try {
     const id = parseId(req.params.id);
     if (!id) return badRequest(res, "ID invalide");
     await categorieService.delete(id, req.admin!.id_admin);
     ok(res, { message: "Catégorie supprimée (cascade appliquée)" });
+  } catch (e) { handle(res, e); }
+};
+
+// ── Suppression multiple ─────────────────────────────────────────────────────
+
+const BulkDeleteSchema = z.object({
+  ids: z.array(z.number().int().positive()).min(1).max(200),
+});
+
+export const removeBulk = async (req: Request, res: Response) => {
+  try {
+    const { ids } = BulkDeleteSchema.parse(req.body);
+    const results = await Promise.allSettled(
+      ids.map((id) => categorieService.delete(id, req.admin!.id_admin)),
+    );
+
+    const succeeded = ids.filter((_, i) => results[i].status === "fulfilled");
+    const failed    = ids.filter((_, i) => results[i].status === "rejected");
+
+    ok(res, {
+      deleted: succeeded.length,
+      failed:  failed.length,
+      ids_deleted: succeeded,
+      ids_failed:  failed,
+      message: failed.length === 0
+        ? `${succeeded.length} catégorie(s) supprimée(s)`
+        : `${succeeded.length} supprimée(s), ${failed.length} échec(s)`,
+    });
   } catch (e) { handle(res, e); }
 };

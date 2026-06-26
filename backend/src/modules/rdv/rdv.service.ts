@@ -6,6 +6,11 @@ import { prisma } from "../../lib/prisma";
 import { CreateRdvDto, UpdateRdvDto, RdvQueryDto, RDV_STATUTS } from "./rdv.schema";
 import { notifRepository } from "../notifications/notifications.repository";
 import { notifSseBroadcast } from "../notifications/notifications.controller";
+import {
+  sendMail,
+  tplRdvConfirmation,
+  tplRdvStatutChange,
+} from "../../lib/mailer";
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   nouveau:  ["confirme", "annule"],
@@ -31,7 +36,7 @@ export const rdvService = {
       if (v) id_visiteur = v.id_visiteur;
     }
 
-    return rdvRepository.create({
+    const rdv = await rdvRepository.create({
       nom:            data.nom.trim(),
       email:          data.email.toLowerCase().trim(),
       telephone:      data.telephone     ?? null,
@@ -41,20 +46,35 @@ export const rdvService = {
       agence:         data.agence        ?? null,
       message:        data.message       ?? null,
       id_visiteur:    id_visiteur        ?? null,
-    }).then(async (rdv) => {
-      try {
-        const dateStr = dateRdv.toLocaleDateString("fr-FR");
-        await notifRepository.createForAll(
-          "nouveau_rdv",
-          `Nouveau RDV — ${data.nom.trim()}`,
-          `Souhaité le ${dateStr}`,
-          "/admin/rdv",
-          { source_label: data.nom.trim() }
-        );
-        notifSseBroadcast({ type: "nouveau_rdv", titre: `Nouveau RDV — ${data.nom.trim()}` });
-      } catch (e) { console.error("[rdv notif]", e); }
-      return rdv;
     });
+
+    // ── Email de confirmation au visiteur ──────────────────────────────────
+    const { subject, html } = tplRdvConfirmation({
+      nom:            data.nom.trim(),
+      email:          data.email.toLowerCase().trim(),
+      date_souhaitee: dateRdv,
+      heure:          data.heure   ?? null,
+      agence:         data.agence  ?? null,
+      objet:          data.objet   ?? null,
+    });
+    sendMail({ to: data.email.toLowerCase().trim(), subject, html }).catch((e) =>
+      console.error("[rdv.email.confirmation]", e)
+    );
+
+    // ── Notification admin ─────────────────────────────────────────────────
+    try {
+      const dateStr = dateRdv.toLocaleDateString("fr-FR");
+      await notifRepository.createForAll(
+        "nouveau_rdv",
+        `Nouveau RDV — ${data.nom.trim()}`,
+        `Souhaité le ${dateStr}`,
+        "/admin/rdv",
+        { source_label: data.nom.trim() }
+      );
+      notifSseBroadcast({ type: "nouveau_rdv", titre: `Nouveau RDV — ${data.nom.trim()}` });
+    } catch (e) { console.error("[rdv notif]", e); }
+
+    return rdv;
   },
 
   async list(params: RdvQueryDto) {
@@ -81,6 +101,12 @@ export const rdvService = {
       }
     }
 
+
+    // ── Statut automatique : si réponse admin envoyée et statut encore "nouveau" → "confirme" ──
+    if (data.reponse_admin && data.reponse_admin.trim() && !data.statut && current.statut === "nouveau") {
+      data = { ...data, statut: "confirme" };
+    }
+
     const rdv = await rdvRepository.update(id, { ...data, id_admin });
 
     await logAudit({
@@ -90,6 +116,21 @@ export const rdvService = {
       entity_id:   id,
       detail:      { statut_avant: current.statut, statut_apres: data.statut ?? current.statut },
     });
+
+    // ── Email : toujours envoyer la réponse admin si présente ──────────────────
+    if (data.reponse_admin && data.reponse_admin.trim()) {
+      const { subject, html } = tplRdvStatutChange({
+        nom:            current.nom,
+        statut:         data.statut ?? current.statut,
+        date_souhaitee: current.date_souhaitee,
+        heure:          data.heure ?? current.heure ?? null,
+        agence:         current.agence ?? null,
+        message_admin:  data.reponse_admin,
+      });
+      sendMail({ to: current.email, subject, html }).catch((e) =>
+        console.error("[rdv.email.reponse]", e)
+      );
+    }
 
     return rdv;
   },

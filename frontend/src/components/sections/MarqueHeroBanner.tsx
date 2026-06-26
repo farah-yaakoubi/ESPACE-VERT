@@ -3,13 +3,14 @@
 import Link from "next/link";
 
 interface MarqueHeroBannerProps {
-  nom:          string;
-  slug:         string;
-  description?: string;
-  /** URL de la bannière uploadée depuis l'admin */
-  banniere?:    string;
-  /** Affiche le CTA « Prendre rendez-vous » (Matar uniquement) */
-  rdvCta?:      boolean;
+  nom:              string;
+  slug:             string;
+  description?:     string;
+  banniere?:        string;
+  /** Variantes responsive de la bannière */
+  banniereTablet?:  string;
+  banniereMobile?:  string;
+  rdvCta?:          boolean;
 }
 
 const NAV_H = 80;
@@ -19,9 +20,11 @@ export function MarqueHeroBanner({
   slug,
   description,
   banniere,
+  banniereTablet,
+  banniereMobile,
   rdvCta = false,
 }: MarqueHeroBannerProps) {
-  /* ── Avec bannière image ── */
+
   if (banniere) {
     return (
       <>
@@ -39,10 +42,19 @@ export function MarqueHeroBanner({
             max-height: 760px;
             isolation: isolate;
           }
+          /* ✅ FIX : picture remplit la section */
+          .mhb-picture {
+            display: block;
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+          }
           .mhb-img {
-            position: absolute; inset: 0;
-            width: 100%; height: 100%;
-            object-fit: cover; object-position: center 34%;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 34%;
             animation: mhbZoom 12s ease-in-out forwards;
             will-change: transform;
           }
@@ -78,8 +90,16 @@ export function MarqueHeroBanner({
         `}</style>
 
         <section className="mhb-section">
-          {/* Background image */}
-          <img src={banniere} alt={nom} className="mhb-img" />
+          {/* ✅ FIX : <picture> responsive à la place du simple <img> */}
+          <picture className="mhb-picture">
+            {banniereMobile && (
+              <source media="(max-width: 640px)" srcSet={banniereMobile} />
+            )}
+            {banniereTablet && (
+              <source media="(max-width: 1024px)" srcSet={banniereTablet} />
+            )}
+            <img src={banniere} alt={nom} className="mhb-img" />
+          </picture>
 
           {/* Double gradient overlay */}
           <div
@@ -117,7 +137,6 @@ export function MarqueHeroBanner({
               }}>
                 {nom}
               </h1>
-
               {description && (
                 <p style={{
                   margin: "14px 0 0",
@@ -147,7 +166,7 @@ export function MarqueHeroBanner({
     );
   }
 
-  /* ── Fallback : dégradé vert (aucune bannière configurée) ── */
+  /* ── Fallback : dégradé vert ── */
   return (
     <section
       className="bg-gradient-to-br from-ev-950 to-ev-800"

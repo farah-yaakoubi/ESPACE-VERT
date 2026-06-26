@@ -55,12 +55,12 @@ export const statsRepository = {
         faqs:       totalFaqs,
       },
       devis: {
-        par_statut: devisStats.reduce<Record<string, number>>((acc, d) => { acc[d.statut] = d._count._all; return acc; }, {}),
-        total:      devisStats.reduce((a, d) => a + d._count._all, 0),
+        par_statut: (devisStats as any[]).reduce((acc: Record<string, number>, d: any) => { acc[d.statut] = d._count._all; return acc; }, {} as Record<string, number>),
+        total:      (devisStats as any[]).reduce((a: number, d: any) => a + d._count._all, 0),
       },
       rdv: {
-        par_statut: rdvStats.reduce<Record<string, number>>((acc, r) => { acc[r.statut] = r._count._all; return acc; }, {}),
-        total:      rdvStats.reduce((a, r) => a + r._count._all, 0),
+        par_statut: (rdvStats as any[]).reduce((acc: Record<string, number>, r: any) => { acc[r.statut] = r._count._all; return acc; }, {} as Record<string, number>),
+        total:      (rdvStats as any[]).reduce((a: number, r: any) => a + r._count._all, 0),
       },
       messages: { non_lus: messagesNonLus },
       recents:  { devis: derniersDevis, rdv: derniersRdv, messages: derniersMessages },
@@ -285,9 +285,9 @@ export const statsRepository = {
 
       // Conversions
       conversions: {
-        devis_par_statut: devisParStatut.reduce<Record<string, number>>((acc, d) => {
+        devis_par_statut: (devisParStatut as any[]).reduce((acc: Record<string, number>, d: any) => {
           acc[d.statut] = d._count._all; return acc;
-        }, {}),
+        }, {} as Record<string, number>),
         total: totalDevisRecent,
         taux:  tauxConversion,
       },

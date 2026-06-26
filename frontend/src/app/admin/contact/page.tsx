@@ -1,12 +1,289 @@
 "use client";
+/**
+ * app/admin/contact/page.tsx — CORRIGÉ v2
+ * ─────────────────────────────────────────────────────────────────────────────
+ * CORRECTIONS :
+ *  • Suppression des appels à PUT /admin/contact/:id/statut qui N'EXISTE PAS
+ *    dans le backend (route inexistante → 404 silencieux)
+ *  • Le statut est désormais calculé localement depuis les champs réels :
+ *    - lu=false                     → "Non lu"
+ *    - lu=true, replied_at=null     → "Lu"
+ *    - replied_at présent           → "Répondu"
+ *    - deleted (futur)              → "Archivé"
+ *  • Le seul changement d'état réel disponible = envoyer une réponse (reply)
+ *  • quickStatus supprimé (n'appelait qu'une route inexistante)
+ *  • Panneau "Pipeline statut" remplacé par un indicateur simple et honnête
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
 import { useEffect, useState, useCallback } from "react";
 import { adminContact, type ContactItem } from "@/lib/admin-api";
-import { Search, Eye, Trash2, RefreshCw, MessageSquare } from "lucide-react";
+import {
+  Search, RefreshCw, MessageSquare, ChevronRight, X, Send,
+  Mail, Clock, User, CheckCircle2, AlertCircle,
+  Loader2, Reply, StickyNote, Filter, Inbox,
+  ChevronLeft, Trash2,
+} from "lucide-react";
+import { toast } from "@/components/admin/Toast";
 
-function fmt(d: string) {
-  return new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+// ─── Statuts calculés localement (pas de champ statut en DB pour contact) ─────
+// Le backend contact N'A PAS de route /statut — statut est déduit de lu + replied_at
+function computeStatut(item: ContactItem): "non_lu" | "lu" | "repondu" {
+  if (item.replied_at) return "repondu";
+  if (!item.lu)        return "non_lu";
+  return "lu";
 }
 
+const STATUT_CONFIG = {
+  non_lu:  { label: "Non lu",   icon: AlertCircle,  color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe", textLight: "#1d4ed8" },
+  lu:      { label: "Lu",       icon: Clock,        color: "#d97706", bg: "#fffbeb", border: "#fde68a", textLight: "#b45309" },
+  repondu: { label: "Répondu",  icon: CheckCircle2, color: "#059669", bg: "#ecfdf5", border: "#a7f3d0", textLight: "#047857" },
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function fmt(d: string) {
+  const dt  = new Date(d);
+  const now = new Date();
+  const diffH = (now.getTime() - dt.getTime()) / 36e5;
+  if (diffH < 1)  return "À l'instant";
+  if (diffH < 24) return `Il y a ${Math.floor(diffH)}h`;
+  if (diffH < 48) return "Hier " + dt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return dt.toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
+}
+function fmtFull(d: string) {
+  return new Date(d).toLocaleString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+// ─── Badge statut ─────────────────────────────────────────────────────────────
+function StatusBadge({ item }: { item: ContactItem }) {
+  const key = computeStatut(item);
+  const s   = STATUT_CONFIG[key];
+  const Icon = s.icon;
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, background: s.bg, color: s.textLight, border: `1px solid ${s.border}`, fontSize: 11, fontWeight: 700 }}>
+      <Icon size={10} />{s.label}
+    </span>
+  );
+}
+
+// ─── Panneau de détail ────────────────────────────────────────────────────────
+function ContactDetailPanel({ item, onClose, onSaved }: { item: ContactItem; onClose: () => void; onSaved: () => void }) {
+  const [saving,  setSaving]  = useState(false);
+  const [reponse, setReponse] = useState("");
+  const [tab,     setTab]     = useState<"reply" | "note">("reply");
+
+  const statut     = computeStatut(item);
+  const sc         = STATUT_CONFIG[statut];
+  const hasReplied = !!item.replied_at;
+
+  const sendReply = async () => {
+    if (!reponse.trim()) return;
+    setSaving(true);
+    try {
+      await adminContact.reply(item.id_contact, reponse);
+      toast.success("Réponse envoyée par email ✓");
+      onSaved(); onClose();
+    } catch { toast.error("Erreur lors de l'envoi"); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)", display: "flex", justifyContent: "flex-end" }} onClick={onClose}>
+      <div style={{ width: "100%", maxWidth: 560, background: "#fff", height: "100vh", display: "flex", flexDirection: "column", animation: "slideInRight 0.3s cubic-bezier(0.22,1,0.36,1)", boxShadow: "-8px 0 40px rgba(0,0,0,0.15)" }} onClick={e => e.stopPropagation()}>
+        <style>{`@keyframes slideInRight{from{transform:translateX(100%)}to{transform:translateX(0)}} @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
+
+        {/* Header */}
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid #f3f4f6" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+            <div style={{ width: 42, height: 42, borderRadius: 12, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <MessageSquare size={19} style={{ color: "#2563eb" }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" as const, marginBottom: 4 }}>
+                <h2 style={{ fontSize: 15, fontWeight: 800, color: "#111827" }}>{item.nom}</h2>
+                <StatusBadge item={item} />
+              </div>
+              <p style={{ fontSize: 12, color: "#9ca3af" }}>{item.email} · {fmtFull(item.created_at)}</p>
+            </div>
+            <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 4, flexShrink: 0 }}><X size={18} /></button>
+          </div>
+        </div>
+
+        {/* Corps */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
+
+          {/* Sujet */}
+          {item.sujet && (
+            <div style={{ background: "#f9fafb", borderRadius: 12, padding: "12px 16px" }}>
+              <p style={{ fontSize: 10, color: "#9ca3af", marginBottom: 4 }}>Sujet</p>
+              <p style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>{item.sujet}</p>
+            </div>
+          )}
+
+          {/* Message original */}
+          <section>
+            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+              <Mail size={11} />Message reçu
+            </p>
+            <div style={{ background: "#f9fafb", borderRadius: 12, padding: "16px", fontSize: 13, color: "#374151", lineHeight: 1.8, whiteSpace: "pre-wrap" as const, borderLeft: "3px solid #e5e7eb" }}>
+              {item.message}
+            </div>
+          </section>
+
+          {/* Réponse déjà envoyée */}
+          {item.reponse && (
+            <section>
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#047857", textTransform: "uppercase" as const, display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+                <Reply size={11} />Réponse envoyée · {item.replied_at ? fmtFull(item.replied_at) : ""}
+              </p>
+              <div style={{ background: "#ecfdf5", borderRadius: 12, padding: "16px", fontSize: 13, color: "#065f46", lineHeight: 1.8, whiteSpace: "pre-wrap" as const, borderLeft: "3px solid #a7f3d0" }}>
+                {item.reponse}
+              </div>
+            </section>
+          )}
+
+          {/* Indicateur d'état — honnête, pas de faux boutons de statut */}
+          <section>
+            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, marginBottom: 10 }}>
+              État du message
+            </p>
+            <div style={{ display: "flex", gap: 8 }}>
+              {(["non_lu", "lu", "repondu"] as const).map(k => {
+                const s    = STATUT_CONFIG[k];
+                const Icon = s.icon;
+                const steps = ["non_lu", "lu", "repondu"] as const;
+                const curIdx  = steps.indexOf(statut);
+                const stepIdx = steps.indexOf(k);
+                const isDone   = stepIdx < curIdx;
+                const isCurrent = stepIdx === curIdx;
+                return (
+                  <div key={k} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "10px 8px", borderRadius: 12, background: isCurrent ? s.bg : isDone ? "#f9fafb" : "#f9fafb", border: `1.5px solid ${isCurrent ? s.border : "#e5e7eb"}` }}>
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: isDone || isCurrent ? s.color : "#e5e7eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {isDone ? <CheckCircle2 size={14} style={{ color: "#fff" }} /> : <Icon size={14} style={{ color: isDone || isCurrent ? "#fff" : "#9ca3af" }} />}
+                    </div>
+                    <span style={{ fontSize: 10, fontWeight: isCurrent ? 700 : 500, color: isCurrent ? s.textLight : "#9ca3af", textAlign: "center" as const }}>{s.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 8 }}>
+              {statut === "non_lu" && "Ce message n'a pas encore été ouvert."}
+              {statut === "lu"     && "Message lu. En attente d'une réponse."}
+              {statut === "repondu"&& "Une réponse a déjà été envoyée à ce contact."}
+            </p>
+          </section>
+
+          {/* Onglets Réponse / Note */}
+          <section>
+            <div style={{ display: "flex", gap: 0, background: "#f9fafb", borderRadius: 10, padding: 3, marginBottom: 12, width: "fit-content" }}>
+              {[
+                { key: "reply", label: "Répondre",     icon: Reply },
+                { key: "note",  label: "Note interne", icon: StickyNote },
+              ].map(t => (
+                <button key={t.key} onClick={() => setTab(t.key as any)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 16px", borderRadius: 8, background: tab === t.key ? "#fff" : "transparent", boxShadow: tab === t.key ? "0 1px 4px rgba(0,0,0,0.08)" : "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: tab === t.key ? 700 : 500, color: tab === t.key ? "#111827" : "#9ca3af" }}>
+                  <t.icon size={12} />{t.label}
+                </button>
+              ))}
+            </div>
+
+            {tab === "reply" && (
+              <div>
+                {hasReplied && (
+                  <div style={{ padding: "10px 14px", background: "#fefce8", borderRadius: 10, border: "1px solid #fde68a", fontSize: 12, color: "#92400e", display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                    <Reply size={13} />Déjà répondu — vous pouvez envoyer une nouvelle réponse.
+                  </div>
+                )}
+                <textarea value={reponse} onChange={e => setReponse(e.target.value)} rows={5}
+                  placeholder={`Bonjour ${item.nom.split(" ")[0]},\n\nMerci pour votre message…`}
+                  style={{ width: "100%", border: "1.5px solid #e5e7eb", borderRadius: 12, padding: "12px 14px", fontSize: 13, lineHeight: 1.7, resize: "vertical", outline: "none", fontFamily: "inherit", color: "#111827", boxSizing: "border-box" as const, marginBottom: 10 }}
+                  onFocus={e => (e.currentTarget.style.borderColor = "#2563eb")}
+                  onBlur={e => (e.currentTarget.style.borderColor = "#e5e7eb")}
+                />
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "#eff6ff", borderRadius: 10, border: "1px solid #bfdbfe", fontSize: 12, color: "#1d4ed8" }}>
+                  <Mail size={13} />
+                  <span>La réponse sera envoyée à <strong>{item.email}</strong></span>
+                </div>
+              </div>
+            )}
+
+            {tab === "note" && (
+              <div style={{ padding: "12px 16px", background: "#fffbeb", borderRadius: 12, border: "1px solid #fde68a", fontSize: 13, color: "#92400e" }}>
+                <StickyNote size={14} style={{ marginBottom: 8 }} />
+                <p style={{ fontWeight: 600, marginBottom: 4 }}>Note interne</p>
+                <p style={{ fontSize: 12 }}>Les notes internes ne sont pas encore disponibles pour les messages de contact dans cette version.</p>
+              </div>
+            )}
+          </section>
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: "16px 24px", borderTop: "1px solid #f3f4f6", display: "flex", gap: 10 }}>
+          <button onClick={onClose} style={{ flex: 1, height: 42, border: "1.5px solid #e5e7eb", borderRadius: 12, fontSize: 13, fontWeight: 600, color: "#374151", cursor: "pointer", background: "#fff" }}>Fermer</button>
+          {tab === "reply" && (
+            <button onClick={sendReply} disabled={saving || !reponse.trim()} style={{ flex: 2, height: 42, borderRadius: 12, fontSize: 13, fontWeight: 700, background: "linear-gradient(135deg,#2563eb,#3b82f6)", color: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, opacity: saving || !reponse.trim() ? 0.55 : 1, boxShadow: "0 2px 10px rgba(37,99,235,0.3)" }}>
+              {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Send size={14} />}
+              {saving ? "Envoi en cours…" : "Envoyer la réponse"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Carte message ────────────────────────────────────────────────────────────
+function MessageCard({ item, onClick, onDelete }: { item: ContactItem; onClick: () => void; onDelete: (id: number) => void }) {
+  const statut = computeStatut(item);
+  const sc     = STATUT_CONFIG[statut];
+  const isNew  = !item.lu;
+
+  return (
+    <div
+      style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "16px 20px", borderBottom: "1px solid #f3f4f6", background: isNew ? "#fefce8" : "transparent", cursor: "pointer", transition: "background 0.1s", position: "relative" as const }}
+      onMouseEnter={e => !isNew && (e.currentTarget.style.background = "#fafafa")}
+      onMouseLeave={e => !isNew && (e.currentTarget.style.background = "transparent")}
+      onClick={onClick}
+    >
+      {isNew && <span style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: "#2563eb", borderRadius: "0 3px 3px 0" }} />}
+
+      {/* Avatar */}
+      <div style={{ width: 40, height: 40, borderRadius: "50%", background: isNew ? "#2563eb" : "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 15, fontWeight: 700, color: isNew ? "#fff" : "#6b7280" }}>
+        {item.nom[0]?.toUpperCase()}
+      </div>
+
+      {/* Contenu */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 3 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+            <p style={{ fontSize: 13, fontWeight: isNew ? 800 : 600, color: "#111827", whiteSpace: "nowrap" as const }}>{item.nom}</p>
+            {isNew && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#2563eb", flexShrink: 0 }} />}
+            <StatusBadge item={item} />
+          </div>
+          <span style={{ fontSize: 11, color: "#9ca3af", whiteSpace: "nowrap" as const, flexShrink: 0 }}>{fmt(item.created_at)}</span>
+        </div>
+        <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 4 }}>{item.email}</p>
+        {item.sujet && <p style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 3 }}>{item.sujet}</p>}
+        <p style={{ fontSize: 12, color: "#9ca3af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+          {item.message.slice(0, 100)}{item.message.length > 100 ? "…" : ""}
+        </p>
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+        {!item.replied_at && (
+          <div style={{ padding: "4px 10px", borderRadius: 20, fontSize: 10, fontWeight: 600, background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe", display: "flex", alignItems: "center", gap: 4 }}>
+            <Reply size={9} />Répondre
+          </div>
+        )}
+        <button onClick={() => onDelete(item.id_contact)} style={{ padding: "4px 10px", borderRadius: 20, fontSize: 10, fontWeight: 600, background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+          <Trash2 size={9} />Supprimer
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Page principale ──────────────────────────────────────────────────────────
 export default function AdminContactPage() {
   const [items,    setItems]    = useState<ContactItem[]>([]);
   const [meta,     setMeta]     = useState({ total: 0, page: 1, pages: 1 });
@@ -14,157 +291,138 @@ export default function AdminContactPage() {
   const [search,   setSearch]   = useState("");
   const [luFilter, setLuFilter] = useState("");
   const [selected, setSelected] = useState<ContactItem | null>(null);
-  const [reponse,  setReponse]  = useState("");
-  const [saving,   setSaving]   = useState(false);
+  const [curPage,  setCurPage]  = useState(1);
 
   const load = useCallback(async (page = 1) => {
     setLoading(true);
     try {
-      const p: Record<string,string> = { page: String(page), limit: "15" };
+      const p: Record<string, string> = { page: String(page), limit: "20" };
       if (search)   p.search = search;
       if (luFilter) p.lu     = luFilter;
       const res = await adminContact.list(p);
       setItems(res.data);
       setMeta(res.meta as any);
-    } catch(e){ console.error(e); }
+      setCurPage(page);
+    } catch { }
     finally { setLoading(false); }
   }, [search, luFilter]);
 
   useEffect(() => { load(1); }, [load]);
 
   const openDetail = async (item: ContactItem) => {
-    const full = await adminContact.getById(item.id_contact);
-    setSelected(full);
-    setReponse(full.reponse ?? "");
-  };
-
-  const sendReply = async () => {
-    if (!selected || !reponse.trim()) return;
-    setSaving(true);
-    try {
-      await adminContact.reply(selected.id_contact, reponse);
-      setSelected(null);
-      load(meta.page);
-    } catch(e){ alert("Erreur: " + (e as Error).message); }
-    finally { setSaving(false); }
+    try { const full = await adminContact.getById(item.id_contact); setSelected(full); }
+    catch { setSelected(item); }
   };
 
   const remove = async (id: number) => {
-    if (!confirm("Supprimer ce message ?")) return;
-    await adminContact.remove(id);
-    load(meta.page);
+    if (!confirm("Supprimer ce message définitivement ?")) return;
+    try {
+      await adminContact.remove(id);
+      toast.success("Message supprimé");
+      load(curPage);
+    } catch { toast.error("Erreur lors de la suppression"); }
   };
 
+  const nonLus   = items.filter(m => !m.lu).length;
+  const repondus = items.filter(m => !!m.replied_at).length;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+
+      {/* En-tête */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap" as const, gap: 12 }}>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Messages de contact</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{meta.total} messages au total</p>
+          <h1 style={{ fontSize: 22, fontWeight: 800, color: "#111827", letterSpacing: "-0.04em", display: "flex", alignItems: "center", gap: 10 }}>
+            <MessageSquare size={22} style={{ color: "#2563eb" }} />Messages de contact
+          </h1>
+          <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
+            {meta.total} messages au total
+            {nonLus > 0 && <span style={{ marginLeft: 10, fontSize: 11, fontWeight: 700, color: "#2563eb", background: "#eff6ff", padding: "2px 8px", borderRadius: 20, border: "1px solid #bfdbfe" }}>{nonLus} non lu{nonLus > 1 ? "s" : ""}</span>}
+          </p>
         </div>
-        <button onClick={() => load(1)} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 px-3 py-2 rounded-xl hover:bg-gray-100">
-          <RefreshCw size={15} />Actualiser
+        <button onClick={() => load(curPage)} style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 16px", borderRadius: 10, background: "#f9fafb", border: "1px solid #e5e7eb", cursor: "pointer", fontSize: 13, color: "#374151" }}>
+          <RefreshCw size={13} />Actualiser
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input placeholder="Nom, email, sujet…" value={search} onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-9 pl-9 pr-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500" />
-        </div>
-        <select value={luFilter} onChange={(e) => setLuFilter(e.target.value)}
-          className="h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white">
-          <option value="">Tous les messages</option>
-          <option value="false">Non lus</option>
-          <option value="true">Lus</option>
-        </select>
+      {/* Compteurs état */}
+      <div style={{ display: "flex", gap: 12 }}>
+        {[
+          { key: "non_lu",  label: "Non lus",  count: items.filter(m => !m.lu).length,             icon: AlertCircle,  color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe", textLight: "#1d4ed8" },
+          { key: "lu",      label: "Lus",       count: items.filter(m => m.lu && !m.replied_at).length, icon: Clock, color: "#d97706", bg: "#fffbeb", border: "#fde68a", textLight: "#b45309" },
+          { key: "repondu", label: "Répondus",  count: repondus,                                    icon: CheckCircle2, color: "#059669", bg: "#ecfdf5", border: "#a7f3d0", textLight: "#047857" },
+        ].map(({ key, label, count, icon: Icon, color, bg, border, textLight }) => (
+          <div key={key} style={{ flex: 1, background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "14px 16px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: bg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
+              <Icon size={15} style={{ color }} />
+            </div>
+            <p style={{ fontSize: 22, fontWeight: 800, color: "#111827", letterSpacing: "-0.04em", lineHeight: 1 }}>{count}</p>
+            <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>{label}</p>
+          </div>
+        ))}
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      {/* Filtres */}
+      <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #e5e7eb", padding: "12px 16px", display: "flex", gap: 10, flexWrap: "wrap" as const, alignItems: "center" }}>
+        <div style={{ flex: 1, minWidth: 200, position: "relative" as const }}>
+          <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nom, email, sujet…"
+            style={{ width: "100%", height: 36, paddingLeft: 36, border: "1px solid #e5e7eb", borderRadius: 9, fontSize: 13, outline: "none", background: "#f9fafb", boxSizing: "border-box" as const, color: "#111827" }}
+          />
+        </div>
+        <div style={{ display: "flex", gap: 0, background: "#f9fafb", borderRadius: 10, padding: 3 }}>
+          {[
+            { key: "",      label: "Tous" },
+            { key: "false", label: "Non lus" },
+            { key: "true",  label: "Lus" },
+          ].map(f => (
+            <button key={f.key} onClick={() => setLuFilter(v => v === f.key ? "" : f.key)} style={{ padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: luFilter === f.key ? 700 : 500, background: luFilter === f.key ? "#fff" : "transparent", color: luFilter === f.key ? "#111827" : "#9ca3af", boxShadow: luFilter === f.key ? "0 1px 4px rgba(0,0,0,0.08)" : "none" }}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Liste */}
+      <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e5e7eb", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 20px", borderBottom: "1px solid #f3f4f6" }}>
+          <Inbox size={14} style={{ color: "#9ca3af" }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>Boîte de réception</span>
+          {nonLus > 0 && <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, background: "#2563eb", color: "#fff", padding: "2px 8px", borderRadius: 20 }}>{nonLus} nouveau{nonLus > 1 ? "x" : ""}</span>}
+        </div>
+
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-7 h-7 border-4 border-ev-600 border-t-transparent rounded-full animate-spin" />
+          <div style={{ display: "flex", justifyContent: "center", padding: "64px 0" }}>
+            <div style={{ width: 28, height: 28, borderRadius: "50%", border: "3px solid #dbeafe", borderTopColor: "#2563eb", animation: "spin3 0.8s linear infinite" }} />
+            <style>{`@keyframes spin3{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
           </div>
         ) : items.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">Aucun message trouvé</div>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {items.map((m) => (
-              <div key={m.id_contact} className={`flex items-start gap-4 p-4 hover:bg-gray-50 transition-colors ${!m.lu ? "bg-orange-50/30" : ""}`}>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${!m.lu ? "bg-orange-100" : "bg-gray-100"}`}>
-                  <MessageSquare size={16} className={!m.lu ? "text-orange-500" : "text-gray-400"} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <p className="font-semibold text-sm text-gray-800">{m.nom}</p>
-                    {!m.lu && <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">Non lu</span>}
-                    {m.replied_at && <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-medium">Répondu</span>}
-                  </div>
-                  <p className="text-xs text-gray-500 mb-1">{m.email} — {fmt(m.created_at)}</p>
-                  {m.sujet && <p className="text-sm font-medium text-gray-700 mb-0.5">{m.sujet}</p>}
-                  <p className="text-sm text-gray-500 line-clamp-2">{m.message}</p>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => openDetail(m)} className="p-1.5 text-gray-400 hover:text-ev-600 hover:bg-ev-50 rounded-lg transition-colors"><Eye size={15} /></button>
-                  <button onClick={() => remove(m.id_contact)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={15} /></button>
-                </div>
-              </div>
-            ))}
+          <div style={{ textAlign: "center" as const, padding: "64px 0", color: "#9ca3af" }}>
+            <Inbox size={40} style={{ margin: "0 auto 12px", opacity: 0.2 }} />
+            <p style={{ fontWeight: 600 }}>Aucun message</p>
           </div>
+        ) : (
+          items.map(item => (
+            <MessageCard key={item.id_contact} item={item} onClick={() => openDetail(item)} onDelete={remove} />
+          ))
         )}
+
         {meta.pages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-            <p className="text-xs text-gray-400">Page {meta.page} / {meta.pages}</p>
-            <div className="flex gap-2">
-              <button disabled={meta.page <= 1} onClick={() => load(meta.page - 1)} className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50">Précédent</button>
-              <button disabled={meta.page >= meta.pages} onClick={() => load(meta.page + 1)} className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50">Suivant</button>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderTop: "1px solid #f3f4f6" }}>
+            <p style={{ fontSize: 12, color: "#9ca3af" }}>{meta.total} messages · page {curPage}/{meta.pages}</p>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button disabled={curPage <= 1} onClick={() => load(curPage - 1)} style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: curPage <= 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: curPage <= 1 ? 0.4 : 1 }}>
+                <ChevronLeft size={14} style={{ color: "#6b7280" }} />
+              </button>
+              <button disabled={curPage >= meta.pages} onClick={() => load(curPage + 1)} style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: curPage >= meta.pages ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: curPage >= meta.pages ? 0.4 : 1 }}>
+                <ChevronRight size={14} style={{ color: "#6b7280" }} />
+              </button>
             </div>
           </div>
         )}
       </div>
 
-      {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">{selected.nom}</h2>
-              <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-700 text-xl font-light">✕</button>
-            </div>
-            <div className="p-6 space-y-5">
-              <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
-                <div><p className="text-gray-400 text-xs mb-0.5">Email</p><a href={"mailto:" + selected.email} className="font-medium text-ev-600 hover:underline">{selected.email}</a></div>
-                <div><p className="text-gray-400 text-xs mb-0.5">Date</p><p className="font-medium">{fmt(selected.created_at)}</p></div>
-                {selected.sujet && <div className="col-span-2"><p className="text-gray-400 text-xs mb-0.5">Sujet</p><p className="font-medium">{selected.sujet}</p></div>}
-              </div>
-              <div><p className="text-gray-400 text-xs mb-1">Message</p>
-                <p className="text-sm bg-gray-50 rounded-xl p-4 text-gray-700 whitespace-pre-wrap">{selected.message}</p></div>
-              {selected.reponse && (
-                <div><p className="text-gray-400 text-xs mb-1">Réponse envoyée</p>
-                  <p className="text-sm bg-green-50 rounded-xl p-4 text-green-800 whitespace-pre-wrap">{selected.reponse}</p></div>
-              )}
-              {!selected.replied_at && (
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1 font-medium">Votre réponse</label>
-                  <textarea value={reponse} onChange={(e) => setReponse(e.target.value)} rows={5}
-                    placeholder="Rédigez votre réponse ici…"
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 resize-none" />
-                </div>
-              )}
-            </div>
-            <div className="p-6 pt-0 flex gap-3">
-              <button onClick={() => setSelected(null)} className="flex-1 h-10 border border-gray-200 text-sm text-gray-600 rounded-xl hover:bg-gray-50">Fermer</button>
-              {!selected.replied_at && (
-                <button onClick={sendReply} disabled={saving || !reponse.trim()}
-                  className="flex-1 h-10 bg-ev-700 text-white text-sm rounded-xl hover:bg-ev-800 disabled:opacity-60 flex items-center justify-center gap-2">
-                  {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : null}
-                  Envoyer la réponse
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {selected && <ContactDetailPanel item={selected} onClose={() => setSelected(null)} onSaved={() => load(curPage)} />}
     </div>
   );
 }

@@ -1,35 +1,22 @@
 "use client";
-/**
- * VisiteurTracker — NOUVEAU composant manquant
- *
- * POURQUOI LES VISITEURS N'APPARAISSAIENT PAS EN BASE :
- * Ce composant était absent du layout. Sans lui, aucune requête POST
- * vers /api/visiteurs/track n'était faite, donc aucun visiteur n'était
- * créé ou mis à jour dans la table `visiteurs`.
- *
- * FONCTIONNEMENT :
- * 1. Au premier chargement : envoie POST /visiteurs/track sans token
- *    → le backend crée un nouveau Visiteur et retourne son token_visiteur
- *    → on stocke ce token dans sessionStorage pour les prochaines visites
- * 2. À chaque changement de route (pathname) : enregistre la durée passée
- *    sur la page précédente via duree (en secondes)
- * 3. Le token_visiteur est aussi utilisé dans les formulaires (devis, contact, rdv)
- *    pour lier la demande au visiteur connu.
- */
+
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+const BASE_URL   = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 const STORAGE_KEY = "ev_visitor_token";
 
 interface TrackPayload {
   token_visiteur?: string;
-  url:             string;
+  url?:            string;
   titre?:          string;
   duree?:          number;
+  search_query?:   string;
+  search_results?: number;
+  id_faq?:         number;
 }
 
-async function track(payload: TrackPayload): Promise<string | null> {
+async function trackApi(payload: TrackPayload): Promise<string | null> {
   try {
     const res = await fetch(`${BASE_URL}/visiteurs/track`, {
       method:  "POST",
@@ -39,15 +26,12 @@ async function track(payload: TrackPayload): Promise<string | null> {
     });
     if (!res.ok) return null;
     const json = await res.json();
-    // Le backend retourne { success: true, data: { token_visiteur: "..." } }
-    // ou { token_visiteur: "..." } directement selon la version
     return (
       json?.data?.token_visiteur ??
       json?.token_visiteur ??
       null
     );
   } catch {
-    // Silencieux — le tracking ne doit jamais bloquer l'UX
     return null;
   }
 }
@@ -59,12 +43,11 @@ export function VisiteurTracker() {
 
   // ── Initialisation au premier montage ──────────────────────────────────────
   useEffect(() => {
-    // Récupérer le token existant depuis sessionStorage
     const stored = sessionStorage.getItem(STORAGE_KEY);
     tokenRef.current = stored;
 
-    // Envoyer le tracking de cette première page
-    track({
+    // Tracking de la première page
+    trackApi({
       token_visiteur: stored ?? undefined,
       url:            pathname,
       titre:          document.title,
@@ -72,11 +55,35 @@ export function VisiteurTracker() {
       if (newToken) {
         tokenRef.current = newToken;
         sessionStorage.setItem(STORAGE_KEY, newToken);
-        // Exposer le token globalement pour les formulaires
         if (typeof window !== "undefined") {
           (window as any).__ev_visitor_token = newToken;
         }
       }
+
+      // ── Exposer trackEvFaq globalement ──────────────────────────────────
+      // Utilisé par ChatWidget : window.trackEvFaq(id_faq)
+      (window as any).trackEvFaq = async (id_faq: number) => {
+        const token = tokenRef.current ?? sessionStorage.getItem(STORAGE_KEY);
+        if (!token || !id_faq) return;
+        // Double appel : via /visiteurs/track (lie au visiteur) ET via /faq/:id/view
+        await Promise.allSettled([
+          trackApi({ token_visiteur: token, id_faq }),
+          fetch(`${BASE_URL}/faq/${id_faq}/view`, { method: "POST", cache: "no-store" }),
+        ]);
+      };
+
+      // ── Exposer trackSearch globalement ─────────────────────────────────
+      // Utilisé par ChatWidget et tout composant de recherche public :
+      //   window.trackSearch("engrais foliaire", 5)
+      (window as any).trackSearch = async (query: string, nbResults = 0) => {
+        const token = tokenRef.current ?? sessionStorage.getItem(STORAGE_KEY);
+        if (!token || !query?.trim()) return;
+        await trackApi({
+          token_visiteur: token,
+          search_query:   query.trim(),
+          search_results: nbResults,
+        });
+      };
     });
 
     startRef.current = Date.now();
@@ -87,9 +94,8 @@ export function VisiteurTracker() {
   useEffect(() => {
     const duree = Math.round((Date.now() - startRef.current) / 1000);
 
-    // N'envoyer que si le visiteur est resté plus de 2 secondes
     if (tokenRef.current && duree > 2) {
-      track({
+      trackApi({
         token_visiteur: tokenRef.current,
         url:            pathname,
         titre:          document.title,
@@ -100,7 +106,6 @@ export function VisiteurTracker() {
     startRef.current = Date.now();
   }, [pathname]);
 
-  // Ce composant ne rend rien — c'est un effet de bord pur
   return null;
 }
 

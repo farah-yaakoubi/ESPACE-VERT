@@ -1,43 +1,78 @@
-import { prisma } from  "../../lib/prisma";
-import { CreateProduitDto, UpdateProduitDto, ProduitQueryDto, AddImageDto } from "./produit.schema";
-
-// Protège les listes publiques/admin contre des produits orphelins
-// (id_categorie pointe vers une catégorie supprimée ou invalide).
-function requireExistingCategorie(where: Record<string, unknown>) {
-  return Object.keys(where).length === 0
-    ? { categorie: { is: {} } }
-    : { AND: [where, { categorie: { is: {} } }] };
-}
+import { prisma } from "../../lib/prisma";
+import { AddImageDto, CreateProduitDto, ProduitQueryDto, UpdateProduitDto } from "./produit.schema";
 
 const PUBLIC_INCLUDE = {
-  marque:    { select: { nom: true, slug: true, logo: true } },
   categorie: {
     select: {
-      id_categorie: true, nom: true, slug: true,
-      parent: { select: { nom: true, slug: true } },
+      id_categorie: true, nom: true, slug: true, translations: true, id_marque: true,
+      parent: { select: { nom: true, slug: true, translations: true } },
+      activite: { select: { id_activite: true, nom: true, slug: true } },
+      marque: { select: { nom: true, slug: true, logo: true, translations: true } },
     },
   },
-  activite:  { select: { nom: true, slug: true } }, // ← NOUVEAU
   images:    { orderBy: { ordre: "asc" as const } },
 } as const;
 
 const ADMIN_INCLUDE = {
-  marque:    { select: { nom: true, slug: true } },
-  categorie: { select: { nom: true, slug: true } },
-  activite:  { select: { nom: true, slug: true } },
-  images:    { orderBy: { ordre: "asc" as const } }, // ← toutes les images, pas seulement la principale
+  categorie: { select: { nom: true, slug: true, marque: { select: { nom: true, slug: true } } } },
+  images:    { orderBy: { ordre: "asc" as const } },
 } as const;
 
 // Include léger pour la liste admin (seulement l'image principale)
-// IMPORTANT : id_categorie et id_marque sont aussi renvoyés au niveau produit
-// (champs scalaires natifs de la table) pour que le formulaire d'édition puisse
-// pré-sélectionner la catégorie et la marque sans faire de recherche par nom.
+// La marque est héritée de la catégorie.
 const ADMIN_LIST_INCLUDE = {
-  marque:    { select: { nom: true, slug: true } },
-  categorie: { select: { id_categorie: true, nom: true, slug: true } },
-  activite:  { select: { nom: true, slug: true } },
+  categorie: {
+    select: {
+      id_categorie: true, nom: true, slug: true, id_marque: true,
+      marque: { select: { nom: true, slug: true } },
+      activite: { select: { id_activite: true, nom: true, slug: true } },
+    },
+  },
   images:    { where: { is_principale: true }, take: 1 },
 } as const;
+
+function withInheritedRefs<T extends { categorie?: any }>(produit: T) {
+  return {
+    ...produit,
+    marque: produit.categorie?.marque ?? null,
+    activite: produit.categorie?.activite ?? null,
+  };
+}
+
+async function collectCategorieIds(filters: { id_categorie?: number; id_activite?: number; id_marque?: number; actifOnly?: boolean }) {
+  const where: any = {};
+  if (filters.actifOnly) where.actif = true;
+
+  const allCats = await prisma.categorie.findMany({
+    where,
+    select: { id_categorie: true, parent_id: true, id_activite: true, id_marque: true },
+  });
+
+  const directIds = new Set<number>();
+  if (filters.id_categorie) directIds.add(filters.id_categorie);
+  if (filters.id_activite) {
+    allCats
+      .filter(c => c.id_activite === filters.id_activite)
+      .forEach(c => directIds.add(c.id_categorie));
+  }
+  if (filters.id_marque) {
+    allCats
+      .filter(c => c.id_marque === filters.id_marque)
+      .forEach(c => directIds.add(c.id_categorie));
+  }
+
+  const collected = new Set<number>();
+  const collectDescendants = (rootId: number) => {
+    if (collected.has(rootId)) return;
+    collected.add(rootId);
+    allCats
+      .filter(c => c.parent_id === rootId)
+      .forEach(c => collectDescendants(c.id_categorie));
+  };
+
+  directIds.forEach(collectDescendants);
+  return [...collected];
+}
 
 export const produitRepository = {
 
@@ -49,88 +84,73 @@ export const produitRepository = {
   }) {
     const { page, limit, id_marque, id_categorie, id_activite, marque_slug, division, search } = params;
     const where: any = { actif: true };
-    if (id_marque)    where.id_marque    = id_marque;
-    if (id_categorie) {
-      // Filtrage hiérarchique : inclure la catégorie sélectionnée ET tous ses descendants
-      const allCats = await prisma.categorie.findMany({ select: { id_categorie: true, parent_id: true } });
-      const collectIds = (rootId: number): number[] => {
-        const ids: number[] = [rootId];
-        const children = allCats.filter(c => c.parent_id === rootId);
-        for (const child of children) ids.push(...collectIds(child.id_categorie));
-        return ids;
-      };
-      const catIds = collectIds(id_categorie);
-      where.id_categorie = catIds.length === 1 ? catIds[0] : { in: catIds };
-    }
-    if (id_activite) {
-      // Récupérer TOUTES les catégories appartenant à cette activité
-      // + leurs descendants (sous-catégories profondes sans id_activite direct)
-      const activiteCats = await prisma.categorie.findMany({
-        where:  { id_activite },
-        select: { id_categorie: true },
-      });
-      const allCats = await prisma.categorie.findMany({
-        select: { id_categorie: true, parent_id: true },
-      });
-      const collectCatIds = (parentId: number): number[] => {
-        const children = allCats.filter(c => c.parent_id === parentId);
-        return [parentId, ...children.flatMap(c => collectCatIds(c.id_categorie))];
-      };
-      const allCatIds = activiteCats.flatMap(c => collectCatIds(c.id_categorie));
 
-      where.OR = [
-        { id_activite: id_activite },
-        { id_categorie: { in: allCatIds.length > 0 ? allCatIds : [-1] } },
-      ];
-    }
-    if (division)     where.division     = division;
     if (marque_slug) {
       const m = await prisma.marque.findUnique({ where: { slug: marque_slug } });
       if (!m) return { produits: [], total: 0 };
-      where.id_marque = m.id_marque;
+      where.id_categorie = { in: await collectCategorieIds({ id_marque: m.id_marque, actifOnly: true }) };
+    } else if (id_marque || id_categorie || id_activite) {
+      const catIds = await collectCategorieIds({ id_categorie, id_activite, id_marque, actifOnly: true });
+      where.id_categorie = catIds.length > 0 ? { in: catIds } : -1;
     }
+
+    if (division) where.division = division;
+
     if (search) {
-      const searchClause = [
+      where.OR = [
         { nom:         { contains: search } },
         { description: { contains: search } },
       ];
-      // Combiner avec id_activite si présent
-      if (where.OR) {
-        where.AND = [{ OR: where.OR }, { OR: searchClause }];
-        delete where.OR;
-      } else {
-        where.OR = searchClause;
-      }
     }
-    const safeWhere = requireExistingCategorie(where);
     const [total, produits] = await Promise.all([
-      prisma.produit.count({ where: safeWhere }),
+      prisma.produit.count({ where }),
       prisma.produit.findMany({
-        where: safeWhere, skip: (page - 1) * limit, take: limit,
+        where, skip: (page - 1) * limit, take: limit,
         orderBy: [{ ordre: "asc" }, { nom: "asc" }],
         include: PUBLIC_INCLUDE,
       }),
     ]);
-    return { produits, total };
+    return { produits: produits.map(withInheritedRefs), total };
   },
 
   async findBySlugPublic(slug: string) {
-    return prisma.produit.findFirst({
-      where:   requireExistingCategorie({ slug }),
+    const produit = await prisma.produit.findFirst({
+      where:   { slug },
       include: {
-        marque:    { select: { nom: true, slug: true, logo: true, description: true } },
-        activite:  { select: { nom: true, slug: true } }, // ← NOUVEAU
         categorie: {
           include: {
-            activite:  { select: { nom: true, slug: true } },
-            marque:    { select: { nom: true, slug: true } },
-            parent:    { select: { nom: true, slug: true } },
-            sous_cats: { select: { nom: true, slug: true } },
+            activite:  { select: { id_activite: true, nom: true, slug: true } },
+            marque:    { select: { nom: true, slug: true, logo: true, description: true, translations: true } },
+            parent:    { select: { nom: true, slug: true, translations: true } },
+            sous_cats: { select: { nom: true, slug: true, translations: true } },
           },
         },
         images: { orderBy: { ordre: "asc" } },
       },
     });
+    return produit ? withInheritedRefs(produit) : null;
+  },
+
+  async findBySkuPublic(sku: string) {
+    const produit = await prisma.produit.findFirst({
+      where:   { sku } as any,
+      include: {
+        categorie: {
+          include: {
+            activite:  { select: { id_activite: true, nom: true, slug: true } },
+            marque:    { select: { nom: true, slug: true, logo: true, description: true, translations: true } },
+            parent:    { select: { nom: true, slug: true, translations: true } },
+            sous_cats: { select: { nom: true, slug: true, translations: true } },
+          },
+        },
+        images: { orderBy: { ordre: "asc" } },
+      },
+    });
+    return produit ? withInheritedRefs(produit) : null;
+  },
+
+  async findBySku(sku: string) {
+    return prisma.produit.findFirst({ where: { sku } as any });
   },
 
   // ── Admin ───────────────────────────────────────────────────────
@@ -138,9 +158,10 @@ export const produitRepository = {
     const { page, limit, id_marque, id_categorie, id_activite, division, search } = params;
     const actif = params.actif === undefined ? undefined : params.actif === "true";
     const where: any = {};
-    if (id_marque)           where.id_marque    = id_marque;
-    if (id_categorie)        where.id_categorie = id_categorie;
-    if (id_activite)         where.id_activite  = id_activite; // ← filtre direct
+    if (id_marque || id_categorie || id_activite) {
+      const catIds = await collectCategorieIds({ id_categorie, id_activite, id_marque });
+      where.id_categorie = catIds.length > 0 ? { in: catIds } : -1;
+    }
     if (division)            where.division     = division;
     if (actif !== undefined) where.actif        = actif;
     if (search) {
@@ -149,28 +170,26 @@ export const produitRepository = {
         { description: { contains: search } },
       ];
     }
-    const safeWhere = requireExistingCategorie(where);
     const [total, produits] = await Promise.all([
-      prisma.produit.count({ where: safeWhere }),
+      prisma.produit.count({ where }),
       prisma.produit.findMany({
-        where: safeWhere, skip: (page - 1) * limit, take: limit,
+        where, skip: (page - 1) * limit, take: limit,
         orderBy: { ordre: "asc" },
         include: ADMIN_LIST_INCLUDE,  // liste légère — seulement image principale
       }),
     ]);
-    return { produits, total };
+    return { produits: produits.map(withInheritedRefs), total };
   },
 
   async findById(id_produit: number) {
-    return prisma.produit.findFirst({
-      where:   requireExistingCategorie({ id_produit }),
+    const produit = await prisma.produit.findFirst({
+      where:   { id_produit },
       include: {
-        marque:    true,
-        categorie: true,
-        activite:  true, // ← NOUVEAU
+        categorie: { include: { marque: true, activite: true } },
         images:    { orderBy: { ordre: "asc" } },
       },
     });
+    return produit ? withInheritedRefs(produit) : null;
   },
 
   async findBySlug(slug: string) {
@@ -178,19 +197,23 @@ export const produitRepository = {
   },
 
   // ── Mutations ──────────────────────────────────────────────────
-  async create(data: CreateProduitDto) {
-    return prisma.produit.create({
+  async create(data: CreateProduitDto & { sku: string }) {
+    const produit = await prisma.produit.create({
       data: { ...data, slug: data.slug.toLowerCase(), actif: true },
       include: {
-        marque:    { select: { nom: true } },
-        categorie: { select: { nom: true } },
-        activite:  { select: { nom: true } },
+        categorie: { select: { nom: true, marque: { select: { nom: true } } } },
       },
     });
+    return withInheritedRefs(produit);
   },
 
   async update(id_produit: number, data: UpdateProduitDto) {
-    return prisma.produit.update({ where: { id_produit }, data });
+    // Extraire les IDs de relation — Prisma update() veut connect/disconnect, pas les scalaires directs
+    const { id_categorie, id_marque, ...rest } = data as any;
+    const relData: any = { ...rest };
+    if (id_categorie !== undefined && id_categorie !== null)
+      relData.categorie = { connect: { id_categorie } };
+    return prisma.produit.update({ where: { id_produit }, data: relData });
   },
 
   async delete(id_produit: number) {

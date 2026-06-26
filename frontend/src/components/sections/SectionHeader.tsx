@@ -10,7 +10,7 @@ interface SectionHeaderProps {
 
 export function SectionHeader({ eyebrow, title, subtitle, align = "center", className }: SectionHeaderProps) {
   return (
-    <div className={cn("mb-12", align === "center" ? "text-center" : "text-left", className)}>
+    <div className={cn("mb-6", align === "center" ? "text-center" : "text-left", className)}>
       {eyebrow && <p className="eyebrow mb-3">{eyebrow}</p>}
       <h2
         className="h-section"

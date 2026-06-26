@@ -1,10 +1,10 @@
-
 import { Router } from "express";
 import { authenticate, requirePermission } from "../../middleware/authMiddleware";
 import * as ctrl from "./produit.controller";
 
 // ── Public ────────────────────────────────────────────
 export const produitPublicRouter = Router();
+produitPublicRouter.get("/resolve-path", ctrl.resolvePath);
 produitPublicRouter.get("/",      ctrl.listPublic);
 produitPublicRouter.get("/:slug", ctrl.getBySlugPublic);
 
@@ -13,6 +13,7 @@ export const produitAdminRouter = Router();
 produitAdminRouter.use(authenticate);
 
 // Lecture : produits.read
+produitAdminRouter.get("/preview-sku", requirePermission("produits.read"), ctrl.previewSku);
 produitAdminRouter.get("/",      requirePermission("produits.read"), ctrl.list);
 produitAdminRouter.get("/:id",   requirePermission("produits.read"), ctrl.getById);
 

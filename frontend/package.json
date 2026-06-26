@@ -5,8 +5,8 @@
   "scripts": {
     "clean": "node ./scripts/clean-next.mjs",
     "typegen": "next typegen",
-    "dev": "npm run clean && next dev",
-    "build": "npm run clean && next build",
+    "dev": "next dev",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "type-check": "npm run typegen && tsc --noEmit"
@@ -17,7 +17,7 @@
     "clsx": "^2.1.0",
     "framer-motion": "^11.11.17",
     "lucide-react": "^0.460.0",
-    "next": "^15.3.1",
+    "next": "15.5.18",
     "next-intl": "^4.9.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

@@ -1,10 +1,13 @@
 // src/modules/categorie/categorie.schema.ts
 import { z } from "zod";
 
-export const CreateCategorieSchema = z.object({
+const TranslationsSchema = z.record(z.enum(["fr", "ar", "en"]), z.record(z.string(), z.string().nullable())).optional();
+
+const CategorieBaseSchema = z.object({
   nom:         z.string().min(1).max(150),
   slug:        z.string().min(1).max(180).regex(/^[a-z0-9-]+$/),
   description: z.string().optional().nullable(),
+  translations: TranslationsSchema,
   image:       z.string().url().max(500).optional().nullable(),
   id_activite: z.number().int().positive().optional().nullable(),
   id_marque:   z.number().int().positive().optional().nullable(),
@@ -12,9 +15,22 @@ export const CreateCategorieSchema = z.object({
   ordre:       z.number().int().min(0).optional().default(0),
 });
 
-export const UpdateCategorieSchema = CreateCategorieSchema.partial().extend({
+export const CreateCategorieSchema = CategorieBaseSchema.refine(
+  (data) => data.id_marque != null || data.id_activite != null,
+  { message: "Une catégorie doit appartenir à au moins une marque ou une activité", path: ["id_marque"] }
+);
+
+export const UpdateCategorieSchema = CategorieBaseSchema.partial().extend({
   actif: z.boolean().optional(),
-});
+}).refine(
+  (data) => {
+    // Si on met à jour id_marque ou id_activite, vérifier qu'au moins un reste renseigné
+    // Si aucun des deux n'est fourni dans le update, on laisse passer (valeurs existantes en base)
+    if (data.id_marque === null && data.id_activite === null) return false;
+    return true;
+  },
+  { message: "Une catégorie doit appartenir à au moins une marque ou une activité", path: ["id_marque"] }
+);
 
 export const CategorieQuerySchema = z.object({
   id_marque:   z.coerce.number().int().positive().optional(),

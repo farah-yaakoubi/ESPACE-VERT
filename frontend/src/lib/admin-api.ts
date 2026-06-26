@@ -79,8 +79,14 @@ async function request<T>(path: string, init: RequestInit = {}, auth = true): Pr
   }
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-    throw new Error(err.error ?? err.message ?? `Erreur ${res.status}`);
+    let errMsg = `Erreur ${res.status}`;
+    try {
+      const err = await res.json();
+      errMsg = err.error ?? err.message ?? errMsg;
+    } catch { /* réponse non-JSON (ex: 502, 504) */ }
+    const e = new Error(errMsg) as Error & { status: number };
+    e.status = res.status;
+    throw e;
   }
 
   return parseResponse<T>(await res.json());
@@ -116,6 +122,7 @@ export const adminDevis = {
   update:  (id: number, data: Partial<{ statut: string; reponse_admin: string; note_interne: string }>) =>
     request<DevisItem>(`/admin/devis/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   remove:  (id: number) => request<void>(`/admin/devis/${id}`, { method: "DELETE" }),
+  stats:   () => request<Record<string, number>>("/admin/devis/stats"),
 };
 
 // ── RDV ───────────────────────────────────────────────────────────────────────
@@ -189,9 +196,9 @@ export const adminAdmins = {
 // ── Marques ───────────────────────────────────────────────────────────────────
 export const adminMarques = {
   list:   () => request<MarqueAdmin[]>("/admin/marques"),
-  create: (data: { nom: string; slug: string; description?: string | null; logo?: string | null; banniere?: string | null }) =>
+  create: (data: { nom: string; slug: string; description?: string | null; logo?: string | null; banniere?: string | null; type_marque?: "groupe" | "partenaire" }) =>
     request<MarqueAdmin>("/admin/marques", { method: "POST", body: JSON.stringify(data) }),
-  update: (id: number, data: Partial<{ nom: string; slug: string; description: string | null; logo: string | null; banniere: string | null; actif: boolean }>) =>
+  update: (id: number, data: Partial<{ nom: string; slug: string; description: string | null; logo: string | null; banniere: string | null; type_marque: "groupe" | "partenaire"; actif: boolean }>) =>
     request<MarqueAdmin>(`/admin/marques/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   remove: (id: number) => request<void>(`/admin/marques/${id}`, { method: "DELETE" }),
 };
@@ -214,14 +221,16 @@ export const adminCategories = {
   update: (id: number, data: Partial<{ nom: string; slug: string; description: string | null; image: string | null; id_activite: number | null; id_marque: number | null; parent_id: number | null; ordre: number; actif: boolean }>) =>
     request<CategorieAdmin>(`/admin/categories/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   remove: (id: number) => request<void>(`/admin/categories/${id}`, { method: "DELETE" }),
+  removeBulk: (ids: number[]) =>
+    request<{ deleted: number; failed: number; message: string }>("/admin/categories/bulk", { method: "DELETE", body: JSON.stringify({ ids }) }),
 };
 
 // ── FAQ ───────────────────────────────────────────────────────────────────────
 export const adminFaq = {
   list:   (p?: Record<string, string>) => request<FaqAdmin[]>(`/admin/faq${qs(p)}`),
-  create: (data: { question: string; reponse: string; categorie?: string | null; ordre?: number; active?: boolean }) =>
+  create: (data: { question: string; reponse: string; rubrique?: string | null; ordre?: number; active?: boolean }) =>
     request<FaqAdmin>("/admin/faq", { method: "POST", body: JSON.stringify(data) }),
-  update: (id: number, data: Partial<{ question: string; reponse: string; categorie: string | null; ordre: number; active: boolean }>) =>
+  update: (id: number, data: Partial<{ question: string; reponse: string; rubrique: string | null; ordre: number; active: boolean }>) =>
     request<FaqAdmin>(`/admin/faq/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   remove: (id: number) => request<void>(`/admin/faq/${id}`, { method: "DELETE" }),
 };
@@ -297,7 +306,6 @@ export const adminNotifs = {
 };
 
 // ── Chat inter-admins ─────────────────────────────────────────────────────────
-// MODIFIÉ v2.1 : ajout pièces jointes (sendFile), markRead, SSE
 export const adminChat = {
   availableAdmins: () =>
     request<ChatAdminSummary[]>("/admin/chat/available-admins"),
@@ -326,7 +334,6 @@ export const adminChat = {
       body:   JSON.stringify({ contenu, type_message: "texte" }),
     }),
 
-  // Envoi fichier/image/PDF via multipart
   sendFile: async (id: number, file: File, contenu = ""): Promise<ChatMsg> => {
     const form = new FormData();
     form.append("fichier", file);
@@ -571,6 +578,7 @@ export interface MarqueAdmin {
   logo:        string | null;
   banniere:    string | null;
   description: string | null;
+  type_marque: "groupe" | "partenaire";
   actif:       boolean;
   created_at:  string;
   _count?:     { produits: number; categories: number };
@@ -586,7 +594,7 @@ export interface ActiviteAdmin {
   ordre:       number;
   actif:       boolean;
   created_at:  string;
-  _count?:     { produits: number; categories: number };
+  _count?:     { categories: number };
 }
 
 export interface CategorieAdmin {
@@ -610,9 +618,10 @@ export interface FaqAdmin {
   id_faq:     number;
   question:   string;
   reponse:    string;
-  categorie:  string | null;
+  rubrique:   string | null;
   ordre:      number;
   active:     boolean;
+  nb_consultations?: number;
   created_at: string;
 }
 
@@ -645,7 +654,7 @@ export interface VisiteurStats {
   topPages:        { url: string; titre: string; vues: number; duree: number }[];
   paysStats:       { pays: string; count: number }[];
   searchStats:     { query: string; count: number }[];
-  faqStats:        { id_faq: number; question: string; categorie: string | null; nb_consultations: number }[];
+  faqStats:        { id_faq: number; question: string; rubrique: string | null; nb_consultations: number }[];
 }
 
 // ── Notifications ─────────────────────────────────────────────────────────────

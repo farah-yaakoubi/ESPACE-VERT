@@ -1,141 +1,141 @@
 "use client";
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 
-const G1 = "#0a6030";
-const G2 = "#7dc040";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
-const IcoUp = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.8}
-    strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-    <polyline points="17 11 12 6 7 11"/>
-    <polyline points="17 18 12 13 7 18"/>
-  </svg>
-);
+function ScrollButton({
+  label,
+  disabled,
+  onClick,
+  direction,
+}: {
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+  direction: "up" | "down";
+}) {
+  const gradientId = `scroll-chevron-${direction}`;
 
-const IcoDown = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.8}
-    strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-    <polyline points="7 6 12 11 17 6"/>
-    <polyline points="7 13 12 18 17 13"/>
-  </svg>
-);
-
-function ProgressRing({ pct }: { pct: number }) {
-  const R = 16, CIRC = 2 * Math.PI * R;
   return (
-    <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 36 36">
-      <circle cx="18" cy="18" r={R} fill="none" stroke="#e5e7eb" strokeWidth="2" />
-      <circle cx="18" cy="18" r={R} fill="none"
-        stroke={G2} strokeWidth="2.5" strokeLinecap="round"
-        strokeDasharray={CIRC}
-        strokeDashoffset={CIRC * (1 - pct / 100)}
-        style={{ transition: "stroke-dashoffset 0.18s ease" }} />
-    </svg>
+    <button
+      type="button"
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      title={label}
+      aria-label={label}
+      className={`group relative flex h-12 w-12 items-center justify-center rounded-2xl transition ${
+        disabled
+          ? "cursor-default opacity-35"
+          : "hover:bg-emerald-50 hover:shadow-sm"
+      }`}
+    >
+      <svg
+        viewBox="0 0 32 32"
+        aria-hidden="true"
+        className={`h-8 w-8 ${direction === "down" ? "rotate-180" : ""}`}
+      >
+        <defs>
+          <linearGradient id={gradientId} x1="6" y1="26" x2="26" y2="6" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#0a6030" />
+            <stop offset="0.48" stopColor="#2e7d4f" />
+            <stop offset="1" stopColor="#7dc040" />
+          </linearGradient>
+        </defs>
+        <path
+          d="M6 20.5 16 10.5 26 20.5"
+          fill="none"
+          stroke={`url(#${gradientId})`}
+          strokeWidth="5.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M6 27 16 17 26 27"
+          fill="none"
+          stroke={`url(#${gradientId})`}
+          strokeWidth="5.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      <span className="pointer-events-none absolute right-full mr-3 rounded-lg bg-slate-950 px-2.5 py-1.5 text-[11px] font-semibold text-white opacity-0 shadow-lg transition group-hover:opacity-100">
+        {label}
+      </span>
+    </button>
   );
 }
 
 export default function ScrollControls() {
-  const [pct, setPct]           = useState(0);
-  const [atTop, setAtTop]       = useState(true);
+  const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(false);
-  const [show, setShow]         = useState(false);
+  const [showUp, setShowUp] = useState(false);
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
     const onScroll = () => {
-      const y  = window.scrollY;
+      const y = window.scrollY;
       const wh = window.innerHeight;
       const dh = document.documentElement.scrollHeight;
-      setPct(dh > wh ? Math.round((y / (dh - wh)) * 100) : 0);
-      setAtTop(y < 60);
+      const scrollable = Math.max(1, dh - wh);
+      const isLowerHalf = y / scrollable >= 0.5;
+
+      setAtTop(y < 80);
       setAtBottom(y + wh >= dh - 80);
-      setShow(y > 200);
+      setShowUp(isLowerHalf);
+      setShow(dh > wh + 240 && y > 180);
     };
+
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
     onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, []);
 
   return (
     <AnimatePresence>
       {show && (
         <motion.div
-          initial={{ opacity: 0, x: 40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 40 }}
-          transition={{ type: "spring", stiffness: 280, damping: 28 }}
-          className="hidden sm:flex fixed right-5 z-40 flex-col items-center gap-2"
-          style={{ bottom: "clamp(72px, 10vh, 88px)" }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 12 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          className="fixed right-6 z-40 hidden flex-col items-center gap-2 sm:flex"
+          style={{ bottom: "104px" }}
+          aria-label="Navigation de page"
         >
-          {/* Badge % */}
-          <AnimatePresence>
-            {pct > 0 && pct < 100 && (
-              <motion.span
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                className="text-[10px] font-black tabular-nums bg-white text-gray-400 px-2 py-0.5 rounded-full shadow-sm border border-gray-100"
-              >
-                {pct}%
-              </motion.span>
-            )}
-          </AnimatePresence>
-
-          {/* Bouton haut — dégradé vert plein */}
-          <AnimatePresence>
-            {!atTop && (
-              <motion.button key="up"
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                whileHover={{ scale: 1.12, y: -2 }}
-                whileTap={{ scale: 0.9 }}
-                className="relative w-11 h-11 rounded-full shadow-lg flex items-center justify-center group"
-                style={{ background: `linear-gradient(135deg, ${G1}, ${G2})` }}
-                title="Haut de page"
-              >
-                <span className="text-white relative z-10"><IcoUp /></span>
-                {/* Pulse */}
-                <motion.span
-                  className="absolute inset-0 rounded-full"
-                  style={{ background: "rgba(125,192,64,0.35)" }}
-                  animate={{ scale: [1, 1.6], opacity: [0.4, 0] }}
-                  transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut" }}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={showUp ? "scroll-up" : "scroll-down"}
+              initial={{ opacity: 0, y: showUp ? 10 : -10, scale: 0.94 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: showUp ? -10 : 10, scale: 0.94 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {showUp ? (
+                <ScrollButton
+                  label="Haut de page"
+                  disabled={atTop}
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  direction="up"
                 />
-                {/* Tooltip */}
-                <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-gray-900/95 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xl">
-                  Haut de page
-                  <span className="absolute left-full top-1/2 -translate-y-1/2 border-[5px] border-transparent border-l-gray-900/95" />
-                </span>
-              </motion.button>
-            )}
-          </AnimatePresence>
-
-          {/* Bouton bas — cercle blanc + anneau de progression vert */}
-          <AnimatePresence>
-            {!atBottom && (
-              <motion.button key="down"
-                onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" })}
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                whileHover={{ scale: 1.12, y: -2 }}
-                whileTap={{ scale: 0.9 }}
-                className="relative w-11 h-11 rounded-full bg-white shadow-lg border border-gray-100 flex items-center justify-center group"
-                title="Bas de page"
-              >
-                <ProgressRing pct={pct} />
-                <span className="relative z-10 text-gray-500 group-hover:text-[#0a6030] transition-colors">
-                  <IcoDown />
-                </span>
-                {/* Tooltip */}
-                <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-gray-900/95 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xl">
-                  Bas de page
-                  <span className="absolute left-full top-1/2 -translate-y-1/2 border-[5px] border-transparent border-l-gray-900/95" />
-                </span>
-              </motion.button>
-            )}
+              ) : (
+                <ScrollButton
+                  label="Bas de page"
+                  disabled={atBottom}
+                  onClick={() =>
+                    window.scrollTo({
+                      top: document.documentElement.scrollHeight,
+                      behavior: "smooth",
+                    })
+                  }
+                  direction="down"
+                />
+              )}
+            </motion.div>
           </AnimatePresence>
         </motion.div>
       )}

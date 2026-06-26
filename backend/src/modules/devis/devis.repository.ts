@@ -77,7 +77,7 @@ export const devisRepository = {
   },
 
   async update(id_devis: number, data: UpdateDevisPayload) {
-    const payload: Prisma.DevisDemandeUncheckedUpdateInput = {};
+    const payload: Record<string, unknown> = {};
     if (data.statut !== undefined) payload.statut = data.statut;
     if (data.note_interne !== undefined) payload.note_interne = data.note_interne;
     if (data.reponse_admin !== undefined) payload.reponse_admin = data.reponse_admin;

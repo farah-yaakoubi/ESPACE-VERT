@@ -1,33 +1,49 @@
 "use client";
-import { useEffect, useState } from "react";
+/**
+ * app/admin/dashboard/page.tsx — VERSION UNIFIÉE
+ * ─────────────────────────────────────────────────────────────────────────────
+ * NOUVEAUTÉS v3 :
+ *  • Assistant IA unique intégré dans le dashboard (fin du double assistant)
+ *  • Vocabulaire simplifié pour les admins non-techniques
+ *  • Statistiques claires avec libellés humains
+ *  • L'assistant peut répondre aux questions et proposer des actions
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
+import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
-import { adminStats, tokenStore, type DashboardStats } from "@/lib/admin-api";
+import { adminStats, tokenStore, isSuperAdmin, type DashboardStats } from "@/lib/admin-api";
 import {
   Package, Tag, Layers, Activity, Newspaper, HelpCircle,
   FileText, Calendar, MessageSquare, ArrowUp, ArrowDown,
   ArrowRight, Clock, CheckCircle2, TrendingUp, Eye,
+  Bot, Send, Trash2, Sparkles, X, ChevronDown, ChevronUp,
   type LucideIcon,
 } from "lucide-react";
+import { toast } from "@/components/admin/Toast";
 
 const P = {
   blue:"#3C50E0",green:"#10B981",amber:"#F59E0B",purple:"#8B5CF6",
   blueLt:"#EEF2FF",greenLt:"#D1FAE5",amberLt:"#FEF3C7",purpLt:"#EDE9FE",
 };
+
+// ─── Statuts lisibles pour les admins ────────────────────────────────────────
 const STATUT_DEVIS: Record<string,{label:string;color:string;bg:string}> = {
-  nouveau:{label:"Nouveau",color:"#3C50E0",bg:"#EEF2FF"},
-  en_cours:{label:"En cours",color:"#F59E0B",bg:"#FEF3C7"},
-  traite:{label:"Traité",color:"#10B981",bg:"#D1FAE5"},
-  rejete:{label:"Rejeté",color:"#EF4444",bg:"#FEE2E2"},
+  nouveau:  {label:"Nouveau",    color:"#3C50E0",bg:"#EEF2FF"},
+  en_cours: {label:"En cours",   color:"#F59E0B",bg:"#FEF3C7"},
+  traite:   {label:"Traité",     color:"#10B981",bg:"#D1FAE5"},
+  rejete:   {label:"Refusé",     color:"#EF4444",bg:"#FEE2E2"},
 };
 const STATUT_RDV: Record<string,{label:string;color:string;bg:string}> = {
-  nouveau:{label:"Nouveau",color:"#3C50E0",bg:"#EEF2FF"},
-  confirme:{label:"Confirmé",color:"#10B981",bg:"#D1FAE5"},
-  termine:{label:"Terminé",color:"#6B7280",bg:"#F3F4F6"},
-  annule:{label:"Annulé",color:"#EF4444",bg:"#FEE2E2"},
+  nouveau:  {label:"À confirmer",color:"#3C50E0",bg:"#EEF2FF"},
+  confirme: {label:"Confirmé",   color:"#10B981",bg:"#D1FAE5"},
+  termine:  {label:"Terminé",    color:"#6B7280",bg:"#F3F4F6"},
+  annule:   {label:"Annulé",     color:"#EF4444",bg:"#FEE2E2"},
 };
 
 function fmt(d:string){return new Date(d).toLocaleDateString("fr-FR",{day:"2-digit",month:"short"});}
 
+// ─── Sparkline ────────────────────────────────────────────────────────────────
 function Sparkline({values,color}:{values:number[];color:string}){
   if(values.length<2)return null;
   const w=120,h=40,max=Math.max(...values,1);
@@ -47,6 +63,7 @@ function Sparkline({values,color}:{values:number[];color:string}){
   );
 }
 
+// ─── KPI Card ─────────────────────────────────────────────────────────────────
 interface KpiProps{label:string;value:number|string;delta?:number;deltaLabel?:string;deltaUp?:boolean;icon:LucideIcon;color:string;colorLt:string;href:string;chart?:number[];}
 function KpiCard({label,value,delta,deltaLabel,deltaUp,icon:Icon,color,colorLt,href,chart}:KpiProps){
   return(
@@ -75,6 +92,7 @@ function KpiCard({label,value,delta,deltaLabel,deltaUp,icon:Icon,color,colorLt,h
   );
 }
 
+// ─── Barres de statut ─────────────────────────────────────────────────────────
 function StatutBars({data,statuts}:{data:Record<string,number>;statuts:Record<string,{label:string;color:string;bg:string}>}){
   const total=Object.values(data).reduce((a,b)=>a+b,0)||1;
   return(
@@ -84,7 +102,7 @@ function StatutBars({data,statuts}:{data:Record<string,number>;statuts:Record<st
         const pct=Math.round((v/total)*100);
         return(
           <div key={k} className="flex items-center gap-3">
-            <span className="text-xs text-gray-500 w-16 shrink-0">{s.label}</span>
+            <span className="text-xs text-gray-500 w-20 shrink-0">{s.label}</span>
             <div className="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden">
               <div className="h-full rounded-full transition-all duration-700" style={{width:`${Math.max(pct,2)}%`,background:s.color}}/>
             </div>
@@ -96,6 +114,7 @@ function StatutBars({data,statuts}:{data:Record<string,number>;statuts:Record<st
   );
 }
 
+// ─── Barres hebdomadaires ─────────────────────────────────────────────────────
 function WeekBars({values,color}:{values:number[];color:string}){
   const days=["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"];
   const max=Math.max(...values,1);
@@ -112,10 +131,215 @@ function WeekBars({values,color}:{values:number[];color:string}){
   );
 }
 
+// ─── Suggestions rapides pour l'assistant ────────────────────────────────────
+const QUICK_QUESTIONS = [
+  "Quels devis sont en attente ?",
+  "Combien de RDV à confirmer ?",
+  "Résume les messages non lus",
+  "Que dois-je faire aujourd'hui ?",
+];
+
+// ─── Assistant IA intégré ─────────────────────────────────────────────────────
+interface AiMessage { role: "user"|"assistant"; content: string; ts: Date; }
+
+function DashboardAssistant({ stats }: { stats: DashboardStats | null }) {
+  const [open,     setOpen]     = useState(false);
+  const [input,    setInput]    = useState("");
+  const [messages, setMessages] = useState<AiMessage[]>([]);
+  const [loading,  setLoading]  = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef  = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, open]);
+
+  const send = useCallback(async (text: string) => {
+    if (!text.trim() || loading) return;
+    setInput("");
+    const userMsg: AiMessage = { role: "user", content: text.trim(), ts: new Date() };
+    setMessages(prev => [...prev, userMsg]);
+    setLoading(true);
+
+    // Contexte compact du dashboard
+    const statsContext = stats ? `
+DONNÉES DU SITE EN CE MOMENT :
+- Devis reçus : ${stats.devis.total} total, dont ${stats.devis.par_statut.nouveau ?? 0} nouveaux en attente
+- Rendez-vous : ${stats.rdv.total} total, dont ${stats.rdv.par_statut.nouveau ?? 0} à confirmer
+- Messages : ${stats.messages.non_lus} non lus
+- Catalogue : ${stats.catalogue.produits} produits, ${stats.catalogue.marques} marques, ${stats.catalogue.categories} catégories
+- Derniers devis : ${stats.recents.devis.slice(0,3).map(d=>`${d.nom} (${STATUT_DEVIS[d.statut]?.label??d.statut})`).join(", ") || "aucun"}
+` : "";
+
+    const systemPrompt = `Tu es l'assistant de gestion du site Espace Vert, une entreprise tunisienne spécialisée dans les espaces verts et le jardinage.
+
+Tu aides les administrateurs du site à gérer les demandes clients (devis, rendez-vous, messages), le catalogue de produits, et le contenu du site.
+
+RÈGLES IMPORTANTES :
+- Réponds toujours en français, de façon claire et simple
+- Pas de jargon technique : dis "demandes" au lieu de "CRM", "catalogue" au lieu de "BDD"
+- Sois direct et concis — les admins sont occupés
+- Quand tu conseilles une action, dis précisément où aller dans le menu
+- Si tu n'as pas l'information, dis-le clairement
+
+${statsContext}`;
+
+    try {
+      const history = messages.slice(-6).map(m => ({ role: m.role, content: m.content }));
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 800,
+          system: systemPrompt,
+          messages: [...history, { role: "user", content: text.trim() }],
+        }),
+      });
+      const data = await res.json();
+      const reply = data?.content?.[0]?.text ?? "Désolé, je n'ai pas pu répondre. Réessayez.";
+      setMessages(prev => [...prev, { role: "assistant", content: reply, ts: new Date() }]);
+    } catch {
+      setMessages(prev => [...prev, { role: "assistant", content: "Erreur de connexion. Vérifiez la configuration.", ts: new Date() }]);
+    } finally {
+      setLoading(false);
+    }
+  }, [messages, loading, stats]);
+
+  const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); }
+  };
+
+  return (
+    <div className="bg-white rounded-xl border overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
+      {/* En-tête cliquable */}
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#f0fdf4" }}>
+            <Bot size={18} style={{ color: "#2e7d4f" }} />
+          </div>
+          <div className="text-left">
+            <p className="text-sm font-bold text-gray-800">Assistant IA</p>
+            <p className="text-xs text-gray-400">Posez une question sur votre site ou vos clients</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {messages.length > 0 && (
+            <span className="text-xs bg-green-100 text-green-700 font-semibold px-2 py-0.5 rounded-full">
+              {messages.filter(m => m.role === "assistant").length} réponses
+            </span>
+          )}
+          {open ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+        </div>
+      </button>
+
+      {/* Panneau dépliable */}
+      {open && (
+        <div style={{ borderTop: "1px solid #F1F5F9" }}>
+          {/* Suggestions rapides */}
+          {messages.length === 0 && (
+            <div className="px-6 pt-4 pb-2">
+              <p className="text-xs text-gray-400 mb-3 font-medium">Questions fréquentes :</p>
+              <div className="flex flex-wrap gap-2">
+                {QUICK_QUESTIONS.map(q => (
+                  <button key={q} onClick={() => send(q)}
+                    className="text-xs px-3 py-1.5 rounded-full border font-medium transition-colors hover:bg-green-50"
+                    style={{ borderColor: "#a7f3d0", color: "#047857" }}>
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Conversation */}
+          {messages.length > 0 && (
+            <div className="px-6 py-4 space-y-4 max-h-80 overflow-y-auto">
+              {messages.map((m, i) => (
+                <div key={i} className={`flex gap-3 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                    m.role === "user" ? "bg-green-600 text-white" : "bg-gray-100 text-gray-500"
+                  }`}>
+                    {m.role === "user" ? "V" : <Bot size={13} />}
+                  </div>
+                  <div className={`max-w-[78%] rounded-xl px-4 py-3 text-sm leading-relaxed ${
+                    m.role === "user"
+                      ? "bg-green-600 text-white rounded-tr-sm"
+                      : "bg-gray-50 text-gray-700 rounded-tl-sm border border-gray-100"
+                  }`} style={{ whiteSpace: "pre-wrap" }}>
+                    {m.content}
+                  </div>
+                </div>
+              ))}
+              {loading && (
+                <div className="flex gap-3">
+                  <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                    <Bot size={13} className="text-gray-400" />
+                  </div>
+                  <div className="bg-gray-50 rounded-xl rounded-tl-sm px-4 py-3 flex gap-1.5 items-center border border-gray-100">
+                    {[0,1,2].map(i => (
+                      <span key={i} className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: `${i*0.15}s` }} />
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div ref={bottomRef} />
+            </div>
+          )}
+
+          {/* Zone de saisie */}
+          <div className="px-6 pb-5 pt-2 flex gap-3 items-end">
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKey}
+              placeholder="Posez votre question… (Entrée pour envoyer)"
+              rows={1}
+              className="flex-1 resize-none rounded-xl border px-4 py-3 text-sm outline-none transition-all"
+              style={{
+                borderColor: "#E2E8F0", background: "#F8FAFC", color: "#1f2937",
+                maxHeight: 120, minHeight: 44,
+              }}
+              onFocus={e => (e.currentTarget.style.borderColor = "#2e7d4f")}
+              onBlur={e => (e.currentTarget.style.borderColor = "#E2E8F0")}
+            />
+            <div className="flex gap-2 shrink-0">
+              {messages.length > 0 && (
+                <button onClick={() => setMessages([])} title="Effacer la conversation"
+                  className="w-10 h-10 rounded-xl border flex items-center justify-center text-gray-400 hover:text-red-500 hover:border-red-200 transition-colors"
+                  style={{ borderColor: "#E2E8F0" }}>
+                  <Trash2 size={14} />
+                </button>
+              )}
+              <button
+                onClick={() => send(input)}
+                disabled={!input.trim() || loading}
+                className="w-10 h-10 rounded-xl flex items-center justify-center transition-all"
+                style={{
+                  background: input.trim() && !loading ? "#2e7d4f" : "#f3f4f6",
+                  color: input.trim() && !loading ? "#fff" : "#9ca3af",
+                  cursor: input.trim() && !loading ? "pointer" : "default",
+                }}>
+                <Send size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Page principale ──────────────────────────────────────────────────────────
 export default function AdminDashboard(){
-  const [stats,setStats]=useState<DashboardStats|null>(null);
-  const [loading,setLoading]=useState(true);
-  const [error,setError]=useState("");
+  const [stats,   setStats]   = useState<DashboardStats|null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState("");
+
   useEffect(()=>{
     let active = true;
     let es: EventSource | null = null;
@@ -174,26 +398,28 @@ export default function AdminDashboard(){
   if(error)return<div className="rounded-xl bg-red-50 border border-red-200 p-8 text-center text-red-600 text-sm">{error}</div>;
   if(!stats)return null;
 
-  const devisTotal=stats.devis.total,rdvTotal=stats.rdv.total;
-  const devisNew=stats.devis.par_statut.nouveau??0,rdvNew=stats.rdv.par_statut.nouveau??0;
-  const msgNonLus=stats.messages.non_lus;
-  const catalogTotal=stats.catalogue.produits+stats.catalogue.marques+stats.catalogue.categories+stats.catalogue.activites+stats.catalogue.actualites+stats.catalogue.faqs;
-  const devisWeek=[Math.max(0,devisTotal-9),Math.max(0,devisTotal-7),Math.max(0,devisTotal-5),Math.max(0,devisTotal-4),Math.max(0,devisTotal-2),Math.max(0,devisTotal-1),devisTotal];
-  const rdvWeek=[Math.max(0,rdvTotal-7),Math.max(0,rdvTotal-6),Math.max(0,rdvTotal-4),Math.max(0,rdvTotal-3),Math.max(0,rdvTotal-2),rdvTotal,rdvTotal];
+  const devisTotal  = stats.devis.total;
+  const rdvTotal    = stats.rdv.total;
+  const devisNew    = stats.devis.par_statut.nouveau ?? 0;
+  const rdvNew      = stats.rdv.par_statut.nouveau ?? 0;
+  const msgNonLus   = stats.messages.non_lus;
+  const catalogTotal= stats.catalogue.produits+stats.catalogue.marques+stats.catalogue.categories+stats.catalogue.activites+stats.catalogue.actualites+stats.catalogue.faqs;
+  const devisWeek   = [Math.max(0,devisTotal-9),Math.max(0,devisTotal-7),Math.max(0,devisTotal-5),Math.max(0,devisTotal-4),Math.max(0,devisTotal-2),Math.max(0,devisTotal-1),devisTotal];
+  const rdvWeek     = [Math.max(0,rdvTotal-7),Math.max(0,rdvTotal-6),Math.max(0,rdvTotal-4),Math.max(0,rdvTotal-3),Math.max(0,rdvTotal-2),rdvTotal,rdvTotal];
 
   const catalogItems=[
-    {label:"Produits",val:stats.catalogue.produits,icon:Package,href:"/admin/produits",color:P.green,colorLt:P.greenLt},
-    {label:"Marques",val:stats.catalogue.marques,icon:Tag,href:"/admin/marques",color:P.purple,colorLt:P.purpLt},
-    {label:"Catégories",val:stats.catalogue.categories,icon:Layers,href:"/admin/categories",color:P.amber,colorLt:P.amberLt},
-    {label:"Activités",val:stats.catalogue.activites,icon:Activity,href:"/admin/activites",color:P.blue,colorLt:P.blueLt},
-    {label:"Actualités",val:stats.catalogue.actualites,icon:Newspaper,href:"/admin/actualites",color:"#DB2777",colorLt:"#FCE7F3"},
-    {label:"FAQ",val:stats.catalogue.faqs,icon:HelpCircle,href:"/admin/faq",color:"#0D9488",colorLt:"#CCFBF1"},
+    {label:"Produits",    val:stats.catalogue.produits,   icon:Package,    href:"/admin/produits",    color:P.green,   colorLt:P.greenLt},
+    {label:"Marques",     val:stats.catalogue.marques,    icon:Tag,        href:"/admin/marques",     color:P.purple,  colorLt:P.purpLt},
+    {label:"Catégories",  val:stats.catalogue.categories, icon:Layers,     href:"/admin/categories",  color:P.amber,   colorLt:P.amberLt},
+    {label:"Activités",   val:stats.catalogue.activites,  icon:Activity,   href:"/admin/activites",   color:P.blue,    colorLt:P.blueLt},
+    {label:"Actualités",  val:stats.catalogue.actualites, icon:Newspaper,  href:"/admin/actualites",  color:"#DB2777", colorLt:"#FCE7F3"},
+    {label:"FAQ",         val:stats.catalogue.faqs,       icon:HelpCircle, href:"/admin/faq",         color:"#0D9488", colorLt:"#CCFBF1"},
   ];
 
   return(
     <div className="space-y-6">
 
-      {/* Header */}
+      {/* En-tête */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800" style={{letterSpacing:"-0.04em"}}>Tableau de bord</h1>
@@ -208,21 +434,45 @@ export default function AdminDashboard(){
         </Link>
       </div>
 
-      {/* KPI Row */}
+      {/* Chiffres clés */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <KpiCard label="Devis reçus" value={devisTotal} delta={devisNew} deltaLabel="en attente" deltaUp={devisNew>0} icon={FileText} color={P.blue} colorLt={P.blueLt} href="/admin/devis" chart={devisWeek}/>
-        <KpiCard label="Rendez-vous" value={rdvTotal} delta={rdvNew} deltaLabel="à confirmer" deltaUp={rdvNew>0} icon={Calendar} color={P.green} colorLt={P.greenLt} href="/admin/rdv" chart={rdvWeek}/>
-        <KpiCard label="Messages non lus" value={msgNonLus} deltaLabel={msgNonLus>0?"en attente de réponse":"tout est lu ✓"} icon={MessageSquare} color={P.amber} colorLt={P.amberLt} href="/admin/contact"/>
-        <KpiCard label="Catalogue total" value={catalogTotal} deltaLabel="éléments publiés" icon={Package} color={P.purple} colorLt={P.purpLt} href="/admin/produits"/>
+        <KpiCard
+          label="Demandes de devis"
+          value={devisTotal}
+          delta={devisNew}
+          deltaLabel={devisNew > 0 ? `en attente de réponse` : "tout est traité ✓"}
+          deltaUp={devisNew > 0}
+          icon={FileText} color={P.blue} colorLt={P.blueLt} href="/admin/devis" chart={devisWeek}
+        />
+        <KpiCard
+          label="Rendez-vous"
+          value={rdvTotal}
+          delta={rdvNew}
+          deltaLabel={rdvNew > 0 ? "à confirmer" : "tous confirmés ✓"}
+          deltaUp={rdvNew > 0}
+          icon={Calendar} color={P.green} colorLt={P.greenLt} href="/admin/rdv" chart={rdvWeek}
+        />
+        <KpiCard
+          label="Messages non lus"
+          value={msgNonLus}
+          deltaLabel={msgNonLus > 0 ? "en attente de réponse" : "tout est lu ✓"}
+          icon={MessageSquare} color={P.amber} colorLt={P.amberLt} href="/admin/contact"
+        />
+        <KpiCard
+          label="Éléments du catalogue"
+          value={catalogTotal}
+          deltaLabel="produits, marques, catégories…"
+          icon={Package} color={P.purple} colorLt={P.purpLt} href="/admin/produits"
+        />
       </div>
 
-      {/* Charts row */}
+      {/* Graphiques */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         <div className="xl:col-span-2 bg-white rounded-xl border p-5" style={{borderColor:"#E2E8F0"}}>
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-base font-bold text-gray-800">Activité cette semaine</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Devis et rendez-vous</p>
+              <p className="text-xs text-gray-400 mt-0.5">Demandes de devis et rendez-vous</p>
             </div>
             <div className="flex items-center gap-4 text-xs text-gray-400">
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full inline-block" style={{background:P.blue}}/>Devis</span>
@@ -230,7 +480,7 @@ export default function AdminDashboard(){
             </div>
           </div>
           <div className="grid grid-cols-2 gap-6">
-            <div><p className="text-xs text-gray-400 mb-3">Devis</p><WeekBars values={devisWeek} color={P.blue}/></div>
+            <div><p className="text-xs text-gray-400 mb-3">Demandes de devis</p><WeekBars values={devisWeek} color={P.blue}/></div>
             <div><p className="text-xs text-gray-400 mb-3">Rendez-vous</p><WeekBars values={rdvWeek} color={P.green}/></div>
           </div>
           <div className="mt-5 pt-4 border-t flex items-center gap-6" style={{borderColor:"#F1F5F9"}}>
@@ -243,14 +493,20 @@ export default function AdminDashboard(){
         <div className="bg-white rounded-xl border flex flex-col" style={{borderColor:"#E2E8F0"}}>
           <div className="p-5 border-b" style={{borderColor:"#F1F5F9"}}>
             <div className="flex items-center justify-between mb-4">
-              <div><h2 className="text-sm font-bold text-gray-800">Statuts devis</h2><p className="text-xs text-gray-400">{devisTotal} au total</p></div>
+              <div>
+                <h2 className="text-sm font-bold text-gray-800">État des devis</h2>
+                <p className="text-xs text-gray-400">{devisTotal} au total</p>
+              </div>
               <Link href="/admin/devis" className="text-xs font-semibold flex items-center gap-0.5" style={{color:P.blue}}>Voir <ArrowRight size={11}/></Link>
             </div>
             <StatutBars data={stats.devis.par_statut} statuts={STATUT_DEVIS}/>
           </div>
           <div className="p-5 flex-1">
             <div className="flex items-center justify-between mb-4">
-              <div><h2 className="text-sm font-bold text-gray-800">Statuts RDV</h2><p className="text-xs text-gray-400">{rdvTotal} au total</p></div>
+              <div>
+                <h2 className="text-sm font-bold text-gray-800">État des rendez-vous</h2>
+                <p className="text-xs text-gray-400">{rdvTotal} au total</p>
+              </div>
               <Link href="/admin/rdv" className="text-xs font-semibold flex items-center gap-0.5" style={{color:P.green}}>Voir <ArrowRight size={11}/></Link>
             </div>
             <StatutBars data={stats.rdv.par_statut} statuts={STATUT_RDV}/>
@@ -258,7 +514,10 @@ export default function AdminDashboard(){
         </div>
       </div>
 
-      {/* Catalogue table */}
+      {/* Assistant IA — intégré ici, un seul endroit */}
+      <DashboardAssistant stats={stats} />
+
+      {/* Catalogue */}
       <div className="bg-white rounded-xl border overflow-hidden" style={{borderColor:"#E2E8F0"}}>
         <div className="flex items-center justify-between px-6 py-4 border-b" style={{borderColor:"#F1F5F9"}}>
           <div>
@@ -307,12 +566,12 @@ export default function AdminDashboard(){
         </div>
       </div>
 
-      {/* Recent Activity */}
+      {/* Activité récente */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {stats.recents.devis.length>0&&(
+        {stats.recents.devis.length > 0 && (
           <div className="bg-white rounded-xl border overflow-hidden" style={{borderColor:"#E2E8F0"}}>
             <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:"#F1F5F9"}}>
-              <h2 className="text-sm font-bold text-gray-800">Derniers devis</h2>
+              <h2 className="text-sm font-bold text-gray-800">Dernières demandes</h2>
               <Link href="/admin/devis" className="text-xs font-semibold flex items-center gap-0.5" style={{color:P.blue}}>Tout voir <ArrowRight size={11}/></Link>
             </div>
             <div className="divide-y" style={{borderColor:"#F8FAFC"}}>
@@ -336,11 +595,11 @@ export default function AdminDashboard(){
           </div>
         )}
 
-        {stats.recents.messages.length>0&&(
+        {stats.recents.messages.length > 0 && (
           <div className="bg-white rounded-xl border overflow-hidden" style={{borderColor:"#E2E8F0"}}>
             <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:"#F1F5F9"}}>
               <div>
-                <h2 className="text-sm font-bold text-gray-800">Messages</h2>
+                <h2 className="text-sm font-bold text-gray-800">Messages reçus</h2>
                 {msgNonLus>0&&<p className="text-xs font-semibold mt-0.5" style={{color:P.amber}}>{msgNonLus} non lu{msgNonLus>1?"s":""}</p>}
               </div>
               <Link href="/admin/contact" className="text-xs font-semibold flex items-center gap-0.5" style={{color:P.amber}}>Tout voir <ArrowRight size={11}/></Link>
@@ -363,12 +622,12 @@ export default function AdminDashboard(){
           </div>
         )}
 
-        {stats.recents.rdv?.length>0&&(
+        {stats.recents.rdv?.length > 0 && (
           <div className="bg-white rounded-xl border overflow-hidden" style={{borderColor:"#E2E8F0"}}>
             <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:"#F1F5F9"}}>
               <div>
-                <h2 className="text-sm font-bold text-gray-800">Prochains RDV</h2>
-                <p className="text-xs text-gray-400 mt-0.5">{rdvNew} à confirmer</p>
+                <h2 className="text-sm font-bold text-gray-800">Prochains rendez-vous</h2>
+                <p className="text-xs text-gray-400 mt-0.5">{rdvNew > 0 ? `${rdvNew} à confirmer` : "Tous confirmés"}</p>
               </div>
               <Link href="/admin/rdv" className="text-xs font-semibold flex items-center gap-0.5" style={{color:P.green}}>Tout voir <ArrowRight size={11}/></Link>
             </div>

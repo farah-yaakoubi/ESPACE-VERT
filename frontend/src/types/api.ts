@@ -27,6 +27,9 @@ export interface ApiError {
 
 export type ApiResponse<T> = ApiSuccess<T> | ApiError;
 
+export type LocaleCode = "fr" | "ar" | "en";
+export type EntityTranslations = Partial<Record<LocaleCode, Record<string, string | null>>>;
+
 // ── Marque  (GET /api/marques, GET /api/marques/:slug) ────────────────────────
 
 export interface Marque {
@@ -36,7 +39,9 @@ export interface Marque {
   logo:        string | null;
   banniere:    string | null;
   description: string | null;
+  translations?: EntityTranslations | null;
   actif:       boolean;
+  type_marque: "groupe" | "partenaire";
 }
 
 /** Shape returned by GET /api/marques/:slug — includes produits */
@@ -50,6 +55,7 @@ export interface MarqueCategorie {
   nom:          string;
   slug:         string;
   description:  string | null;
+  translations?: EntityTranslations | null;
   image:        string | null;
   id_activite:  number | null;
   parent_id:    number | null;
@@ -62,6 +68,7 @@ export interface Activite {
   nom:         string;
   slug:        string;
   description: string | null;
+  translations?: EntityTranslations | null;
   image:       string | null;
   banniere:    string | null;
   ordre:       number;
@@ -78,6 +85,7 @@ export interface ActiviteCategorie {
   nom:          string;
   slug:         string;
   description:  string | null;
+  translations?: EntityTranslations | null;
   image:        string | null;
   parent_id:    number | null;
   id_marque:    number | null;
@@ -90,6 +98,7 @@ export interface Categorie {
   nom:          string;
   slug:         string;
   description:  string | null;
+  translations?: EntityTranslations | null;
   image:        string | null;
   id_marque:    number | null;
   id_activite:  number | null;
@@ -112,16 +121,20 @@ export interface ProduitImage {
 
 export interface ProduitCard {
   id_categorie:    number;
-  id_marque:       number;
+  id_marque:       number | null;
+  id_activite?:    number | null;
   id_produit:      number;
   nom:             string;
   slug:            string;
   description:     string | null;
+  translations?:   EntityTranslations | null;
   fiche_technique: string | null;
   division:        string;
   tags:            unknown;
   created_at:      string;
-  categorie:       { nom: string; slug: string };
+  categorie:       { nom: string; slug: string; translations?: EntityTranslations | null };
+  marque?:         { nom: string; slug: string; logo?: string | null; translations?: EntityTranslations | null } | null;
+  activite?:       { nom: string; slug: string; translations?: EntityTranslations | null } | null;
   images:          { url: string; alt: string | null }[];
 }
 
@@ -132,6 +145,7 @@ export interface Produit {
   nom:             string;
   slug:            string;
   description:     string | null;
+  translations?:   EntityTranslations | null;
   fiche_technique: string | null;
   division:        string;
   tags:            string[];
@@ -146,15 +160,19 @@ export interface Produit {
     id_categorie: number;
     nom:          string;
     slug:         string;
+    translations?: EntityTranslations | null;
     parent:       { nom: string; slug: string } | null;
     sous_cats:    { nom: string; slug: string }[];
+    activite?:    { nom: string; slug: string } | null;
   };
   marque: {
     nom:         string;
     slug:        string;
     logo:        string | null;
     description: string | null;
+    translations?: EntityTranslations | null;
   };
+  /** @deprecated Utiliser categorie.activite — conservé pour compatibilité */
   activite?: {
     nom:  string;
     slug: string;
@@ -168,6 +186,7 @@ export interface Actualite {
   id_actualite: number;
   titre:        string;
   contenu:      string;
+  translations?: EntityTranslations | null;
   image:        string | null;
   slug:         string;
   publiee:      boolean;
@@ -223,10 +242,13 @@ export interface CategorieDetailProduit {
   nom:          string;
   slug:         string;
   description:  string | null;
+  translations?: EntityTranslations | null;
   division:     string;
   tags:         unknown;
   ordre:        number;
   id_categorie: number;
+  marque?:      { nom: string; slug: string; logo?: string | null; translations?: EntityTranslations | null } | null;
+  activite?:    { nom: string; slug: string; translations?: EntityTranslations | null } | null;
   images:       { url: string; alt: string | null }[];
 }
 
@@ -235,6 +257,7 @@ export interface CategorieDetailSousCat {
   nom:          string;
   slug:         string;
   description:  string | null;
+  translations?: EntityTranslations | null;
   image:        string | null;
   ordre:        number;
   produits:     CategorieDetailProduit[];
@@ -245,6 +268,7 @@ export interface CategorieDetail {
   nom:          string;
   slug:         string;
   description:  string | null;
+  translations?: EntityTranslations | null;
   image:        string | null;
   parent_id:    number | null;
   parent:       { nom: string; slug: string } | null;

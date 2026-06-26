@@ -8,12 +8,16 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ProduitCard } from "@/types/api";
+import { useI18n } from "@/i18n/I18nProvider";
+import { translatedField } from "@/i18n/translated-field";
+import type { Locale } from "@/i18n/config";
 
 export interface CatNode {
   id_categorie: number;
   nom:          string;
   slug:         string;
   parent_id:    number | null;
+  translations?: ProduitCard["translations"];
   ordre?:       number;
   image?:       string | null;
   sous_cats?:   CatNode[];
@@ -80,11 +84,20 @@ function extractDivisions(produits: ProduitCard[]): string[] {
   return [...set].sort((a, b) => a.localeCompare(b, "fr"));
 }
 
+function labelOf(item: { nom: string; translations?: ProduitCard["translations"] | null }, locale: Locale) {
+  return translatedField(item as any, "nom", locale) || item.nom;
+}
+
+function descriptionOf(item: { description?: string | null; translations?: ProduitCard["translations"] | null }, locale: Locale) {
+  return translatedField(item as any, "description", locale) || item.description || "";
+}
+
 /* Count produits that would match a given cat (considering other filters too) */
 function countForCat(
   produits: ProduitCard[],
   catIds: Set<number>,
   filters: FilterState,
+  locale: Locale,
 ): number {
   return produits.filter(p => {
     if (!catIds.has((p as any).id_categorie)) return false;
@@ -97,7 +110,9 @@ function countForCat(
     if (filters.divisions.length > 0 && !filters.divisions.includes(p.division)) return false;
     if (filters.search.trim()) {
       const q = filters.search.toLowerCase();
-      if (!p.nom.toLowerCase().includes(q) && !(p.description ?? "").toLowerCase().includes(q)) return false;
+      const name = labelOf(p, locale).toLowerCase();
+      const description = descriptionOf(p, locale).toLowerCase();
+      if (!name.includes(q) && !description.includes(q)) return false;
     }
     return true;
   }).length;
@@ -153,7 +168,7 @@ function FilterSection({
 
 /** Single cat tree node */
 function CatTreeNode({
-  node, depth, activeCatId, openSet, produits, filters, onSelect, onToggle,
+  node, depth, activeCatId, openSet, produits, filters, locale, onSelect, onToggle,
 }: {
   node:        CatNode;
   depth:       number;
@@ -161,6 +176,7 @@ function CatTreeNode({
   openSet:     Set<number>;
   produits:    ProduitCard[];
   filters:     FilterState;
+  locale:      Locale;
   onSelect:    (id: number | null) => void;
   onToggle:    (id: number) => void;
 }) {
@@ -169,9 +185,10 @@ function CatTreeNode({
   const isActive = activeCatId === node.id_categorie;
   const catIds   = useMemo(() => collectIds(node), [node]);
   const count    = useMemo(
-    () => countForCat(produits, catIds, { ...filters, categoryId: null }),
-    [produits, catIds, filters]
+    () => countForCat(produits, catIds, { ...filters, categoryId: null }, locale),
+    [produits, catIds, filters, locale]
   );
+  const label = labelOf(node, locale);
 
   const hasActiveChild = hasKids && activeCatId !== null && (() => {
     const ids = collectIds(node); ids.delete(node.id_categorie); return ids.has(activeCatId);
@@ -203,7 +220,7 @@ function CatTreeNode({
             depth > 0 ? "w-1.5 h-1.5" : "w-2 h-2",
             isActive ? "bg-white" : hasActiveChild ? "bg-ev-500" : depth > 0 ? "bg-gray-300" : "bg-ev-500",
           )} />
-          <span className="truncate flex-1">{node.nom}</span>
+          <span className="truncate flex-1">{label}</span>
         </button>
 
         {/* Toggle children */}
@@ -237,6 +254,7 @@ function CatTreeNode({
               openSet={openSet}
               produits={produits}
               filters={filters}
+              locale={locale}
               onSelect={onSelect}
               onToggle={onToggle}
             />
@@ -258,6 +276,7 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 /* ── Main FilterPanel ────────────────────────────────────────────────────── */
 
 export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCategoryClick }: FilterPanelProps) {
+  const { locale, t } = useI18n();
   const [openSet,      setOpenSet]      = useState<Set<number>>(new Set());
   const [mobileOpen,   setMobileOpen]   = useState(false);
   const drawerRef                        = useRef<HTMLDivElement>(null);
@@ -334,7 +353,7 @@ export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCat
       <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-1">
         <div className="flex items-center gap-2">
           <SlidersVertical size={14} className="text-ev-600" />
-          <span className="text-sm font-bold text-gray-800">Filtres</span>
+          <span className="text-sm font-bold text-gray-800">{t("catalog.filters", "Filtres")}</span>
         </div>
         {activeCount > 0 && (
           <button
@@ -342,7 +361,7 @@ export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCat
             className="flex items-center gap-1 text-xs text-gray-400 hover:text-ev-700 transition-colors"
           >
             <X size={11} />
-            Tout effacer
+            {t("catalog.clearAll", "Tout effacer")}
           </button>
         )}
       </div>
@@ -355,7 +374,7 @@ export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCat
             type="text"
             value={filters.search}
             onChange={e => onChange({ ...filters, search: e.target.value })}
-            placeholder="Rechercher un produit…"
+            placeholder={t("catalog.searchProduct", "Rechercher un produit...")}
             className="w-full h-8 pl-8 pr-3 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ev-400 bg-white placeholder:text-gray-400"
           />
           {filters.search && (
@@ -384,13 +403,13 @@ export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCat
             filters.categoryId === null && filters.tags.length === 0 && filters.divisions.length === 0
               ? "text-white/70" : "text-ev-500"
           } />
-          <span className="flex-1 text-left">Tous les produits</span>
+          <span className="flex-1 text-left">{t("catalog.allProducts", "Tous les produits")}</span>
         </button>
       </div>
 
       {/* Categories */}
       {tree.length > 0 && (
-        <FilterSection label="Catégories" icon={<LayoutGrid size={11} />}>
+        <FilterSection label={t("catalog.categories", "Catégories")} icon={<LayoutGrid size={11} />}>
           <div className="space-y-0.5">
             {tree.map(node => (
               <CatTreeNode
@@ -401,6 +420,7 @@ export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCat
                 openSet={openSet}
                 produits={produits}
                 filters={filters}
+                locale={locale}
                 onSelect={handleCatSelect}
                 onToggle={handleCatToggle}
               />
@@ -411,7 +431,7 @@ export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCat
 
       {/* Divisions / Gammes */}
       {allDivisions.length > 1 && (
-        <FilterSection label="Gamme" icon={<SlidersHorizontal size={11} />} defaultOpen={false}>
+        <FilterSection label={t("catalog.range", "Gamme")} icon={<SlidersHorizontal size={11} />} defaultOpen={false}>
           <div className="space-y-1">
             {allDivisions.map(div => {
               const active = filters.divisions.includes(div);
@@ -466,7 +486,7 @@ export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCat
       )}
 
       {/* Tri */}
-      <FilterSection label="Trier par" icon={<ArrowUpDown size={11} />} defaultOpen={false}>
+        <FilterSection label={t("catalog.sortBy", "Trier par")} icon={<ArrowUpDown size={11} />} defaultOpen={false}>
         <div className="space-y-1">
           {SORT_OPTIONS.map(opt => (
             <button
@@ -509,7 +529,7 @@ export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCat
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 shadow-sm text-sm font-medium text-gray-700 hover:border-ev-300 hover:text-ev-700 transition-all shrink-0"
           >
             <SlidersVertical size={14} className="text-ev-600" />
-            Filtres
+            {t("catalog.filters", "Filtres")}
             {activeCount > 0 && (
               <span className="bg-ev-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                 {activeCount}
@@ -521,7 +541,7 @@ export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCat
               onClick={handleReset}
               className="ml-auto text-xs text-gray-400 hover:text-ev-700 flex items-center gap-1 shrink-0 transition-colors"
             >
-              <X size={11} /> Effacer
+              <X size={11} /> {t("catalog.clear", "Effacer")}
             </button>
           )}
         </div>
@@ -532,7 +552,7 @@ export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCat
             const node = findNode(tree, filters.categoryId);
             return node ? (
               <span key="cat" className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full bg-ev-100 text-ev-800 text-xs font-medium border border-ev-200">
-                {node.nom}
+                {labelOf(node, locale)}
                 <button onClick={() => onChange({ ...filters, categoryId: null })}><X size={10} /></button>
               </span>
             ) : null;
@@ -572,7 +592,7 @@ export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCat
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <SlidersVertical size={15} className="text-ev-600" />
-            <span className="font-bold text-gray-800">Filtres</span>
+            <span className="font-bold text-gray-800">{t("catalog.filters", "Filtres")}</span>
             {activeCount > 0 && (
               <span className="bg-ev-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                 {activeCount}
@@ -598,13 +618,13 @@ export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCat
             onClick={handleReset}
             className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 font-medium hover:bg-gray-50 transition-colors"
           >
-            Effacer
+            {t("catalog.clear", "Effacer")}
           </button>
           <button
             onClick={() => setMobileOpen(false)}
             className="flex-1 py-2.5 rounded-xl bg-ev-700 text-white text-sm font-semibold hover:bg-ev-800 transition-colors"
           >
-            Voir les résultats
+            {t("catalog.viewResults", "Voir les résultats")}
           </button>
         </div>
       </div>
@@ -617,6 +637,7 @@ export function applyFilters(
   produits:    ProduitCard[],
   filters:     FilterState,
   tree:        CatNode[],
+  locale:      Locale = "fr",
 ): ProduitCard[] {
   let list = produits;
 
@@ -648,15 +669,15 @@ export function applyFilters(
   if (filters.search.trim()) {
     const q = filters.search.toLowerCase();
     list = list.filter(p =>
-      p.nom.toLowerCase().includes(q) ||
-      (p.description ?? "").toLowerCase().includes(q)
+      labelOf(p, locale).toLowerCase().includes(q) ||
+      descriptionOf(p, locale).toLowerCase().includes(q)
     );
   }
 
   // Sort
   list = [...list];
-  if (filters.sort === "nom_asc")  list.sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
-  if (filters.sort === "nom_desc") list.sort((a, b) => b.nom.localeCompare(a.nom, "fr"));
+  if (filters.sort === "nom_asc")  list.sort((a, b) => labelOf(a, locale).localeCompare(labelOf(b, locale), locale));
+  if (filters.sort === "nom_desc") list.sort((a, b) => labelOf(b, locale).localeCompare(labelOf(a, locale), locale));
   if (filters.sort === "newest")   list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return list;

@@ -1,73 +1,101 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const NAV_H = 80;
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   TYPE — structure d'un slide Hero tel que renvoyé par le backend
-   GET /api/hero-slides  →  HeroSlide[]
-   Géré depuis /admin/hero dans le backoffice.
-   ───────────────────────────────────────────────────────────────────────────── */
 export interface HeroSlide {
-  id:           number;
-  image:        string;   // URL desktop — 1920×1080px recommandé
-  imageMobile?: string;   // URL mobile — 768×960px portrait (optionnel)
-  imageTablet?: string;   // URL tablette — 1200×900px (optionnel)
-  href?:        string;   // Lien cliquable (optionnel)
-  titre?:       string;   // Titre affiché sur l'image
-  sousTitre?:   string;   // Sous-titre
-  ctaLabel?:    string;   // Texte du bouton CTA
-  /**
-   * Position du sujet dans l'image. Utilise la syntaxe CSS object-position.
-   * Exemples : "center 30%", "center bottom", "60% center"
-   * Si non défini, fallback par breakpoint : mobile→bottom, tablet→28%, desktop→32%
-   */
+  id: number;
+  image: string;
+  imageMobile?: string;
+  imageTablet?: string;
+  href?: string;
+  titre?: string;
+  sousTitre?: string;
+  ctaLabel?: string;
   objectPosition?: string;
-  ordre:        number;
-  actif:        boolean;
+  ordre: number;
+  actif: boolean;
 }
 
-/* ── Fallback statique — utilisé si le fetch backend échoue ── */
 const SLIDES_FALLBACK: HeroSlide[] = [
-  { id: 1, image: "/images/hero/semences.webp",  href: "/marques/semences",  ordre: 1, actif: true },
-  { id: 2, image: "/images/hero/fertivert.webp", href: "/marques/fertivert", ordre: 2, actif: true },
-  { id: 3, image: "/images/hero/pulvert.webp",   href: "/marques/pulvert",   ordre: 3, actif: true },
-  { id: 4, image: "/images/hero/jardinage.webp", href: "/marques/jardinage", ordre: 4, actif: true },
-  { id: 5, image: "/images/hero/matar.webp",     href: "/marques/matar",     ordre: 5, actif: true },
+  {
+    id: 1,
+    image: "/images/hero/semences-desktop.webp",
+    imageTablet: "/images/hero/semences-tablette.webp",
+    imageMobile: "/images/hero/semences-mobile.webp",
+    href: "/activites/semences-et-plants",
+    sousTitre:
+      "Des solutions innovantes et durables pour accompagner les professionnels de l'agriculture.",
+    ctaLabel: "Decouvrir nos activites",
+    ordre: 1,
+    actif: true,
+  },
+  {
+    id: 2,
+    image: "/images/hero/fertivert-desktop.webp",
+    imageTablet: "/images/hero/fertivert-tablette.webp",
+    imageMobile: "/images/hero/fertivert-mobile.webp",
+    href: "/marques/fertivert",
+    sousTitre: "Nutrition vegetale et accompagnement technique pour vos exploitations.",
+    ctaLabel: "Explorer Fertivert",
+    ordre: 2,
+    actif: true,
+  },
+  {
+    id: 3,
+    image: "/images/hero/matar-desktop.webp",
+    imageTablet: "/images/hero/matar-tablette.webp",
+    imageMobile: "/images/hero/matar-mobile.webp",
+    href: "/marques/matar",
+    sousTitre: "Des solutions fiables pour mieux piloter vos projets agricoles.",
+    ctaLabel: "Voir nos solutions",
+    ordre: 3,
+    actif: true,
+  },
+  {
+    id: 4,
+    image: "/images/hero/pulvert-desktop.webp",
+    imageTablet: "/images/hero/pulvert-tablette.webp",
+    imageMobile: "/images/hero/pulvert-mobile.webp",
+    href: "/marques/pulvert",
+    sousTitre: "Des equipements et references performants pour une application rigoureuse.",
+    ctaLabel: "Decouvrir Pulvert",
+    ordre: 4,
+    actif: true,
+  },
 ];
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 function useHeroSlides() {
   const [slides, setSlides] = useState<HeroSlide[]>(SLIDES_FALLBACK);
+
   useEffect(() => {
     fetch(`${BASE}/hero-slides?page=home`)
-      .then(r => r.ok ? r.json() : Promise.reject())
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data: HeroSlide[]) => {
-        const actifs = data.filter(s => s.actif).sort((a, b) => a.ordre - b.ordre);
+        const actifs = data.filter((s) => s.actif).sort((a, b) => a.ordre - b.ordre);
         if (actifs.length > 0) setSlides(actifs);
       })
-      .catch(() => {});
+      .catch(() => undefined);
   }, []);
+
   return slides;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Helpers — srcSet & sizes pour charger la bonne résolution selon l'écran
-   ───────────────────────────────────────────────────────────────────────────── */
 function buildSrcSet(slide: HeroSlide): string {
-  const mobile  = slide.imageMobile ?? slide.image;
-  const tablet  = slide.imageTablet ?? slide.image;
+  const mobile = slide.imageMobile ?? slide.image;
+  const tablet = slide.imageTablet ?? slide.image;
   const desktop = slide.image;
-  // Évite les doublons si une seule image est fournie
   const entries = new Map<string, number>([
-    [mobile,  768],
-    [tablet,  1200],
+    [mobile, 768],
+    [tablet, 1200],
     [desktop, 1920],
   ]);
-  return [...entries.entries()].map(([url, w]) => `${url} ${w}w`).join(", ");
+
+  return [...entries.entries()].map(([url, width]) => `${url} ${width}w`).join(", ");
 }
 
 const HERO_SIZES = [
@@ -77,28 +105,28 @@ const HERO_SIZES = [
 ].join(", ");
 
 export function Hero() {
-  const slides  = useHeroSlides();
+  const slides = useHeroSlides();
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
-    const t = setInterval(() => setCurrent(c => (c + 1) % slides.length), 5000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setCurrent((c) => (c + 1) % slides.length), 5000);
+    return () => clearInterval(timer);
   }, [slides.length]);
 
-  /* Précharge le slide suivant (toutes résolutions) */
   useEffect(() => {
     const nextIdx = (current + 1) % slides.length;
-    const next    = slides[nextIdx];
-    const urls    = [next.image, next.imageMobile, next.imageTablet].filter(Boolean) as string[];
-    const links: HTMLLinkElement[] = urls.map(href => {
+    const next = slides[nextIdx];
+    const urls = [next.image, next.imageMobile, next.imageTablet].filter(Boolean) as string[];
+    const links: HTMLLinkElement[] = urls.map((href) => {
       const link = document.createElement("link");
-      link.rel  = "preload";
-      link.as   = "image";
+      link.rel = "preload";
+      link.as = "image";
       link.href = href;
       document.head.appendChild(link);
       return link;
     });
-    return () => links.forEach(l => document.head.removeChild(l));
+
+    return () => links.forEach((link) => document.head.removeChild(link));
   }, [current, slides]);
 
   const slide = slides[current];
@@ -106,7 +134,6 @@ export function Hero() {
   return (
     <>
       <style>{`
-        /* ── Hero section ─────────────────────────────────────────────────── */
         .hero-section {
           position: relative;
           width: 100%;
@@ -118,21 +145,40 @@ export function Hero() {
           isolation: isolate;
         }
 
-        /* ── Image de fond ────────────────────────────────────────────────── */
         .hero-image {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          /*
-           * Valeur par défaut (desktop) : sujet principal visible entre 24-40%
-           * depuis le haut. Surchargé par breakpoints ci-dessous.
-           * Si le slide fournit objectPosition, il est appliqué via style inline.
-           */
           object-position: center 32%;
+          display: block;
+          will-change: transform, opacity;
+        }
+
+        .hero-slide {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          opacity: 0;
+          transition: opacity 1.8s ease-in-out;
+        }
+
+        .hero-slide--active {
+          opacity: 1;
+          z-index: 1;
+        }
+
+        .hero-slide--previous {
+          opacity: 0;
+          z-index: 0;
+        }
+
+        .hero-slide__image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
           display: block;
         }
 
-        /* ── Texte & CTA ──────────────────────────────────────────────────── */
         .hero-copy {
           position: absolute;
           left: 0;
@@ -141,105 +187,118 @@ export function Hero() {
           z-index: 6;
           padding: 0 clamp(20px, 5vw, 80px);
         }
+
         .hero-copy-inner {
           width: min(100%, 780px);
         }
 
-        /* ── Mobile ≤ 640px ───────────────────────────────────────────────── */
         @media (max-width: 640px) {
           .hero-section {
             min-height: 560px;
-            /* Sur mobile le hero = 100dvh. Pour une image 16:9 ça dépasse
-               la hauteur native → fort zoom. On garde le sujet visible
-               en forçant object-position vers le bas (produits, personnages…). */
           }
+
           .hero-image {
-            /*
-             * "center bottom" : priorité au bas de l'image (produits, sol).
-             * Si ton visuel a le sujet en haut, utilise "center top".
-             * Peut être surchargé par slide.objectPosition via style inline.
-             */
             object-position: center bottom;
           }
+
           .hero-copy {
             bottom: 88px;
             padding: 0 16px;
           }
         }
 
-        /* ── Tablette 641–1024px ──────────────────────────────────────────── */
         @media (min-width: 641px) and (max-width: 1024px) {
           .hero-section {
             min-height: 640px;
           }
+
           .hero-image {
-            /* Légèrement plus haut que desktop car le ratio écran est plus serré */
             object-position: center 28%;
           }
         }
 
-        /* ── Desktop ≥ 1025px ─────────────────────────────────────────────── */
         @media (min-width: 1025px) {
           .hero-section {
             height: 100vh;
             height: 100dvh;
             max-height: 920px;
           }
-          /* object-position: center 32% appliqué dans .hero-image par défaut */
         }
 
-        /* ── Très grand écran ≥ 1920px ────────────────────────────────────── */
         @media (min-width: 1920px) {
           .hero-section { max-height: 1080px; }
         }
 
-        /* ── Animations ───────────────────────────────────────────────────── */
-        @keyframes heroFadeUp {
-          from { opacity: 0; transform: translateY(18px); }
-          to   { opacity: 1; transform: translateY(0); }
+        /* Zoom lent sur l'image active — 14s, démarre de scale(1) vers scale(1.10) */
+        @keyframes heroSlowZoom {
+          from { transform: scale(1);    }
+          to   { transform: scale(1.10); }
         }
-        .hero-text-enter { animation: heroFadeUp 0.7s cubic-bezier(.22,1,.36,1) both; }
-        .hero-cta:hover  { background: #6aaf30 !important; transform: translateY(-1px); }
+
+        /* Apparition douce du texte — fade + légère montée */
+        @keyframes heroTextIn {
+          from { opacity: 0; transform: translateY(14px); }
+          to   { opacity: 1; transform: translateY(0);    }
+        }
+
+        .hero-slide--active .hero-slide__image {
+          animation: heroSlowZoom 14s ease-out forwards;
+        }
+
+        .hero-text-enter {
+          animation: heroTextIn 1.2s 0.6s ease-out both;
+        }
+
+        .hero-cta:hover { background: #6aaf30 !important; transform: translateY(-1px); }
+
+        @media (prefers-reduced-motion: reduce) {
+          .hero-slide,
+          .hero-slide__image,
+          .hero-text-enter {
+            animation: none !important;
+            transition: opacity 0.01ms !important;
+          }
+        }
       `}</style>
 
       <section className="hero-section">
+        {slides.map((item, index) => {
+          const isActive = index === current;
+          const isPrevious = index === (current - 1 + slides.length) % slides.length;
+          
+          return (
+            <div
+              key={item.id}
+              style={{ pointerEvents: isActive ? "auto" : "none" }}
+              className={[
+                "hero-slide",
+                isActive ? "hero-slide--active" : "",
+                isPrevious ? "hero-slide--previous" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              <img
+                src={item.image}
+                srcSet={buildSrcSet(item)}
+                sizes={HERO_SIZES}
+                alt=""
+                className="hero-image hero-slide__image"
+                style={{
+                  ...(item.objectPosition ? { objectPosition: item.objectPosition } : {}),
+                }}
+              />
+            </div>
+          );
+        })}
 
-        {/* ── Images en couches avec cross-fade ── */}
-        {slides.map((s, i) => (
-          <div
-            key={s.id}
-            style={{
-              position: "absolute", inset: 0,
-              opacity: i === current ? 1 : 0,
-              transition: "opacity 1.5s ease-in-out",
-              zIndex: i === current ? 1 : 0,
-            }}
-          >
-            <img
-              src={s.image}
-              srcSet={buildSrcSet(s)}
-              sizes={HERO_SIZES}
-              alt=""
-              className="hero-image"
-              style={{
-                /*
-                 * objectPosition inline — prioritaire sur le CSS breakpoint.
-                 * Permet de personnaliser la position par slide depuis le backoffice.
-                 * Si non défini, le CSS breakpoint s'applique (mobile: bottom, desktop: 32%).
-                 */
-                ...(s.objectPosition ? { objectPosition: s.objectPosition } : {}),
-                transform:  i === current ? "scale(1.07)" : "scale(1)",
-                transition: "transform 6s ease-in-out",
-              }}
-            />
-          </div>
-        ))}
-
-        {/* ── Overlay gradient double — navbar + bas de page ── */}
         <div
           aria-hidden
           style={{
-            position: "absolute", inset: 0, zIndex: 4, pointerEvents: "none",
+            position: "absolute",
+            inset: 0,
+            zIndex: 4,
+            pointerEvents: "none",
             background: `linear-gradient(to bottom,
               rgba(0,0,0,0.42) 0%,
               rgba(0,0,0,0.10) 25%,
@@ -249,45 +308,64 @@ export function Hero() {
           }}
         />
 
-        {/* ── Texte du slide actif ── */}
         {(slide.titre || slide.sousTitre || slide.ctaLabel) && (
           <div key={`text-${slide.id}`} className="hero-text-enter hero-copy">
             <div className="hero-copy-inner">
               {slide.titre && (
-                <h1 style={{
-                  margin: 0,
-                  fontSize: "clamp(2rem, 5vw, 3.6rem)",
-                  fontWeight: 800, color: "#fff", lineHeight: 1.1,
-                  letterSpacing: "-0.02em",
-                  textShadow: "0 2px 24px rgba(0,0,0,0.3)",
-                }}>
+                <h1
+                  style={{
+                    margin: 0,
+                    fontSize: "clamp(2rem, 5vw, 3.6rem)",
+                    fontWeight: 800,
+                    color: "#fff",
+                    lineHeight: 1.1,
+                    letterSpacing: "-0.02em",
+                    textShadow: "0 2px 24px rgba(0,0,0,0.3)",
+                  }}
+                >
                   {slide.titre}
                 </h1>
               )}
+
               {slide.sousTitre && (
-                <p style={{
-                  margin: "14px 0 0",
-                  fontSize: "clamp(0.95rem, 1.5vw, 1.15rem)",
-                  color: "rgba(255,255,255,0.82)", lineHeight: 1.6, maxWidth: 520,
-                  textShadow: "0 1px 8px rgba(0,0,0,0.3)",
-                }}>
+                <p
+                  style={{
+                    margin: "14px 0 0",
+                    fontSize: "clamp(0.95rem, 1.5vw, 1.15rem)",
+                    color: "rgba(255,255,255,0.82)",
+                    lineHeight: 1.6,
+                    maxWidth: 520,
+                    textShadow: "0 1px 8px rgba(0,0,0,0.3)",
+                  }}
+                >
                   {slide.sousTitre}
                 </p>
               )}
+
               {slide.ctaLabel && slide.href && (
-                <Link href={slide.href} className="hero-cta" style={{
-                  display: "inline-flex", alignItems: "center", gap: 8,
-                  marginTop: 28, padding: "12px 28px",
-                  background: "#7dc040", color: "#fff",
-                  fontWeight: 700, fontSize: "0.9rem",
-                  borderRadius: 9999, textDecoration: "none",
-                  letterSpacing: "0.02em",
-                  boxShadow: "0 4px 20px rgba(125,192,64,0.4)",
-                  transition: "background 0.15s, transform 0.12s",
-                }}>
+                <Link
+                  href={slide.href}
+                  className="hero-cta"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    marginTop: 28,
+                    padding: "12px 28px",
+                    background: "#7dc040",
+                    color: "#fff",
+                    fontWeight: 700,
+                    fontSize: "0.9rem",
+                    borderRadius: 9999,
+                    textDecoration: "none",
+                    letterSpacing: "0.02em",
+                    boxShadow: "0 4px 20px rgba(125,192,64,0.4)",
+                    transition: "background 0.15s, transform 0.12s",
+                  }}
+                >
                   {slide.ctaLabel}
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                    <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
                 </Link>
               )}
@@ -295,29 +373,36 @@ export function Hero() {
           </div>
         )}
 
-        {/* ── Dots navigation ── */}
-        <div style={{
-          position: "absolute", bottom: 28, left: "50%",
-          transform: "translateX(-50%)",
-          display: "flex", gap: 8, zIndex: 10,
-        }}>
-          {slides.map((_, i) => (
+        <div
+          style={{
+            position: "absolute",
+            bottom: 28,
+            left: "50%",
+            transform: "translateX(-50%)",
+            display: "flex",
+            gap: 8,
+            zIndex: 10,
+          }}
+        >
+          {slides.map((_, index) => (
             <button
-              key={i}
-              onClick={() => setCurrent(i)}
-              aria-label={`Slide ${i + 1}`}
+              key={index}
+              onClick={() => setCurrent(index)}
+              aria-label={`Slide ${index + 1}`}
               style={{
-                width: i === current ? 28 : 8, height: 8,
+                width: index === current ? 28 : 8,
+                height: 8,
                 borderRadius: 9999,
-                background: i === current ? "#7dc040" : "rgba(255,255,255,0.45)",
-                border: "none", cursor: "pointer", padding: 0,
+                background: index === current ? "#7dc040" : "rgba(255,255,255,0.45)",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
                 transition: "all 0.35s cubic-bezier(.4,0,.2,1)",
               }}
             />
           ))}
         </div>
 
-        {/* ── Lien zone si pas de CTA ── */}
         {slide.href && !slide.ctaLabel && (
           <Link
             href={slide.href}
@@ -331,9 +416,6 @@ export function Hero() {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   PageHero — Bannière pour les pages intérieures (inchangée)
-   ───────────────────────────────────────────────────────────────────────────── */
 interface PageHeroProps {
   eyebrow?: string;
   title: string;
@@ -344,58 +426,98 @@ interface PageHeroProps {
 
 export function PageHero({ eyebrow, title, subtitle, image, minHeight }: PageHeroProps) {
   return (
-    <section style={{
-      position: "relative",
-      paddingTop: `calc(${NAV_H}px + 3rem)`, paddingBottom: "3rem",
-      minHeight: minHeight ?? "clamp(360px, 48vh, 560px)",
-      background: image ? undefined : "linear-gradient(135deg, #0a5c2e 0%, #15803d 50%, #4a7c2f 100%)",
-      overflow: "hidden",
-    }}>
+    <section
+      style={{
+        position: "relative",
+        paddingTop: `calc(${NAV_H}px + 3rem)`,
+        paddingBottom: "3rem",
+        minHeight: minHeight ?? "clamp(360px, 48vh, 560px)",
+        background: image ? undefined : "linear-gradient(135deg, #0a5c2e 0%, #15803d 50%, #4a7c2f 100%)",
+        overflow: "hidden",
+      }}
+    >
       {image && (
         <>
-          <div style={{
-            position: "absolute", inset: 0,
-            backgroundImage: `url(${image})`,
-            backgroundSize: "cover", backgroundPosition: "center",
-            zIndex: 0,
-          }} />
-          <div style={{
-            position: "absolute", inset: 0,
-            background: "linear-gradient(135deg, rgba(10,92,46,0.88), rgba(21,128,61,0.78))",
-            zIndex: 1,
-          }} />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage: `url(${image})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              zIndex: 0,
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "linear-gradient(135deg, rgba(10,92,46,0.88), rgba(21,128,61,0.78))",
+              zIndex: 1,
+            }}
+          />
         </>
       )}
-      <div aria-hidden style={{
-        position: "absolute", top: -60, right: -60,
-        width: 280, height: 280, borderRadius: "50%",
-        background: "rgba(125,192,64,0.12)",
-        zIndex: image ? 2 : 0, pointerEvents: "none",
-      }} />
-      <div aria-hidden style={{
-        position: "absolute", bottom: -40, left: -40,
-        width: 200, height: 200, borderRadius: "50%",
-        background: "rgba(125,192,64,0.08)",
-        zIndex: image ? 2 : 0, pointerEvents: "none",
-      }} />
+
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          top: -60,
+          right: -60,
+          width: 280,
+          height: 280,
+          borderRadius: "50%",
+          background: "rgba(125,192,64,0.12)",
+          zIndex: image ? 2 : 0,
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          bottom: -40,
+          left: -40,
+          width: 200,
+          height: 200,
+          borderRadius: "50%",
+          background: "rgba(125,192,64,0.08)",
+          zIndex: image ? 2 : 0,
+          pointerEvents: "none",
+        }}
+      />
+
       <div className="container-ev" style={{ position: "relative", zIndex: image ? 3 : 1 }}>
         {eyebrow && (
-          <p style={{
-            fontSize: 11, fontWeight: 800, letterSpacing: "0.22em",
-            textTransform: "uppercase", color: "#86efac", marginBottom: 12,
-          }}>
+          <p
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              color: "#86efac",
+              marginBottom: 12,
+            }}
+          >
             {eyebrow}
           </p>
         )}
+
         <h1 className="h-display" style={{ color: "#ffffff", maxWidth: 700, textShadow: "0 2px 16px rgba(0,0,0,0.25)" }}>
           {title}
         </h1>
+
         {subtitle && (
-          <p style={{
-            marginTop: 16,
-            fontSize: "clamp(0.95rem, 1.4vw, 1.1rem)",
-            color: "rgba(255,255,255,0.80)", maxWidth: 560, lineHeight: 1.65,
-          }}>
+          <p
+            style={{
+              marginTop: 16,
+              fontSize: "clamp(0.95rem, 1.4vw, 1.1rem)",
+              color: "rgba(255,255,255,0.80)",
+              maxWidth: 560,
+              lineHeight: 1.65,
+            }}
+          >
             {subtitle}
           </p>
         )}

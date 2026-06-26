@@ -1,12 +1,5 @@
 "use client";
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   PageHeroStatic — Bannière image fixe pour les pages intérieures
-   • Récupère l'image depuis le backend (/api/hero-slides?page=<slug>)
-   • Fallback sur une image locale si aucun slide actif n'est configuré
-   • Effet Ken Burns (zoom-in CSS) + double gradient
-   ───────────────────────────────────────────────────────────────────────────── */
-
 import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 
@@ -14,38 +7,22 @@ const FALLBACK_IMAGE = "/images/hero/fertivert.webp";
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 export interface PageHeroStaticProps {
-  /** Slug de page correspondant au champ `page` en base (ex: "contact") */
-  page: string;
-  /** Libellé badge au-dessus du titre (optionnel) */
-  eyebrow?: string;
-  /** Titre principal */
-  title: string;
-  /** Phrase d'accroche */
-  subtitle?: string;
-  /**
-   * Image de fallback locale si aucun slide n'est configuré en admin.
-   * Défaut : /images/hero/fertivert.webp
-   */
-  fallbackImage?: string;
-  /**
-   * Hauteur CSS (ex: "55vh", "480px").
-   * Défaut : "55vh" (min 300px / max 560px).
-   */
-  height?: string;
-  /** Hauteur spécifique mobile */
-  mobileHeight?: string;
-  /** Hauteur spécifique tablette */
-  tabletHeight?: string;
-  /** Point focal desktop, ex: "center 35%" */
-  imagePosition?: string;
-  /** Point focal tablette */
-  imagePositionTablet?: string;
-  /** Point focal mobile */
-  imagePositionMobile?: string;
-  /** Largeur max du bloc texte */
-  contentMaxWidth?: string;
-  /** Alignement du contenu texte */
-  contentAlign?: "left" | "center";
+  page:                   string;
+  eyebrow?:               string;
+  title:                  string;
+  subtitle?:              string;
+  fallbackImage?:         string;
+  /** Variantes responsive du fallback local */
+  fallbackImageTablet?:   string;
+  fallbackImageMobile?:   string;
+  height?:                string;
+  mobileHeight?:          string;
+  tabletHeight?:          string;
+  imagePosition?:         string;
+  imagePositionTablet?:   string;
+  imagePositionMobile?:   string;
+  contentMaxWidth?:       string;
+  contentAlign?:          "left" | "center";
 }
 
 export function PageHeroStatic({
@@ -53,38 +30,46 @@ export function PageHeroStatic({
   eyebrow,
   title,
   subtitle,
-  fallbackImage = FALLBACK_IMAGE,
-  height = "clamp(360px, 58vh, 680px)",
-  mobileHeight = "clamp(340px, 58svh, 500px)",
-  tabletHeight = "clamp(400px, 54svh, 620px)",
-  imagePosition = "center 34%",
+  fallbackImage       = FALLBACK_IMAGE,
+  fallbackImageTablet,
+  fallbackImageMobile,
+  height              = "clamp(360px, 58vh, 680px)",
+  mobileHeight        = "clamp(340px, 58svh, 500px)",
+  tabletHeight        = "clamp(400px, 54svh, 620px)",
+  imagePosition       = "center 34%",
   imagePositionTablet,
   imagePositionMobile,
-  contentMaxWidth = "46rem",
-  contentAlign = "left",
+  contentMaxWidth     = "46rem",
+  contentAlign        = "left",
 }: PageHeroStaticProps) {
-  const [image, setImage] = useState<string>(fallbackImage);
+  const [image,       setImage]       = useState<string>(fallbackImage);
+  const [imageTablet, setImageTablet] = useState<string | undefined>(fallbackImageTablet);
+  const [imageMobile, setImageMobile] = useState<string | undefined>(fallbackImageMobile);
 
   useEffect(() => {
     fetch(`${BASE}/hero-slides?page=${page}`)
       .then(r => r.ok ? r.json() : Promise.reject())
-      .then((data: { image: string; actif: boolean; ordre: number }[]) => {
+      .then((data: { image: string; imageMobile?: string; imageTablet?: string; actif: boolean; ordre: number }[]) => {
         const first = data
           .filter(s => s.actif)
           .sort((a, b) => a.ordre - b.ordre)[0];
-        if (first?.image) setImage(first.image);
+        if (first?.image) {
+          setImage(first.image);
+          if (first.imageTablet) setImageTablet(first.imageTablet);
+          if (first.imageMobile) setImageMobile(first.imageMobile);
+        }
       })
-      .catch(() => {}); // garde le fallback
+      .catch(() => {});
   }, [page]);
 
   const sectionVars = {
-    "--phs-height": height,
-    "--phs-height-mobile": mobileHeight,
-    "--phs-height-tablet": tabletHeight,
-    "--phs-image-pos": imagePosition,
-    "--phs-image-pos-tablet": imagePositionTablet ?? imagePosition,
-    "--phs-image-pos-mobile": imagePositionMobile ?? imagePositionTablet ?? imagePosition,
-    "--phs-content-max": contentMaxWidth,
+    "--phs-height":            height,
+    "--phs-height-mobile":     mobileHeight,
+    "--phs-height-tablet":     tabletHeight,
+    "--phs-image-pos":         imagePosition,
+    "--phs-image-pos-tablet":  imagePositionTablet ?? imagePosition,
+    "--phs-image-pos-mobile":  imagePositionMobile ?? imagePositionTablet ?? imagePosition,
+    "--phs-content-max":       contentMaxWidth,
   } as CSSProperties;
 
   return (
@@ -94,10 +79,20 @@ export function PageHeroStatic({
           from { transform: scale(1.0); }
           to   { transform: scale(1.08); }
         }
+        /* ✅ FIX : picture remplit la section */
+        .phs-picture {
+          display: block;
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+        }
         .phs-bg-image {
-          position: absolute; inset: 0;
-          width: 100%; height: 100%;
-          object-fit: cover; object-position: var(--phs-image-pos); display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: var(--phs-image-pos);
+          display: block;
           animation: phsZoomIn 11s ease-in-out forwards;
           will-change: transform;
         }
@@ -132,9 +127,9 @@ export function PageHeroStatic({
         .phs-static-text-wrap.is-center p:last-child {
           margin-inline: auto;
         }
-        @media (max-width: 640px)  {
+        @media (max-width: 640px) {
           .phs-static-section { height: var(--phs-height-mobile); min-height: 340px; }
-          .phs-bg-image { object-position: var(--phs-image-pos-mobile); }
+          .phs-bg-image        { object-position: var(--phs-image-pos-mobile); }
           .phs-static-shell {
             padding-top: calc(var(--nav-h) + 28px);
             padding-bottom: 22px;
@@ -142,7 +137,7 @@ export function PageHeroStatic({
         }
         @media (min-width: 641px) and (max-width: 1024px) {
           .phs-static-section { height: var(--phs-height-tablet); }
-          .phs-bg-image { object-position: var(--phs-image-pos-tablet); }
+          .phs-bg-image        { object-position: var(--phs-image-pos-tablet); }
           .phs-static-shell {
             padding-top: calc(var(--nav-h) + 42px);
             padding-bottom: 32px;
@@ -155,8 +150,16 @@ export function PageHeroStatic({
 
       <section className="phs-static-section" style={sectionVars}>
 
-        {/* Image + Ken Burns */}
-        <img src={image} alt="" className="phs-bg-image" />
+        {/* ✅ FIX : <picture> responsive */}
+        <picture className="phs-picture">
+          {imageMobile && (
+            <source media="(max-width: 640px)" srcSet={imageMobile} />
+          )}
+          {imageTablet && (
+            <source media="(max-width: 1024px)" srcSet={imageTablet} />
+          )}
+          <img src={image} alt="" className="phs-bg-image" />
+        </picture>
 
         {/* Gradient double */}
         <div

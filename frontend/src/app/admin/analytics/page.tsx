@@ -10,7 +10,7 @@ import { tokenStore } from "@/lib/admin-api";
 import {
   Users, Eye, Clock, TrendingUp, FileText, Map,
   Search, ArrowUp, ArrowDown, MousePointerClick,
-  BarChart3, Globe, Zap,
+  BarChart3, Globe, Zap, Download,
 } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -440,6 +440,7 @@ export default function AnalyticsPage() {
   const [entonnoir, setEntonnoir] = useState<Entonnoir[]>([]);
   const [loading, setLoading]   = useState(true);
   const [tab, setTab]           = useState<"trafic" | "geo" | "comportement" | "conversion">("trafic");
+  const [exporting, setExporting] = useState(false);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -448,21 +449,86 @@ export default function AnalyticsPage() {
 
     try {
       const [ana, hm, ent] = await Promise.all([
-        fetch(`${BASE}/admin/stats/analytics?days=${days}`, { headers: h }).then(r => r.json()),
-        fetch(`${BASE}/admin/stats/heatmap?days=${days}`, { headers: h }).then(r => r.json()),
-        fetch(`${BASE}/admin/stats/entonnoir?days=${days}`, { headers: h }).then(r => r.json()),
+        fetch(`${BASE}/admin/stats/analytics?days=${days}`, { headers: h }).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(`${BASE}/admin/stats/heatmap?days=${days}`, { headers: h }).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(`${BASE}/admin/stats/entonnoir?days=${days}`, { headers: h }).then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
-      setData(ana.data ?? ana);
-      setHeatmap(hm.data ?? hm);
-      setEntonnoir(ent.data ?? ent);
-    } catch (e) {
-      console.error(e);
+      if (ana) setData(ana.data ?? ana);
+      if (hm)  setHeatmap(hm.data ?? hm);
+      if (ent) setEntonnoir(ent.data ?? ent);
+    } catch {
+      // Serveur backend indisponible — affichage en mode dégradé
     } finally {
       setLoading(false);
     }
   }, [days]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const exportCsv = () => {
+    if (!data) return;
+    setExporting(true);
+    try {
+      const esc = (v: string | number | null | undefined) => {
+        if (v == null) return "";
+        const s = String(v).replace(/"/g, '""');
+        return /[",\n]/.test(s) ? `"${s}"` : s;
+      };
+
+      const sections: string[][] = [];
+
+      sections.push([`Période: ${days} derniers jours`], []);
+
+      sections.push(["=== KPIs ==="]);
+      sections.push(["Indicateur", "Valeur"]);
+      sections.push(["Visiteurs actifs",      esc(data.kpis.visiteurs_actifs)]);
+      sections.push(["Total visiteurs",       esc(data.kpis.total_visiteurs)]);
+      sections.push(["Nouveaux visiteurs",    esc(data.kpis.nouveaux_visiteurs)]);
+      sections.push(["Pages vues",            esc(data.kpis.page_views)]);
+      sections.push(["Durée moy. (sec)",      esc(data.kpis.avg_duree_sec)]);
+      sections.push(["Pages/visite",          esc(data.kpis.pages_par_visite)]);
+      sections.push(["Devis soumis",          esc(data.kpis.devis_total)]);
+      sections.push(["Taux conversion (%)",   esc(data.kpis.taux_conversion)]);
+      sections.push([]);
+
+      sections.push(["=== TOP PAGES ==="]);
+      sections.push(["URL", "Titre", "Vues", "Durée moy. (sec)"]);
+      data.top_pages.forEach(p => sections.push([esc(p.url), esc(p.titre), esc(p.vues), esc(p.duree)]));
+      sections.push([]);
+
+      sections.push(["=== RECHERCHES FREQUENTES ==="]);
+      sections.push(["Requête", "Occurrences"]);
+      data.recherches.forEach(r => sections.push([esc(r.query), esc(r.nb)]));
+      sections.push([]);
+
+      sections.push(["=== GEOGRAPHIE - PAYS ==="]);
+      sections.push(["Pays", "Visiteurs"]);
+      data.geo.pays.forEach(p => sections.push([esc(p.pays), esc(p.nb)]));
+      sections.push([]);
+
+      sections.push(["=== GEOGRAPHIE - REGIONS ==="]);
+      sections.push(["Région", "Visiteurs"]);
+      data.geo.regions.forEach(r => sections.push([esc(r.region), esc(r.nb)]));
+      sections.push([]);
+
+      sections.push(["=== CONVERSIONS ==="]);
+      sections.push(["Statut", "Nombre"]);
+      Object.entries(data.conversions.devis_par_statut).forEach(([k, v]) =>
+        sections.push([esc(k), esc(v)])
+      );
+
+      const csv = "\uFEFF" + sections.map(row => row.join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `analytics-${days}j-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // ── Rendu ────────────────────────────────────────────────────────
   return (
@@ -480,6 +546,17 @@ export default function AnalyticsPage() {
         </div>
         <div className="flex items-center gap-3">
           <PeriodSelector value={days} onChange={setDays} />
+          <button
+            onClick={exportCsv}
+            disabled={exporting || !data}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          >
+            {exporting
+              ? <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              : <Download size={14} className="text-gray-500" />
+            }
+            Exporter CSV
+          </button>
           <button onClick={fetchAll}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all"
             style={{ background: "#3C50E0", color: "white" }}>
@@ -643,24 +720,58 @@ export default function AnalyticsPage() {
 
           {/* Recherches */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Search size={16} className="text-amber-500" />
-              <h3 className="font-semibold text-gray-800">Recherches fréquentes</h3>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Search size={16} className="text-amber-500" />
+                <h3 className="font-semibold text-gray-800">Recherches fréquentes</h3>
+              </div>
+              {(data?.recherches?.length ?? 0) > 0 && (
+                <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
+                  {data?.recherches?.length} requête{(data?.recherches?.length ?? 0) > 1 ? "s" : ""}
+                </span>
+              )}
             </div>
             {loading ? <Skeleton className="h-48" /> : (
-              <div className="flex flex-wrap gap-2">
-                {(data?.recherches ?? []).map((r, i) => (
-                  <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border"
-                    style={{
-                      background: `rgba(245,158,11,${0.05 + (r.nb / (data?.recherches[0]?.nb ?? 1)) * 0.15})`,
-                      borderColor: "#FDE68A",
-                      fontSize: `${Math.max(11, Math.min(14, 10 + (r.nb / (data?.recherches[0]?.nb ?? 1)) * 4))}px`,
-                    }}>
-                    <span className="text-gray-700">{r.query}</span>
-                    <span className="text-xs font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full">{r.nb}</span>
-                  </span>
-                ))}
-                {!(data?.recherches?.length) && <p className="text-gray-400 text-sm">Aucune recherche enregistrée</p>}
+              <div className="space-y-2">
+                {(data?.recherches ?? []).slice(0, 15).map((r, i) => {
+                  const max = data?.recherches[0]?.nb ?? 1;
+                  const pct = Math.round((r.nb / max) * 100);
+                  return (
+                    <div key={i} className="flex items-center gap-3 group">
+                      <span className="text-xs font-bold text-gray-300 w-5 text-right shrink-0">
+                        {i + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm text-gray-700 font-medium truncate">{r.query}</span>
+                          <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full ml-2 shrink-0">
+                            {r.nb}×
+                          </span>
+                        </div>
+                        <div className="h-1.5 bg-amber-50 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{
+                              width: `${pct}%`,
+                              background: i === 0
+                                ? "linear-gradient(90deg,#F59E0B,#FBBF24)"
+                                : i < 3
+                                  ? "linear-gradient(90deg,#FCD34D,#FDE68A)"
+                                  : "#FEF3C7",
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {!(data?.recherches?.length) && (
+                  <div className="flex flex-col items-center py-6 gap-2 text-gray-400">
+                    <Search size={24} strokeWidth={1.5} />
+                    <p className="text-sm">Aucune recherche enregistrée sur cette période</p>
+                    <p className="text-xs text-gray-300">Les recherches visiteurs apparaîtront ici automatiquement</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

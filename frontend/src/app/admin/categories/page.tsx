@@ -12,6 +12,7 @@ import {
 import {
   Activity,
   AlertCircle,
+  CheckSquare,
   ChevronDown,
   ChevronRight,
   Edit2,
@@ -20,6 +21,7 @@ import {
   Info,
   Plus,
   RefreshCw,
+  Square,
   Tag,
   Trash2,
   X,
@@ -54,7 +56,6 @@ interface TreeNode extends CategorieAdmin {
 
 function buildTree(flat: CategorieAdmin[]): TreeNode[] {
   const map = new Map<number, TreeNode>();
-  // Créer tous les nœuds sans depth (sera calculé après construction)
   flat.forEach((c) =>
     map.set(c.id_categorie, { ...c, children: [], depth: 0 }),
   );
@@ -63,16 +64,13 @@ function buildTree(flat: CategorieAdmin[]): TreeNode[] {
     if (node.parent_id && map.has(node.parent_id)) {
       map.get(node.parent_id)!.children.push(node);
     } else {
-      // Parent absent ou null → nœud racine
       roots.push(node);
     }
   });
 
-  // Tri à chaque niveau : ordre ASC, puis nom ASC (même règle que le backend)
   const sort = (arr: TreeNode[]) =>
     arr.sort((a, b) => a.ordre - b.ordre || a.nom.localeCompare(b.nom, "fr"));
 
-  // Calcul récursif du depth APRÈS construction complète de l'arbre
   const assignDepth = (nodes: TreeNode[], depth: number): TreeNode[] => {
     sort(nodes);
     nodes.forEach((n) => {
@@ -96,14 +94,13 @@ function flattenTree(nodes: TreeNode[]): TreeNode[] {
   return result;
 }
 
+/** Collecte l'id d'un nœud + tous ses descendants */
+function collectSubtreeIds(node: TreeNode): number[] {
+  return [node.id_categorie, ...node.children.flatMap(collectSubtreeIds)];
+}
+
 // ── Badge marque/activité ────────────────────────────────────────
-function Badge({
-  label,
-  type,
-}: {
-  label: string;
-  type: "marque" | "activite";
-}) {
+function Badge({ label, type }: { label: string; type: "marque" | "activite" }) {
   return (
     <span
       className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
@@ -122,14 +119,18 @@ function Badge({
 function TreeRow({
   node,
   expanded,
+  selected,
   onToggle,
+  onSelect,
   onEdit,
   onDelete,
   onAddChild,
 }: {
   node: TreeNode;
   expanded: boolean;
+  selected: boolean;
   onToggle: () => void;
+  onSelect: (id: number, withSubtree?: boolean) => void;
   onEdit: (c: CategorieAdmin) => void;
   onDelete: (c: CategorieAdmin) => void;
   onAddChild: (parent: CategorieAdmin) => void;
@@ -139,15 +140,32 @@ function TreeRow({
 
   return (
     <tr
-      className={`group hover:bg-gray-50/80 transition-colors ${!node.actif ? "opacity-50" : ""}`}
+      className={`group transition-colors ${
+        selected
+          ? "bg-red-50/70 hover:bg-red-50"
+          : "hover:bg-gray-50/80"
+      } ${!node.actif ? "opacity-50" : ""}`}
     >
+      {/* Checkbox */}
+      <td className="pl-3 pr-1 py-2.5 w-8">
+        <button
+          onClick={() => onSelect(node.id_categorie)}
+          className={`w-5 h-5 flex items-center justify-center rounded transition-colors ${
+            selected
+              ? "text-red-600"
+              : "text-gray-300 hover:text-gray-500"
+          }`}
+        >
+          {selected ? <CheckSquare size={16} /> : <Square size={16} />}
+        </button>
+      </td>
+
       {/* Nom avec indentation */}
       <td className="px-4 py-2.5">
         <div
           className="flex items-center"
           style={{ paddingLeft: `${node.depth * 22}px` }}
         >
-          {/* Toggle expand */}
           <button
             onClick={onToggle}
             className={`shrink-0 w-5 h-5 flex items-center justify-center rounded transition-colors mr-1 ${
@@ -157,33 +175,20 @@ function TreeRow({
             }`}
           >
             {hasChildren ? (
-              expanded ? (
-                <ChevronDown size={13} />
-              ) : (
-                <ChevronRight size={13} />
-              )
+              expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />
             ) : null}
           </button>
 
-          {/* Icône dossier */}
-          <span
-            className={`shrink-0 mr-2 ${hasChildren ? "text-amber-500" : "text-gray-400"}`}
-          >
+          <span className={`shrink-0 mr-2 ${hasChildren ? "text-amber-500" : "text-gray-400"}`}>
             {hasChildren ? (
-              expanded ? (
-                <FolderOpen size={14} />
-              ) : (
-                <Folder size={14} />
-              )
+              expanded ? <FolderOpen size={14} /> : <Folder size={14} />
             ) : (
               <span className="text-[10px] text-gray-300">└</span>
             )}
           </span>
 
           <div className="min-w-0">
-            <p
-              className={`font-medium text-gray-800 truncate ${node.depth === 0 ? "text-sm" : "text-xs"}`}
-            >
+            <p className={`font-medium text-gray-800 truncate ${node.depth === 0 ? "text-sm" : "text-xs"}`}>
               {node.nom}
             </p>
             <p className="text-[10px] text-gray-400 font-mono">{node.slug}</p>
@@ -191,15 +196,11 @@ function TreeRow({
         </div>
       </td>
 
-      {/* Badges marque / activité */}
+      {/* Badges */}
       <td className="px-4 py-2.5">
         <div className="flex flex-wrap gap-1">
-          {node.marque && (
-            <Badge label={(node.marque as any).nom} type="marque" />
-          )}
-          {node.activite && (
-            <Badge label={(node.activite as any).nom} type="activite" />
-          )}
+          {node.marque && <Badge label={(node.marque as any).nom} type="marque" />}
+          {node.activite && <Badge label={(node.activite as any).nom} type="activite" />}
         </div>
       </td>
 
@@ -220,17 +221,13 @@ function TreeRow({
       </td>
 
       {/* Ordre */}
-      <td className="px-4 py-2.5 text-center text-xs text-gray-400">
-        {node.ordre}
-      </td>
+      <td className="px-4 py-2.5 text-center text-xs text-gray-400">{node.ordre}</td>
 
       {/* Statut */}
       <td className="px-4 py-2.5">
         <span
           className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-            node.actif
-              ? "bg-green-100 text-green-700"
-              : "bg-red-100 text-red-600"
+            node.actif ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"
           }`}
         >
           {node.actif ? "Actif" : "Inactif"}
@@ -267,11 +264,15 @@ function TreeRow({
 
 // ── Confirm Dialog ────────────────────────────────────────────────
 function ConfirmDialog({
+  title,
   message,
+  confirmLabel = "Supprimer",
   onConfirm,
   onCancel,
 }: {
+  title?: string;
   message: string;
+  confirmLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -281,7 +282,8 @@ function ConfirmDialog({
         <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
           <AlertCircle size={22} className="text-red-600" />
         </div>
-        <p className="text-gray-700 text-sm text-center mb-6">{message}</p>
+        {title && <h3 className="text-gray-900 font-semibold text-center mb-2">{title}</h3>}
+        <p className="text-gray-600 text-sm text-center mb-6 leading-relaxed">{message}</p>
         <div className="flex gap-3">
           <button
             onClick={onCancel}
@@ -291,9 +293,9 @@ function ConfirmDialog({
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 h-10 bg-red-600 text-white text-sm rounded-xl hover:bg-red-700"
+            className="flex-1 h-10 bg-red-600 text-white text-sm rounded-xl hover:bg-red-700 font-medium"
           >
-            Supprimer
+            {confirmLabel}
           </button>
         </div>
       </div>
@@ -302,22 +304,14 @@ function ConfirmDialog({
 }
 
 // ── Alert inline ─────────────────────────────────────────────────
-function Alert({
-  type,
-  children,
-}: {
-  type: "error" | "info";
-  children: React.ReactNode;
-}) {
+function Alert({ type, children }: { type: "error" | "info"; children: React.ReactNode }) {
   const s =
     type === "error"
       ? "bg-red-50 border-red-200 text-red-700"
       : "bg-blue-50 border-blue-200 text-blue-700";
   const Icon = type === "error" ? AlertCircle : Info;
   return (
-    <div
-      className={`flex items-start gap-2.5 border rounded-xl px-4 py-3 text-sm ${s}`}
-    >
+    <div className={`flex items-start gap-2.5 border rounded-xl px-4 py-3 text-sm ${s}`}>
       <Icon size={15} className="shrink-0 mt-0.5" />
       <span className="leading-relaxed">{children}</span>
     </div>
@@ -337,12 +331,16 @@ export default function AdminCategoriesPage() {
   const [err, setErr] = useState("");
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
-  const [confirmDelete, setConfirmDelete] = useState<CategorieAdmin | null>(
-    null,
-  );
+
+  // Sélection multiple
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [confirmDelete, setConfirmDelete] = useState<CategorieAdmin | null>(null);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setSelected(new Set());
     try {
       const [cats, mrqs, acts] = await Promise.all([
         adminCategories.list(),
@@ -353,7 +351,6 @@ export default function AdminCategoriesPage() {
       setItems(catArr);
       setMarques(Array.isArray(mrqs) ? mrqs : ((mrqs as any).data ?? []));
       setActivites(Array.isArray(acts) ? acts : ((acts as any).data ?? []));
-      // Auto-expand racines
       setExpanded(
         new Set(
           catArr
@@ -366,19 +363,14 @@ export default function AdminCategoriesPage() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
-  // Arbre complet
   const tree = useMemo(() => buildTree(items), [items]);
 
-  // Aplatissement pour l'affichage (respecte expanded)
   const visibleRows = useMemo(() => {
     const result: TreeNode[] = [];
     const walk = (nodes: TreeNode[]) => {
       nodes.forEach((n) => {
-        // Filtre recherche
         if (search) {
           const matches =
             n.nom.toLowerCase().includes(search.toLowerCase()) ||
@@ -407,18 +399,94 @@ export default function AdminCategoriesPage() {
     });
   };
 
-  const expandAll = () =>
-    setExpanded(new Set(items.map((c) => c.id_categorie)));
+  // ── Sélection ────────────────────────────────────────────────────
+  const toggleSelect = (id: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    setSelected(new Set(visibleRows.map((n) => n.id_categorie)));
+  };
+
+  const clearSelection = () => setSelected(new Set());
+
+  const allVisibleSelected =
+    visibleRows.length > 0 &&
+    visibleRows.every((n) => selected.has(n.id_categorie));
+
+  const toggleSelectAll = () => {
+    allVisibleSelected ? clearSelection() : selectAll();
+  };
+
+  // ── Suppression unique ────────────────────────────────────────────
+  const handleDelete = (c: CategorieAdmin) => {
+    setConfirmDelete(c);
+  };
+
+  const confirmDeleteAction = async () => {
+    if (!confirmDelete) return;
+    const c = confirmDelete;
+    setConfirmDelete(null);
+    try {
+      await adminCategories.remove(c.id_categorie);
+      toast.success("Catégorie supprimée", c.nom);
+      load();
+    } catch (e) {
+      toast.error("Erreur", (e as Error).message);
+    }
+  };
+
+  // ── Suppression multiple ──────────────────────────────────────────
+  const handleBulkDelete = () => {
+    if (selected.size === 0) return;
+    setConfirmBulkDelete(true);
+  };
+
+  const confirmBulkDeleteAction = async () => {
+    setConfirmBulkDelete(false);
+    setBulkDeleting(true);
+    try {
+      const ids = Array.from(selected);
+      // Appel bulk via fetch direct (à ajouter dans admin-api si besoin)
+      const res = await (adminCategories as any).removeBulk
+        ? (adminCategories as any).removeBulk(ids)
+        : Promise.all(ids.map((id) => adminCategories.remove(id)));
+
+      if ((res as any)?.deleted !== undefined) {
+        const r = res as { deleted: number; failed: number; message: string };
+        if (r.failed > 0) {
+          toast.warning(
+            "Suppression partielle",
+            `${r.deleted} supprimée(s), ${r.failed} échec(s)`,
+          );
+        } else {
+          toast.success("Suppression réussie", r.message);
+        }
+      } else {
+        toast.success("Suppression réussie", `${ids.length} catégorie(s) supprimée(s)`);
+      }
+      load();
+    } catch (e) {
+      toast.error("Erreur", (e as Error).message);
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  // ── Formulaire ────────────────────────────────────────────────────
+  const expandAll  = () => setExpanded(new Set(items.map((c) => c.id_categorie)));
   const collapseAll = () =>
-    setExpanded(
-      new Set(items.filter((c) => !c.parent_id).map((c) => c.id_categorie)),
-    );
+    setExpanded(new Set(items.filter((c) => !c.parent_id).map((c) => c.id_categorie)));
 
   const openCreate = (parentCat?: CategorieAdmin) => {
     setForm({
       ...EMPTY,
-      parent_id: parentCat ? String(parentCat.id_categorie) : "",
-      id_marque: parentCat ? String(parentCat.id_marque ?? "") : "",
+      parent_id:   parentCat ? String(parentCat.id_categorie) : "",
+      id_marque:   parentCat ? String(parentCat.id_marque   ?? "") : "",
       id_activite: parentCat ? String(parentCat.id_activite ?? "") : "",
     });
     setEditing(null);
@@ -428,15 +496,15 @@ export default function AdminCategoriesPage() {
 
   const openEdit = (c: CategorieAdmin) => {
     setForm({
-      nom: c.nom,
-      slug: c.slug,
+      nom:         c.nom,
+      slug:        c.slug,
       description: c.description ?? "",
-      image: c.image ?? "",
+      image:       c.image       ?? "",
       id_activite: c.id_activite ? String(c.id_activite) : "",
-      id_marque: c.id_marque ? String(c.id_marque) : "",
-      parent_id: c.parent_id ? String(c.parent_id) : "",
-      ordre: c.ordre,
-      actif: c.actif,
+      id_marque:   c.id_marque   ? String(c.id_marque)   : "",
+      parent_id:   c.parent_id   ? String(c.parent_id)   : "",
+      ordre:       c.ordre,
+      actif:       c.actif,
     });
     setEditing(c);
     setErr("");
@@ -452,14 +520,14 @@ export default function AdminCategoriesPage() {
     setErr("");
     try {
       const p = {
-        nom: form.nom,
-        slug: form.slug,
+        nom:         form.nom,
+        slug:        form.slug,
         description: form.description || null,
-        image: form.image || null,
+        image:       form.image       || null,
         id_activite: form.id_activite ? Number(form.id_activite) : null,
-        id_marque: form.id_marque ? Number(form.id_marque) : null,
-        parent_id: form.parent_id ? Number(form.parent_id) : null,
-        ordre: form.ordre,
+        id_marque:   form.id_marque   ? Number(form.id_marque)   : null,
+        parent_id:   form.parent_id   ? Number(form.parent_id)   : null,
+        ordre:       form.ordre,
         ...(modal === "edit" ? { actif: form.actif } : {}),
       };
       if (modal === "create") {
@@ -478,44 +546,6 @@ export default function AdminCategoriesPage() {
     }
   };
 
-  const handleDelete = (c: CategorieAdmin) => {
-    const hasChildren = items.some((x) => x.parent_id === c.id_categorie);
-    if (hasChildren) {
-      toast.warning(
-        "Suppression impossible",
-        `« ${c.nom} » a des sous-catégories. Supprimez-les d'abord.`,
-      );
-      return;
-    }
-    setConfirmDelete(c);
-  };
-
-  const confirmDeleteAction = async () => {
-    if (!confirmDelete) return;
-    const c = confirmDelete;
-    setConfirmDelete(null);
-    try {
-      await adminCategories.remove(c.id_categorie);
-      toast.success("Catégorie supprimée", c.nom);
-      load();
-    } catch (e) {
-      const msg = (e as Error).message;
-      if (
-        msg.includes("produit") ||
-        msg.includes("Foreign") ||
-        msg.includes("constraint")
-      ) {
-        toast.error(
-          "Suppression impossible",
-          `« ${c.nom} » est liée à des produits. Retirez-les d'abord.`,
-        );
-      } else {
-        toast.error("Erreur", msg);
-      }
-    }
-  };
-
-  // Options catégories parentes pour le select (exclut soi-même et ses descendants)
   const parentOptions = useMemo(() => {
     if (!editing) return items;
     const descendants = new Set<number>();
@@ -529,20 +559,15 @@ export default function AdminCategoriesPage() {
     };
     collect(editing.id_categorie);
     return items.filter(
-      (c) =>
-        c.id_categorie !== editing.id_categorie &&
-        !descendants.has(c.id_categorie),
+      (c) => c.id_categorie !== editing.id_categorie && !descendants.has(c.id_categorie),
     );
   }, [items, editing]);
 
-  // Pour le select parent : affichage indenté
   const parentOptionsOrdered = useMemo(() => {
     const result: { cat: CategorieAdmin; depth: number }[] = [];
     const walk = (nodes: TreeNode[]) => {
       nodes.forEach((n) => {
-        const orig = parentOptions.find(
-          (c) => c.id_categorie === n.id_categorie,
-        );
+        const orig = parentOptions.find((c) => c.id_categorie === n.id_categorie);
         if (orig) result.push({ cat: orig, depth: n.depth });
         walk(n.children);
       });
@@ -552,16 +577,39 @@ export default function AdminCategoriesPage() {
   }, [parentOptions]);
 
   const rootCount = items.filter((c) => !c.parent_id).length;
-  const subCount = items.filter((c) => c.parent_id).length;
+  const subCount  = items.filter((c) =>  c.parent_id).length;
+
+  // Calcul de l'impact de la sélection (inclut les descendants déjà sélectionnés)
+  const selectionImpact = useMemo(() => {
+    const nodeMap = new Map(flattenTree(tree).map((n) => [n.id_categorie, n]));
+    let cats = 0;
+    selected.forEach((id) => {
+      const node = nodeMap.get(id);
+      if (node) cats += collectSubtreeIds(node).length;
+    });
+    return cats;
+  }, [selected, tree]);
 
   return (
     <div className="space-y-5">
-      {/* Confirm delete dialog */}
+      {/* Confirm delete unique */}
       {confirmDelete && (
         <ConfirmDialog
-          message={`Supprimer « ${confirmDelete.nom} » ? Cette action est irréversible.`}
+          title="Supprimer cette catégorie ?"
+          message={`« ${confirmDelete.nom} » et toutes ses sous-catégories / produits associés seront définitivement supprimés.`}
           onConfirm={confirmDeleteAction}
           onCancel={() => setConfirmDelete(null)}
+        />
+      )}
+
+      {/* Confirm bulk delete */}
+      {confirmBulkDelete && (
+        <ConfirmDialog
+          title={`Supprimer ${selected.size} catégorie${selected.size > 1 ? "s" : ""} ?`}
+          message={`Cette action supprimera définitivement les ${selected.size} catégorie${selected.size > 1 ? "s" : ""} sélectionnée${selected.size > 1 ? "s" : ""} ainsi que toutes leurs sous-catégories et produits associés (${selectionImpact} éléments au total). Cette action est irréversible.`}
+          confirmLabel={`Supprimer ${selected.size} catégorie${selected.size > 1 ? "s" : ""}`}
+          onConfirm={confirmBulkDeleteAction}
+          onCancel={() => setConfirmBulkDelete(false)}
         />
       )}
 
@@ -626,6 +674,38 @@ export default function AdminCategoriesPage() {
         </div>
       </div>
 
+      {/* Barre d'actions flottante (visible si sélection active) */}
+      {selected.size > 0 && (
+        <div className="sticky top-4 z-30 mx-auto max-w-xl">
+          <div className="bg-gray-900 text-white rounded-2xl shadow-xl px-4 py-3 flex items-center gap-3">
+            <span className="text-sm font-medium flex-1">
+              <span className="bg-white text-gray-900 font-bold px-2 py-0.5 rounded-lg mr-2">
+                {selected.size}
+              </span>
+              catégorie{selected.size > 1 ? "s" : ""} sélectionnée{selected.size > 1 ? "s" : ""}
+            </span>
+            <button
+              onClick={clearSelection}
+              className="text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10"
+            >
+              Désélectionner
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              disabled={bulkDeleting}
+              className="flex items-center gap-2 text-sm bg-red-600 hover:bg-red-500 text-white px-4 py-1.5 rounded-xl font-medium disabled:opacity-60"
+            >
+              {bulkDeleting ? (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Trash2 size={14} />
+              )}
+              Supprimer la sélection
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Arbre */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         {loading ? (
@@ -641,6 +721,20 @@ export default function AdminCategoriesPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
+                  {/* Checkbox tout sélectionner */}
+                  <th className="pl-3 pr-1 py-3 w-8">
+                    <button
+                      onClick={toggleSelectAll}
+                      className={`w-5 h-5 flex items-center justify-center rounded transition-colors ${
+                        allVisibleSelected
+                          ? "text-red-600"
+                          : "text-gray-300 hover:text-gray-500"
+                      }`}
+                      title={allVisibleSelected ? "Tout désélectionner" : "Tout sélectionner"}
+                    >
+                      {allVisibleSelected ? <CheckSquare size={16} /> : <Square size={16} />}
+                    </button>
+                  </th>
                   {[
                     "Catégorie / Sous-catégorie",
                     "Rattachement",
@@ -665,7 +759,9 @@ export default function AdminCategoriesPage() {
                     key={node.id_categorie}
                     node={node}
                     expanded={expanded.has(node.id_categorie)}
+                    selected={selected.has(node.id_categorie)}
                     onToggle={() => toggleExpand(node.id_categorie)}
+                    onSelect={toggleSelect}
                     onEdit={openEdit}
                     onDelete={handleDelete}
                     onAddChild={openCreate}
@@ -677,79 +773,56 @@ export default function AdminCategoriesPage() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal create/edit */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
             <div className="p-5 border-b flex items-center justify-between sticky top-0 bg-white z-10">
               <h2 className="font-bold text-gray-900">
-                {modal === "create"
-                  ? "Nouvelle catégorie"
-                  : `Modifier — ${editing?.nom}`}
+                {modal === "create" ? "Nouvelle catégorie" : `Modifier — ${editing?.nom}`}
               </h2>
-              <button
-                onClick={() => setModal(null)}
-                className="text-gray-400 hover:text-gray-700"
-              >
+              <button onClick={() => setModal(null)} className="text-gray-400 hover:text-gray-700">
                 <X size={18} />
               </button>
             </div>
             <div className="p-5 space-y-4">
               {err && <Alert type="error">{err}</Alert>}
 
-              {/* Nom + Slug */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Nom *
-                  </label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Nom *</label>
                   <input
                     value={form.nom}
                     onChange={(e) =>
                       setForm({
                         ...form,
-                        nom: e.target.value,
-                        slug:
-                          modal === "create"
-                            ? toSlug(e.target.value)
-                            : form.slug,
+                        nom:  e.target.value,
+                        slug: modal === "create" ? toSlug(e.target.value) : form.slug,
                       })
                     }
                     className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Slug *
-                  </label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Slug *</label>
                   <input
                     value={form.slug}
                     onChange={(e) =>
-                      setForm({
-                        ...form,
-                        slug: e.target.value
-                          .toLowerCase()
-                          .replace(/[^a-z0-9-]/g, ""),
-                      })
+                      setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })
                     }
                     className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 font-mono text-xs"
                   />
                 </div>
               </div>
 
-              {/* Catégorie parente (hiérarchie indentée) */}
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">
                   Catégorie parente{" "}
-                  <span className="text-gray-400 font-normal">
-                    (laisser vide = catégorie racine)
-                  </span>
+                  <span className="text-gray-400 font-normal">(laisser vide = catégorie racine)</span>
                 </label>
                 <select
                   value={form.parent_id}
-                  onChange={(e) =>
-                    setForm({ ...form, parent_id: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, parent_id: e.target.value })}
                   className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white"
                 >
                   <option value="">— Catégorie racine —</option>
@@ -763,83 +836,56 @@ export default function AdminCategoriesPage() {
                 </select>
               </div>
 
-              {/* Marque + Activité */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Marque
-                  </label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Marque</label>
                   <select
                     value={form.id_marque}
-                    onChange={(e) =>
-                      setForm({ ...form, id_marque: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, id_marque: e.target.value })}
                     className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white"
                   >
                     <option value="">— Aucune —</option>
                     {marques.map((m) => (
-                      <option key={m.id_marque} value={m.id_marque}>
-                        {m.nom}
-                      </option>
+                      <option key={m.id_marque} value={m.id_marque}>{m.nom}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Activité
-                  </label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Activité</label>
                   <select
                     value={form.id_activite}
-                    onChange={(e) =>
-                      setForm({ ...form, id_activite: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, id_activite: e.target.value })}
                     className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white"
                   >
                     <option value="">— Aucune —</option>
                     {activites.map((a) => (
-                      <option key={a.id_activite} value={a.id_activite}>
-                        {a.nom}
-                      </option>
+                      <option key={a.id_activite} value={a.id_activite}>{a.nom}</option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {/* Ordre + Image */}
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Ordre d&apos;affichage
-                  </label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Ordre d&apos;affichage</label>
                   <input
                     type="number"
                     value={form.ordre}
-                    onChange={(e) =>
-                      setForm({ ...form, ordre: Number(e.target.value) })
-                    }
+                    onChange={(e) => setForm({ ...form, ordre: Number(e.target.value) })}
                     className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Image
-                  </label>
-                  <ImageUploader
-                    onUpload={(v) => setForm({ ...form, image: v })}
-                  />
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Image</label>
+                  <ImageUploader onUpload={(v) => setForm({ ...form, image: v })} />
                 </div>
               </div>
 
-              {/* Description */}
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Description
-                </label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
                 <textarea
                   value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
                   rows={2}
                   className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 resize-none"
                 />
@@ -850,9 +896,7 @@ export default function AdminCategoriesPage() {
                   <input
                     type="checkbox"
                     checked={form.actif}
-                    onChange={(e) =>
-                      setForm({ ...form, actif: e.target.checked })
-                    }
+                    onChange={(e) => setForm({ ...form, actif: e.target.checked })}
                     className="accent-ev-600 w-4 h-4"
                   />
                   Catégorie active
@@ -862,9 +906,7 @@ export default function AdminCategoriesPage() {
               {form.parent_id && (
                 <Alert type="info">
                   Cette catégorie sera rattachée comme sous-catégorie de «{" "}
-                  {items.find((c) => String(c.id_categorie) === form.parent_id)
-                    ?.nom ?? "…"}{" "}
-                  ».
+                  {items.find((c) => String(c.id_categorie) === form.parent_id)?.nom ?? "…"} ».
                 </Alert>
               )}
             </div>

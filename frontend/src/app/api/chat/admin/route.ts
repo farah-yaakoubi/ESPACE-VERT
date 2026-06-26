@@ -37,7 +37,7 @@ async function fetchAdminContext(token: string): Promise<string> {
     fetch(`${BACKEND_URL}/faq`)
       .then(r => r.json())
       .then(d => {
-        const faqs = (d.data ?? d ?? []) as Array<{ question: string; reponse: string; categorie?: string }>;
+        const faqs = (d.data ?? d ?? []) as Array<{ question: string; reponse: string; rubrique?: string }>;
         if (faqs.length > 0) {
           parts.push(
             `FAQs configurées (${faqs.length}) :\n` +

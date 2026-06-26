@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
-import { useTheme } from "@/components/ThemeProvider";
+import { getProductHref } from "@/lib/product-url";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
@@ -38,7 +38,8 @@ interface Resultat {
   slug:       string;
   division:   string;
   categorie?: { nom: string };
-  marque?:    { nom: string };
+  marque?:    { nom: string; slug?: string | null };
+  activite?:  { nom: string; slug?: string | null };
   images:     { url: string; is_principale?: boolean }[];
 }
 
@@ -55,8 +56,7 @@ export function ProduitSearch({
   logoSrc       = "/logos/logo-espace-vert.png",
   logoAlt       = "Logo",
 }: SearchProps) {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const isDark = false;
   const [open,    setOpen]    = useState(false);
   const [query,   setQuery]   = useState("");
   const [results, setResults] = useState<Resultat[]>([]);
@@ -98,7 +98,12 @@ export function ProduitSearch({
     try {
       const res  = await fetch(`${BASE}/produits?search=${encodeURIComponent(q)}&limit=8&actif=true`);
       const data = await res.json();
-      setResults((data.data ?? data) as Resultat[]);
+      const items = (data.data ?? data) as Resultat[];
+      setResults(items);
+      // Tracker la recherche pour l'analytics visiteurs
+      if (typeof window !== "undefined" && typeof (window as any).trackSearch === "function") {
+        (window as any).trackSearch(q.trim(), items.length);
+      }
     } catch { setResults([]); }
     finally   { setLoading(false); }
   }, []);
@@ -110,20 +115,19 @@ export function ProduitSearch({
     timerRef.current = setTimeout(() => search(v), 280);
   };
 
-  const goTo = (slug: string) => { close(); router.push(`/produits/${slug}`); };
+  const goTo = (product: Resultat) => { close(); router.push(getProductHref(product)); };
 
   const onKey = (e: React.KeyboardEvent) => {
     if (!results.length) return;
     if (e.key === "ArrowDown") { e.preventDefault(); setActive(a => Math.min(a + 1, results.length - 1)); }
     if (e.key === "ArrowUp")   { e.preventDefault(); setActive(a => Math.max(a - 1, 0)); }
-    if (e.key === "Enter" && active >= 0) goTo(results[active].slug);
+    if (e.key === "Enter" && active >= 0) goTo(results[active]);
     if (e.key === "Enter" && active < 0 && query.trim()) {
       close(); router.push(`/produits?search=${encodeURIComponent(query)}`);
     }
     if (e.key === "Escape") close();
   };
 
-  const QUICK_TAGS = [ "Biostimulant", "Semences"];
   const palette = isDark
     ? {
         sage: "#7dc040",
@@ -338,42 +342,7 @@ export function ProduitSearch({
                       </AnimatePresence>
                     </div>
 
-                    {/* Quick tags */}
-                    <AnimatePresence>
-                      {!query && !loading && (
-                        <motion.div
-                          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                          style={{ marginTop: 20, display: "flex", flexWrap: "wrap", gap: 10 }}
-                        >
-                          <span style={{
-                            fontSize: 11, fontWeight: 700, letterSpacing: "0.14em",
-                            textTransform: "uppercase", color: palette.textMuted,
-                            alignSelf: "center", marginRight: 4,
-                          }}>
-                            Tendances :
-                          </span>
-                          {QUICK_TAGS.map((tag, i) => (
-                            <motion.button
-                              key={tag}
-                              onClick={() => onInput(tag)}
-                              initial={{ opacity: 0, y: 6 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.14 + i * 0.04 }}
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.96 }}
-                              style={{
-                                fontSize: 13, fontWeight: 500, padding: "6px 14px", borderRadius: 100,
-                                border: `1px solid ${palette.tagBorder}`, background: palette.tagBg,
-                                color: palette.textSecondary, cursor: "pointer",
-                                backdropFilter: "blur(4px)",
-                              }}
-                            >
-                              {tag}
-                            </motion.button>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                   
 
                     {/* Aucun résultat */}
                     <AnimatePresence>
@@ -410,7 +379,7 @@ export function ProduitSearch({
                               return (
                                 <motion.button
                                   key={p.id_produit}
-                                  onClick={() => goTo(p.slug)}
+                                  onClick={() => goTo(p)}
                                   initial={{ opacity: 0, x: -8 }}
                                   animate={{ opacity: 1, x: 0 }}
                                   transition={{ delay: i * 0.04 }}

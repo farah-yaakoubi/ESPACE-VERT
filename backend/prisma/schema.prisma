@@ -40,6 +40,12 @@ enum Division {
   @@map("division")
 }
 
+enum MarqueType {
+  groupe
+  partenaire
+  @@map("marque_type")
+}
+
 // ─── RBAC ─────────────────────────────────────────────────────────────────────
 model Role {
   id_role     Int     @id @default(autoincrement())
@@ -189,11 +195,13 @@ model Marque {
   logo        String?     @db.VarChar(500)
   banniere    String?     @db.VarChar(500)
   description String?     @db.Text
+  translations Json?
   slug        String      @unique @db.VarChar(160)
+  type_marque MarqueType  @default(groupe)
   actif       Boolean     @default(true)
   created_at  DateTime    @default(now())
   categories  Categorie[]
-  produits    Produit[]
+  activites   ActiviteMarque[]
   @@map("marques")
 }
 
@@ -201,6 +209,7 @@ model Activite {
   id_activite Int         @id @default(autoincrement())
   nom         String      @db.VarChar(150)
   description String?     @db.Text
+  translations Json?
   image       String?     @db.VarChar(500)
   banniere    String?     @db.VarChar(500)
   slug        String      @unique @db.VarChar(180)
@@ -208,14 +217,29 @@ model Activite {
   actif       Boolean     @default(true)
   created_at  DateTime    @default(now())
   categories  Categorie[]
-  produits    Produit[]
+  marques     ActiviteMarque[]
   @@map("activites")
+}
+
+model ActiviteMarque {
+  id             Int      @id @default(autoincrement())
+  id_activite    Int
+  id_marque      Int
+  ordre          Int      @default(0)
+  featured       Boolean  @default(false)
+  activite       Activite @relation(fields: [id_activite], references: [id_activite], onDelete: Cascade)
+  marque         Marque   @relation(fields: [id_marque], references: [id_marque], onDelete: Cascade)
+  @@unique([id_activite, id_marque])
+  @@index([id_activite])
+  @@index([id_marque])
+  @@map("activites_marques")
 }
 
 model Categorie {
   id_categorie Int      @id @default(autoincrement())
   nom          String   @db.VarChar(150)
   description  String?  @db.Text
+  translations Json?
   image        String?  @db.VarChar(500)
   slug         String   @unique @db.VarChar(180)
   // ← Une catégorie peut appartenir à une marque ET/OU une activité
@@ -240,36 +264,53 @@ model Produit {
   id_produit           Int      @id @default(autoincrement())
   nom                  String   @db.VarChar(200)
   description          String?  @db.Text
+  translations         Json?
   fiche_technique      String?  @db.Text
   slug                 String   @unique @db.VarChar(220)
   id_categorie         Int
-  id_marque            Int?     // ← optionnel : un produit peut n'appartenir qu'à une activité
-  id_activite          Int?     // ← lien direct optionnel avec activité
   division             Division @default(standard)
   tags                 Json?    @default("[]")
   actif                Boolean  @default(true)
   ordre                Int      @default(0)
   // ── Champs techniques ──────────────────────────────────────────
-  sku                  String?  @db.VarChar(100)
+  sku                  String   @unique @db.VarChar(100)  // référence unique, générée automatiquement
   poids                String?  @db.VarChar(50)
   nature               String?  @db.VarChar(100)
   composition_chimique String?  @db.Text
   usage                String?  @db.Text
   biologique           Boolean? @default(false)
   conditionnement      String?  @db.VarChar(200)
+  // ── Champs semences (catalogue style) ─────────────────────────
+  saison               String?  @db.VarChar(100)
+  obtenteur            String?  @db.VarChar(150)
+  type_semence         String?  @db.VarChar(100)
+  productivite         String?  @db.VarChar(200)
+  longueur_fruit       String?  @db.VarChar(100)
+  resistance           String?  @db.Text
+  descriptif_var       String?  @db.Text
+  obtenteur_logo       String?  @db.VarChar(500)
+  calendrier_semis     String?  @db.VarChar(12)
+  calendrier_recolte   String?  @db.VarChar(12)
   created_at           DateTime @default(now())
   updated_at           DateTime @updatedAt
   categorie Categorie @relation(fields: [id_categorie], references: [id_categorie], onDelete: Restrict, onUpdate: Cascade)
-  marque    Marque?   @relation(fields: [id_marque],    references: [id_marque])
-  activite  Activite? @relation(fields: [id_activite],  references: [id_activite], onDelete: SetNull)
   images    ProduitImage[]
   devis     DevisDemande[]
   visites   VisitePage[]
+  embedding ProduitEmbedding?
   @@index([id_categorie])
-  @@index([id_marque])
-  @@index([id_activite])
+  @@index([sku])
   @@index([actif])
   @@map("produits")
+}
+
+model ProduitEmbedding {
+  id         Int     @id @default(autoincrement())
+  id_produit Int     @unique
+  chunk      String  @db.Text
+  embedding  Json
+  produit    Produit @relation(fields: [id_produit], references: [id_produit], onDelete: Cascade)
+  @@map("produits_embeddings")
 }
 
 model ProduitImage {
@@ -290,6 +331,7 @@ model Actualite {
   id_actualite Int       @id @default(autoincrement())
   titre        String    @db.VarChar(255)
   contenu      String    @db.LongText
+  translations Json?
   image        String?   @db.VarChar(500)
   slug         String    @unique @db.VarChar(280)
   publiee      Boolean   @default(false)
@@ -306,7 +348,8 @@ model Faq {
   id_faq           Int      @id @default(autoincrement())
   question         String   @db.Text
   reponse          String   @db.Text
-  categorie        String?  @db.VarChar(120)
+  translations     Json?
+  rubrique         String?  @db.VarChar(120)
   ordre            Int      @default(0)
   active           Boolean  @default(true)
   nb_consultations Int      @default(0)
@@ -404,6 +447,7 @@ model HeroSlide {
   titre      String?  @db.VarChar(200)
   sousTitre  String?  @db.VarChar(400)
   ctaLabel   String?  @db.VarChar(80)
+  translations Json?
   ordre      Int      @default(0)
   actif      Boolean  @default(true)
   created_at DateTime @default(now())

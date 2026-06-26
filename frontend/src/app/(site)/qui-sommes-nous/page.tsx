@@ -1,155 +1,126 @@
-import Link from "next/link";
+"use client";
+
 import Image from "next/image";
+import Link from "next/link";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   Building2,
   Calendar,
-  CheckCircle2,
   Compass,
+  Handshake,
   Leaf,
+  Lightbulb,
   ShieldCheck,
-  Sprout,
   TrendingUp,
   Users,
 } from "lucide-react";
-import { TimelineEV } from "@/components/qui-sommes-nous/TimelineEV";
 import { AnimatedCount } from "@/components/qui-sommes-nous/AnimatedCount";
 import AgenceSection from "@/components/qui-sommes-nous/AgenceSection";
 
+const MISSION_IMAGE = "/images/notre-mission.webp";
+const HISTORY_IMAGE = "/images/hero/semences-desktop.webp";
+
+const BADGES = ["Semences", "Irrigation", "Fertilisation", "Principes", "Marques"];
+
 const STATS = [
-  { value: 1995, label: "Fondé en", icon: Calendar },
-  { value: 30, suffix: "+", label: "Ans d'expérience", icon: TrendingUp },
-  { value: 100, label: "Collaborateurs", icon: Users },
-  { value: 5, label: "Sociétés du groupe", icon: Building2 },
+  { value: 1995, label: "Année de création",  icon: Calendar,   suffix: "" },
+  { value: 100,  label: "Collaborateurs",      icon: Users,      suffix: "+" },
+  { value: 5,    label: "Sociétés du groupe",  icon: Building2,  suffix: "" },
+  { value: 30,   label: "Ans d'expérience",    icon: TrendingUp, suffix: "+" },
+];
+
+const PRINCIPLES = [
+  { title: "Qualité & fiabilité",  text: "Des produits et services choisis pour leur performance et leur durabilité.", icon: ShieldCheck },
+  { title: "Proximité",            text: "Une présence locale forte et un accompagnement terrain au quotidien.",        icon: Compass },
+  { title: "Partenariats solides", text: "Des collaborations durables construites sur la confiance mutuelle.",          icon: Handshake },
+  { title: "Innovation",           text: "Des solutions modernes adaptées aux enjeux agricoles d'aujourd'hui.",         icon: Lightbulb },
+];
+
+const HISTORY_STEPS = [
+  { year: "1995",        title: "Fondation",          text: "Le groupe démarre autour des semences agricoles en Tunisie." },
+  { year: "2000+",       title: "Expansion",          text: "Élargissement des gammes et développement de l'activité à l'échelle nationale." },
+  { year: "2015",        title: "Diversification",    text: "Structuration des filiales spécialisées et lancement des marques propres." },
+  { year: "Aujourd'hui", title: "Présence nationale", text: "Un groupe structuré, proche du terrain, reconnu et lisible." },
 ];
 
 const SOCIETES = [
-  {
-    name: "Espace Vert SARL",
-    tag: "Maison mère",
-    desc: "Semences, irrigation, matériel agricole et conseil terrain.",
-    image: "/logos/logo-espace-vert.png",
-    color: "#10693B",
-  },
-  {
-    name: "STAJAP",
-    tag: "Espaces verts & sport",
-    desc: "Parcs, stades, jardins et équipements professionnels.",
-    image: "/logosPartenaires/logo stajap.png",
-    color: "#1565C0",
-  },
-  {
-    name: "Mondiale Irrigation",
-    tag: "Fabrication",
-    desc: "Tuyaux et solutions techniques pour l'irrigation.",
-    image: "/logosPartenaires/logo mendial irrigation.png",
-    color: "#006064",
-  },
-  {
-    name: "Baddar Agricole",
-    tag: "Pépinière & semences",
-    desc: "Plants, pépinière et semences spécialisées.",
-    image: "/logosPartenaires/logo baddar agricole.png",
-    color: "#558B2F",
-  },
-  {
-    name: "Fertivert",
-    tag: "Fertilisation",
-    desc: "Engrais, fertilisants et biostimulants formulés localement.",
-    image: "/logos/FERTIVERT LOGO.png",
-    color: "#6B21A8",
-  },
+  { name: "",         image: "/logos/logo espace vert.png" },
+  { name: "",           image: "/logos/FERTIVERT LOGO.png" },
+  { name: "",              image: "/logosPartenaires/logo stajap.png" },
+  { name: "", image: "/logosPartenaires/logo mendial irrigation.png" },
+  { name: "",     image: "/logosPartenaires/logo baddar agricole.png" },
 ];
 
-const DOMAINES = [
-  "Semences",
-  "Irrigation",
-  "Matériel agricole",
-  "Fertilisation",
-  "Jardinage",
-];
-
-const VALEURS = [
-  { text: "Qualité produit et service fiable", icon: ShieldCheck },
-  { text: "Conseil technique de proximité", icon: Compass },
-  { text: "Partenariats solides", icon: CheckCircle2 },
-  { text: "Vision durable de la performance agricole", icon: Sprout },
-];
-
-function GreenDivider() {
+function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   return (
-    <div className="flex items-center gap-3 py-1">
-      <div className="h-px flex-1 rounded-full bg-gradient-to-r from-transparent to-ev-200" />
-      <Leaf size={15} className="text-ev-400" />
-      <div className="h-px flex-1 rounded-full bg-gradient-to-l from-transparent to-ev-200" />
+    <motion.div
+      initial={{ opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function SectionTitle({ label, light = false }: { label: string; light?: boolean }) {
+  return (
+    <div className="mb-6">
+      <h2
+        className={`text-[1.7rem] font-black tracking-[-0.04em] sm:text-[2rem] ${light ? "text-white" : "text-[#161616]"}`}
+        style={{ fontFamily: "var(--font-display)" }}
+      >
+        {label}
+      </h2>
+      <div className={`mt-2.5 h-[3px] w-10 rounded-full ${light ? "bg-[#9dce78]" : "bg-[#5d8a45]"}`} />
     </div>
   );
 }
 
-function SectionFrame({
-  eyebrow,
-  title,
-  subtitle,
-  center = false,
-}: {
-  eyebrow: string;
-  title: string;
-  subtitle?: string;
-  center?: boolean;
-}) {
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={center ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
-      <div className={`inline-flex rounded-full border border-ev-200 bg-white px-4 py-2 shadow-sm ${center ? "" : ""}`}>
-        <p className="eyebrow !mb-0">{eyebrow}</p>
-      </div>
-      <div className={`mt-4 border-l-4 border-ev-200 pl-4 sm:pl-5 ${center ? "mx-auto max-w-2xl border-l-0 border-t-4 pt-5 pl-0" : ""}`}>
-        <h2 className="site-heading qsn-title-reveal text-[2rem] sm:text-[2.45rem] lg:text-[3.1rem]">{title}</h2>
-        {subtitle && <p className="site-copy mt-4">{subtitle}</p>}
-      </div>
+    <div className={`rounded-2xl border border-[#ddd5c4] bg-white p-7 shadow-[0_4px_24px_rgba(50,40,20,0.07)] sm:p-8 ${className}`}>
+      {children}
     </div>
   );
 }
 
-function SocietesMarquee() {
-  const items = [...SOCIETES, ...SOCIETES];
-
+function LogoMarquee() {
+  const items = [...SOCIETES, ...SOCIETES, ...SOCIETES];
   return (
     <>
       <style>{`
-        @keyframes aboutSocietesMarquee {
+        @keyframes logoScroll {
           from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
+          to   { transform: translateX(calc(-100% / 3)); }
         }
-        .about-societes-track {
-          animation: aboutSocietesMarquee 28s linear infinite;
-        }
-        .about-societes-wrap:hover .about-societes-track {
-          animation-play-state: paused;
-        }
+        .logo-track { animation: logoScroll 32s linear infinite; }
+        .logo-wrap:hover .logo-track { animation-play-state: paused; }
       `}</style>
-
-      <div className="about-societes-wrap relative overflow-hidden">
-        <div
-          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 sm:w-24"
-          style={{ background: "linear-gradient(90deg, white, transparent)" }}
-        />
-        <div
-          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 sm:w-24"
-          style={{ background: "linear-gradient(270deg, white, transparent)" }}
-        />
-
-        <div className="about-societes-track flex w-max items-center gap-4 pr-4">
-          {items.map((societe, index) => (
-            <div key={`${societe.name}-${index}`} className="shrink-0">
-              <Image
-                src={societe.image}
-                alt={societe.name}
-                width={960}
-                height={640}
-                className="h-[88px] w-auto object-contain sm:h-[108px] lg:h-[124px]"
-                sizes="(max-width: 640px) 40vw, 240px"
-              />
-            </div>
+      <div className="logo-wrap relative overflow-hidden py-3">
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-white to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-white to-transparent" />
+        <div className="logo-track flex w-max items-center gap-10">
+          {items.map((s, i) => (
+            <motion.div
+              key={`${s.name}-${i}`}
+              whileHover={{ scale: 1.08 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="flex-shrink-0 flex h-24 w-[200px] items-center justify-center"
+            >
+              <div className="h-full w-full rounded-2xl bg-white border-2 border-[#e8e2d8] flex flex-col items-center justify-center gap-2 px-5 py-3 shadow-[0_2px_12px_rgba(50,40,20,0.08)] hover:border-[#5d8a45] transition-colors duration-200">
+                <Image
+                  src={s.image}
+                  alt={s.name}
+                  width={160}
+                  height={60}
+                  className="h-14 w-auto max-w-full object-contain"
+                />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#8a7e72]">{s.name}</span>
+              </div>
+            </motion.div>
           ))}
         </div>
       </div>
@@ -157,260 +128,357 @@ function SocietesMarquee() {
   );
 }
 
+/* ════════════════════════════════════════════════════════════
+   PAGE
+════════════════════════════════════════════════════════════ */
 export default function QuiSommesNousPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <>
       <style>{`
-        @keyframes qsnTitleReveal {
-          from { opacity: 0; transform: translateY(16px); }
-          to { opacity: 1; transform: translateY(0); }
+        .qsn-root {
+          background:
+            radial-gradient(ellipse 80% 35% at 0% 15%, rgba(93,138,69,0.12) 0%, transparent 55%),
+            radial-gradient(ellipse 60% 40% at 100% 75%, rgba(93,138,69,0.08) 0%, transparent 55%),
+            #f0ebe0;
+          min-height: 100vh;
         }
-        @keyframes qsnSoftFade {
-          from { opacity: 0; transform: translateY(12px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .qsn-title-reveal {
-          animation: qsnTitleReveal .7s cubic-bezier(.22,1,.36,1) both;
-        }
-        .qsn-soft-fade {
-          animation: qsnSoftFade .55s cubic-bezier(.22,1,.36,1) both;
+        @media (min-width: 1280px) {
+          .qsn-root {
+            background:
+              radial-gradient(ellipse 80% 35% at 0% 15%, rgba(93,138,69,0.12) 0%, transparent 55%),
+              radial-gradient(ellipse 60% 40% at 100% 75%, rgba(93,138,69,0.08) 0%, transparent 55%),
+              linear-gradient(90deg,
+                #5d8245 0%, #5d8245 3%,
+                #f0ebe0 3%, #f0ebe0 97%,
+                #5d8245 97%, #5d8245 100%
+              );
+          }
         }
       `}</style>
 
-      <section className="relative overflow-hidden bg-ev-950">
-        <Image
-          src="/images/hero/Untitled-4.webp"
-          alt="Groupe Espace Vert"
-          fill
-          priority
-          className="object-cover"
-          sizes="100vw"
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(4,31,20,.88)_0%,rgba(9,65,38,.78)_45%,rgba(18,105,59,.45)_100%)]" />
-        <div className="absolute -right-20 top-14 h-64 w-64 rounded-full border border-white/10" />
-        <div className="absolute -left-16 bottom-0 h-56 w-56 rounded-full border border-ev-300/20" />
+      <div className="qsn-root">
+        <div className="container-ev py-10 sm:py-16">
 
-        <div className="relative container-ev pb-14 pt-28 sm:pb-16 sm:pt-32 lg:pb-20">
-          <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
-            <div className="max-w-3xl">
-              <p className="eyebrow mb-5 text-ev-200">Groupe Espace Vert · Depuis 1995</p>
-              <h1
-                className="qsn-title-reveal text-4xl font-black leading-[1.04] tracking-tight text-white sm:text-[3.7rem] lg:text-[4.5rem]"
+          {/* ══ HERO : titre seul, grand, aéré ══ */}
+          <Reveal>
+            <div className="mb-3">
+              <p
+                className="mb-3 text-[11px] font-black uppercase tracking-[0.25em] text-[#5d8a45]"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                Qui sommes-nous
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-8 text-white/82 sm:text-lg">
-                Un groupe tunisien qui réunit expertise terrain, réseau d&apos;agences et solutions agricoles
-                complètes.
+                Le groupe Espace Vert
               </p>
+              <h1
+                className="text-[clamp(4rem,9vw,7.5rem)] font-black leading-[0.85] tracking-[-0.06em] text-[#161616]"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                Qui sommes{" "}
+                <span className="text-[#5d8a45]">nous?</span>
+              </h1>
+            </div>
+          </Reveal>
 
-              <div className="mt-8 flex flex-wrap gap-3">
-                <a href="#groupe" className="btn-primary">
-                  Découvrir le groupe
-                </a>
-                <a
-                  href="#agences"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-6 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-all hover:bg-white/20"
-                >
-                  Voir nos agences
-                  <ArrowRight size={16} />
-                </a>
-              </div>
-
-              <div className="mt-8 flex flex-wrap gap-2.5">
-                {DOMAINES.map((domaine) => (
-                  <span
-                    key={domaine}
-                    className="rounded-full border border-white/18 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-white/88 backdrop-blur-sm"
-                  >
-                    {domaine}
-                  </span>
-                ))}
+          {/* ══ BANDEAU INTRO : sous-titre dans son propre espace ══ */}
+          <Reveal delay={0.08}>
+            <div className="mb-10 mt-6 rounded-2xl border border-[#c8dbb8] bg-[#eef6e7] px-7 py-5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-[1.15rem] leading-8 font-medium text-[#2a4a1e]">
+                Un groupe tunisien qui réunit <span className="font-black text-[#5d8a45]">expertise terrain</span>,{" "}
+                <span className="font-black text-[#5d8a45]">réseau d'agences</span> et{" "}
+                <span className="font-black text-[#5d8a45]">solutions agricoles complètes</span>.
+              </p>
+              <div className="flex-shrink-0 flex items-center gap-2 mt-2 sm:mt-0">
+                <div className="h-2 w-2 rounded-full bg-[#5d8a45]" />
+                <span className="text-[0.85rem] font-semibold text-[#4a7236]">Depuis 1995 · Tunisie</span>
               </div>
             </div>
+          </Reveal>
 
-            <div className="lg:justify-self-end">
-              <div className="rounded-[30px] border border-white/12 bg-white/10 p-6 text-white backdrop-blur-md sm:p-7">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/14">
-                    <Leaf size={28} className="text-ev-200" />
-                  </div>
+          {/* ── LIGNE 1 : Identité + Grande image ── */}
+          <div className="grid gap-6 mb-6 md:grid-cols-[1fr_1.5fr]">
+
+            <Reveal delay={0.03}>
+              <Card className="h-full flex flex-col justify-between">
+                <div className="flex items-start gap-5 mb-6">
+                  <motion.div
+                    animate={{ y: [0, -5, 0] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl border-2 border-[#c8dbb8] bg-[#eef6e7] text-[#5d8a45]"
+                  >
+                    <Leaf size={26} strokeWidth={1.8} />
+                  </motion.div>
                   <div>
-                    <p className="text-lg font-black">ESPACE VERT</p>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ev-200">
-                      Innovation · Qualité · Rentabilité
+                    <p
+                      className="text-[11px] font-black uppercase tracking-[0.18em] text-[#5d8a45] mb-2"
+                      style={{ fontFamily: "var(--font-display)" }}
+                    >
+                      Groupe Espace Vert
+                    </p>
+                    <p className="text-[1.05rem] leading-7 text-[#4d463e]">
+                      Fondé en 1995, nous accompagnons les agriculteurs tunisiens
+                      avec des solutions intégrées — semences, irrigation, fertilisation.
                     </p>
                   </div>
                 </div>
+                <div className="flex flex-wrap gap-2">
+                  {BADGES.map((b) => (
+                    <span
+                      key={b}
+                      className="rounded-full border-2 border-[#c8dbb8] bg-[#eef6e7] px-4 py-1.5 text-[0.8rem] font-bold text-[#3a6228] tracking-wide"
+                    >
+                      {b}
+                    </span>
+                  ))}
+                </div>
+              </Card>
+            </Reveal>
 
-                <p className="mt-6 text-sm leading-7 text-white/78">
-                  Cinq sociétés, quatre agences et une même volonté d&apos;accompagner durablement les
-                  professionnels de l&apos;agriculture en Tunisie.
-                </p>
-              </div>
-            </div>
+            <Reveal delay={0.05}>
+              <motion.div
+                initial={{ opacity: 0, scale: 1.04 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                className="relative overflow-hidden rounded-2xl border-2 border-[#c8d8b4] shadow-[0_8px_32px_rgba(50,40,20,0.12)]"
+                style={{ minHeight: 240 }}
+              >
+                <Image
+                  src={HISTORY_IMAGE}
+                  alt="Groupe Espace Vert"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 55vw"
+                />
+                {/* Overlay vert dégradé */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0f3a1e]/70 via-transparent to-transparent" />
+                <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-white/70">Fondé en</p>
+                    <p
+                      className="text-[3rem] font-black text-white leading-none"
+                      style={{ fontFamily: "var(--font-display)" }}
+                    >
+                      1995
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-[#5d8a45]/80 px-4 py-2 backdrop-blur-sm">
+                    <p className="text-[0.8rem] font-bold text-white">Groupe tunisien</p>
+                    <p className="text-[0.72rem] text-white/80">Agriculture &amp; Solutions</p>
+                  </div>
+                </div>
+              </motion.div>
+            </Reveal>
           </div>
-        </div>
-      </section>
 
-      <section id="groupe" className="border-b border-sand-200 bg-white">
-        <div className="container-ev py-10 sm:py-14 lg:py-16">
-          <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
-            <SectionFrame
-              eyebrow="Présentation"
-              title="Un groupe structuré au service de l’agriculture tunisienne"
-              subtitle="Fondé en 1995, Espace Vert s’est développé autour des semences, de l’irrigation, du matériel agricole et de la fertilisation."
-            />
+          {/* ── LIGNE 2 : Mission + Histoire ── */}
+          <div className="grid gap-6 mb-6 md:grid-cols-[1fr_1.5fr]">
 
-            <div className="space-y-5">
-              <div className="rounded-[24px] border border-ev-100 bg-ev-50/60 p-5 sm:p-6">
-                <p className="text-sm leading-7 text-ev-900">
-                  Le groupe s&apos;appuie aujourd&apos;hui sur des agences régionales, des filiales spécialisées
-                  et <strong>trois marques mères</strong> qui structurent son offre sur le marché.
-                </p>
+            {/* Mission — fond vert foncé */}
+            <Reveal delay={0.04}>
+              <div className="h-full flex flex-col gap-0 rounded-2xl overflow-hidden border-2 border-[#1b5430] shadow-[0_4px_24px_rgba(15,58,30,0.15)]">
+                {/* Header vert */}
+                <div className="bg-[#1b5430] px-7 pt-7 pb-5">
+                  <SectionTitle label="Notre mission" light />
+                  <p className="text-[1.05rem] leading-8 text-white/85">
+                    Accompagner les projets agricoles et faciliter leur performance
+                    avec conseil, proximité et solutions complètes.
+                  </p>
+                </div>
+                {/* Image */}
+                <div className="relative flex-1 min-h-[180px]">
+                  <Image src={MISSION_IMAGE} alt="Notre mission" fill className="object-cover" sizes="340px" />
+                  <div className="absolute inset-0 bg-[#1b5430]/20" />
+                </div>
               </div>
+            </Reveal>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-              {STATS.map((stat) => {
-                const Icon = stat.icon;
+            {/* Histoire */}
+            <Reveal delay={0.06}>
+              <Card className="h-full">
+                <SectionTitle label="Notre histoire" />
+                <div className="grid gap-5 sm:grid-cols-[1fr_1fr]">
 
-                return (
-                  <div
-                    key={stat.label}
-                    className="rounded-[24px] border border-sand-200 bg-sand-50 px-5 py-5 shadow-[0_18px_40px_rgba(17,24,39,0.04)] sm:px-6"
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <p className="text-3xl font-black text-ev-950 sm:text-[2.65rem]">
-                          <AnimatedCount value={stat.value} suffix={stat.suffix} />
+                  {/* Timeline */}
+                  <div className="space-y-0">
+                    {HISTORY_STEPS.map((step, i) => (
+                      <motion.div
+                        key={step.year}
+                        initial={{ opacity: 0, x: -10 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.4, delay: i * 0.07 }}
+                        className="flex gap-4"
+                      >
+                        <div className="flex flex-col items-center">
+                          <div className="mt-[7px] h-3 w-3 flex-shrink-0 rounded-full bg-[#5d8a45] ring-[3px] ring-[#c8dbb8]" />
+                          {i < HISTORY_STEPS.length - 1 && (
+                            <div className="w-[2px] flex-1 bg-[#c8dbb8]" style={{ minHeight: 36 }} />
+                          )}
+                        </div>
+                        <div className="pb-5">
+                          <span
+                            className="text-[11px] font-black uppercase tracking-widest text-[#5d8a45]"
+                            style={{ fontFamily: "var(--font-display)" }}
+                          >
+                            {step.year}
+                          </span>
+                          <p className="text-[1.05rem] font-bold text-[#1a1a1a]">{step.title}</p>
+                          <p className="text-[0.88rem] leading-6 text-[#726759] mt-0.5">{step.text}</p>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Photos 2×2 */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {[HISTORY_IMAGE, MISSION_IMAGE, MISSION_IMAGE, HISTORY_IMAGE].map((src, i) => (
+                      <motion.div
+                        key={i}
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 22 }}
+                        className="relative overflow-hidden rounded-xl border-2 border-[#d8cfbf]"
+                        style={{ aspectRatio: "1/1" }}
+                      >
+                        <Image src={src} alt="" fill className="object-cover" sizes="140px" />
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            </Reveal>
+          </div>
+
+          {/* ── LIGNE 3 : Chiffres + Principes ── */}
+          <div className="grid gap-6 mb-6 md:grid-cols-2">
+
+            {/* Chiffres — fond vert clair avec accent */}
+            <Reveal delay={0.04}>
+              <div className="rounded-2xl border-2 border-[#5d8a45] bg-[#f5faf0] p-7 sm:p-8 shadow-[0_4px_24px_rgba(93,138,69,0.12)]">
+                <SectionTitle label="En chiffres" />
+                <div className="grid grid-cols-2 gap-4">
+                  {STATS.map((s, i) => {
+                    const Icon = s.icon;
+                    return (
+                      <motion.div
+                        key={s.label}
+                        initial={{ opacity: 0, y: 12 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.38, delay: i * 0.05 }}
+                        whileHover={{ y: -3, boxShadow: "0 8px 24px rgba(93,138,69,0.18)" }}
+                        className="rounded-xl border-2 border-[#c8dbb8] bg-white p-4 transition-shadow"
+                      >
+                        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-[#5d8a45] text-white">
+                          <Icon size={18} />
+                        </div>
+                        <p
+                          className="text-[2.2rem] font-black leading-none tracking-[-0.04em] text-[#1b5430]"
+                          style={{ fontFamily: "var(--font-display)" }}
+                        >
+                          <AnimatedCount value={s.value} suffix={s.suffix} />
                         </p>
-                        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">
-                          {stat.label}
-                        </p>
-                      </div>
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-ev-700 shadow-sm">
-                        <Icon size={18} />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-b border-sand-200 bg-white">
-        <div className="container-ev py-10 sm:py-12 lg:py-14">
-          <SectionFrame
-            eyebrow="Nos sociétés"
-            title="Des activités complémentaires, une même exigence"
-            subtitle="Une lecture visuelle du groupe à travers ses principales entités."
-          />
-
-          <div className="mt-8">
-            <SocietesMarquee />
-          </div>
-        </div>
-      </section>
-
-      <TimelineEV />
-
-      <section className="border-b border-sand-200 bg-ev-950 text-white">
-        <div className="container-ev py-12 sm:py-16 lg:py-20">
-          <div className="grid gap-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-start">
-            <div>
-              <div className="inline-flex rounded-full border border-white/10 bg-white/5 px-4 py-2 shadow-[0_10px_30px_rgba(0,0,0,0.08)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ev-300">Notre mission</p>
-              </div>
-              <h2 className="qsn-title-reveal mt-4 text-[2rem] font-bold leading-tight sm:text-[2.6rem]">
-                Accompagner les projets agricoles avec conseil, technique et proximité
-              </h2>
-              <div className="qsn-soft-fade mt-6 max-w-2xl rounded-[28px] border border-white/10 bg-white/[0.04] p-6 sm:p-7">
-                <p className="text-[15px] leading-8 text-white/82 sm:text-base">
-                  Nous proposons des solutions fiables et un accompagnement concret, depuis le choix produit
-                  jusqu&apos;au suivi terrain.
-                </p>
-
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  <div className="qsn-soft-fade rounded-2xl border border-white/8 bg-black/10 px-4 py-4 transition-transform duration-200 hover:-translate-y-0.5">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/8">
-                        <Compass size={18} className="text-ev-300" />
-                      </div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ev-300">Conseil</p>
-                    </div>
-                    <p className="mt-2 text-sm leading-7 text-white/78">
-                      Une lecture terrain et des recommandations adaptées aux besoins réels des exploitations.
-                    </p>
-                  </div>
-                  <div className="qsn-soft-fade rounded-2xl border border-white/8 bg-black/10 px-4 py-4 transition-transform duration-200 hover:-translate-y-0.5">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/8">
-                        <Sprout size={18} className="text-ev-300" />
-                      </div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ev-300">Suivi</p>
-                    </div>
-                    <p className="mt-2 text-sm leading-7 text-white/78">
-                      Un accompagnement durable, du choix de la solution jusqu&apos;à la mise en oeuvre.
-                    </p>
-                  </div>
+                        <p className="mt-1.5 text-[0.85rem] font-medium text-[#5a6e52]">{s.label}</p>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
+            </Reveal>
 
-            <div className="qsn-soft-fade rounded-[30px] border border-white/10 bg-white/5 p-6 shadow-[0_18px_40px_rgba(0,0,0,0.10)] sm:p-7">
-              <div className="flex items-center gap-3 border-b border-white/8 pb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/8">
-                  <Leaf size={18} className="text-ev-300" />
+            {/* Principes */}
+            <Reveal delay={0.06}>
+              <Card>
+                <SectionTitle label="Nos principes" />
+                <div className="grid grid-cols-2 gap-4">
+                  {PRINCIPLES.map((item, i) => {
+                    const Icon = item.icon;
+                    const colors = [
+                      { bg: "bg-[#eef6e7]", icon: "text-[#5d8a45]", border: "border-[#c8dbb8]", title: "text-[#1b5430]" },
+                      { bg: "bg-[#f0f7eb]", icon: "text-[#3a6228]", border: "border-[#b8d4a4]", title: "text-[#2a4a1e]" },
+                      { bg: "bg-[#f5faf0]", icon: "text-[#5d8a45]", border: "border-[#c8dbb8]", title: "text-[#1b5430]" },
+                      { bg: "bg-[#eef6e7]", icon: "text-[#3a6228]", border: "border-[#b8d4a4]", title: "text-[#2a4a1e]" },
+                    ];
+                    const c = colors[i];
+                    return (
+                      <motion.div
+                        key={item.title}
+                        initial={{ opacity: 0, y: 12 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.38, delay: i * 0.05 }}
+                        whileHover={{ y: -4 }}
+                        className={`rounded-xl border-2 ${c.border} ${c.bg} p-5 text-center`}
+                      >
+                        <div className={`mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-white ${c.icon} shadow-sm`}>
+                          <Icon size={20} />
+                        </div>
+                        <p className={`text-[0.92rem] font-bold ${c.title} leading-tight`}>{item.title}</p>
+                        <p className="mt-1.5 text-[0.8rem] leading-6 text-[#706456]">{item.text}</p>
+                      </motion.div>
+                    );
+                  })}
                 </div>
+              </Card>
+            </Reveal>
+          </div>
+
+          {/* ── LIGNE 4 : Sociétés ── */}
+          <Reveal delay={0.05}>
+            <Card className="mb-6 border-2 border-[#ddd5c4]">
+              <SectionTitle label="Nos sociétés" />
+              <LogoMarquee />
+            </Card>
+          </Reveal>
+
+          {/* ── LIGNE 5 : CTA ── */}
+          <Reveal delay={0.06}>
+            <div className="relative mb-6 overflow-hidden rounded-2xl bg-[linear-gradient(135deg,#0f3a1e_0%,#1b5430_55%,#1f6035_100%)] p-8 text-white shadow-[0_14px_40px_rgba(15,58,30,0.30)] sm:p-10">
+              {/* Motif décoratif */}
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(120,180,90,0.22),transparent_50%)]" />
+              <div className="pointer-events-none absolute -right-8 -top-8 h-48 w-48 rounded-full border-[3px] border-white/5" />
+              <div className="pointer-events-none absolute -right-4 -top-4 h-32 w-32 rounded-full border-[3px] border-white/8" />
+              <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ev-300">Nos principes</p>
-                  <p className="mt-1 text-sm text-white/60">Les bases de notre manière de travailler</p>
+                  <p
+                    className="text-[11px] font-black uppercase tracking-[0.25em] text-[#9dce78] mb-3"
+                    style={{ fontFamily: "var(--font-display)" }}
+                  >
+                    Partenaire de confiance
+                  </p>
+                  <h2
+                    className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-black leading-tight tracking-[-0.03em] text-white"
+                    style={{ fontFamily: "var(--font-display)" }}
+                  >
+                    Cultivons la performance ensemble
+                  </h2>
+                  <p className="mt-3 text-[1.05rem] leading-8 text-white/75">
+                    Ensemble, préparons l'agriculture de demain.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    href="/activites"
+                    className="inline-flex items-center gap-2 rounded-full bg-[#5d8a45] px-7 py-3.5 text-[0.95rem] font-bold text-white transition hover:bg-[#6e9858] shadow-[0_4px_14px_rgba(93,138,69,0.5)]"
+                  >
+                    Nos activités <ArrowRight size={16} />
+                  </Link>
+                  <Link
+                    href="/contact"
+                    className="inline-flex items-center rounded-full border-2 border-white/30 px-7 py-3.5 text-[0.95rem] font-semibold text-white transition hover:bg-white/10"
+                  >
+                    Nous contacter
+                  </Link>
                 </div>
               </div>
-
-              <ul className="mt-5 space-y-3">
-                {VALEURS.map((value) => {
-                  const Icon = value.icon;
-
-                  return (
-                  <li key={value.text} className="qsn-soft-fade rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3.5 transition-transform duration-200 hover:-translate-y-0.5">
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white/8">
-                        <Icon size={16} className="text-ev-300" />
-                      </div>
-                      <p className="text-sm leading-7 text-white/84">{value.text}</p>
-                    </div>
-                  </li>
-                )})}
-              </ul>
             </div>
-          </div>
-        </div>
-      </section>
+          </Reveal>
 
-      <div id="agences">
-        <AgenceSection />
+          {/* ── AGENCES ── */}
+          <Reveal delay={0.08}>
+            <AgenceSection />
+          </Reveal>
+
+        </div>
       </div>
-
-      <section className="bg-white">
-        <div className="container-ev py-14 text-center sm:py-16">
-          <h2 className="site-subheading qsn-title-reveal text-[2rem] sm:text-[2.5rem]">
-            Vous souhaitez échanger avec notre équipe ?
-          </h2>
-          <p className="site-copy mx-auto mt-4 max-w-2xl">
-            Nous sommes à votre disposition pour vous orienter vers la solution la plus adaptée à votre projet.
-          </p>
-          <div className="mt-8 flex justify-center">
-            <Link href="/contact" className="btn-primary">
-              Nous contacter
-            </Link>
-          </div>
-        </div>
-      </section>
-    </div>
+    </>
   );
 }

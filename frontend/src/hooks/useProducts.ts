@@ -62,8 +62,7 @@ export function useProducts(initial: UseProductsOptions = {}): UseProductsResult
       setLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, search, categorie, stableMarque, stableDivision, stableLimit]);
-  // stableActivite inclus : le backend supporte ?id_activite= (filtrage via categorie.id_activite)
+  }, [page, search, categorie, stableMarque, stableActivite, stableDivision, stableLimit]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 

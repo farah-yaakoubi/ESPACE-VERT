@@ -1,0 +1,41 @@
+
+> espace-vert-frontend@1.0.0 dev
+> next dev
+
+   ▲ Next.js 15.5.18
+   - Local:        http://localhost:3001
+   - Network:      http://192.168.229.1:3001
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 2.1s
+ ○ Compiling /activites/[slug]/etude-installation ...
+ ✓ Compiled /activites/[slug]/etude-installation in 4.5s (1650 modules)
+ GET /activites/irrigation/etude-installation 200 in 5978ms
+ GET /activites/irrigation?cat=180 200 in 6041ms
+ ✓ Compiled in 5.2s (743 modules)
+ ○ Compiling /marques/[slug] ...
+ ✓ Compiled /marques/[slug] in 1729ms (1616 modules)
+ GET /marques/baddar-semences 200 in 4483ms
+ ✓ Compiled in 2.8s (746 modules)
+ ✓ Compiled in 1614ms (746 modules)
+ ○ Compiling /contact ...
+ ✓ Compiled /contact in 4.3s (1599 modules)
+ GET /contact 200 in 6457ms
+ GET /devis 200 in 6468ms
+ ✓ Compiled in 3.4s (776 modules)
+ ✓ Compiled in 2.5s (776 modules)
+ ✓ Compiled in 3.2s (776 modules)
+ ✓ Compiled in 1657ms (776 modules)
+ ✓ Compiled in 2.1s (776 modules)
+ ✓ Compiled in 1640ms (776 modules)
+ ✓ Compiled in 3.8s (776 modules)
+ ✓ Compiled in 460ms (776 modules)
+ ✓ Compiled in 1995ms (776 modules)
+ ✓ Compiled in 578ms (776 modules)
+ ✓ Compiled in 579ms (776 modules)
+ ✓ Compiled in 569ms (776 modules)
+ ✓ Compiled in 504ms (776 modules)
+ ✓ Compiled in 755ms (776 modules)
+ ✓ Compiled in 1508ms (776 modules)
+ ✓ Compiled in 703ms (776 modules)

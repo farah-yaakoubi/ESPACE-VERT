@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { Mail, MapPin, Phone } from "lucide-react";
+import Image from "next/image";
+import { useMemo, useState } from "react";
 
 type Agence = {
   id: string;
@@ -73,13 +73,25 @@ function AgencePreview({ agence }: { agence: Agence }) {
       exit={{ opacity: 0, y: 8, scale: 0.96 }}
       transition={{ duration: 0.18 }}
       className="pointer-events-none absolute z-20 hidden w-[220px] -translate-x-1/2 overflow-hidden rounded-2xl border border-white/70 bg-white shadow-[0_16px_42px_rgba(0,0,0,0.18)] sm:block"
-      style={{ left: `${agence.pinX}%`, top: `calc(${agence.pinY}% - 14px)`, transform: "translate(-50%, -100%)" }}
+      style={{
+        left: `${agence.pinX}%`,
+        top: `calc(${agence.pinY}% - 14px)`,
+        transform: "translate(-50%, -100%)",
+      }}
     >
       <div className="relative h-28 w-full">
-        <Image src={agence.image} alt={agence.ville} fill className="object-cover" sizes="220px" />
+        <Image
+          src={agence.image}
+          alt={agence.ville}
+          fill
+          className="object-cover"
+          sizes="220px"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-3">
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ev-200">{agence.region}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ev-200">
+            {agence.region}
+          </p>
           <p className="mt-1 text-sm font-bold text-white">{agence.ville}</p>
         </div>
       </div>
@@ -103,11 +115,34 @@ export default function AgenceSection() {
     <section className="bg-white border-b border-sand-200">
       <div className="container-ev py-12 sm:py-16 lg:py-20">
         <div className="max-w-3xl">
-          <p className="eyebrow mb-4">Nos agences</p>
-          <h2 className="site-heading">Une présence de proximité à l&apos;échelle nationale</h2>
-          <p className="site-copy mt-4">
-            Survolez la carte ou sélectionnez une agence pour afficher rapidement ses coordonnées.
-          </p>
+          <motion.p
+            initial={{ opacity: 0, y: -10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.4 }}
+            className="eyebrow mb-4"
+          >
+            Nos agences
+          </motion.p>
+          <motion.h2
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.5, delay: 0.08 }}
+            className="site-heading"
+          >
+            Une présence de proximité à l&apos;échelle nationale
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.5, delay: 0.16 }}
+            className="site-copy mt-4"
+          >
+            Survolez la carte ou sélectionnez une agence pour afficher
+            rapidement ses coordonnées.
+          </motion.p>
         </div>
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
@@ -128,7 +163,11 @@ export default function AgenceSection() {
                 priority
               />
 
-              <AnimatePresence>{activeAgence ? <AgencePreview key={activeAgence.id} agence={activeAgence} /> : null}</AnimatePresence>
+              <AnimatePresence>
+                {activeAgence ? (
+                  <AgencePreview key={activeAgence.id} agence={activeAgence} />
+                ) : null}
+              </AnimatePresence>
 
               {AGENCES.map((agence) => {
                 const active = agence.id === activeId;
@@ -186,8 +225,12 @@ export default function AgenceSection() {
                     <div className="flex items-center gap-3">
                       <span className="h-2.5 w-2.5 rounded-full bg-ev-600" />
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-ev-950">{agence.ville}</p>
-                        <p className="mt-1 text-xs text-gray-500">{agence.region}</p>
+                        <p className="text-sm font-semibold text-ev-950">
+                          {agence.ville}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          {agence.region}
+                        </p>
                       </div>
                     </div>
                   </button>
@@ -206,13 +249,19 @@ export default function AgenceSection() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ev-200">{activeAgence.region}</p>
-                  <p className="mt-1 text-lg font-bold text-white">{activeAgence.ville}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ev-200">
+                    {activeAgence.region}
+                  </p>
+                  <p className="mt-1 text-lg font-bold text-white">
+                    {activeAgence.ville}
+                  </p>
                 </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
-                <h3 className="text-2xl font-bold text-ev-950">{activeAgence.ville}</h3>
+                <h3 className="text-2xl font-bold text-ev-950">
+                  {activeAgence.ville}
+                </h3>
                 {activeAgence.principal && (
                   <span className="rounded-full bg-ev-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-ev-800">
                     Siège
@@ -220,7 +269,9 @@ export default function AgenceSection() {
                 )}
               </div>
 
-              <p className="mt-2 text-sm font-medium text-ev-700">{activeAgence.region}</p>
+              <p className="mt-2 text-sm font-medium text-ev-700">
+                {activeAgence.region}
+              </p>
               <p className="site-copy-sm mt-5">{activeAgence.adresse}</p>
 
               <div className="mt-6 space-y-3">
@@ -228,7 +279,9 @@ export default function AgenceSection() {
                   <Phone size={16} className="mt-0.5 shrink-0 text-ev-600" />
                   <div>
                     <p>{activeAgence.tel}</p>
-                    {activeAgence.tel2 && <p className="mt-1">{activeAgence.tel2}</p>}
+                    {activeAgence.tel2 && (
+                      <p className="mt-1">{activeAgence.tel2}</p>
+                    )}
                   </div>
                 </div>
 

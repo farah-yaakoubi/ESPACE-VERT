@@ -32,6 +32,17 @@ export const listAdmin = async (req: Request, res: Response) => {
   } catch (err) { handleError(res, err); }
 };
 
+// ── PUBLIC : incrémenter le compteur de consultations ─────────────────────────
+// POST /faq/:id/view — appelé par le chatbot (via window.trackEvFaq) et la page FAQ
+export const incrementView = async (req: Request, res: Response) => {
+  try {
+    const id = parseId(req.params.id);
+    if (!id) return badRequest(res, "ID invalide");
+    await faqService.incrementConsultation(id);
+    ok(res, { incremented: true });
+  } catch (err) { handleError(res, err); }
+};
+
 export const create = async (req: Request, res: Response) => {
   try {
     const dto  = CreateFaqSchema.parse(req.body);

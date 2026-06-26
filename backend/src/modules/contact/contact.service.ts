@@ -6,6 +6,11 @@ import { prisma } from "../../lib/prisma";
 import { CreateContactDto, ReplyContactDto, ContactQueryDto } from "./contact.schema";
 import { notifRepository } from "../notifications/notifications.repository";
 import { notifSseBroadcast } from "../notifications/notifications.controller";
+import {
+  sendMail,
+  tplContactConfirmation,
+  tplContactReply,
+} from "../../lib/mailer";
 
 export const contactService = {
 
@@ -15,25 +20,39 @@ export const contactService = {
       const v = await prisma.visiteur.findUnique({ where: { token_visiteur: data.token_visiteur } });
       if (v) id_visiteur = v.id_visiteur;
     }
-    return contactRepository.create({
+
+    const msg = await contactRepository.create({
       nom:         data.nom.trim(),
       email:       data.email.toLowerCase().trim(),
       sujet:       data.sujet ?? null,
       message:     data.message,
       id_visiteur: id_visiteur ?? null,
-    }).then(async (msg) => {
-      try {
-        await notifRepository.createForAll(
-          "nouveau_message",
-          `Nouveau message — ${data.nom.trim()}`,
-          data.sujet ?? data.message.slice(0, 80),
-          "/admin/contact",
-          { source_label: data.nom.trim() }
-        );
-        notifSseBroadcast({ type: "nouveau_message", titre: `Nouveau message — ${data.nom.trim()}` });
-      } catch (e) { console.error("[contact notif]", e); }
-      return msg;
     });
+
+    // ── Email de confirmation au visiteur ──────────────────────────────────
+    const { subject, html } = tplContactConfirmation({
+      nom:     data.nom.trim(),
+      email:   data.email.toLowerCase().trim(),
+      sujet:   data.sujet ?? null,
+      message: data.message,
+    });
+    sendMail({ to: data.email.toLowerCase().trim(), subject, html }).catch((e) =>
+      console.error("[contact.email.confirmation]", e)
+    );
+
+    // ── Notification admin ─────────────────────────────────────────────────
+    try {
+      await notifRepository.createForAll(
+        "nouveau_message",
+        `Nouveau message — ${data.nom.trim()}`,
+        data.sujet ?? data.message.slice(0, 80),
+        "/admin/contact",
+        { source_label: data.nom.trim() }
+      );
+      notifSseBroadcast({ type: "nouveau_message", titre: `Nouveau message — ${data.nom.trim()}` });
+    } catch (e) { console.error("[contact notif]", e); }
+
+    return msg;
   },
 
   async list(params: ContactQueryDto) {
@@ -56,9 +75,20 @@ export const contactService = {
 
   async reply(id: number, dto: ReplyContactDto, id_admin: number) {
     const current = await contactService.getById(id);
-    if (current.reponse) throw { status: 409, message: "Ce message a déjà reçu une réponse" };
+
     const m = await contactRepository.reply(id, dto.reponse, id_admin);
     await logAudit({ id_admin, action: "REPLY", entity_name: "contact", entity_id: id });
+
+    // ── Email de réponse au visiteur ───────────────────────────────────────
+    const { subject, html } = tplContactReply({
+      nom:    current.nom,
+      sujet:  current.sujet ?? null,
+      reponse: dto.reponse,
+    });
+    sendMail({ to: current.email, subject, html }).catch((e) =>
+      console.error("[contact.email.reply]", e)
+    );
+
     return m;
   },
 

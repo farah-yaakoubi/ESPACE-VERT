@@ -9,7 +9,6 @@ type AnimatedCountProps = {
   prefix?: string;
   durationMs?: number;
 };
-
 export function AnimatedCount({
   value,
   suffix = "",

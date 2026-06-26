@@ -1,4 +1,3 @@
-
 import { Request, Response } from "express";
 import multer from "multer";
 import path   from "path";
@@ -63,6 +62,15 @@ const handleError = (res: Response, err: unknown) => {
   return serverError(res);
 };
 
+export const previewSku = async (req: Request, res: Response) => {
+  try {
+    const id_categorie = Number(req.query.id_categorie);
+    if (!id_categorie) return badRequest(res, "id_categorie requis");
+    const data = await produitService.previewSku(id_categorie);
+    ok(res, data);
+  } catch (err) { handleError(res, err); }
+};
+
 // ══════════════════════════════════════════════════════════════
 // PUBLIC
 // ══════════════════════════════════════════════════════════════
@@ -77,6 +85,15 @@ export const listPublic = async (req: Request, res: Response) => {
 export const getBySlugPublic = async (req: Request, res: Response) => {
   try {
     const data = await produitService.getBySlugPublic(req.params.slug);
+    ok(res, data);
+  } catch (err) { handleError(res, err); }
+};
+
+export const resolvePath = async (req: Request, res: Response) => {
+  try {
+    const { activite, marque, produit } = req.query as Record<string, string>;
+    if (!activite || !marque || !produit) return badRequest(res, "Paramètres manquants : activite, marque, produit");
+    const data = await produitService.resolvePath(activite, marque, produit);
     ok(res, data);
   } catch (err) { handleError(res, err); }
 };

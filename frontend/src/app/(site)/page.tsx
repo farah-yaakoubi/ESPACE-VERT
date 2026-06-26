@@ -9,9 +9,7 @@ export default function HomePage() {
   return (
     <>
       <Hero />
-      <section id="nos-activites">
-        <HomeNavButtons />
-      </section>
+      <HomeNavButtons />
       <NewsCarousel />
     </>
   );

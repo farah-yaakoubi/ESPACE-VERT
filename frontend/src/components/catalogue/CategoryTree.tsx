@@ -10,17 +10,44 @@ import { ProduitCard }   from "@/components/cards/ProduitCard";
 import type { ProduitCard as ProduitCardType } from "@/types/api";
 import type { CategorieNode, MarqueTree, ProduitInTree } from "@/types/catalogue";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/I18nProvider";
+import { translatedField } from "@/i18n/translated-field";
+import type { Locale } from "@/i18n/config";
 
 const PAGE_SIZE = 12;
 
 /* ── Helpers ──────────────────────────────────────────────────────── */
-function toProduitCard(p: ProduitInTree, categorieName: string, id_marque: number): ProduitCardType {
+function toProduitCard(
+  p: ProduitInTree,
+  categorieName: string,
+  marque: { id_marque: number; nom: string; slug: string; logo?: string | null },
+): ProduitCardType {
   return {
-    id_produit: p.id_produit, id_categorie: p.id_categorie, id_marque,
-    nom: p.nom, slug: p.slug, description: p.description,
+    id_produit: p.id_produit, id_categorie: p.id_categorie, id_marque: p.id_marque ?? marque.id_marque,
+    id_activite: p.id_activite,
+    nom: p.nom, slug: p.slug, description: p.description, translations: p.translations,
     fiche_technique: null, division: p.division, tags: p.tags, created_at: "",
-    categorie: { nom: categorieName, slug: "" }, images: p.images,
+    categorie: { nom: categorieName, slug: "" },
+    marque: p.marque ?? marque,
+    activite: p.activite,
+    images: p.images,
   };
+}
+
+function categoryLabel(cat: { nom: string; translations?: any }, locale: Locale) {
+  return translatedField(cat as any, "nom", locale) || cat.nom;
+}
+
+function productLabel(product: { nom: string; translations?: any }, locale: Locale) {
+  return translatedField(product as any, "nom", locale) || product.nom;
+}
+
+function productDescription(product: { description?: string | null; translations?: any }, locale: Locale) {
+  return translatedField(product as any, "description", locale) || product.description || "";
+}
+
+function productWord(count: number, t: (key: string, fallback?: string) => string) {
+  return count > 1 ? t("catalog.products", "produits") : t("catalog.product", "produit");
 }
 
 function collectProduits(node: CategorieNode): { produit: ProduitInTree; catNom: string }[] {
@@ -80,6 +107,7 @@ function SidebarNode({
   onSelect: (id: number) => void;
   onToggle: (id: number) => void;
 }) {
+  const { locale } = useI18n();
   const total       = countAll(node);
   const hasChildren = node.sous_cats.length > 0;
   const isSelected  = selectedId === node.id_categorie;
@@ -127,7 +155,7 @@ function SidebarNode({
 
           {/* Image catégorie si présente */}
           {node.image && (
-            <Image src={node.image} alt={node.nom} width={18} height={18}
+            <Image src={node.image} alt={categoryLabel(node, locale)} width={18} height={18}
               className="rounded-md shrink-0 object-cover opacity-80" />
           )}
 
@@ -140,7 +168,7 @@ function SidebarNode({
             isRoot           ? "text-gray-800"   : "text-gray-600",
             !isSelected && "group-hover:text-ev-800",
           )}>
-            {node.nom}
+            {categoryLabel(node, locale)}
           </span>
 
           {/* Compteur */}
@@ -199,14 +227,119 @@ function SidebarNode({
   );
 }
 
-/* ── Vue grille sous-catégories ──────────────────────────────────── */
+/* ── Grille visuelle unifiée (racine ou sous-catégories) ─────────── */
+function CatVisualGrid({
+  nodes,
+  allProduitsFlat,
+  onSelect,
+  parentNode,
+  onBack,
+}: {
+  nodes: CategorieNode[];
+  allProduitsFlat: { produit: ProduitInTree; catNom: string }[];
+  onSelect: (id: number) => void;
+  parentNode?: CategorieNode | null;
+  onBack?: () => void;
+}) {
+  const { locale, t } = useI18n();
+  function nodeCount(n: CategorieNode) {
+    const ids = new Set<number>();
+    function collect(node: CategorieNode) { ids.add(node.id_categorie); node.sous_cats.forEach(collect); }
+    collect(n);
+    return allProduitsFlat.filter(({ produit }) => ids.has(produit.id_categorie)).length;
+  }
+
+  function nodeFirstImage(n: CategorieNode): string | null {
+    const ids = new Set<number>();
+    function collect(node: CategorieNode) { ids.add(node.id_categorie); node.sous_cats.forEach(collect); }
+    collect(n);
+    const first = allProduitsFlat.find(({ produit }) => ids.has(produit.id_categorie) && produit.images?.[0]);
+    return first?.produit.images?.[0]?.url ?? null;
+  }
+
+  return (
+    <div className="mb-8">
+      {/* Breadcrumb si on est dans une sous-catégorie */}
+      {parentNode && onBack && (
+        <div className="flex items-center justify-between mb-7">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-ev-700 transition-colors"
+            >
+              <ChevronLeft size={14} /> {t("catalog.categories", "Catégories")}
+            </button>
+            <span className="text-gray-300">/</span>
+            <h2 className="font-bold text-ev-900 text-base">{categoryLabel(parentNode, locale)}</h2>
+          </div>
+          <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
+            {nodes.length} {t("catalog.categories", "Catégories").toLowerCase()}
+          </span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+        {nodes.filter(node => !!node.image).map(node => {
+          const count  = nodeCount(node);
+          const imgSrc = node.image;
+
+          return (
+            <button
+              key={node.id_categorie}
+              onClick={() => onSelect(node.id_categorie)}
+              className="group overflow-hidden rounded-2xl border border-sand-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-ev-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-ev-400 focus:ring-offset-2"
+              aria-label={`${t("catalog.viewProducts", "Voir produits")} ${categoryLabel(node, locale)}`}
+            >
+              <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br from-white via-ev-50 to-sand-100">
+                {imgSrc ? (
+                  <Image
+                    src={imgSrc}
+                    alt={categoryLabel(node, locale)}
+                    fill
+                    className="object-contain p-6 drop-shadow-md transition-transform duration-500 group-hover:scale-105"
+                    sizes="(max-width:640px) 100vw, (max-width:1280px) 50vw, 25vw"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-3xl text-ev-200 shadow-sm">
+                    🌿
+                  </div>
+                )}
+                <span className="absolute right-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-ev-800 shadow-sm">
+                  {count} {productWord(count, t)}
+                </span>
+              </div>
+
+              <div className="flex min-h-[116px] flex-col p-4">
+                <div className="mb-3 flex items-start gap-2">
+                  <span className="mt-1 h-8 w-1 rounded-full bg-ev-600 shrink-0" />
+                  <p className="text-[15px] font-bold leading-snug text-gray-900 line-clamp-2 group-hover:text-ev-700 transition-colors">
+                    {categoryLabel(node, locale)}
+                  </p>
+                </div>
+                <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-xl bg-ev-700 px-3.5 py-2 text-[12px] font-semibold text-white transition-colors group-hover:bg-ev-800">
+                  {t("catalog.viewProducts", "Voir produits")}
+                  <ChevronRight size={13} />
+                </span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── Vue grille sous-catégories (legacy stub, replaced by CatVisualGrid) ── */
 function SousCatGrid({
   node,
   onSelect,
+  marque,
 }: {
   node: CategorieNode;
   onSelect: (id: number) => void;
+  marque: MarqueTree;
 }) {
+  const { locale, t } = useI18n();
   const avecImage   = node.sous_cats.filter(sc => !!sc.image && sc.image.trim() !== "");
   const sansImage   = node.sous_cats.filter(sc => !sc.image || sc.image.trim() === "");
 
@@ -249,14 +382,14 @@ function SousCatGrid({
               <div className="relative h-56 sm:h-64 bg-gradient-to-br from-ev-50 to-ev-100 group-hover:from-[#e8f8e8] group-hover:to-[#f0faf0] overflow-hidden transition-all duration-300">
                 <Image
                   src={sc.image!}
-                  alt={sc.nom}
+                  alt={categoryLabel(sc, locale)}
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                   sizes="(max-width:640px)100vw,(max-width:1024px)50vw,50vw"
                 />
                 <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
                 <p className="absolute bottom-4 left-4 right-4 text-white font-bold text-base leading-tight drop-shadow">
-                  {sc.nom}
+                  {categoryLabel(sc, locale)}
                 </p>
               </div>
             </button>
@@ -272,16 +405,16 @@ function SousCatGrid({
           <div key={sc.id_categorie} className="mb-10">
             <div className="flex items-center gap-2 mb-4">
               <Package size={15} className="text-ev-600 shrink-0" />
-              <h3 className="text-base font-bold text-gray-800">{sc.nom}</h3>
+              <h3 className="text-base font-bold text-gray-800">{categoryLabel(sc, locale)}</h3>
               <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                {produits.length} produit{produits.length > 1 ? "s" : ""}
+                {produits.length} {productWord(produits.length, t)}
               </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
               {produits.map(({ produit }) => (
                 <ProduitCard
                   key={produit.id_produit}
-                  produit={toProduitCard(produit, sc.nom, 0)}
+                  produit={toProduitCard(produit, sc.nom, marque)}
                 />
               ))}
             </div>
@@ -300,6 +433,7 @@ interface CategoryTreeProps {
 }
 
 export function CategoryTree({ tree }: CategoryTreeProps) {
+  const { locale, t } = useI18n();
   const router       = useRouter();
   const pathname     = usePathname();
   const searchParams = useSearchParams();
@@ -363,9 +497,9 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
     const q = search.trim().toLowerCase();
     if (!q) return source;
     return source.filter(({ produit }) =>
-      `${produit.nom} ${produit.description ?? ""}`.toLowerCase().includes(q)
+      `${productLabel(produit, locale)} ${productDescription(produit, locale)}`.toLowerCase().includes(q)
     );
-  }, [catFromUrl, search, tree]);
+  }, [catFromUrl, search, tree, locale]);
 
   const totalAll   = tree.categories.reduce((a, c) => a + countAll(c), 0);
   const totalPages = Math.ceil(allProduits.length / PAGE_SIZE);
@@ -400,7 +534,7 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
               <div className="w-6 h-6 rounded-lg bg-ev-700 flex items-center justify-center">
                 <SlidersHorizontal size={12} className="text-white" />
               </div>
-              <span className="text-[15px] font-bold text-gray-900 tracking-tight">Catégories</span>
+              <span className="text-[15px] font-bold text-gray-900 tracking-tight">{t("catalog.categories", "Catégories")}</span>
             </div>
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
               <X size={15} />
@@ -413,7 +547,7 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
             <input
               value={search}
               onChange={e => { setSearch(e.target.value); navigate(catFromUrl, 1); }}
-              placeholder="Rechercher…"
+              placeholder={t("catalog.searchProduct", "Rechercher un produit...")}
               className="w-full h-9 pl-8 pr-8 text-[13px] border border-stone-200 rounded-xl bg-stone-50 focus:bg-white focus:outline-none focus:border-ev-400 focus:ring-1 focus:ring-ev-100 transition-all placeholder:text-gray-400"
             />
             {search && (
@@ -441,7 +575,7 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
             )}>
               <Layers size={14} className={!catFromUrl && !search ? "text-white" : "text-ev-600"} />
             </div>
-            <span className="flex-1 text-left">Tous les produits</span>
+            <span className="flex-1 text-left">{t("catalog.allProducts", "Tous les produits")}</span>
             <span className={cn(
               "text-[11px] font-bold px-2 py-0.5 rounded-full",
               !catFromUrl && !search ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"
@@ -474,7 +608,7 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
           <div className="px-3 pb-3 pt-2 border-t border-stone-100">
             <div className="bg-ev-50 rounded-xl px-3 py-2.5 flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-ev-500 shrink-0" />
-              <span className="text-[12px] font-medium text-ev-800 flex-1 truncate">{selectedNode.nom}</span>
+              <span className="text-[12px] font-medium text-ev-800 flex-1 truncate">{categoryLabel(selectedNode, locale)}</span>
               <button onClick={handleReset} className="text-ev-400 hover:text-ev-700 transition-colors">
                 <X size={13} />
               </button>
@@ -495,16 +629,16 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
             className="lg:hidden flex items-center gap-2 px-3.5 py-2.5 bg-white border border-stone-200 rounded-xl text-[13px] font-medium text-gray-700 hover:border-ev-400 hover:text-ev-700 transition-all shadow-sm"
           >
             <SlidersHorizontal size={14} />
-            Filtrer
+            {t("catalog.filters", "Filtres")}
             {catFromUrl && <span className="w-1.5 h-1.5 rounded-full bg-ev-500 ml-0.5" />}
           </button>
 
           {/* Badge catégorie active */}
           {catFromUrl && selectedNode && (
             <div className="flex items-center gap-1.5">
-              <span className="text-[12px] text-gray-400 font-medium">Dans :</span>
+              <span className="text-[12px] text-gray-400 font-medium">{t("catalog.categories", "Catégories")} :</span>
               <span className="flex items-center gap-1.5 bg-ev-700 text-white text-[12px] font-semibold px-3 py-1.5 rounded-full shadow-sm">
-                {selectedNode.nom}
+                {categoryLabel(selectedNode, locale)}
                 <button onClick={handleReset} className="opacity-70 hover:opacity-100 transition-opacity ml-0.5">
                   <X size={11} />
                 </button>
@@ -518,7 +652,7 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
             <input
               value={search}
               onChange={e => { setSearch(e.target.value); navigate(catFromUrl, 1); }}
-              placeholder="Rechercher un produit…"
+              placeholder={t("catalog.searchProduct", "Rechercher un produit...")}
               className="w-full h-10 pl-9 pr-9 text-[14px] border border-stone-200 rounded-xl bg-white focus:outline-none focus:border-ev-400 focus:ring-2 focus:ring-ev-100 shadow-sm transition-all placeholder:text-gray-400"
             />
             {search && (
@@ -528,28 +662,42 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
             )}
           </div>
 
-          {/* Compteur */}
-          <span className="text-[12px] text-gray-400 font-medium whitespace-nowrap">
-            <span className="text-gray-700 font-semibold">{allProduits.length}</span> produit{allProduits.length !== 1 ? "s" : ""}
-            {totalPages > 1 && <span className="text-gray-400"> · p.{page}/{totalPages}</span>}
-          </span>
+          {/* Compteur — masqué en vue grille catégories */}
+          {(catFromUrl || search) && (
+            <span className="text-[12px] text-gray-400 font-medium whitespace-nowrap">
+              <span className="text-gray-700 font-semibold">{allProduits.length}</span> {productWord(allProduits.length, t)}
+              {totalPages > 1 && <span className="text-gray-400"> · p.{page}/{totalPages}</span>}
+            </span>
+          )}
         </div>
 
-        {/* Grille produits OU grille sous-catégories */}
-        {selectedNode && selectedNode.sous_cats.length > 0 && !search && selectedNode.sous_cats.some(sc => !!sc.image && sc.image.trim() !== "") ? (
-          /* ── Le nœud sélectionné a des sous-catégories avec images → grille visuelle ── */
-          <SousCatGrid node={selectedNode} onSelect={handleSelect} />
+        {/* Grille visuelle catégories racines (premier chargement) */}
+        {!catFromUrl && !search && tree.categories.filter(n => !!n.image).length > 0 ? (
+          <CatVisualGrid
+            nodes={tree.categories}
+            allProduitsFlat={tree.categories.flatMap(collectProduits)}
+            onSelect={handleSelect}
+          />
+        ) : selectedNode && selectedNode.sous_cats.filter(n => !!n.image).length > 0 && !search ? (
+          /* ── Sous-catégories avec images → grille visuelle ── */
+          <CatVisualGrid
+            nodes={selectedNode.sous_cats}
+            allProduitsFlat={tree.categories.flatMap(collectProduits)}
+            onSelect={handleSelect}
+            parentNode={selectedNode}
+            onBack={handleReset}
+          />
         ) : allProduits.length === 0 ? (
           <div className="flex-1 flex items-center justify-center py-24">
             <div className="text-center">
               <div className="w-16 h-16 rounded-2xl bg-stone-100 flex items-center justify-center mx-auto mb-4">
                 <Package size={24} className="text-gray-300" />
               </div>
-              <p className="text-gray-500 text-[15px] font-medium mb-1">Aucun produit trouvé</p>
-              <p className="text-gray-400 text-[13px]">Essayez une autre catégorie ou modifiez votre recherche</p>
+              <p className="text-gray-500 text-[15px] font-medium mb-1">{t("catalog.noProducts", "Aucun produit trouvé")}</p>
+              <p className="text-gray-400 text-[13px]">{t("catalog.tryFilters", "Essayez de modifier ou d'effacer vos filtres.")}</p>
               {(catFromUrl || search) && (
                 <button onClick={handleReset} className="mt-4 text-[13px] font-semibold text-ev-600 hover:text-ev-800 hover:underline transition-colors">
-                  ↩ Réinitialiser les filtres
+                  {t("catalog.resetFilters", "Réinitialiser les filtres")}
                 </button>
               )}
             </div>
@@ -558,7 +706,7 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
               {paginated.map(({ produit, catNom }) => (
-                <ProduitCard key={produit.id_produit} produit={toProduitCard(produit, catNom, tree.id_marque)} />
+                <ProduitCard key={produit.id_produit} produit={toProduitCard(produit, catNom, tree)} />
               ))}
             </div>
             <div className="mt-4">

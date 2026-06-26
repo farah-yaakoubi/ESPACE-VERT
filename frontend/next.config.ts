@@ -4,6 +4,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(process.cwd()),
   images: {
+    qualities: [75, 100],
     remotePatterns: [
       {
         protocol: "http",

@@ -1,264 +1,309 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight, ExternalLink, MessageCircle, Send, X } from "lucide-react";
 import Image from "next/image";
-import { useState, useRef, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Message {
-  id:        string;
-  role:      "user" | "assistant";
-  content:   string;
+  id: string;
+  role: "user" | "assistant";
+  content: string;
   timestamp: Date;
-  actions?:  Action[];
+  actions?: Action[];
 }
 
 interface Action {
   label: string;
   href?: string;
-  type:  "link" | "suggestion";
+  type: "link" | "suggestion" | "pdf";
 }
 
 interface PagePreview {
-  href:        string;
-  title:       string;
+  href: string;
+  title: string;
   description: string;
-  emoji:       string;
+  label: string;
 }
 
-// ─── Mapping routes → aperçus de pages ───────────────────────────────────────
-
 const PAGE_PREVIEWS: Record<string, PagePreview> = {
-  "/produits":    { href: "/produits",    title: "Catalogue Produits",    description: "Irrigation, fertilisation, semences, machinisme…", emoji: "🌿" },
-  "/activites":   { href: "/activites",   title: "Nos Activités",         description: "Découvrez nos 6 domaines d'expertise agricoles",   emoji: "🌱" },
-  "/marques":     { href: "/marques",     title: "Nos Marques",           description: "Fertivert, Pulvert, Matar, Semences et plus",      emoji: "🏷️" },
-  "/devis":       { href: "/devis",       title: "Demander un Devis",     description: "Obtenez une offre personnalisée sous 24h",         emoji: "📋" },
-  "/rendez-vous": { href: "/rendez-vous", title: "Prendre Rendez-vous",   description: "Rencontrez nos experts en agence",                 emoji: "📅" },
-  "/contact":     { href: "/contact",     title: "Nous Contacter",        description: "Équipe disponible du lundi au samedi",             emoji: "📞" },
-  "/actualites":  { href: "/actualites",  title: "Actualités & Conseils", description: "Guides techniques, conseils agronomiques",         emoji: "📰" },
+  "/activites":                    { href: "/activites",                    title: "Nos activités",             description: "Irrigation, fertilisation, semences, pulvérisation", label: "AC" },
+  "/activites/semences-et-plants": { href: "/activites/semences-et-plants", title: "Semences & Plants",         description: "Catalogue semences + outil de recommandation",        label: "SM" },
+  "/marques":                      { href: "/marques",                      title: "Nos marques",               description: "Fertivert, Pulvert, Matar et partenaires",            label: "MQ" },
+  "/devis":                        { href: "/devis",                        title: "Demande de devis",          description: "Obtenez une offre adaptée à votre besoin",            label: "DV" },
+  "/rendez-vous":                  { href: "/rendez-vous",                  title: "Rendez-vous",               description: "Bureau d'étude & installation systèmes d'irrigation", label: "RV" },
+  "/contact":                      { href: "/contact",                      title: "Contact",                   description: "Coordonnées et message direct",                       label: "CT" },
+  "/actualites":                   { href: "/actualites",                   title: "Actualités & Conseils",     description: "Articles techniques et informations",                 label: "NT" },
+  "/qui-sommes-nous":              { href: "/qui-sommes-nous",              title: "Qui sommes-nous",           description: "Notre histoire, agences et sociétés du groupe",       label: "QN" },
 };
 
+const FALLBACK_SUGGESTIONS = [
+  "Quels produits d'irrigation proposez-vous ?",
+  "Je cherche des semences adaptées à ma culture",
+  "Trouver une agence proche de moi",
+  "Demander un devis personnalisé",
+];
+
 function getPreview(href: string): PagePreview | null {
-  if (PAGE_PREVIEWS[href]) return PAGE_PREVIEWS[href];
-  for (const key of Object.keys(PAGE_PREVIEWS)) {
-    if (href.startsWith(key) && key !== "/") return { ...PAGE_PREVIEWS[key], href };
+  const cleanHref = href.split("#")[0].split("?")[0];
+  const preview = PAGE_PREVIEWS[cleanHref];
+  if (preview) return { ...preview, href };
+
+  const parts = cleanHref.split("/").filter(Boolean);
+  const titleFromSlug = (slug: string) => slug.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+  if (parts[0] === "marques" && parts[1] && parts.length === 2) {
+    const title = titleFromSlug(parts[1]);
+    return { href, title, description: "Page marque et catalogue associé", label: "MQ" };
   }
+
+  if (parts[0] === "activites" && parts[1] && parts.length === 2) {
+    const title = titleFromSlug(parts[1]);
+    return { href, title, description: "Page activité et produits associés", label: "AC" };
+  }
+
+  if (parts.includes("produits")) {
+    return { href, title: titleFromSlug(parts[parts.length - 1] ?? "Produit"), description: "Fiche produit détaillée", label: "PR" };
+  }
+
   return null;
 }
 
-// ─── Quick suggestions ────────────────────────────────────────────────────────
-
-const QUICK_SUGGESTIONS = [
-  "Produits Fertivert disponibles ?",
-  "Comment choisir un pulvérisateur ?",
-  "Demander un devis",
-  "Vos agences en Tunisie",
-];
-
-// ─── Icônes SVG ───────────────────────────────────────────────────────────────
-
-const Icons = {
-  Close: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
-      strokeLinecap="round" className="w-5 h-5">
-      <path d="M18 6L6 18M6 6l12 12"/>
-    </svg>
-  ),
-  Send: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-      strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-      <line x1="22" y1="2" x2="11" y2="13"/>
-      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-    </svg>
-  ),
-  ExternalLink: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-      strokeLinecap="round" className="w-3 h-3">
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-      <polyline points="15 3 21 3 21 9"/>
-      <line x1="10" y1="14" x2="21" y2="3"/>
-    </svg>
-  ),
-  ArrowRight: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-      strokeLinecap="round" className="w-3.5 h-3.5">
-      <path d="M5 12h14M12 5l7 7-7 7"/>
-    </svg>
-  ),
-  // Double chevron vers le haut (style "swipe" de l'image)
-  DoubleChevronUp: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.8}
-      strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-      <polyline points="17 11 12 6 7 11"/>
-      <polyline points="17 18 12 13 7 18"/>
-    </svg>
-  ),
-};
-
-// ─── Typing indicator ─────────────────────────────────────────────────────────
-
 function TypingDots() {
   return (
-    <div className="flex items-center gap-1 px-4 py-3">
-      {[0, 1, 2].map(i => (
+    <div className="flex h-9 items-center gap-1 px-3">
+      {[0, 1, 2].map((i) => (
         <span
           key={i}
-          className="w-2 h-2 rounded-full bg-[#7dc040] inline-block"
-          style={{ animation: `chatBounce 1.2s ease-in-out ${i * 0.2}s infinite` }}
+          className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-700"
+          style={{ animation: `evChatTyping 1.15s ease-in-out ${i * 0.16}s infinite` }}
         />
       ))}
-      <style>{`@keyframes chatBounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}}`}</style>
+      <style>{`@keyframes evChatTyping{0%,80%,100%{transform:translateY(0);opacity:.45}40%{transform:translateY(-4px);opacity:1}}`}</style>
     </div>
   );
 }
 
-// ─── Page Preview Card ────────────────────────────────────────────────────────
-
 function PagePreviewCard({ preview }: { preview: PagePreview }) {
+  const iframeSrc = preview.href.split("#")[0];
+  const src = `${iframeSrc}${iframeSrc.includes("?") ? "&" : "?"}preview=chat`;
   return (
     <a
       href={preview.href}
-      className="group flex items-center gap-3 p-2.5 rounded-xl border transition-all duration-200 hover:shadow-md cursor-pointer"
-      style={{ borderColor: "#d1ead8", background: "linear-gradient(135deg,#f0fdf4 0%,#e8f8ee 100%)", textDecoration: "none" }}
+      className="group block w-[278px] overflow-hidden rounded-lg border border-slate-200 bg-white text-left shadow-sm transition hover:border-emerald-300 hover:shadow-md sm:w-[310px]"
+      style={{ textDecoration: "none" }}
     >
-      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-lg"
-        style={{ background: "linear-gradient(135deg,#0a6030 0%,#7dc040 100%)" }}>
-        <span role="img" aria-label={preview.title}>{preview.emoji}</span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-gray-800 leading-none mb-0.5 truncate">{preview.title}</p>
-        <p className="text-[10px] text-gray-500 truncate leading-tight">{preview.description}</p>
-      </div>
-      <span className="flex-shrink-0 transition-transform group-hover:translate-x-0.5" style={{ color: "#0a6030" }}>
-        <Icons.ArrowRight />
+      <span className="relative block h-32 overflow-hidden border-b border-slate-200 bg-slate-100">
+        <iframe
+          src={src}
+          title={`Aperçu ${preview.title}`}
+          loading="lazy"
+          tabIndex={-1}
+          aria-hidden="true"
+          className="pointer-events-none absolute left-0 top-0 border-0"
+          style={{ width: 1240, height: 540, transform: "scale(0.25)", transformOrigin: "top left" }}
+        />
+        <span className="absolute left-2 top-2 rounded bg-white/95 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-700 shadow-sm">
+          Aperçu
+        </span>
+      </span>
+      <span className="flex items-center gap-3 p-2.5">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-[11px] font-bold text-emerald-800">
+          {preview.label}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-xs font-semibold text-slate-900">{preview.title}</span>
+          <span className="block truncate text-[11px] text-slate-500">{preview.description}</span>
+        </span>
+        <ArrowRight className="h-3.5 w-3.5 shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-emerald-700" />
       </span>
     </a>
   );
 }
 
-// ─── Message Bubble ───────────────────────────────────────────────────────────
+function FormattedText({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.startsWith("**") && part.endsWith("**") ? (
+          <strong key={i}>{part.slice(2, -2)}</strong>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
 
 function MessageBubble({ msg, onSuggestion }: { msg: Message; onSuggestion: (label: string) => void }) {
   const isUser = msg.role === "user";
-
-  const previews: PagePreview[] = (msg.actions ?? [])
-    .filter(a => a.type === "link" && a.href)
-    .map(a => getPreview(a.href!))
+  const previews = (msg.actions ?? [])
+    .filter((a) => a.type === "link" && a.href && !a.href.startsWith("http"))
+    .map((a) => getPreview(a.href!))
     .filter((p): p is PagePreview => p !== null);
-
-  const rawLinks  = (msg.actions ?? []).filter(a => a.type === "link" && a.href && !getPreview(a.href));
-  const suggestions = (msg.actions ?? []).filter(a => a.type === "suggestion");
+  const rawLinks = (msg.actions ?? []).filter((a) => a.type === "link" && a.href && !a.href.startsWith("http") && !getPreview(a.href));
+  const externalLinks = (msg.actions ?? []).filter((a) => a.type === "link" && a.href?.startsWith("http"));
+  const pdfLinks = (msg.actions ?? []).filter((a) => a.type === "pdf" && a.href);
+  const suggestions = (msg.actions ?? []).filter((a) => a.type === "suggestion");
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-      className={`flex ${isUser ? "justify-end" : "justify-start"} mb-3`}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.18 }}
+      className={`mb-4 flex ${isUser ? "justify-end" : "justify-start"}`}
     >
-      {!isUser && (
-        <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mr-2 mt-0.5 border border-green-100"
-          style={{ background: "#fff" }}>
-          <Image src="/logos/logo-espace-vert.png" alt="Espace Vert" width={28} height={28}
-            className="w-full h-full object-contain" />
+      <div className={`flex max-w-[88%] gap-2 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+        {!isUser && (
+          <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+            <Image src="/logos/logo-espace-vert.png" alt="Espace Vert" width={26} height={26} className="h-full w-full object-contain" />
+          </div>
+        )}
+        <div className="min-w-0">
+          <div
+            className={`whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-6 shadow-sm ${
+              isUser
+                ? "rounded-br-md bg-emerald-700 text-white"
+                : "rounded-bl-md border border-slate-200 bg-white text-slate-800"
+            }`}
+          >
+            {isUser ? msg.content : <FormattedText text={msg.content} />}
+          </div>
+
+          {previews.length > 0 && (
+            <div className="mt-2 space-y-2">
+              {previews.map((preview, index) => (
+                <PagePreviewCard key={`${preview.href}-${index}`} preview={preview} />
+              ))}
+            </div>
+          )}
+
+          {rawLinks.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {rawLinks.map((action, index) => (
+                <a
+                  key={`${action.href}-${index}`}
+                  href={action.href}
+                  className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800 transition hover:border-emerald-400"
+                >
+                  {action.label}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              ))}
+            </div>
+          )}
+
+          {externalLinks.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {externalLinks.map((action, index) => (
+                <a
+                  key={`${action.href}-${index}`}
+                  href={action.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-800 transition hover:border-sky-400"
+                >
+                  {action.label}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              ))}
+            </div>
+          )}
+
+          {pdfLinks.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {pdfLinks.map((action, index) => (
+                <a
+                  key={`${action.href}-${index}`}
+                  href={action.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  download
+                  className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-800 transition hover:border-red-400 hover:bg-red-100"
+                >
+                  📄 {action.label}
+                </a>
+              ))}
+            </div>
+          )}
+
+          {suggestions.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {suggestions.map((action, index) => (
+                <button
+                  key={`${action.label}-${index}`}
+                  onClick={() => onSuggestion(action.label)}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-emerald-300 hover:text-emerald-800"
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <p className={`mt-1 px-1 text-[10px] text-slate-400 ${isUser ? "text-right" : "text-left"}`}>
+            {msg.timestamp.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+          </p>
         </div>
-      )}
-
-      <div className="max-w-[90%] sm:max-w-[82%] min-w-0">
-        <div
-          className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-            isUser ? "text-white rounded-br-sm" : "text-gray-800 rounded-bl-sm border border-green-100"
-          }`}
-          style={isUser
-            ? { background: "linear-gradient(135deg,#0a6030,#2e7d4f)" }
-            : { background: "#f0fdf4" }}
-        >
-          <span className="break-words">{msg.content}</span>
-        </div>
-
-        {previews.length > 0 && (
-          <div className="mt-2 space-y-1.5">
-            {previews.map((p, i) => <PagePreviewCard key={i} preview={p} />)}
-          </div>
-        )}
-
-        {rawLinks.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            {rawLinks.map((action, i) => (
-              <a key={i} href={action.href}
-                className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all hover:shadow-sm"
-                style={{ color: "#0a6030", borderColor: "#a8d5b5", background: "#f0fdf4" }}>
-                {action.label} <Icons.ExternalLink />
-              </a>
-            ))}
-          </div>
-        )}
-
-        {suggestions.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            {suggestions.map((action, i) => (
-              <button key={i} onClick={() => onSuggestion(action.label)}
-                className="inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border transition-all hover:shadow-sm active:scale-95"
-                style={{ color: "#2e7d4f", borderColor: "#c8e6d4", background: "#fff" }}>
-                {action.label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        <p className="text-[10px] text-gray-400 mt-1 px-1">
-          {msg.timestamp.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-        </p>
       </div>
     </motion.div>
   );
 }
 
-// ─── Widget principal ─────────────────────────────────────────────────────────
-
 export default function ChatWidget() {
+  const [embedded, setEmbedded] = useState(false);
   const [open, setOpen]         = useState(false);
-  const [messages, setMsgs]     = useState<Message[]>([
-    {
-      id:        "welcome",
-      role:      "assistant",
-      content:   "Bonjour ! 👋 Je suis l'assistant d'Espace Vert. Je réponds à vos questions, vous aide à trouver un produit ou vous redirige vers nos équipes.",
-      timestamp: new Date(),
-      actions:   QUICK_SUGGESTIONS.map(s => ({ label: s, type: "suggestion" as const })),
-    },
-  ]);
-  const [input, setInput]       = useState("");
-  const [loading, setLoading]   = useState(false);
-  const [unread, setUnread]     = useState(0);
+  const makeWelcome = (suggestions: string[]): Message => ({
+    id:        "welcome",
+    role:      "assistant",
+    content:   "Bonjour ! Je suis l'assistant du Groupe Espace Vert.\nComment puis-je vous aider aujourd'hui ?\n\nChoisissez une option ou posez votre question :",
+    timestamp: new Date(),
+    actions:   suggestions.map((label) => ({ label, type: "suggestion" as const })),
+  });
+
+  const [messages, setMsgs] = useState<Message[]>([makeWelcome(FALLBACK_SUGGESTIONS)]);
+
+  // ── Charger les suggestions depuis les FAQs actives ──────────────────────
+  useEffect(() => {
+    const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+    fetch(`${BASE}/faq?limit=4&active=true`)
+      .then((r) => r.json())
+      .then((data) => {
+        const faqs: { question: string }[] = Array.isArray(data) ? data : (data.data ?? []);
+        const labels = faqs.slice(0, 4).map((f) => f.question);
+        if (labels.length > 0) {
+          setMsgs([makeWelcome(labels)]);
+        }
+      })
+      .catch(() => {}); // garde les suggestions fallback si erreur
+  }, []);
+  const [input,      setInput]      = useState("");
+  const [loading,    setLoading]    = useState(false);
+  const [unread,     setUnread]     = useState(0);
   const [showScroll, setShowScroll] = useState(false);
-  const bottomRef               = useRef<HTMLDivElement>(null);
-  const inputRef                = useRef<HTMLInputElement>(null);
-  const scrollContainerRef      = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+  const bottomRef          = useRef<HTMLDivElement>(null);
+  const inputRef           = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => { setEmbedded(window.self !== window.top); }, []);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
   useEffect(() => {
-    if (open) {
-      setUnread(0);
-      setTimeout(() => inputRef.current?.focus(), 300);
-    }
+    if (open) { setUnread(0); setTimeout(() => inputRef.current?.focus(), 180); }
   }, [open]);
 
   const sendMessage = useCallback(
     async (text: string) => {
       if (!text.trim() || loading) return;
-
+      const cleanText = text.trim();
       const userMsg: Message = {
         id:        Date.now().toString(),
         role:      "user",
-        content:   text.trim(),
+        content:   cleanText,
         timestamp: new Date(),
       };
-
-      setMsgs(prev => [...prev, userMsg]);
+      setMsgs((prev) => [...prev, userMsg]);
       setInput("");
       setLoading(true);
 
@@ -266,34 +311,40 @@ export default function ChatWidget() {
         const res = await fetch("/api/chat", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({
-            message: text.trim(),
-            history: messages.slice(-6).map(m => ({ role: m.role, content: m.content })),
+          body: JSON.stringify({
+            message: cleanText,
+            history: messages.slice(-8).map((m) => ({ role: m.role, content: m.content })),
           }),
         });
-
         const data = await res.json();
-
-        setMsgs(prev => [
+        // ── Si réponse FAQ → incrémenter nb_consultations uniquement ────────
+        if (data.id_faq && typeof window !== "undefined" && (window as any).trackEvFaq) {
+          (window as any).trackEvFaq(data.id_faq);
+        }
+        // ── Si PAS de FAQ → logger dans recherches fréquentes ─────────────
+        if (!data.id_faq && typeof window !== "undefined" && (window as any).trackSearch) {
+          (window as any).trackSearch(cleanText, 0);
+        }
+        setMsgs((prev) => [
           ...prev,
           {
             id:        (Date.now() + 1).toString(),
             role:      "assistant",
             content:   data.reply ?? "Désolé, je n'ai pas pu traiter votre demande.",
             timestamp: new Date(),
-            actions:   data.actions ?? [],
+            actions:   Array.isArray(data.actions) ? data.actions : [],
           },
         ]);
-        if (!open) setUnread(u => u + 1);
+        if (!open) setUnread((c) => c + 1);
       } catch {
-        setMsgs(prev => [
+        setMsgs((prev) => [
           ...prev,
           {
             id:        (Date.now() + 1).toString(),
             role:      "assistant",
-            content:   "Une erreur s'est produite. Veuillez réessayer ou nous contacter directement.",
+            content:   "Une erreur s'est produite. Vous pouvez contacter directement notre équipe.",
             timestamp: new Date(),
-            actions:   [{ label: "Nous contacter", href: "/contact", type: "link" }],
+            actions:   [{ label: "Nous contacter", href: "/contact", type: "link" as const }],
           },
         ]);
       } finally {
@@ -303,211 +354,157 @@ export default function ChatWidget() {
     [loading, messages, open],
   );
 
+  if (embedded) return null;
+
   return (
-    <>
-      {/* ── Position : BAS GAUCHE ──────────────────────────────────────────── */}
-      <div className="fixed bottom-4 left-3 right-3 z-50 flex flex-col items-stretch gap-2 pb-[max(env(safe-area-inset-bottom),0px)] sm:bottom-6 sm:left-6 sm:right-auto sm:items-start sm:gap-3">
+    <div className="fixed bottom-4 left-3 right-3 z-50 flex flex-col items-stretch gap-3 pb-[max(env(safe-area-inset-bottom),0px)] sm:bottom-6 sm:left-auto sm:right-6 sm:items-end">
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 18, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0,  scale: 1 }}
+            exit={{    opacity: 0, y: 14,  scale: 0.96 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="flex w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl sm:w-[390px]"
+            style={{ height: "min(600px, calc(100dvh - 6.25rem))" }}
+          >
+            <div className="flex min-h-0 w-full flex-col">
 
-        {/* ── Fenêtre chat ── */}
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.94 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 16, scale: 0.94 }}
-              transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full max-w-[390px] rounded-2xl overflow-hidden flex flex-col"
-              style={{
-                height:     "min(540px, calc(100dvh - 6.5rem))",
-                background: "#fff",
-                boxShadow:  "0 28px 72px rgba(0,0,0,0.16), 0 0 0 1px rgba(46,125,79,0.12)",
-              }}
-            >
-              {/* ── Header avec vrai logo ── */}
-              <div
-                className="flex items-center gap-3 px-3.5 py-3.5 sm:px-4 flex-shrink-0 relative overflow-hidden"
-                style={{ background: "linear-gradient(135deg,#0a6030 0%,#1a7a40 50%,#2e7d4f 100%)" }}
-              >
-                <div className="absolute inset-0 opacity-10"
-                  style={{ backgroundImage: "radial-gradient(circle at 80% 20%,#7dc040 0%,transparent 60%)" }} />
-
-                {/* Logo image réel */}
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 relative p-1.5"
-                  style={{ background: "rgba(255,255,255,0.92)" }}
-                >
-                  <Image
-                    src="/logos/logo-espace-vert.png"
-                    alt="Espace Vert"
-                    width={36}
-                    height={36}
-                    className="w-full h-full object-contain"
-                    priority
-                  />
+              {/* Header */}
+              <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 bg-white px-4 py-3.5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 p-1.5">
+                  <Image src="/logos/logo-espace-vert.png" alt="Espace Vert" width={34} height={34} className="h-full w-full object-contain" priority />
                 </div>
-
-                <div className="flex-1 min-w-0 relative">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <p className="text-white font-bold text-sm leading-none">Espace Vert</p>
-                    <span
-                      className="inline-flex items-center gap-1 text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-                      style={{ background: "rgba(125,192,64,0.3)", color: "#c8f0a0" }}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#7dc040] inline-block animate-pulse" />
-                      En ligne
-                    </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-bold text-slate-950">Assistant Espace Vert</p>
+                    <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                   </div>
-                  <p className="text-white/60 text-[11px] mt-0.5">Assistant virtuel · répond en secondes</p>
+                  <p className="truncate text-xs text-slate-500">Semences · Irrigation · Fertilisation · Devis</p>
                 </div>
-
                 <button
                   onClick={() => setOpen(false)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/15 transition-colors relative"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
                   aria-label="Fermer le chat"
                 >
-                  <Icons.Close />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
 
-              {/* ── Messages ── */}
-              <div className="relative flex-1 min-h-0">
-              <div
-                ref={scrollContainerRef}
-                className="h-full overflow-y-auto px-3 py-3 sm:px-4 sm:py-4"
-                style={{ scrollbarWidth: "none" }}
-                onScroll={() => {
-                  const el = scrollContainerRef.current;
-                  if (!el) return;
-                  setShowScroll(el.scrollHeight - el.scrollTop - el.clientHeight > 80);
-                }}
-              >
-                {messages.map(msg => (
-                  <MessageBubble key={msg.id} msg={msg} onSuggestion={sendMessage} />
-                ))}
-
-                {loading && (
-                  <div className="flex justify-start mb-3">
-                    <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 mr-2 border border-green-100"
-                      style={{ background: "#fff" }}>
-                      <Image src="/logos/logo-espace-vert.png" alt="Espace Vert" width={28} height={28}
-                        className="w-full h-full object-contain" />
-                    </div>
-                    <div className="rounded-2xl rounded-bl-sm border border-green-100" style={{ background: "#f0fdf4" }}>
-                      <TypingDots />
-                    </div>
-                  </div>
-                )}
-                <div ref={bottomRef} />
-              </div>
-
-              {/* ── Bouton scroll to bottom ── */}
-              <AnimatePresence>
-                {showScroll && (
-                  <motion.button
-                    initial={{ opacity: 0, scale: 0.7, y: 8 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.7, y: 8 }}
-                    transition={{ duration: 0.18 }}
-                    onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
-                    className="absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center text-white shadow-lg"
-                    style={{ background: "linear-gradient(135deg,#0a6030 0%,#7dc040 100%)" }}
-                    aria-label="Défiler vers le bas"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.8}
-                      strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                      <polyline points="7 6 12 11 17 6"/>
-                      <polyline points="7 13 12 18 17 13"/>
-                    </svg>
-                  </motion.button>
-                )}
-              </AnimatePresence>
-              </div>
-
-              {/* ── Input ── */}
-              <div className="px-3 py-3 border-t border-gray-100 flex-shrink-0">
+              {/* Messages */}
+              <div className="relative min-h-0 flex-1 bg-slate-50">
                 <div
-                  className="flex items-center gap-2 rounded-xl border bg-gray-50 px-3 py-2 transition-all focus-within:bg-white"
-                  style={{ borderColor: "#e2e8f0" }}
-                  onFocus={e => e.currentTarget.style.borderColor = "#7dc040"}
-                  onBlur={e => e.currentTarget.style.borderColor = "#e2e8f0"}
+                  ref={scrollContainerRef}
+                  className="h-full overflow-y-auto px-3 py-4 sm:px-4"
+                  style={{ scrollbarWidth: "thin" }}
+                  onScroll={() => {
+                    const el = scrollContainerRef.current;
+                    if (!el) return;
+                    setShowScroll(el.scrollHeight - el.scrollTop - el.clientHeight > 90);
+                  }}
                 >
+                  {messages.map((msg) => (
+                    <MessageBubble key={msg.id} msg={msg} onSuggestion={sendMessage} />
+                  ))}
+
+                  {loading && (
+                    <div className="mb-4 flex justify-start gap-2">
+                      <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white p-1 shadow-sm">
+                        <Image src="/logos/logo-espace-vert.png" alt="Espace Vert" width={26} height={26} className="h-full w-full object-contain" />
+                      </div>
+                      <div className="rounded-2xl rounded-bl-md border border-slate-200 bg-white shadow-sm">
+                        <TypingDots />
+                      </div>
+                    </div>
+                  )}
+                  <div ref={bottomRef} />
+                </div>
+
+                <AnimatePresence>
+                  {showScroll && (
+                    <motion.button
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{    opacity: 0, y: 6 }}
+                      onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
+                      className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-md transition hover:text-emerald-700"
+                      aria-label="Défiler vers le bas"
+                    >
+                      <ArrowRight className="h-4 w-4 rotate-90" />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Input */}
+              <div className="shrink-0 border-t border-slate-200 bg-white p-3">
+                <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 transition focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-100">
                   <input
                     ref={inputRef}
                     value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
-                    placeholder="Posez votre question…"
-                    className="flex-1 text-sm bg-transparent outline-none text-gray-800 placeholder-gray-400"
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage(input)}
+                    placeholder="Posez votre question..."
+                    className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
                     disabled={loading}
                     aria-label="Message"
                   />
                   <button
                     onClick={() => sendMessage(input)}
                     disabled={!input.trim() || loading}
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white transition-all active:scale-90 disabled:opacity-40"
-                    style={{ background: "linear-gradient(135deg,#0a6030,#7dc040)" }}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-700 text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
                     aria-label="Envoyer"
                   >
-                    <Icons.Send />
+                    <Send className="h-4 w-4" />
                   </button>
                 </div>
-
-                <div className="flex flex-wrap items-center justify-center gap-1.5 mt-2 text-center">
-                  <span className="text-[10px] text-gray-400">Assistant virtuel ·</span>
-                  <span className="text-[10px] font-semibold" style={{ color: "#0a5c2e" }}>Espace Vert</span>
-                </div>
+                <p className="mt-2 text-center text-[10px] text-slate-400">
+                  Pour les prix et disponibilités, nos conseillers restent à votre disposition.
+                </p>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
-        {/* ── Bouton toggle avec logo Espace Vert ── */}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Bouton flottant */}
+      <div className="flex items-end justify-end gap-2">
+        {!open && (
+          <motion.div
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="hidden rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-lg sm:block"
+          >
+            Besoin d&apos;aide ?
+          </motion.div>
+        )}
         <motion.button
-          onClick={() => setOpen(v => !v)}
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.92 }}
-          className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center text-white"
-          style={{
-            background: "linear-gradient(135deg,#0a6030 0%,#7dc040 100%)",
-            boxShadow:  "0 8px 32px rgba(10,96,48,0.45)",
-          }}
+          onClick={() => setOpen((v) => !v)}
+          whileHover={{ y: -1 }}
+          whileTap={{ scale: 0.96 }}
+          className="relative flex h-14 w-14 items-center justify-center rounded-full bg-emerald-700 text-white shadow-xl transition hover:bg-emerald-800"
           aria-label={open ? "Fermer le chat" : "Ouvrir le chat Espace Vert"}
         >
           <AnimatePresence mode="wait">
             {open ? (
-              <motion.div key="close"
-                initial={{ rotate: -90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: 90, opacity: 0 }}
-                transition={{ duration: 0.18 }}>
-                <Icons.Close />
-              </motion.div>
+              <motion.span key="close" initial={{ opacity: 0, rotate: -45 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: 45 }} transition={{ duration: 0.15 }}>
+                <X className="h-6 w-6" />
+              </motion.span>
             ) : (
-              <motion.div key="logo"
-                initial={{ rotate: 90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: -90, opacity: 0 }}
-                transition={{ duration: 0.18 }}>
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-white p-1">
-                  <Image src="/logos/logo-espace-vert.png" alt="Espace Vert" width={36} height={36}
-                    className="w-full h-full object-contain" />
-                </div>
-              </motion.div>
+              <motion.span key="chat" initial={{ opacity: 0, rotate: 45 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: -45 }} transition={{ duration: 0.15 }}>
+                <MessageCircle className="h-6 w-6" />
+              </motion.span>
             )}
           </AnimatePresence>
 
-          {/* Badge messages non lus */}
           {unread > 0 && !open && (
-            <motion.span
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center"
-            >
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white ring-2 ring-white">
               {unread}
-            </motion.span>
+            </span>
           )}
         </motion.button>
       </div>
-    </>
+    </div>
   );
 }

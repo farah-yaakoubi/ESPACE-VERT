@@ -13,12 +13,12 @@ const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 interface Actu {
   id_actualite: number;
-  titre:        string;
-  slug:         string;
-  image:        string | null;
-  contenu:      string;
+  titre: string;
+  slug: string;
+  image: string | null;
+  contenu: string;
   published_at: string | null;
-  created_at:   string;
+  created_at: string;
 }
 
 const GRADS = [
@@ -40,17 +40,19 @@ function stripHtml(h: string) {
 }
 
 export default function NewsCarousel() {
-  const trackRef         = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
-  const [news,   setNews]   = useState<Actu[]>([]);
+  const [news, setNews] = useState<Actu[]>([]);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     fetch(`${BASE}/actualites?limit=8&publiee=true`, { cache: "no-store" })
-      .then(r => r.json())
-      .then(d => { if (d.success && Array.isArray(d.data)) setNews(d.data); })
-      .catch(() => {})
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && Array.isArray(d.data)) setNews(d.data);
+      })
+      .catch(() => undefined)
       .finally(() => setLoading(false));
   }, []);
 
@@ -72,13 +74,20 @@ export default function NewsCarousel() {
 
     const gapValue = window.getComputedStyle(track).gap || window.getComputedStyle(track).columnGap || "0";
     const gap = Number.parseFloat(gapValue) || 0;
-    const CARD_W = firstCard.offsetWidth + gap;
-    const TOTAL  = news.length * CARD_W;
-    let pos = 0, raf: number;
+    const cardWidth = firstCard.offsetWidth + gap;
+    const total = news.length * cardWidth;
+    let pos = 0;
+    let raf = 0;
+
     const step = () => {
-      if (!paused) { pos += 0.55; if (pos >= TOTAL) pos = 0; track.style.transform = `translateX(-${pos}px)`; }
+      if (!paused) {
+        pos += 0.55;
+        if (pos >= total) pos = 0;
+        track.style.transform = `translateX(-${pos}px)`;
+      }
       raf = requestAnimationFrame(step);
     };
+
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
   }, [isMobile, paused, news.length]);
@@ -86,7 +95,6 @@ export default function NewsCarousel() {
   const headerRef = useRef<HTMLDivElement>(null);
   const headerInView = useInView(headerRef, { once: false, margin: "-80px" });
 
-  // Masquer si chargement terminé et aucune actualité
   if (!loading && news.length === 0) return null;
 
   const doubled = news.length > 0 ? [...news, ...news] : [];
@@ -94,102 +102,131 @@ export default function NewsCarousel() {
 
   return (
     <section className="w-full overflow-hidden bg-[#f7faf5] py-0">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pt-14 pb-10">
+      <div className="mx-auto max-w-[1200px] px-4 pt-10 pb-7 sm:px-6 sm:pt-11 sm:pb-8">
         <div ref={headerRef} className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <motion.div
-              className="flex items-center gap-3 mb-3"
+              className="mb-3 flex items-center gap-3"
               animate={{ opacity: headerInView ? 1 : 0, x: headerInView ? 0 : -40 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             >
-              <div className="w-1 h-8 rounded-full" style={{ background:"#1b5e38" }} />
-              <Newspaper size={18} style={{ color:"#2e7d4f" }} />
-              <p style={{ color:"#2e7d4f", fontSize:11, fontWeight:800, letterSpacing:"0.22em", textTransform:"uppercase" }}>Actualités</p>
+              <div className="h-8 w-1 rounded-full" style={{ background: "#1b5e38" }} />
+              <Newspaper size={18} style={{ color: "#2e7d4f" }} />
+              <p style={{ color: "#2e7d4f", fontSize: 11, fontWeight: 800, letterSpacing: "0.22em", textTransform: "uppercase" }}>
+                Actualites
+              </p>
             </motion.div>
             <motion.h2
               animate={{ opacity: headerInView ? 1 : 0, x: headerInView ? 0 : -48 }}
               transition={{ duration: 0.55, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-              style={{ color:"#0d1f0d", fontSize:"clamp(2rem,3.5vw,2.8rem)", fontWeight:900, letterSpacing:"-0.02em", lineHeight:1.1 }}
+              style={{ color: "#0d1f0d", fontSize: "clamp(2rem,3.5vw,2.8rem)", fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1 }}
             >
-              Nos dernières <span style={{ color:"#1b5e38" }}>nouvelles</span>
+              Nos dernieres <span style={{ color: "#1b5e38" }}>nouvelles</span>
             </motion.h2>
-            <div style={{ marginTop:10, width:48, height:4, borderRadius:4, overflow:"hidden", background:"#e8f5ee" }}>
+            <div style={{ marginTop: 10, width: 48, height: 4, borderRadius: 4, overflow: "hidden", background: "#e8f5ee" }}>
               <motion.div
                 animate={{ scaleX: headerInView ? 1 : 0 }}
                 transition={{ duration: 0.5, delay: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                style={{ height:"100%", borderRadius:4, background:"linear-gradient(90deg,#7dc040,#1b5e38)", transformOrigin:"left" }}
+                style={{ height: "100%", borderRadius: 4, background: "linear-gradient(90deg,#7dc040,#1b5e38)", transformOrigin: "left" }}
               />
             </div>
           </div>
-          <Link href="/actualites"
-            className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-bold rounded-xl transition-colors"
-            style={{ background:"#1b5e38" }}
-            onMouseEnter={e => (e.currentTarget.style.background = "#0a6030")}
-            onMouseLeave={e => (e.currentTarget.style.background = "#1b5e38")}>
-            Voir tout <ArrowRight className="w-4 h-4" />
+          <Link
+            href="/actualites"
+            className="hidden rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-colors sm:inline-flex sm:items-center sm:gap-2"
+            style={{ background: "#1b5e38" }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#0a6030")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "#1b5e38")}
+          >
+            Voir tout <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-        <Link href="/actualites"
-          className="inline-flex sm:hidden items-center gap-2 px-4 py-2.5 text-white text-sm font-bold rounded-xl transition-colors"
-          style={{ background:"#1b5e38" }}>
-          Voir tout <ArrowRight className="w-4 h-4" />
+
+        <Link
+          href="/actualites"
+          className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-colors sm:hidden"
+          style={{ background: "#1b5e38" }}
+        >
+          Voir tout <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
 
       {loading ? (
-        <div className="h-[220px] flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-[#0a6030] border-t-transparent rounded-full animate-spin" />
+        <div className="flex h-[220px] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#0a6030] border-t-transparent" />
         </div>
       ) : (
-        <div className={`w-full relative ${isMobile ? "overflow-x-auto scrollbar-none snap-x snap-mandatory px-4 sm:px-6 pb-6" : "overflow-hidden"}`}
+        <div
+          className={`relative w-full ${isMobile ? "overflow-x-auto scrollbar-none snap-x snap-mandatory px-4 sm:px-6 pb-6" : "overflow-hidden"}`}
           onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}>
-          {!isMobile && <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-16 z-10 pointer-events-none"
-            style={{ background: "linear-gradient(to right,#f7faf5,transparent)" }} />
-          }
-          {!isMobile && <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-16 z-10 pointer-events-none"
-            style={{ background: "linear-gradient(to left,#f7faf5,transparent)" }} />
-          }
+          onMouseLeave={() => setPaused(false)}
+        >
+          {!isMobile && (
+            <div
+              className="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-8 sm:w-16"
+              style={{ background: "linear-gradient(to right,#f7faf5,transparent)" }}
+            />
+          )}
+          {!isMobile && (
+            <div
+              className="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-8 sm:w-16"
+              style={{ background: "linear-gradient(to left,#f7faf5,transparent)" }}
+            />
+          )}
 
           <div
             ref={trackRef}
-            className={`flex ${isMobile ? "gap-4 w-max pr-4" : "gap-5 pb-6"}`}
+            className={`flex ${isMobile ? "w-max gap-4 pr-4" : "gap-5 pb-3"}`}
             style={{ width: "max-content", willChange: isMobile ? undefined : "transform", paddingLeft: isMobile ? 0 : 24 }}
           >
-            {items.map((item, i) => (
-              <Link key={`${item.id_actualite}-${i}`} href={`/actualites/${item.slug}`}
+            {items.map((item, index) => (
+              <Link
+                key={`${item.id_actualite}-${index}`}
+                href={`/actualites/${item.slug}`}
                 data-news-card
                 className={`group flex-shrink-0 ${isMobile ? "snap-start" : ""}`}
-                style={{ width: isMobile ? "min(86vw, 320px)" : "360px" }}>
-                <motion.div whileHover={{ y: -4, scale: 1.02 }} transition={{ type: "spring", stiffness: 300, damping: 22 }}
-                  className="rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-shadow h-[220px] relative"
-                  style={{ background: GRADS[i % GRADS.length] }}>
-                  {/* Image de fond si disponible */}
+                style={{ width: isMobile ? "min(86vw, 320px)" : "360px" }}
+              >
+                <motion.div
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 22 }}
+                  className="relative h-[220px] overflow-hidden rounded-2xl shadow-md transition-shadow hover:shadow-xl"
+                  style={{ background: GRADS[index % GRADS.length] }}
+                >
                   {item.image && (
-                    <Image src={item.image} alt={item.titre} fill className="object-cover opacity-30" sizes="(max-width: 767px) 84vw, 360px" />
+                    <Image
+                      src={item.image}
+                      alt={item.titre}
+                      fill
+                      className="object-cover opacity-30"
+                      sizes="(max-width: 767px) 84vw, 360px"
+                    />
                   )}
-                  <div className="absolute inset-0 pointer-events-none"
-                    style={{ backgroundImage: "radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px)", backgroundSize: "24px 24px" }} />
-                  <div className="absolute -right-6 -bottom-6 w-28 h-28 bg-white/40 rounded-full pointer-events-none" />
 
-                  <div className="relative z-10 h-full flex flex-col justify-between p-6">
+                  <div
+                    className="pointer-events-none absolute inset-0"
+                    style={{ backgroundImage: "radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px)", backgroundSize: "24px 24px" }}
+                  />
+                  <div className="pointer-events-none absolute -right-6 -bottom-6 h-28 w-28 rounded-full bg-white/40" />
+
+                  <div className="relative z-10 flex h-full flex-col justify-between p-6">
                     <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-[11px] font-black text-white/80 uppercase tracking-wider bg-white/20 px-2.5 py-1 rounded-full">
-                          Actualité
+                      <div className="mb-3 flex items-center justify-between">
+                        <span className="rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-white/80">
+                          Actualite
                         </span>
-                        <div className="flex items-center gap-1.5 text-white/60 text-[11px]">
-                          <Calendar className="w-3.5 h-3.5" />
+                        <div className="flex items-center gap-1.5 text-[11px] text-white/60">
+                          <Calendar className="h-3.5 w-3.5" />
                           {fmtDate(item.published_at ?? item.created_at)}
                         </div>
                       </div>
-                      <h3 className="text-white font-black text-[17px] leading-snug line-clamp-2 mb-2">{item.titre}</h3>
-                      <p className="text-white/70 text-[13px] leading-relaxed line-clamp-2">{stripHtml(item.contenu)}</p>
+                      <h3 className="mb-2 line-clamp-2 text-[17px] font-black leading-snug text-white">{item.titre}</h3>
+                      <p className="line-clamp-2 text-[13px] leading-relaxed text-white/70">{stripHtml(item.contenu)}</p>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[13px] font-bold text-white/80 group-hover:text-white transition-colors">Lire la suite</span>
-                      <div className="w-8 h-8 rounded-full bg-white/20 group-hover:bg-white/30 flex items-center justify-center transition-all">
-                        <ArrowRight className="w-4 h-4 text-white" />
+                      <span className="text-[13px] font-bold text-white/80 transition-colors group-hover:text-white">Lire la suite</span>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 transition-all group-hover:bg-white/30">
+                        <ArrowRight className="h-4 w-4 text-white" />
                       </div>
                     </div>
                   </div>

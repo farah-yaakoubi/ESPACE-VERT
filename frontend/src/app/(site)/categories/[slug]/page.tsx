@@ -5,7 +5,14 @@ import Link              from "next/link";
 import { ChevronRight, Package, Layers } from "lucide-react";
 import type { CategorieDetail } from "@/types/api";
 import { CategorieCatalogSection } from "@/components/CategorieCatalogSection";
-const BACKEND = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+import { getProductHref } from "@/lib/product-url";
+
+// API_URL (serveur-only) évite les ECONNREFUSED en SSR quand le backend
+// est sur un réseau interne différent de localhost côté navigateur.
+const BACKEND =
+  process.env.API_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://localhost:4000/api";
 
 async function getCat(slug: string): Promise<CategorieDetail | null> {
   try {
@@ -80,7 +87,7 @@ export default async function CategorieDetailPage({ params }: PageProps) {
             {cat.produits.map(p => {
               const img = p.images?.[0];
               return (
-                <Link key={p.id_produit} href={`/produits/${p.slug}`}
+                <Link key={p.id_produit} href={getProductHref(p)}
                   className="group block rounded-2xl border border-gray-100 hover:border-ev-200
                     hover:shadow-lg transition-all duration-300 overflow-hidden bg-white">
                   <div className="relative h-48 bg-gray-50">

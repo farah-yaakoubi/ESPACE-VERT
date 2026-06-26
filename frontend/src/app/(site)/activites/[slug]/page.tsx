@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
-import { activitesService, categoriesService } from "@/services";
+import { cookies } from "next/headers";
+import { activitesService, categoriesService, marquesService } from "@/services";
 import { ActiviteProduitsSectionWrapper } from "./ActiviteProduitsSection";
 import { PageHeroStatic } from "@/components/sections/PageHeroStatic";
 import { SemencesRecommandation } from "./SemencesRecommandation";
+import { getEtudeInstallationHref, isEtudeInstallationCategory } from "@/lib/etude-installation";
+import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
+import { translatedField } from "@/i18n/translated-field";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ cat?: string | string[] }>;
 }
 
 export const revalidate = 300;
@@ -42,10 +47,25 @@ function getActiviteHeroSettings(slug: string) {
   }
 }
 
+function normalizeText(value: string | null | undefined) {
+  return (value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+async function currentLocale(): Promise<Locale> {
+  const cookieLocale = (await cookies()).get("NEXT_LOCALE")?.value;
+  return isLocale(cookieLocale) ? cookieLocale : defaultLocale;
+}
+
 /* ── Static params ───────────────────────────────────────────────── */
 export async function generateStaticParams() {
-  const acts = await activitesService.list();
-  return acts.map((a) => ({ slug: a.slug }));
+  try {
+    const acts = await activitesService.list();
+    return acts.map((a) => ({ slug: a.slug }));
+  } catch { return []; }
 }
 
 /* ── Metadata ────────────────────────────────────────────────────── */
@@ -63,8 +83,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 /* ── Page ────────────────────────────────────────────────────────── */
-export default async function ActiviteDetailPage({ params }: PageProps) {
+export default async function ActiviteDetailPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const locale = await currentLocale();
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const categoryParam = resolvedSearchParams.cat;
+  const hasCategoryFilter = Array.isArray(categoryParam)
+    ? categoryParam.length > 0
+    : Boolean(categoryParam);
 
   const acts = await activitesService.list();
   const act  = acts.find((a) => a.slug === slug);
@@ -74,6 +100,62 @@ export default async function ActiviteDetailPage({ params }: PageProps) {
 
   /* Fetch categories for this activite (includes hierarchy / parent_id) */
   const categories = await categoriesService.list({ id_activite: activite.id_activite });
+  const marques = slug === "irrigation" ? await marquesService.list() : [];
+  const marqueById = new Map(marques.map((marque) => [marque.id_marque, marque]));
+  const marqueByKey = new Map(
+    marques.flatMap((marque) => [
+      [normalizeText(marque.slug), marque] as const,
+      [normalizeText(marque.nom), marque] as const,
+    ])
+  );
+  const findLinkedMarque = (cat: (typeof categories)[number]) => {
+    if (cat.id_marque) {
+      const marque = marqueById.get(cat.id_marque);
+      if (marque) return marque;
+    }
+
+    const key = normalizeText(`${cat.nom} ${cat.slug}`);
+    if (key.includes("matar")) return marqueByKey.get("matar") ?? null;
+    if (key.includes("rivulis") || key.includes("rivilus")) {
+      return marqueByKey.get("rivulis") ?? marqueByKey.get("rivilus") ?? null;
+    }
+    if (key.includes("idroland")) return marqueByKey.get("idroland") ?? null;
+
+    return null;
+  };
+  const equipementsCategory = slug === "irrigation"
+    ? categories.find((cat) => {
+        const key = normalizeText(`${cat.nom} ${cat.slug}`);
+        return !cat.parent_id && (key.includes("equipement") || key.includes("materiel"));
+      }) ?? null
+    : null;
+  const irrigationBrandCards = equipementsCategory
+    ? categories
+        .filter((cat) => cat.parent_id === equipementsCategory.id_categorie)
+        .map((cat) => {
+          const marque = findLinkedMarque(cat);
+          return {
+            id_categorie: cat.id_categorie,
+            nom: marque?.nom ?? cat.nom,
+            image: marque?.logo ?? cat.image ?? null,
+            href: marque ? `/marques/${marque.slug}` : `?cat=${cat.id_categorie}#produits-activite`,
+          };
+        })
+    : [];
+  const selectedCategoryId = Array.isArray(categoryParam)
+    ? parseInt(categoryParam[0] ?? "", 10)
+    : parseInt(categoryParam ?? "", 10);
+
+  if (
+    hasCategoryFilter &&
+    slug === "irrigation" &&
+    Number.isFinite(selectedCategoryId)
+  ) {
+    const selectedCategory = categories.find((cat) => cat.id_categorie === selectedCategoryId);
+    if (selectedCategory && isEtudeInstallationCategory(selectedCategory)) {
+      redirect(getEtudeInstallationHref(slug));
+    }
+  }
 
   /* Root-level categories for quick-nav pills */
   const rootCategories = categories.filter((c) => !c.parent_id);
@@ -82,6 +164,8 @@ export default async function ActiviteDetailPage({ params }: PageProps) {
   const isIrrigation = activite.slug === "irrigation";
   const isSemences = activite.slug === "semences-et-plants";
   const heroSettings = getActiviteHeroSettings(activite.slug);
+  const activiteNom = translatedField(activite as any, "nom", locale) || activite.nom;
+  const activiteDescription = translatedField(activite as any, "description", locale) || activite.description;
 
   return (
     <>
@@ -89,8 +173,8 @@ export default async function ActiviteDetailPage({ params }: PageProps) {
       <PageHeroStatic
         page={`activite:${activite.slug}`}
         eyebrow="Activité"
-        title={activite.nom}
-        subtitle={activite.description ?? undefined}
+        title={activiteNom}
+        subtitle={activiteDescription ?? undefined}
         fallbackImage={(activite as any).banniere || activite.image || "/images/hero/fertivert.webp"}
         contentMaxWidth="44rem"
         {...heroSettings}
@@ -113,11 +197,8 @@ export default async function ActiviteDetailPage({ params }: PageProps) {
         </div>
       )}
 
-      {/* ── Widget recommandations IA (semences uniquement) ─────── */}
-      {isSemences && <SemencesRecommandation />}
-
       {/* ── Categories quick nav ─────────────────────────────────── */}
-      {rootCategories.length > 0 && (
+      {(rootCategories.length > 0 || isIrrigation) && (
         <section className="bg-white border-b border-sand-200">
           <div className="container-ev py-4">
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
@@ -125,12 +206,17 @@ export default async function ActiviteDetailPage({ params }: PageProps) {
               {rootCategories.map((cat) => (
                 <a
                   key={cat.id_categorie}
-                  href={`#cat-${cat.id_categorie}`}
+                  href={
+                    slug === "irrigation" && isEtudeInstallationCategory(cat)
+                      ? getEtudeInstallationHref(slug)
+                      : `?cat=${cat.id_categorie}#produits-activite`
+                  }
                   className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-ev-50 text-ev-700 border border-ev-100 whitespace-nowrap"
                 >
-                  {cat.nom}
+                  {translatedField(cat as any, "nom", locale) || cat.nom}
                 </a>
               ))}
+              {isSemences && <SemencesRecommandation />}
             </div>
           </div>
         </section>
@@ -139,7 +225,9 @@ export default async function ActiviteDetailPage({ params }: PageProps) {
       {/* ── Products section (client component) ─────────────────── */}
       <ActiviteProduitsSectionWrapper
         id_activite={activite.id_activite}
+        activiteSlug={activite.slug}
         categories={categories}
+        brandCards={irrigationBrandCards}
       />
     </>
   );

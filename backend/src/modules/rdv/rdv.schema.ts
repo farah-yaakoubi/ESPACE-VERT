@@ -17,9 +17,10 @@ export const CreateRdvSchema = z.object({
 });
 
 export const UpdateRdvSchema = z.object({
-  statut:       z.enum(RDV_STATUTS).optional(),
-  note_interne: z.string().max(2000).optional().nullable(),
-  heure:        z.string().max(10).optional().nullable(),
+  statut:        z.enum(RDV_STATUTS).optional(),
+  note_interne:  z.string().max(2000).optional().nullable(),
+  heure:         z.string().max(10).optional().nullable(),
+  reponse_admin: z.string().max(2000).optional().nullable(),
 });
 
 export const RdvQuerySchema = z.object({

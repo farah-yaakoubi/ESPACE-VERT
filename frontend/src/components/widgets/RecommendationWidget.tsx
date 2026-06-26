@@ -3,19 +3,10 @@
 import { useState } from 'react';
 import { ChevronDown, X } from 'lucide-react';
 import Image from 'next/image';
-import ProduitCard from '../cards/ProduitCard';
+import { ProduitCard } from '../cards/ProduitCard';
+import type { ProduitCard as Product } from '@/types/api';
 
-interface Product {
-  id_produit: string;
-  nom: string;
-  slug: string;
-  division: 'pro' | 'garden';
-  images: Array<{ url: string; alt: string; is_principale: boolean }>;
-  categorie: { id_categorie: string; nom: string };
-  prix?: number;
-}
-
-interface RecommendationWidgetProps {
+export interface RecommendationWidgetProps {
   triggerIcon?: string; // URL de l'image/logo du widget
   products?: Product[];
 }
@@ -80,8 +71,8 @@ export default function RecommendationWidget({
 
       {/* Modal Backdrop */}
       {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm transition-opacity"
+          <div
+            className="fixed inset-0 z-[90] bg-black/40 backdrop-blur-sm transition-opacity"
           onClick={handleCloseWidget}
           aria-hidden="true"
         />
@@ -89,7 +80,7 @@ export default function RecommendationWidget({
 
       {/* Modal Panel */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 pointer-events-none">
           <div
             className="pointer-events-auto bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-in fade-in slide-in-from-bottom-4 duration-300"
             onClick={(e) => e.stopPropagation()}

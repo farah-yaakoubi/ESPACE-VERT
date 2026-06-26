@@ -1,7 +1,12 @@
 // src/lib/api-client.ts
 import type { ApiResponse, ApiSuccess } from "@/types/api";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+// En SSR (Server Components, Route Handlers) : utilise API_URL (variable serveur-only).
+// En client-side : utilise NEXT_PUBLIC_API_URL.
+const BASE =
+  process.env.API_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://localhost:4000/api";
 
 interface NextFetchRequestConfig {
   revalidate?: number | false;
@@ -49,6 +54,5 @@ export function post<T>(path: string, body: unknown): Promise<ApiResponse<T>> {
 export async function unwrapOrThrow<T>(p: Promise<ApiResponse<T>>): Promise<T> {
   const res = await p;
   if (!res.success) throw new Error(res.error);
-  // Cast to ApiSuccess<T> after the guard — data is guaranteed to be T
   return (res as ApiSuccess<T>).data;
 }

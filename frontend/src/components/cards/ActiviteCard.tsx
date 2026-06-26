@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Leaf } from "lucide-react";
 import type { Activite } from "@/types/api";
 import { cn } from "@/lib/utils";
+import { getActivityHrefBySlug } from "@/lib/activity-links";
 
 export function ActiviteCard({
   activite,
@@ -11,8 +12,10 @@ export function ActiviteCard({
   activite: Activite;
   className?: string;
 }) {
+  const href = getActivityHrefBySlug(activite.slug);
+
   return (
-    <Link href={`/activites/${activite.slug}`} className={cn("block group", className)}>
+    <Link href={href} className={cn("block group", className)}>
       <article className="card card-hover h-full flex flex-col overflow-hidden">
         {/* Image / placeholder */}
         <div

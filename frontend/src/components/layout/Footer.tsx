@@ -9,6 +9,7 @@ import {
   EnvelopeIcon as Mail,
   ArrowTopRightOnSquareIcon as ArrowTopRightOnSquare,
 } from "@heroicons/react/24/outline";
+import { useI18n } from "@/i18n/I18nProvider";
 
 /* ─── Données ──────────────────────────────────────────────── */
 const agences = [
@@ -28,6 +29,7 @@ const socials = [
 
 /* ─── Carte des agences ────────────────────────────────────── */
 function AgencesMap() {
+  const { t } = useI18n();
   const [active, setActive] = useState(0);
   const ag = agences[active];
   return (
@@ -67,7 +69,7 @@ function AgencesMap() {
         </div>
         <a href={ag.maps} target="_blank" rel="noopener noreferrer"
           className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-3 sm:w-auto flex items-center justify-center gap-1.5 bg-[#1a3d0a] hover:bg-[#3cb648] text-white text-[11px] font-black px-3 py-1.5 rounded-xl shadow-lg transition-colors">
-          <ArrowTopRightOnSquare className="w-3.5 h-3.5" /> Ouvrir Maps
+          <ArrowTopRightOnSquare className="w-3.5 h-3.5" /> {t("map.open")}
         </a>
       </div>
       {/* Infos contact */}
@@ -92,6 +94,7 @@ function AgencesMap() {
 
 /* ─── Footer principal ─────────────────────────────────────── */
 export function Footer() {
+  const { t } = useI18n();
   const sectionRef = useRef<HTMLElement>(null);
   const isInView   = useInView(sectionRef, { once:true, margin:"-60px" });
   const fadeUp = (delay=0) => ({
@@ -104,9 +107,9 @@ export function Footer() {
     services: [
       { href:"/activites/semences-et-plants",      label:"Semences & Plants" },
       { href:"/activites/irrigation",              label:"Irrigation" },
-      { href:"/activites/fertilisation",           label:"Fertilisation" },
+      { href:"/marques/fertivert",                 label:"Fertilisation" },
       { href:"/activites/jardinage-et-machinisme", label:"Jardinage & Machinisme" },
-      { href:"/activites/pulverisation",           label:"Pulvérisation" },
+      { href:"/marques/pulvert",                   label:"Pulvérisation" },
     ],
     marques: [
       { href:"/marques/fertivert", label:"Fertivert" },
@@ -114,9 +117,9 @@ export function Footer() {
       { href:"/marques/matar",     label:"Matar"     },
     ],
     company: [
-      { href:"/qui-sommes-nous", label:"Qui sommes-nous" },
-      { href:"/contact",         label:"Contact" },
-      { href:"/actualites",      label:"Actualités" },
+      { href:"/qui-sommes-nous", label:t("nav.about") },
+      { href:"/contact",         label:t("nav.contact") },
+      { href:"/actualites",      label:t("footer.news") },
     ],
   };
 
@@ -160,13 +163,12 @@ export function Footer() {
 
             {/* Tagline */}
             <p className="text-white/50 text-sm leading-relaxed max-w-[280px]">
-              Votre partenaire agricole depuis des décennies.
-              Semences, irrigation, fertilisation & machinisme.
+              {t("footer.tagline")}
             </p>
 
             {/* Réseaux sociaux */}
             <div>
-              <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.18em] mb-4">Suivez-nous</p>
+              <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.18em] mb-4">{t("footer.follow")}</p>
               <div className="flex gap-3 flex-wrap">
                 {socials.map((s, i) => (
                   <motion.a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer"
@@ -187,7 +189,7 @@ export function Footer() {
 
           {/* Services */}
           <motion.div {...fadeUp(0.14)} className="lg:col-span-2">
-            <h4 className="text-[10px] font-black text-[#8cc83f] uppercase tracking-[0.18em] mb-5">Services</h4>
+            <h4 className="text-[10px] font-black text-[#8cc83f] uppercase tracking-[0.18em] mb-5">{t("footer.services")}</h4>
             <ul className="space-y-3">
               {navLinks.services.map((l,i) => (
                 <li key={i}>
@@ -202,7 +204,7 @@ export function Footer() {
 
           {/* Marques */}
           <motion.div {...fadeUp(0.17)} className="lg:col-span-2">
-            <h4 className="text-[10px] font-black text-[#8cc83f] uppercase tracking-[0.18em] mb-5">Nos Marques</h4>
+            <h4 className="text-[10px] font-black text-[#8cc83f] uppercase tracking-[0.18em] mb-5">{t("footer.brands")}</h4>
             <ul className="space-y-3">
               {navLinks.marques.map((l,i) => (
                 <li key={i}>
@@ -217,7 +219,7 @@ export function Footer() {
 
           {/* Entreprise */}
           <motion.div {...fadeUp(0.20)} className="lg:col-span-2">
-            <h4 className="text-[10px] font-black text-[#8cc83f] uppercase tracking-[0.18em] mb-5">Entreprise</h4>
+            <h4 className="text-[10px] font-black text-[#8cc83f] uppercase tracking-[0.18em] mb-5">{t("footer.company")}</h4>
             <ul className="space-y-3">
               {navLinks.company.map((l,i) => (
                 <li key={i}>
@@ -236,7 +238,7 @@ export function Footer() {
           <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-6" />
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-white/25 text-xs text-center sm:text-left">
-              © {new Date().getFullYear()} Groupe Espace Vert. Tous droits réservés.
+              © {new Date().getFullYear()} Groupe Espace Vert. {t("footer.rights")}
             </p>
            
           </div>

@@ -17,6 +17,18 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+const NEED_OPTIONS = [
+  "Irrigation",
+  "Semences et plants",
+  "Fertilisation",
+  "Pulvérisation",
+  "Machinisme",
+  "Jardinage",
+  "Installation",
+  "Achat en quantité",
+  "Autre besoin",
+];
+
 interface DevisFormProps {
   id_produit?: number;
   nomProduit?: string;
@@ -25,21 +37,26 @@ interface DevisFormProps {
 export function DevisForm({ id_produit, nomProduit }: DevisFormProps) {
   const [sent, setSent]   = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedNeed, setSelectedNeed] = useState(NEED_OPTIONS[0]);
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } =
     useForm<FormValues>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (values: FormValues) => {
     setError(null);
+    const messageParts = [
+      selectedNeed ? `Type de besoin : ${selectedNeed}` : null,
+      values.message?.trim() ? `Précisions : ${values.message.trim()}` : null,
+    ].filter(Boolean);
     const res = await devisService.create({
       nom:             values.nom.trim(),
       email:           values.email.trim().toLowerCase(),
       telephone:       values.telephone?.trim() || undefined,
-      message:         values.message?.trim()   || undefined,
+      message:         messageParts.length > 0 ? messageParts.join("\n\n").slice(0, 2000) : undefined,
       id_produit,
       token_visiteur:  getVisitorToken(),   // ← lie la demande au visiteur connu
     });
-    if (res.success) { setSent(true); reset(); }
+    if (res.success) { setSent(true); setSelectedNeed(""); reset(); }
     else setError(res.error ?? "Une erreur s'est produite.");
   };
 
@@ -82,7 +99,20 @@ export function DevisForm({ id_produit, nomProduit }: DevisFormProps) {
         <input id="dv-tel" type="tel" {...register("telephone")} placeholder="+216 XX XXX XXX" className="field" />
       </div>
       <div>
-        <label className="field-label" htmlFor="dv-message">Précisions</label>
+        <label className="field-label" htmlFor="dv-need-options">Type de besoin</label>
+        <select
+          id="dv-need-options"
+          value={selectedNeed}
+          onChange={(event) => setSelectedNeed(event.currentTarget.value)}
+          className="field"
+        >
+          {NEED_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+        <label className="field-label mt-3" htmlFor="dv-message">Précisions</label>
         <textarea id="dv-message" rows={4} {...register("message")}
           placeholder="Quantité, modèle, usage spécifique…" className="field resize-none" />
       </div>

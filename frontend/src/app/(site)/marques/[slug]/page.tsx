@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import Link from "next/link";
-import { marquesService } from "@/services";
+import { activitesService, categoriesService, marquesService } from "@/services";
 import { CategoryTree } from "@/components/catalogue/CategoryTree";
 import { fetchMarqueTree } from "@/lib/api/catalogue";
 import { PageHeroStatic } from "@/components/sections/PageHeroStatic";
+import { ActiviteProduitsSectionWrapper } from "../../activites/[slug]/ActiviteProduitsSection";
+import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
+import { translatedField } from "@/i18n/translated-field";
+import type { MarqueTree } from "@/types/catalogue";
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
@@ -40,10 +45,76 @@ function getMarqueHeroSettings(slug: string) {
   }
 }
 
+function normalizeText(value: string | null | undefined) {
+  return (value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function collectCategorieSubtree<T extends { id_categorie: number; parent_id: number | null }>(
+  categories: T[],
+  rootId: number,
+) {
+  const ids = new Set<number>([rootId]);
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+    for (const category of categories) {
+      if (category.parent_id && ids.has(category.parent_id) && !ids.has(category.id_categorie)) {
+        ids.add(category.id_categorie);
+        changed = true;
+      }
+    }
+  }
+
+  return categories.filter((category) => ids.has(category.id_categorie));
+}
+
+function isBaddarGenericCategory(category: { nom?: string | null; slug?: string | null }) {
+  const label = normalizeText(`${category.nom ?? ""} ${category.slug ?? ""}`);
+  return label.includes("semences") && label.includes("plants");
+}
+
+function hideBaddarGenericCategory(tree: MarqueTree | null): MarqueTree | null {
+  if (!tree || tree.slug !== "baddar-semences") return tree;
+
+  const genericCategories = tree.categories.filter(isBaddarGenericCategory);
+  if (genericCategories.length === 0) return tree;
+
+  const visibleCategories = tree.categories.filter((category) => !isBaddarGenericCategory(category));
+  if (visibleCategories.length === 0) {
+    return { ...tree, categories: [] };
+  }
+
+  const genericProducts = genericCategories.flatMap((category) => category.produits ?? []);
+  const [firstVisibleCategory, ...otherVisibleCategories] = visibleCategories;
+
+  return {
+    ...tree,
+    categories: [
+      {
+        ...firstVisibleCategory,
+        produits: [...(firstVisibleCategory.produits ?? []), ...genericProducts],
+      },
+      ...otherVisibleCategories,
+    ],
+  };
+}
+
+async function currentLocale(): Promise<Locale> {
+  const cookieLocale = (await cookies()).get("NEXT_LOCALE")?.value;
+  return isLocale(cookieLocale) ? cookieLocale : defaultLocale;
+}
+
 /* ── Static params ───────────────────────────────────────────────── */
 export async function generateStaticParams() {
-  const marques = await marquesService.list();
-  return marques.map((m) => ({ slug: m.slug }));
+  try {
+    const marques = await marquesService.list();
+    return marques.map((m) => ({ slug: m.slug }));
+  } catch { return []; }
 }
 
 /* ── Metadata ────────────────────────────────────────────────────── */
@@ -63,6 +134,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 /* ── Page ────────────────────────────────────────────────────────── */
 export default async function MarqueDetailPage({ params }: PageProps) {
   const { slug } = await params;
+  const locale = await currentLocale();
 
   let marque;
   try {
@@ -71,9 +143,34 @@ export default async function MarqueDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const tree    = await fetchMarqueTree(slug);
   const isMatar = marque.slug === "matar";
   const heroSettings = getMarqueHeroSettings(marque.slug);
+  const irrigation = isMatar
+    ? (await activitesService.list()).find((activite) => activite.slug === "irrigation")
+    : null;
+  const irrigationCategories = irrigation
+    ? await categoriesService.list({ id_activite: irrigation.id_activite })
+    : [];
+  const matarCategory = irrigationCategories.find((cat) => {
+    const slugKey = normalizeText(cat.slug);
+    const nameKey = normalizeText(cat.nom);
+    return slugKey === "matar" || nameKey === "matar";
+  }) ?? null;
+  const useIrrigationMatarCatalogue = Boolean(isMatar && irrigation && matarCategory);
+  const matarCategories = useIrrigationMatarCatalogue
+    ? collectCategorieSubtree(irrigationCategories, matarCategory!.id_categorie)
+    : [];
+  const tree = useIrrigationMatarCatalogue ? null : hideBaddarGenericCategory(await fetchMarqueTree(slug));
+  const quickCategories = useIrrigationMatarCatalogue
+    ? matarCategories.filter((cat) => cat.parent_id === matarCategory!.id_categorie)
+    : tree?.categories ?? [];
+  const shownQuickCategories = quickCategories.length > 0
+    ? quickCategories
+    : useIrrigationMatarCatalogue
+      ? [matarCategory!]
+      : [];
+  const marqueNom = translatedField(marque as any, "nom", locale) || marque.nom;
+  const marqueDescription = translatedField(marque as any, "description", locale) || marque.description;
 
   return (
     <>
@@ -81,8 +178,8 @@ export default async function MarqueDetailPage({ params }: PageProps) {
       <PageHeroStatic
         page={`marque:${slug}`}
         eyebrow="Marque"
-        title={marque.nom}
-        subtitle={marque.description ?? undefined}
+        title={marqueNom}
+        subtitle={marqueDescription ?? undefined}
         fallbackImage="/images/hero/fertivert.webp"
         contentMaxWidth="44rem"
         {...heroSettings}
@@ -106,23 +203,37 @@ export default async function MarqueDetailPage({ params }: PageProps) {
       )}
 
       {/* ── Categories quick nav ───────────────────────────────── */}
-      {tree && tree.categories.length > 0 && (
+      {shownQuickCategories.length > 0 && (
         <section className="bg-white border-b border-sand-200">
           <div className="container-ev py-4">
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
               <span className="text-xs text-gray-400 font-medium shrink-0">Catégories :</span>
-              {tree.categories.map((cat) => (
+              {shownQuickCategories.map((cat) => (
                 <a
                   key={cat.id_categorie}
-                  href={`#cat-${cat.id_categorie}`}
+                  href={
+                    useIrrigationMatarCatalogue
+                      ? `?cat=${cat.id_categorie}#produits-activite`
+                      : `#cat-${cat.id_categorie}`
+                  }
                   className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-ev-50 text-ev-700 border border-ev-100 whitespace-nowrap"
                 >
-                  {cat.nom}
+                  {translatedField(cat as any, "nom", locale) || cat.nom}
                 </a>
               ))}
             </div>
           </div>
         </section>
+      )}
+
+      {/* ── Catalogue Matar — même source que l'activité Irrigation / catégorie Matar ── */}
+      {useIrrigationMatarCatalogue && irrigation && matarCategory && (
+        <ActiviteProduitsSectionWrapper
+          id_activite={irrigation.id_activite}
+          activiteSlug={irrigation.slug}
+          categories={matarCategories}
+          categoryScopeId={matarCategory.id_categorie}
+        />
       )}
 
       {/* ── Arbre catégories / produits ────────────────────────── */}

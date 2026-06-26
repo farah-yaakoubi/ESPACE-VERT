@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Package, ChevronRight, Layers } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { CategorieDetail, CategorieDetailSousCat } from "@/types/api";
+import { getProductHref } from "@/lib/product-url";
 
 function mod(n: number, m: number) { return ((n % m) + m) % m; }
 
@@ -78,12 +79,12 @@ function ImageCarousel({ images, nom }: { images: { url: string; alt: string | n
 }
 
 /* ── Carte produit avec carousel hover ────────────────────────────────────── */
-function ProduitHoverCard({ p }: { p: { id_produit: number; slug: string; nom: string; description?: string | null; images: { url: string; alt: string | null }[] } }) {
+function ProduitHoverCard({ p }: { p: { id_produit: number; slug: string; nom: string; description?: string | null; marque?: { slug?: string | null } | null; activite?: { slug?: string | null } | null; images: { url: string; alt: string | null }[] } }) {
   const [hovered, setHovered] = useState(false);
   const img = p.images?.[0];
 
   return (
-    <Link href={`/produits/${p.slug}`}
+    <Link href={getProductHref(p)}
       className="group block rounded-2xl border overflow-hidden bg-white transition-all duration-300"
       style={{
         borderColor: hovered ? "#7dc040" : "#f3f4f6",
@@ -158,14 +159,32 @@ function ProduitsGrid({ sousCat, onBack, parentNom }: {
         <span className="text-gray-800 font-semibold">{sousCat.nom}</span>
       </div>
 
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-1">
-          <Layers size={18} className="text-ev-600" />
-          <h2 className="text-xl font-bold text-gray-900">{sousCat.nom}</h2>
+      <div className="mb-7 overflow-hidden rounded-2xl border border-sand-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center">
+          {sousCat.image && (
+            <div className="relative h-32 w-full shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-white via-ev-50 to-sand-100 sm:w-44">
+              <Image
+                src={sousCat.image}
+                alt={sousCat.nom}
+                fill
+                className="object-contain p-4 drop-shadow-sm"
+                sizes="176px"
+              />
+            </div>
+          )}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <Layers size={18} className="text-ev-600" />
+              <h2 className="text-xl font-bold text-gray-900">{sousCat.nom}</h2>
+            </div>
+            <p className="text-xs font-semibold text-ev-700">
+              {produits.length} produit{produits.length > 1 ? "s" : ""}
+            </p>
+            {sousCat.description && (
+              <p className="mt-2 text-gray-500 text-sm leading-relaxed max-w-xl">{sousCat.description}</p>
+            )}
+          </div>
         </div>
-        {sousCat.description && (
-          <p className="text-gray-500 text-sm leading-relaxed max-w-xl">{sousCat.description}</p>
-        )}
       </div>
 
       {produits.length === 0 ? (
@@ -175,9 +194,6 @@ function ProduitsGrid({ sousCat, onBack, parentNom }: {
         </div>
       ) : (
         <>
-          <p className="text-xs text-gray-400 mb-4">
-            {produits.length} produit{produits.length > 1 ? "s" : ""}
-          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {produits.map(p => <ProduitHoverCard key={p.id_produit} p={p} />)}
           </div>
@@ -196,16 +212,14 @@ function SousCatCoverCard({ souscat, onClick }: { souscat: CategorieDetailSousCa
 
   return (
     <button onClick={onClick}
-      className="group flex flex-col rounded-2xl border border-gray-100 hover:border-ev-300
-        hover:shadow-xl transition-all duration-300 bg-white overflow-hidden text-left
-        focus:outline-none focus:ring-2 focus:ring-ev-400 focus:ring-offset-2">
-      <div className="relative overflow-hidden bg-gradient-to-br from-ev-50 to-ev-100" style={{ aspectRatio: "4 / 3" }}>
+      className="group flex flex-col overflow-hidden rounded-2xl border border-sand-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-ev-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-ev-400 focus:ring-offset-2">
+      <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br from-white via-ev-50 to-sand-100">
         {souscat.image ? (
           <Image src={souscat.image} alt={souscat.nom} fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-            sizes="(max-width:640px)50vw,(max-width:1024px)33vw,220px" />
+            className="object-contain p-6 drop-shadow-md transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width:640px)100vw,(max-width:1280px)50vw,25vw" />
         ) : previews.length > 0 ? (
-          <div className="absolute inset-0 grid grid-cols-2 gap-1 p-3">
+          <div className="absolute inset-0 grid grid-cols-2 gap-2 p-4">
             {previews.map((img, i) => (
               <div key={i} className="relative bg-white rounded-lg overflow-hidden">
                 <Image src={img.url} alt="" fill className="object-contain p-1" sizes="80px" />
@@ -218,21 +232,26 @@ function SousCatCoverCard({ souscat, onClick }: { souscat: CategorieDetailSousCa
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-6xl opacity-15 select-none">🌿</div>
         )}
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
-        <div className="absolute bottom-2 right-2">
-          <span className="bg-black/50 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+        <div className="absolute right-3 top-3">
+          <span className="rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-ev-800 shadow-sm">
             {count > 0 ? `${count} produit${count > 1 ? "s" : ""}` : "Voir"}
           </span>
         </div>
       </div>
-      <div className="px-3.5 py-3 flex items-center justify-between gap-2 flex-1">
-        <p className="text-sm font-bold text-gray-800 leading-tight line-clamp-2 group-hover:text-ev-700 transition-colors">
-          {souscat.nom}
-        </p>
-        <ChevronRight size={14} className="text-gray-300 group-hover:text-ev-500 flex-shrink-0 transition-colors" />
+      <div className="flex min-h-[116px] flex-col p-4">
+        <div className="mb-3 flex items-start gap-2">
+          <span className="mt-1 h-8 w-1 rounded-full bg-ev-600 shrink-0" />
+          <p className="text-[15px] font-bold leading-snug text-gray-900 line-clamp-2 group-hover:text-ev-700 transition-colors">
+            {souscat.nom}
+          </p>
+        </div>
+        <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-xl bg-ev-700 px-3.5 py-2 text-[12px] font-semibold text-white transition-colors group-hover:bg-ev-800">
+          Voir produits
+          <ChevronRight size={13} />
+        </span>
       </div>
       {souscat.image && (souscat.produits ?? []).length > 0 && (
-        <div className="px-3.5 pb-3 flex items-center gap-1.5 border-t border-gray-50 pt-2">
+        <div className="px-4 pb-4 flex items-center gap-1.5 border-t border-gray-50 pt-3">
           {(souscat.produits ?? []).slice(0, 5).map(p => {
             const img = p.images?.[0];
             return (
