@@ -6,10 +6,12 @@ import { cookies } from "next/headers";
 import { activitesService, categoriesService, marquesService } from "@/services";
 import { ActiviteProduitsSectionWrapper } from "./ActiviteProduitsSection";
 import { PageHeroStatic } from "@/components/sections/PageHeroStatic";
+import { JardinageHeroShowcase } from "./JardinageHeroShowcase";
 import { SemencesRecommandation } from "./SemencesRecommandation";
 import { getEtudeInstallationHref, isEtudeInstallationCategory } from "@/lib/etude-installation";
 import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
 import { translatedField } from "@/i18n/translated-field";
+import { cn } from "@/lib/utils";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -100,7 +102,8 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
 
   /* Fetch categories for this activite (includes hierarchy / parent_id) */
   const categories = await categoriesService.list({ id_activite: activite.id_activite });
-  const marques = slug === "irrigation" ? await marquesService.list() : [];
+  const isMachinismeSlug = slug === "jardinage-et-machinisme";
+  const marques = (slug === "irrigation" || isMachinismeSlug) ? await marquesService.list() : [];
   const marqueById = new Map(marques.map((marque) => [marque.id_marque, marque]));
   const marqueByKey = new Map(
     marques.flatMap((marque) => [
@@ -163,22 +166,27 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
   /* Règles spéciales */
   const isIrrigation = activite.slug === "irrigation";
   const isSemences = activite.slug === "semences-et-plants";
+  const isMachinisme = activite.slug === "jardinage-et-machinisme";
   const heroSettings = getActiviteHeroSettings(activite.slug);
   const activiteNom = translatedField(activite as any, "nom", locale) || activite.nom;
   const activiteDescription = translatedField(activite as any, "description", locale) || activite.description;
 
   return (
-    <>
+    <div className={cn(isMachinisme && "theme-machinisme")}>
       {/* ── Hero ── */}
-      <PageHeroStatic
-        page={`activite:${activite.slug}`}
-        eyebrow="Activité"
-        title={activiteNom}
-        subtitle={activiteDescription ?? undefined}
-        fallbackImage={(activite as any).banniere || activite.image || "/images/hero/fertivert.webp"}
-        contentMaxWidth="44rem"
-        {...heroSettings}
-      />
+      {isMachinisme ? (
+        <JardinageHeroShowcase activiteSlug={activite.slug} categories={rootCategories} />
+      ) : (
+        <PageHeroStatic
+          page={`activite:${activite.slug}`}
+          eyebrow="Activité"
+          title={activiteNom}
+          subtitle={activiteDescription ?? undefined}
+          fallbackImage={(activite as any).banniere || activite.image || "/images/hero/fertivert.webp"}
+          contentMaxWidth="44rem"
+          {...heroSettings}
+        />
+      )}
 
       {/* CTA Irrigation / Matar */}
       {isIrrigation && (
@@ -198,7 +206,7 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
       )}
 
       {/* ── Categories quick nav ─────────────────────────────────── */}
-      {(rootCategories.length > 0 || isIrrigation) && (
+      {!isMachinisme && (rootCategories.length > 0 || isIrrigation) && (
         <section className="bg-white border-b border-sand-200">
           <div className="container-ev py-4">
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
@@ -228,7 +236,8 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
         activiteSlug={activite.slug}
         categories={categories}
         brandCards={irrigationBrandCards}
+        marques={marques}
       />
-    </>
+    </div>
   );
 }

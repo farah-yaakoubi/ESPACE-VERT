@@ -137,7 +137,7 @@ function CategoriesGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       {nodes.map((node) => {
         const count = nodeCount(node);
         const fallback = nodeFirstImage(node);
@@ -228,7 +228,7 @@ function SubCategoriesGrid({
 
       {/* Sous-catégories AVEC images */}
       {subCatsWithImages.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {subCatsWithImages.map((subCat) => {
             const count = nodeCount(subCat);
             return (
@@ -290,7 +290,7 @@ function SubCategoriesGrid({
                     {produitsSubCat.length} {productWord(produitsSubCat.length, t)}
                   </span>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {produitsSubCat.map((p) => (
                     <ProduitCard key={p.id_produit} produit={p} />
                   ))}
@@ -659,7 +659,7 @@ export function MarqueProduitsSection({ id_marque, categories }: Props) {
                   </div>
                 ) : (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       {paginated.map((p) => (
                         <ProduitCard key={p.id_produit} produit={p} />
                       ))}

@@ -140,6 +140,48 @@ function parseEmbedding(value: unknown): number[] {
   return [];
 }
 
+// ─── Contexte des pages statiques (Qui sommes-nous + Étude & Installation) ───
+function buildStaticPagesContext(): string {
+  const parts: string[] = [];
+
+  parts.push(`PAGE QUI SOMMES-NOUS (/qui-sommes-nous) :
+Groupe Espace Vert — fondé en 1995 en Tunisie, spécialisé dans l'irrigation, la fertilisation, les semences et le matériel agricole.
+Chiffres clés : 1995 année de création, plus de 100 collaborateurs, 5 sociétés du groupe, 30+ ans d'expérience.
+Sociétés du groupe : Espace Vert (holding), Fertivert (engrais et fertilisation), STAJAP (spécialiste irrigation), Mendial Irrigation, Baddar Agricole.
+Histoire :
+- 1995 : Fondation autour des semences agricoles en Tunisie.
+- 2000+ : Élargissement des gammes, développement à l'échelle nationale.
+- 2015 : Structuration des filiales spécialisées, lancement des marques propres (Fertivert, Pulvert, Matar).
+- Aujourd'hui : Un groupe structuré, présence nationale, reconnu dans le secteur agricole tunisien.
+Notre mission : Accompagner les projets agricoles et faciliter leur performance avec conseil, proximité et solutions complètes.
+Nos principes : Qualité & fiabilité (produits choisis pour leur performance et durabilité), Proximité (présence locale forte et accompagnement terrain), Partenariats solides (collaborations durables basées sur la confiance), Innovation (solutions modernes adaptées aux enjeux agricoles).
+Agences :
+- Tunis — Siège : 69, rue Abderrazak Chraibi, 1001 Tunis | Tél : (+216) 71 333 858 / 71 348 404 | Email : secretariat.groupeev@planet.tn
+- Soliman (Cap Bon) : Route R43, Soliman | Tél : (+216) 72 333 143
+- Borj Amri (Nord-Ouest) : Sidi Ali El Hattab, Borj Amri | Tél : (+216) 71 234 567
+- Sfax (Centre-Est) : Route de Gabes, Sfax 3049 | Tél : (+216) 74 000 000`);
+
+  parts.push(`PAGE BUREAU D'ÉTUDE & INSTALLATION IRRIGATION (/activites/irrigation/etude-installation) :
+Service disponible uniquement pour l'activité irrigation (STAJAP — partenaire Espace Vert).
+Ce service couvre l'étude, la conception, l'installation et l'accompagnement des systèmes d'irrigation agricoles.
+Accroche : "Chaque goutte compte. Chaque culture mérite le meilleur."
+Systèmes proposés : goutte-à-goutte (précision maximale, économie d'eau jusqu'à 50%) et aspersion (couverture large, plein soleil, résistant UV, pression régulée 0,5–3,5 bar).
+Processus en 6 étapes : 1. Visite terrain, 2. Plan technique, 3. Dimensionnement, 4. Installation, 5. Mise en service, 6. Suivi.
+Détail des services :
+- Étude : relevé du terrain, analyse de la source d'eau, pression, débit et contraintes d'exploitation.
+- Conception : plans, sectorisation, dimensionnement et choix des équipements adaptés à chaque culture.
+- Réalisation : préparation du chantier, pose du réseau, raccordements et contrôle de conformité.
+- Installation : mise en place des arroseurs, goutte-à-goutte, filtres, vannes et automatismes.
+- Suivi : tests, réglage, optimisation des zones et contrôle du rendement après mise en service.
+- Conseil : recommandations techniques pour économiser l'eau et améliorer la régularité d'irrigation.
+- Accompagnement : assistance terrain et support après installation pour garder le système performant.
+Pour lancer une étude d'irrigation, l'équipe a besoin de : surface, type de culture, source d'eau, pression disponible, objectif d'automatisation.
+Contact projet : prendre rendez-vous sur /rendez-vous ou contacter via /contact.`);
+
+  return parts.join("\n\n");
+}
+
+
 async function fetchPublicSiteContext(question: string): Promise<string> {
   const db = prisma as any;
 
@@ -185,7 +227,7 @@ async function fetchPublicSiteContext(question: string): Promise<string> {
       .sort((a: any, b: any) => b.score - a.score)
       .slice(0, 6);
 
-    const [faqs, marques, activites] = await Promise.all([
+    const [faqs, marques, activites, categories, actualites] = await Promise.all([
       prisma.faq.findMany({
         take: 5,
         where: { active: true },
@@ -204,6 +246,26 @@ async function fetchPublicSiteContext(question: string): Promise<string> {
         orderBy: [{ ordre: "asc" }, { nom: "asc" }],
         select: { nom: true, slug: true, description: true },
       }),
+      prisma.categorie.findMany({
+        take: 60,
+        where: { actif: true },
+        orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+        select: {
+          nom: true,
+          slug: true,
+          description: true,
+          parent_id: true,
+          activite: { select: { nom: true, slug: true } },
+          marque: { select: { nom: true, slug: true } },
+          _count: { select: { sous_cats: true } },
+        },
+      }),
+      prisma.actualite.findMany({
+        take: 5,
+        where: { publiee: true },
+        orderBy: { published_at: "desc" },
+        select: { titre: true, slug: true, contenu: true },
+      }),
     ]);
 
     const parts: string[] = [];
@@ -213,6 +275,7 @@ async function fetchPublicSiteContext(question: string): Promise<string> {
 - Produits par marques: /marques
 - Activites: /activites
 - Marques: /marques
+- Actualites et conseils: /actualites
 - Demande de devis: /devis
 - Rendez-vous avec un expert: /rendez-vous
 - Contact: /contact`);
@@ -227,6 +290,32 @@ async function fetchPublicSiteContext(question: string): Promise<string> {
       parts.push("MARQUES:\n" +
         marques.map((m) => `- ${m.nom} (${m.type_marque}, /marques/${m.slug})${m.description ? `: ${m.description.slice(0, 140)}` : ""}`).join("\n")
       );
+    }
+
+    // Catégories — on distingue racines (avec sous-cats) et feuilles (sans)
+    if (categories.length > 0) {
+      const catLeaves  = categories.filter((c) => c._count.sous_cats === 0);
+      const catParents = categories.filter((c) => c._count.sous_cats > 0);
+      if (catParents.length > 0) {
+        parts.push("CATÉGORIES PRINCIPALES:\n" +
+          catParents.map((c) =>
+            `- ${c.nom}` +
+            (c.activite ? ` | activité: ${c.activite.nom} (/activites/${c.activite.slug})` : "") +
+            (c.marque   ? ` | marque: ${c.marque.nom} (/marques/${c.marque.slug})` : "") +
+            (c.description ? `: ${c.description.slice(0, 120)}` : "")
+          ).join("\n")
+        );
+      }
+      if (catLeaves.length > 0) {
+        parts.push("SOUS-CATÉGORIES (feuilles — contiennent des produits):\n" +
+          catLeaves.map((c) =>
+            `- ${c.nom}` +
+            (c.activite ? ` | activité: ${c.activite.nom}` : "") +
+            (c.marque   ? ` | marque: ${c.marque.nom}` : "") +
+            (c.description ? `: ${c.description.slice(0, 120)}` : "")
+          ).join("\n")
+        );
+      }
     }
 
     // Ne jamais injecter des produits spécifiques pour les questions générales
@@ -253,6 +342,14 @@ async function fetchPublicSiteContext(question: string): Promise<string> {
       );
     }
 
+    if (actualites.length > 0) {
+      parts.push("ACTUALITÉS ET CONSEILS RÉCENTS:\n" +
+        actualites.map((a) =>
+          `- ${a.titre} (/actualites/${a.slug})${a.contenu ? `: ${a.contenu.replace(/<[^>]*>/g, "").slice(0, 200)}` : ""}`
+        ).join("\n")
+      );
+    }
+
     return parts.join("\n\n");
   } catch (e) {
     console.error("[ai.public] semantic context unavailable, using fallback:", e);
@@ -273,7 +370,16 @@ async function fetchPublicSiteContextFallback(question: string): Promise<string>
       { categorie: { activite: { nom: { contains: term } } } },
     ]);
 
-    const [faqs, produits, marques, activites] = await Promise.all([
+    const catOr = terms.flatMap((term) => [
+      { nom: { contains: term } },
+      { description: { contains: term } },
+    ]);
+    const actualiteOr = terms.flatMap((term) => [
+      { titre: { contains: term } },
+      { contenu: { contains: term } },
+    ]);
+
+    const [faqs, produits, marques, activites, categories, actualites] = await Promise.all([
       prisma.faq.findMany({
         take: 12,
         where: { active: true },
@@ -310,6 +416,32 @@ async function fetchPublicSiteContextFallback(question: string): Promise<string>
         orderBy: [{ ordre: "asc" }, { nom: "asc" }],
         select: { nom: true, slug: true, description: true },
       }),
+      prisma.categorie.findMany({
+        take: 60,
+        where: {
+          actif: true,
+          ...(catOr.length > 0 ? { OR: catOr } : {}),
+        },
+        orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+        select: {
+          nom: true,
+          slug: true,
+          description: true,
+          parent_id: true,
+          activite: { select: { nom: true, slug: true } },
+          marque: { select: { nom: true, slug: true } },
+          _count: { select: { sous_cats: true } },
+        },
+      }),
+      prisma.actualite.findMany({
+        take: 4,
+        where: {
+          publiee: true,
+          ...(actualiteOr.length > 0 ? { OR: actualiteOr } : {}),
+        },
+        orderBy: { published_at: "desc" },
+        select: { titre: true, slug: true, contenu: true },
+      }),
     ]);
 
     const ranked = faqs
@@ -329,6 +461,7 @@ async function fetchPublicSiteContextFallback(question: string): Promise<string>
 - Produits par marques: /marques
 - Activites: /activites
 - Marques: /marques
+- Actualites et conseils: /actualites
 - Demande de devis: /devis
 - Rendez-vous avec un expert: /rendez-vous
 - Contact: /contact`);
@@ -343,6 +476,31 @@ async function fetchPublicSiteContextFallback(question: string): Promise<string>
       parts.push("MARQUES:\n" +
         marques.map((m) => `- ${m.nom} (${m.type_marque}, /marques/${m.slug})${m.description ? `: ${m.description.slice(0, 140)}` : ""}`).join("\n")
       );
+    }
+
+    if (categories.length > 0) {
+      const catLeaves  = categories.filter((c) => c._count.sous_cats === 0);
+      const catParents = categories.filter((c) => c._count.sous_cats > 0);
+      if (catParents.length > 0) {
+        parts.push("CATÉGORIES PRINCIPALES:\n" +
+          catParents.map((c) =>
+            `- ${c.nom}` +
+            (c.activite ? ` | activité: ${c.activite.nom} (/activites/${c.activite.slug})` : "") +
+            (c.marque   ? ` | marque: ${c.marque.nom} (/marques/${c.marque.slug})` : "") +
+            (c.description ? `: ${c.description.slice(0, 120)}` : "")
+          ).join("\n")
+        );
+      }
+      if (catLeaves.length > 0) {
+        parts.push("SOUS-CATÉGORIES (feuilles — contiennent des produits):\n" +
+          catLeaves.map((c) =>
+            `- ${c.nom}` +
+            (c.activite ? ` | activité: ${c.activite.nom}` : "") +
+            (c.marque   ? ` | marque: ${c.marque.nom}` : "") +
+            (c.description ? `: ${c.description.slice(0, 120)}` : "")
+          ).join("\n")
+        );
+      }
     }
 
     const GENERAL_Q_PATTERNS = [
@@ -372,6 +530,14 @@ async function fetchPublicSiteContextFallback(question: string): Promise<string>
       );
     }
 
+    if (actualites.length > 0) {
+      parts.push("ACTUALITÉS ET CONSEILS RÉCENTS:\n" +
+        actualites.map((a) =>
+          `- ${a.titre} (/actualites/${a.slug})${a.contenu ? `: ${a.contenu.replace(/<[^>]*>/g, "").slice(0, 200)}` : ""}`
+        ).join("\n")
+      );
+    }
+
     return parts.join("\n\n");
   } catch (e) {
     console.error("[ai.public] fetchPublicSiteContext error:", e);
@@ -393,11 +559,17 @@ function buildPublicActions(message: string): ChatAction[] {
     marques: arabic ? "عرض العلامات" : "Voir les marques",
     activites: arabic ? "عرض الأنشطة" : "Voir les activités",
     produits: arabic ? "المنتجات حسب الأنشطة" : "Produits par activites",
+    actualites: arabic ? "الأخبار والنصائح" : "Actualités & Conseils",
+    quiSommesNous: arabic ? "من نحن" : "Qui sommes-nous",
+    etudeInstallation: arabic ? "دراسة وتركيب الري" : "Bureau d'étude & installation",
   };
 
   if (/(devis|prix|tarif|cout|commande|acheter|achat|سعر|اسعار|أسعار|عرض|شراء|طلب)/.test(q)) add(label.devis, "/devis");
   if (/(rdv|rendez|expert|conseil|visite|installation|etude|موعد|زيارة|خبير|نصيحة|تركيب|دراسة)/.test(q)) add(label.rdv, "/rendez-vous");
   if (/(contact|telephone|adresse|agence|localisation|horaire|اتصال|هاتف|عنوان|فرع|وكالة|اوقات|أوقات)/.test(q)) add(label.contact, "/contact");
+  if (/(actualite|article|conseil|blog|news|astuce|technique|culture|actualit|أخبار|نصائح|مقال|نشرة)/.test(q)) add(label.actualites, "/actualites");
+  if (/(qui etes|qui sommes|histoire|fondation|groupe|societe|mission|equipe|agence|من نحن|تاريخ|مجموعة|شركة|مهمة|فريق|وكالة)/.test(q)) add(label.quiSommesNous, "/qui-sommes-nous");
+  if (/(etude|installation|bureau|systeme irrigation|goutte|aspersion|dimensionnement|sectorisation|mise en service|دراسة|تركيب|نظام ري|رش|تقطير)/.test(q)) add(label.etudeInstallation, "/activites/irrigation/etude-installation");
   if (/(pelouse|gazon|عشب|نجيل)/.test(q) && /(seche|sec|secheresse|chaud|chaleur|ناشف|سخون|سخانة)/.test(q)) {
     add(arabic ? "مجموعة الحديقة والعشب" : "Kit Jardin & Pelouse", "/activites/irrigation/produits/kit-jardin-pelouse");
     add(arabic ? "الري" : "Irrigation", "/activites/irrigation");
@@ -679,7 +851,10 @@ export async function publicAiChat(req: Request, res: Response): Promise<void> {
   }
 
   try {
-    const siteContext = await fetchPublicSiteContext(message);
+    const [siteContext, staticContext] = await Promise.all([
+      fetchPublicSiteContext(message),
+      Promise.resolve(buildStaticPagesContext()),
+    ]);
     const replyLanguage = isArabicText(message)
       ? "arabe"
       : "français";
@@ -712,8 +887,17 @@ Analyse d'abord l'intention de la question avant de répondre :
 3. QUESTION FAQ / INFORMATION (horaires, agences, devis, contact) :
    → Réponds directement avec l'information disponible dans le contexte FAQ.
 
-Contexte site disponible:
-\${siteContext || "Aucun contexte site specifique disponible."}`;
+4. QUESTION INSTITUTIONNELLE (histoire, fondation, agences, équipe, mission, principes, qui êtes-vous, bureau d'étude, installation irrigation, étude technique) :
+   → Utilise exclusivement le contexte des pages statiques ci-dessous.
+   → Réponds avec les vrais chiffres (1995, 100+ collaborateurs, 5 sociétés, 4 agences) et les vrais contacts.
+   → Pour l'étude & installation, détaille le processus en 6 étapes et les 7 services disponibles.
+
+PAGES STATIQUES DU SITE :
+${staticContext}
+
+Contexte site dynamique (produits, catégories, FAQ, actualités) :
+${siteContext || "Aucun contexte site specifique disponible."}`;
+
 
     const recentHistory = (history as ChatMessage[]).slice(-6);
     const reply = await callGroq(

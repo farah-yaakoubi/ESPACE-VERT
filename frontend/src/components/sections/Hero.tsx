@@ -26,9 +26,7 @@ const SLIDES_FALLBACK: HeroSlide[] = [
     imageTablet: "/images/hero/semences-tablette.webp",
     imageMobile: "/images/hero/semences-mobile.webp",
     href: "/activites/semences-et-plants",
-    sousTitre:
-      "Des solutions innovantes et durables pour accompagner les professionnels de l'agriculture.",
-    ctaLabel: "Decouvrir nos activites",
+    ctaLabel: "Découvrir",
     ordre: 1,
     actif: true,
   },
@@ -38,8 +36,7 @@ const SLIDES_FALLBACK: HeroSlide[] = [
     imageTablet: "/images/hero/fertivert-tablette.webp",
     imageMobile: "/images/hero/fertivert-mobile.webp",
     href: "/marques/fertivert",
-    sousTitre: "Nutrition vegetale et accompagnement technique pour vos exploitations.",
-    ctaLabel: "Explorer Fertivert",
+    ctaLabel: "Explorer",
     ordre: 2,
     actif: true,
   },
@@ -49,8 +46,7 @@ const SLIDES_FALLBACK: HeroSlide[] = [
     imageTablet: "/images/hero/matar-tablette.webp",
     imageMobile: "/images/hero/matar-mobile.webp",
     href: "/marques/matar",
-    sousTitre: "Des solutions fiables pour mieux piloter vos projets agricoles.",
-    ctaLabel: "Voir nos solutions",
+    ctaLabel: "Découvrir",
     ordre: 3,
     actif: true,
   },
@@ -60,8 +56,7 @@ const SLIDES_FALLBACK: HeroSlide[] = [
     imageTablet: "/images/hero/pulvert-tablette.webp",
     imageMobile: "/images/hero/pulvert-mobile.webp",
     href: "/marques/pulvert",
-    sousTitre: "Des equipements et references performants pour une application rigoureuse.",
-    ctaLabel: "Decouvrir Pulvert",
+    ctaLabel: "Explorer",
     ordre: 4,
     actif: true,
   },
@@ -104,6 +99,10 @@ const HERO_SIZES = [
   "100vw",
 ].join(", ");
 
+// Valeurs par défaut — le bouton reste toujours affiché, même si un slide n'a pas de CTA défini
+const CTA_FALLBACK_LABEL = "Découvrir";
+const CTA_FALLBACK_HREF = "/activites";
+
 export function Hero() {
   const slides = useHeroSlides();
   const [current, setCurrent] = useState(0);
@@ -130,6 +129,8 @@ export function Hero() {
   }, [current, slides]);
 
   const slide = slides[current];
+  const ctaLabel = slide.ctaLabel ?? CTA_FALLBACK_LABEL;
+  const ctaHref = slide.href ?? CTA_FALLBACK_HREF;
 
   return (
     <>
@@ -183,13 +184,27 @@ export function Hero() {
           position: absolute;
           left: 0;
           right: 0;
-          bottom: clamp(72px, 12vh, 140px);
+          bottom: clamp(150px, 24vh, 220px);
           z-index: 6;
           padding: 0 clamp(20px, 5vw, 80px);
         }
 
         .hero-copy-inner {
           width: min(100%, 780px);
+        }
+
+        /* Bouton — détaché du bloc titre : il reste en place, à taille lisible,
+           et ne se réanime pas à chaque changement de slide (seul le libellé change).
+           Il occupe désormais la position tout en bas, centrée, qu'occupaient les points. */
+        .hero-cta-fixed {
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 28px;
+          z-index: 7;
+          padding: 0 clamp(20px, 5vw, 80px);
+          display: flex;
+          justify-content: center;
         }
 
         @media (max-width: 640px) {
@@ -202,8 +217,14 @@ export function Hero() {
           }
 
           .hero-copy {
-            bottom: 88px;
+            bottom: 168px;
             padding: 0 16px;
+          }
+
+          .hero-cta-fixed {
+            bottom: 24px;
+            padding: 0 16px;
+            justify-content: center;
           }
         }
 
@@ -214,6 +235,10 @@ export function Hero() {
 
           .hero-image {
             object-position: center 28%;
+          }
+
+          .hero-cta-fixed {
+            bottom: 26px;
           }
         }
 
@@ -249,12 +274,43 @@ export function Hero() {
           animation: heroTextIn 1.2s 0.6s ease-out both;
         }
 
-        .hero-cta:hover { background: #6aaf30 !important; transform: translateY(-1px); }
+        @keyframes ctaColorShift {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+
+        .hero-cta {
+          position: relative;
+          overflow: hidden;
+          background: linear-gradient(120deg, #1f4d34, #c9a24a, #7c8f6a, #1f4d34);
+          background-size: 300% 300%;
+          animation: ctaColorShift 6s ease-in-out infinite;
+          border: 1px solid rgba(255,255,255,0.55);
+          transition: transform 0.5s cubic-bezier(.16,1,.3,1),
+                      box-shadow 0.5s cubic-bezier(.16,1,.3,1),
+                      background 0.4s ease;
+        }
+
+        .hero-cta:hover {
+          animation-play-state: paused;
+          transform: translateY(-3px);
+          box-shadow: 0 16px 34px -10px rgba(31,77,52,0.55);
+        }
+
+        .hero-cta-arrow {
+          display: inline-flex;
+          transition: transform 0.5s cubic-bezier(.16,1,.3,1);
+        }
+
+        .hero-cta:hover .hero-cta-arrow {
+          transform: translateX(5px);
+        }
 
         @media (prefers-reduced-motion: reduce) {
           .hero-slide,
           .hero-slide__image,
-          .hero-text-enter {
+          .hero-text-enter,
+          .hero-cta {
             animation: none !important;
             transition: opacity 0.01ms !important;
           }
@@ -265,7 +321,7 @@ export function Hero() {
         {slides.map((item, index) => {
           const isActive = index === current;
           const isPrevious = index === (current - 1 + slides.length) % slides.length;
-          
+
           return (
             <div
               key={item.id}
@@ -308,102 +364,58 @@ export function Hero() {
           }}
         />
 
-        {(slide.titre || slide.sousTitre || slide.ctaLabel) && (
+        {/* Titre — change et se fond avec chaque slide */}
+        {slide.titre && (
           <div key={`text-${slide.id}`} className="hero-text-enter hero-copy">
             <div className="hero-copy-inner">
-              {slide.titre && (
-                <h1
-                  style={{
-                    margin: 0,
-                    fontSize: "clamp(2rem, 5vw, 3.6rem)",
-                    fontWeight: 800,
-                    color: "#fff",
-                    lineHeight: 1.1,
-                    letterSpacing: "-0.02em",
-                    textShadow: "0 2px 24px rgba(0,0,0,0.3)",
-                  }}
-                >
-                  {slide.titre}
-                </h1>
-              )}
-
-              {slide.sousTitre && (
-                <p
-                  style={{
-                    margin: "14px 0 0",
-                    fontSize: "clamp(0.95rem, 1.5vw, 1.15rem)",
-                    color: "rgba(255,255,255,0.82)",
-                    lineHeight: 1.6,
-                    maxWidth: 520,
-                    textShadow: "0 1px 8px rgba(0,0,0,0.3)",
-                  }}
-                >
-                  {slide.sousTitre}
-                </p>
-              )}
-
-              {slide.ctaLabel && slide.href && (
-                <Link
-                  href={slide.href}
-                  className="hero-cta"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 8,
-                    marginTop: 28,
-                    padding: "12px 28px",
-                    background: "#7dc040",
-                    color: "#fff",
-                    fontWeight: 700,
-                    fontSize: "0.9rem",
-                    borderRadius: 9999,
-                    textDecoration: "none",
-                    letterSpacing: "0.02em",
-                    boxShadow: "0 4px 20px rgba(125,192,64,0.4)",
-                    transition: "background 0.15s, transform 0.12s",
-                  }}
-                >
-                  {slide.ctaLabel}
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              )}
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: "clamp(2rem, 5vw, 3.6rem)",
+                  fontWeight: 800,
+                  color: "#fff",
+                  lineHeight: 1.1,
+                  letterSpacing: "-0.02em",
+                  textShadow: "0 2px 24px rgba(0,0,0,0.3)",
+                }}
+              >
+                {slide.titre}
+              </h1>
             </div>
           </div>
         )}
 
-        <div
-          style={{
-            position: "absolute",
-            bottom: 28,
-            left: "50%",
-            transform: "translateX(-50%)",
-            display: "flex",
-            gap: 8,
-            zIndex: 10,
-          }}
-        >
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrent(index)}
-              aria-label={`Slide ${index + 1}`}
-              style={{
-                width: index === current ? 28 : 8,
-                height: 8,
-                borderRadius: 9999,
-                background: index === current ? "#7dc040" : "rgba(255,255,255,0.45)",
-                border: "none",
-                cursor: "pointer",
-                padding: 0,
-                transition: "all 0.35s cubic-bezier(.4,0,.2,1)",
-              }}
-            />
-          ))}
+        {/* Bouton — toujours présent, position fixe tout en bas et centré
+            (il occupe désormais la place des anciens points de pagination).
+            Pas de key liée au slide : le nœud DOM reste stable, seul le libellé/lien change. */}
+        <div className="hero-cta-fixed">
+          <Link
+            href={ctaHref}
+            className="hero-cta"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "17px 38px",
+              color: "#fff",
+              fontWeight: 600,
+              fontSize: "1rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              borderRadius: 9999,
+              textDecoration: "none",
+            }}
+          >
+            {ctaLabel}
+            <span className="hero-cta-arrow">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </span>
+          </Link>
         </div>
 
-        {slide.href && !slide.ctaLabel && (
+        {slide.href && !slide.titre && (
           <Link
             href={slide.href}
             style={{ position: "absolute", inset: 0, zIndex: 3 }}

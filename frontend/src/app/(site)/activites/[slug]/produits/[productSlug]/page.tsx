@@ -17,7 +17,6 @@ async function assertProductBelongsToActivite(activiteSlug: string, productSlug:
     notFound();
   }
 }
-
 export async function generateMetadata({ params }: PageProps) {
   const { productSlug } = await params;
   return generateProductMetadata({ params: Promise.resolve({ slug: productSlug }) });

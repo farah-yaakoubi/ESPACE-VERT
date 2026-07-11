@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ActiviteCard } from "@/components/cards/ActiviteCard";
 import { PageHeroStatic } from "@/components/sections/PageHeroStatic";
+import { Reveal } from "@/components/ui/Reveal";
 import { activitesService } from "@/services";
 
 export const revalidate = 300;
@@ -33,8 +34,10 @@ export default async function ActivitesPage() {
       <section className="section">
         <div className="container-ev">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            {ordered.map((activite) => (
-              <ActiviteCard key={activite.id_activite} activite={activite} />
+            {ordered.map((activite, index) => (
+              <Reveal key={activite.id_activite} delay={index * 0.08}>
+                <ActiviteCard activite={activite} />
+              </Reveal>
             ))}
           </div>
         </div>

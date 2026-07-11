@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getProductHref } from "@/lib/product-url";
@@ -58,7 +59,7 @@ function ImageCarousel({ images, nom }: { images: { url: string; alt: string | n
             src={images[current].url}
             alt={images[current].alt ?? nom}
             fill
-            className="object-contain p-6"
+            className="object-contain p-2"
             sizes="(max-width:640px)100vw,(max-width:1024px)50vw,25vw"
           />
         </motion.div>
@@ -108,7 +109,7 @@ export function ProduitCard({
 }: {
   produit: ProduitCardType;
   className?: string;
-  variant?: "default" | "seed";
+  variant?: "default" | "seed" | "light";
 }) {
   const { locale } = useI18n();
   const [hovered, setHovered] = useState(false);
@@ -178,33 +179,61 @@ export function ProduitCard({
     );
   }
 
+  if (variant === "light") {
+    return (
+      <Link href={href} className={cn("block group", className)}>
+        <article className="relative flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:border-[#f7c9a0]">
+          <div className="relative h-[150px] sm:h-[170px] bg-[#f7f7f5] flex items-center justify-center overflow-hidden">
+            {img ? (
+              <Image
+                src={img.url}
+                alt={img.alt ?? nom}
+                fill
+                className="object-contain p-6 transition-transform duration-300 group-hover:scale-105"
+                sizes="(max-width:640px)50vw,(max-width:1024px)33vw,25vw"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-5xl opacity-20">🌿</div>
+            )}
+          </div>
+          <div className="flex flex-1 flex-col gap-2 px-4 py-3.5">
+            <h3 className="text-[14px] font-semibold leading-snug text-gray-900 line-clamp-2">
+              {nom}
+            </h3>
+            <span className="mt-auto inline-flex items-center gap-1 text-[12.5px] font-medium text-[#c94e03]">
+              Voir le produit <ChevronRight size={13} />
+            </span>
+          </div>
+        </article>
+      </Link>
+    );
+  }
+
   return (
     <Link href={href} className={cn("block group", className)}>
       <article
-        className="relative flex flex-col overflow-hidden rounded-2xl border border-sand-200 h-full"
+        className="produit-card-gradient relative flex h-full flex-col overflow-hidden rounded-[28px] p-4 sm:p-5"
         style={{
-          background:  "white",
-          boxShadow:   "0 1px 4px rgba(0,0,0,.06)",
-          transform:   "translateY(0)",
-          transition:  "transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease",
+          background: "linear-gradient(160deg, #4f7a55 0%, #3d6647 100%)",
+          transform: "translateY(0)",
+          transition: "transform 0.3s ease, box-shadow 0.3s ease",
+          boxShadow: "0 8px 20px rgba(31,77,52,0.18)",
         }}
         onMouseEnter={e => {
           setHovered(true);
           const el = e.currentTarget as HTMLElement;
-          el.style.transform   = "translateY(-10px)";
-          el.style.boxShadow   = "0 24px 48px rgba(61,165,53,0.20), 0 8px 20px rgba(61,165,53,0.12)";
-          el.style.borderColor = "#7dc040";
+          el.style.transform = "translateY(-8px)";
+          el.style.boxShadow = "0 20px 40px rgba(31,77,52,0.28)";
         }}
         onMouseLeave={e => {
           setHovered(false);
           const el = e.currentTarget as HTMLElement;
-          el.style.transform   = "translateY(0)";
-          el.style.boxShadow   = "0 1px 4px rgba(0,0,0,.06)";
-          el.style.borderColor = "";
+          el.style.transform = "translateY(0)";
+          el.style.boxShadow = "0 8px 20px rgba(31,77,52,0.18)";
         }}
       >
-        {/* ── Zone image ── */}
-        <div className="relative bg-[#f0f0f0] shrink-0 overflow-hidden h-[280px] sm:h-[300px] lg:h-[340px]">
+        {/* ── Zone image — panneau blanc arrondi ── */}
+        <div className="relative shrink-0 overflow-hidden rounded-2xl bg-white h-[200px] sm:h-[220px] lg:h-[240px]">
 
           {divBadge && (
             <span className={cn("absolute top-3 left-3 z-10 px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wide uppercase", divBadge.cls)}>
@@ -227,7 +256,7 @@ export function ProduitCard({
                     src={img.url}
                     alt={img.alt ?? nom}
                     fill
-                    className="object-contain p-6"
+                    className="object-contain p-2"
                     sizes="(max-width:640px)100vw,(max-width:1024px)50vw,25vw"
                   />
                 ) : (
@@ -247,36 +276,25 @@ export function ProduitCard({
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* Shimmer bottom */}
-          <div
-            className="absolute inset-x-0 bottom-0 h-[3px] scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"
-            style={{ background: "linear-gradient(to right, #7dc040, #3fa535, #7dc040)" }}
-          />
         </div>
 
         {/* ── Texte ── */}
-        <div className="flex flex-col flex-1 px-5 py-4 sm:px-6 sm:py-5 gap-1.5">
+        <div className="flex flex-col items-center gap-1 px-2 pt-4 pb-1 text-center">
           <h3
-            className="text-[1rem] sm:text-[1.05rem] font-bold leading-snug text-gray-900 group-hover:text-ev-700 transition-colors line-clamp-2"
+            className="text-[1rem] sm:text-[1.05rem] font-bold leading-snug text-white line-clamp-2"
             style={{ fontFamily: "var(--font-display)" }}
           >
             {nom}
           </h3>
-          {description && (
-            <p className="text-[13.5px] text-gray-500 leading-relaxed line-clamp-3 mt-0.5">
-              {description}
-            </p>
-          )}
         </div>
 
-        {/* ── CTA ── */}
-        <div className="px-5 pb-5 sm:px-6">
+        {/* ── CTA — pilule blanche ── */}
+        <div className="mt-auto flex justify-center px-2 pt-3 pb-1">
           <span
-            className="block text-center text-[12.5px] font-semibold text-ev-700 border border-ev-200 rounded-xl py-2.5 transition-all duration-200 group-hover:bg-ev-700 group-hover:text-white group-hover:border-ev-700"
+            className="produit-card-cta inline-flex items-center justify-center gap-1.5 rounded-full bg-white px-5 py-2 text-[12.5px] font-semibold text-[#2f5c3e] transition-all duration-200 group-hover:gap-2.5"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            Voir le produit →
+            Voir le produit <ChevronRight size={14} />
           </span>
         </div>
       </article>

@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   Barcode, Scale, Package,
   FlaskConical, Target, Star,
-  Sprout, Zap, TestTube, Globe, Waves, Leaf,
+  Sprout, Zap, TestTube, Globe, Waves, Leaf, Wrench,
   CheckCircle2, Wheat, Apple, Grape, TreePine, Carrot, Sun,
 } from "lucide-react";
 
@@ -18,6 +18,8 @@ interface TechTableProps {
   slug?:               string;
   categorie?:          string | null;
   tags?:               string[];
+  /** Force la palette "Power Tool Sale" rouge/noir (activité jardinage-et-machinisme) */
+  isMachinisme?:       boolean;
 }
 
 /* ── Palettes couleurs par famille ──────────────────────────── */
@@ -65,9 +67,17 @@ const PALETTES: Record<string, Palette> = {
     rowAlt: "#f0faf4", border: "#a8d5b8", metaBg: "#f8fdf9",
     FamilyIcon: Leaf, famille: "",
   },
+  /* Palette dédiée "Power Tool Sale" — activité jardinage-et-machinisme */
+  machinisme: {
+    headerBg: "#0a0a0a", headerText: "#ffffff",
+    subHeaderBg: "#e30613", subHeaderText: "#ffffff",
+    rowAlt: "#f2f2f2", border: "#1a1a1a", metaBg: "#fafafa",
+    FamilyIcon: Wrench, famille: "Outillage",
+  },
 };
 
-function getPalette(slug?: string, nature?: string | null, categorie?: string | null): Palette {
+function getPalette(slug?: string, nature?: string | null, categorie?: string | null, isMachinisme?: boolean): Palette {
+  if (isMachinisme) return PALETTES.machinisme;
   const s = (slug ?? "").toLowerCase();
   const n = (nature ?? "").toLowerCase();
   const c = (categorie ?? "").toLowerCase();
@@ -142,12 +152,12 @@ const TABS: { key: Tab; label: string; Icon: React.ElementType }[] = [
 /* ── Composant principal ─────────────────────────────────────── */
 export function ProduitTechTable({
   sku, poids, nature, composition_chimique, usage,
-  biologique, conditionnement, slug, categorie, tags,
+  biologique, conditionnement, slug, categorie, tags, isMachinisme,
 }: TechTableProps) {
   const hasData = !!(sku || poids || nature || composition_chimique || usage || conditionnement || biologique === true);
   if (!hasData) return null;
 
-  const pal = getPalette(slug, nature, categorie);
+  const pal = getPalette(slug, nature, categorie, isMachinisme);
   const { FamilyIcon } = pal;
 
   const compRows   = composition_chimique ? parseComposition(composition_chimique) : [];

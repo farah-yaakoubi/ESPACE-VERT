@@ -23,6 +23,7 @@ export interface PageHeroStaticProps {
   imagePositionMobile?:   string;
   contentMaxWidth?:       string;
   contentAlign?:          "left" | "center";
+  eyebrowColor?:          string;
 }
 
 export function PageHeroStatic({
@@ -41,6 +42,7 @@ export function PageHeroStatic({
   imagePositionMobile,
   contentMaxWidth     = "46rem",
   contentAlign        = "left",
+  eyebrowColor        = "#86efac",
 }: PageHeroStaticProps) {
   const [image,       setImage]       = useState<string>(fallbackImage);
   const [imageTablet, setImageTablet] = useState<string | undefined>(fallbackImageTablet);
@@ -182,7 +184,7 @@ export function PageHeroStatic({
               <p style={{
                 margin: "0 0 11px", fontSize: 11, fontWeight: 800,
                 letterSpacing: "0.22em", textTransform: "uppercase",
-                color: "#86efac", textShadow: "0 1px 6px rgba(0,0,0,0.45)",
+                color: eyebrowColor, textShadow: "0 1px 6px rgba(0,0,0,0.45)",
                 fontFamily: "var(--font-display)",
               }}>
                 {eyebrow}

@@ -307,22 +307,48 @@ function ActivitesCrudPanel() {
                 />
               </div>
 
-              {/* Image miniature */}
+              {/* Icône emoji — navbar dropdown */}
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Image miniature <span className="text-gray-400 font-normal">(carte sur la page /activites)</span>
+                <label className="block text-xs font-medium text-gray-600 mb-2">
+                  Icône <span className="text-gray-400 font-normal">(affichée dans le menu navbar)</span>
                 </label>
-                {form.image && (
-                  <div className="relative w-16 h-16 rounded-xl overflow-hidden mb-2 bg-gray-100">
-                    <Image src={form.image} alt="" fill style={{ objectFit: "cover" }} />
+                {/* Prévisualisation */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-11 h-11 rounded-xl bg-ev-50 border border-ev-100 flex items-center justify-center text-2xl shrink-0">
+                    {form.image || "🌿"}
                   </div>
-                )}
-                <ImageUploader onUpload={(v) => F("image", v)} />
+                  <p className="text-xs text-gray-400">Cliquez une icône ci-dessous pour la sélectionner</p>
+                </div>
+                {/* Picker */}
+                <div className="grid grid-cols-10 gap-1.5 p-3 bg-gray-50 rounded-xl border border-gray-100 max-h-44 overflow-y-auto">
+                  {[
+                    "🌱","🌿","🍃","🍀","🌾","🌻","🌺","🌸","🌼","🪴",
+                    "🌳","🌲","🎋","🎍","🍂","🍁","🪵","🪨","🌊","💧",
+                    "☀️","🌤️","🌦️","🌧️","❄️","🔥","💨","🌈","⚡","🌡️",
+                    "🚜","🚛","🌍","🏭","🏗️","🏡","🔬","🧪","💊","🧴",
+                    "🫘","🥬","🥕","🌽","🍅","🍇","🍊","🍋","🧅","🧄",
+                    "🐄","🐓","🐟","🦋","🐝","🌙","⭐","✨","💚","🟢",
+                  ].map(em => (
+                    <button
+                      key={em}
+                      type="button"
+                      onClick={() => F("image", em)}
+                      className={`h-9 w-full flex items-center justify-center rounded-lg text-xl transition-all hover:scale-110 ${
+                        form.image === em
+                          ? "bg-ev-100 ring-2 ring-ev-500 scale-110"
+                          : "hover:bg-gray-200"
+                      }`}
+                    >
+                      {em}
+                    </button>
+                  ))}
+                </div>
+                {/* Saisie manuelle */}
                 <input
                   type="text" value={form.image}
                   onChange={(e) => F("image", e.target.value)}
-                  placeholder="/images/activites/mon-image.webp"
-                  className="mt-1 w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
+                  placeholder="Ou saisissez un emoji manuellement…"
+                  className="mt-2 w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
                 />
               </div>
 

@@ -1,93 +1,160 @@
 "use client";
 import Image from "next/image";
-import { useState, useRef } from "react";
+import { useRef } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence, useInView } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import {
   MapPinIcon as MapPin,
   PhoneIcon as Phone,
   EnvelopeIcon as Mail,
+  BuildingOffice2Icon as BuildingIcon,
   ArrowTopRightOnSquareIcon as ArrowTopRightOnSquare,
 } from "@heroicons/react/24/outline";
 import { useI18n } from "@/i18n/I18nProvider";
 
-/* ─── Données ──────────────────────────────────────────────── */
-const agences = [
-  { nom:"Tunis",     adresse:"69, rue Abderrazak Chraibi, 1001 Tunis", tel:"(+216) 71 333 858", tel2:"(+216) 71 348 404", email:"secretariat.groupeev@planet.tn", maps:"https://www.google.com/maps/search/?api=1&query=36.8065,10.1815", lat:36.8065, lng:10.1815 },
-  { nom:"Soliman",   adresse:"MGR2+XGH, R43, Sulayman",                 tel:"(+216) 72 333 143",                                                                maps:"https://www.google.com/maps/search/?api=1&query=36.7011,10.4886", lat:36.7011, lng:10.4886 },
-  { nom:"Borj Amri", adresse:"PXQ2+R9, Sidi Ali El Hattab",             tel:"(+216) 71 234 567",                                                                maps:"https://www.google.com/maps/search/?api=1&query=36.9117,9.9728",  lat:36.9117, lng:9.9728  },
-  { nom:"Sfax",      adresse:"MPV7+GG3, rue béjaia, Rte de Gabes 3049", tel:"(+216) 74 000 000",                                                                maps:"https://www.google.com/maps/search/?api=1&query=34.7252,10.7605", lat:34.7252, lng:10.7605 },
-] as const;
+/* ─── Types ─────────────────────────────────────────────────── */
+type Agence = {
+  nom: string;
+  adresse: string;
+  tel: string;
+  tel2?: string;
+  email?: string;
+  maps: string;
+  lat: number;
+  lng: number;
+};
 
-const socials = [
-  { name:"Facebook",  url:"https://www.facebook.com/profile.php?id=61566401919487", bg:"#1877F2", icon:<svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg> },
-  { name:"Instagram", url:"https://www.instagram.com/espacevert.officiel/", gradient:"linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)", bg:"#E1306C", icon:<svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg> },
-  { name:"TikTok",   url:"https://www.tiktok.com/@espace.vert.tunisie", bg:"#010101", icon:<svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg> },
-  { name:"LinkedIn", url:"https://www.linkedin.com/in/espace-vert-b0319b238/", bg:"#0A66C2", icon:<svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> },
-  { name:"YouTube",  url:"https://www.youtube.com/@espacevert7382", bg:"#FF0000", icon:<svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg> },
+/* ─── Données ──────────────────────────────────────────────── */
+const agences: Agence[] = [
+  { nom: "Tunis", adresse: "69, rue Abderrazak Chraibi, 1001 Tunis", tel: "(+216) 71 333 858", tel2: "(+216) 71 348 404", email: "secretariat.groupeev@planet.tn", maps: "https://www.google.com/maps/search/?api=1&query=36.8065,10.1815", lat: 36.8065, lng: 10.1815 },
+  { nom: "Soliman", adresse: "MGR2+XGH, R43, Sulayman", tel: "(+216) 72 333 143", maps: "https://www.google.com/maps/search/?api=1&query=36.7011,10.4886", lat: 36.7011, lng: 10.4886 },
+  { nom: "Borj Amri", adresse: "PXQ2+R9, Sidi Ali El Hattab", tel: "(+216) 71 234 567", maps: "https://www.google.com/maps/search/?api=1&query=36.9117,9.9728", lat: 36.9117, lng: 9.9728 },
+  { nom: "Sfax", adresse: "MPV7+GG3, rue béjaia, Rte de Gabes 3049", tel: "(+216) 74 000 000", maps: "https://www.google.com/maps/search/?api=1&query=34.7252,10.7605", lat: 34.7252, lng: 10.7605 },
 ];
 
-/* ─── Carte des agences ────────────────────────────────────── */
+const socials = [
+  {
+    name: "Facebook",
+    url: "https://www.facebook.com/profile.php?id=61566401919487",
+    bg: "#1877F2",
+    icon: <svg className="w-[17px] h-[17px]" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>,
+  },
+  {
+    name: "Instagram",
+    url: "https://www.instagram.com/espacevert.officiel/",
+    gradient: "linear-gradient(180deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%)",
+    bg: "#E1306C",
+    icon: <svg className="w-[17px] h-[17px]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" /></svg>,
+  },
+  {
+    name: "TikTok",
+    url: "https://www.tiktok.com/@espace.vert.tunisie",
+    bg: "#010101",
+    icon: <svg className="w-[17px] h-[17px]" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" /></svg>,
+  },
+  {
+    name: "LinkedIn",
+    url: "https://www.linkedin.com/in/espace-vert-b0319b238/",
+    bg: "#0A66C2",
+    icon: <svg className="w-[17px] h-[17px]" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" /></svg>,
+  },
+  {
+    name: "YouTube",
+    url: "https://www.youtube.com/@espacevert7382",
+    bg: "#FF0000",
+    icon: <svg className="w-[17px] h-[17px]" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>,
+  },
+];
+
+/* ─── Grille de cartes agences ─────────────────────────────── */
 function AgencesMap() {
-  const { t } = useI18n();
-  const [active, setActive] = useState(0);
-  const ag = agences[active];
+  const gridRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(gridRef, { once: true, margin: "-40px" });
+
   return (
-    <div className="rounded-3xl overflow-hidden border border-white/15 shadow-2xl">
-      {/* Onglets */}
-      <div className="flex bg-black/25 backdrop-blur-sm overflow-x-auto">
-        {agences.map((a, i) => (
-          <button key={i} onClick={() => setActive(i)}
-            className="min-w-[110px] flex-1 px-3 py-3 text-xs font-black transition-all whitespace-nowrap relative overflow-hidden"
-            style={{ color: active===i ? "#fff" : "rgba(255,255,255,0.4)" }}>
-            {active===i && (
-              <motion.span layoutId="mapTab" className="absolute inset-0"
-                style={{ background:"linear-gradient(135deg,#27942f,#3cb648)" }}
-                transition={{ type:"spring", stiffness:420, damping:34 }} />
-            )}
-            <span className="relative z-10 flex items-center justify-center gap-1.5">
-              <MapPin className="w-3 h-3" />{a.nom}
+    <div ref={gridRef} className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      {agences.map((ag, i) => (
+        <motion.div
+          key={ag.nom}
+          initial={{ opacity: 0, y: 24 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+          transition={{ duration: 0.5, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+          whileHover={{ y: -4 }}
+          className="group relative overflow-hidden rounded-3xl bg-white shadow-lg transition-shadow duration-300 hover:shadow-2xl"
+        >
+          {/* Mini-carte cliquable — ouvre Google Maps dans un nouvel onglet */}
+          <a
+            href={ag.maps}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Ouvrir ${ag.nom} sur Google Maps`}
+            className="relative block h-36 w-full overflow-hidden bg-gray-100"
+          >
+            <iframe
+              src={`https://maps.google.com/maps?q=${ag.lat},${ag.lng}&z=15&output=embed`}
+              className="pointer-events-none absolute inset-0 h-full w-full scale-[1.15] transition-transform duration-700 ease-out group-hover:scale-[1.32]"
+              style={{ border: 0 }}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title={`Carte ${ag.nom}`}
+            />
+            <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 text-[10px] font-semibold text-white opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100">
+              <ArrowTopRightOnSquare className="h-3 w-3" />
+              Maps
             </span>
-          </button>
-        ))}
-      </div>
-      {/* Carte */}
-      <div className="relative h-[240px] bg-gray-900">
-        <AnimatePresence mode="wait">
-          <motion.iframe key={active} initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} transition={{ duration:0.28 }}
-            src={`https://maps.google.com/maps?q=${ag.lat},${ag.lng}&z=15&output=embed`}
-            width="100%" height="100%" style={{ border:0 }} allowFullScreen loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade" title={`Carte ${ag.nom}`}
-            className="w-full h-full absolute inset-0" />
-        </AnimatePresence>
-        {/* Badge agence */}
-        <div className="absolute top-3 left-3 right-3 sm:right-auto bg-white/97 backdrop-blur-sm rounded-2xl px-3 py-2 shadow-xl border border-gray-100 max-w-none sm:max-w-[200px]">
-          <p className="text-[11px] font-black text-[#1a3d0a] flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#3cb648] animate-pulse inline-block" />{ag.nom}
-          </p>
-          <p className="text-[10px] text-gray-500 leading-snug mt-0.5">{ag.adresse}</p>
-        </div>
-        <a href={ag.maps} target="_blank" rel="noopener noreferrer"
-          className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-3 sm:w-auto flex items-center justify-center gap-1.5 bg-[#1a3d0a] hover:bg-[#3cb648] text-white text-[11px] font-black px-3 py-1.5 rounded-xl shadow-lg transition-colors">
-          <ArrowTopRightOnSquare className="w-3.5 h-3.5" /> {t("map.open")}
-        </a>
-      </div>
-      {/* Infos contact */}
-      <div className="bg-black/20 px-4 sm:px-5 py-3 flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:gap-x-6 sm:items-center">
-        <a href={`tel:${ag.tel}`} className="flex items-start gap-2 text-white/80 hover:text-white text-xs font-semibold transition-colors break-all text-left">
-          <Phone className="w-3.5 h-3.5 text-[#8cc83f] shrink-0" />{ag.tel}
-        </a>
-        {"tel2" in ag && (ag as any).tel2 && (
-          <a href={`tel:${(ag as any).tel2}`} className="flex items-start gap-2 text-white/60 hover:text-white text-xs font-medium transition-colors break-all text-left">
-            <Phone className="w-3.5 h-3.5 text-[#8cc83f]/60 shrink-0" />{(ag as any).tel2}
           </a>
-        )}
-        {"email" in ag && (ag as any).email && (
-          <a href={`mailto:${(ag as any).email}`} className="flex items-start gap-2 text-white/80 hover:text-white text-xs font-semibold transition-colors break-all text-left">
-            <Mail className="w-3.5 h-3.5 text-[#8cc83f] shrink-0" />{(ag as any).email}
-          </a>
-        )}
-      </div>
+
+          {/* Icône bâtiment superposée */}
+          <div className="relative -mt-6 pl-5">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e8f5e9] shadow-md ring-4 ring-white">
+              <BuildingIcon className="h-6 w-6 text-[#1a3d0a]" />
+            </span>
+          </div>
+
+          {/* Informations — liens réellement fonctionnels */}
+          <div className="flex flex-col gap-2 px-5 pb-6 pt-3">
+            <h3 className="text-[15px] font-black text-gray-900">
+              {ag.nom}
+            </h3>
+
+            <p className="flex items-start gap-2 text-[13px] leading-snug text-gray-600">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#1a3d0a]" />
+              {ag.adresse}
+            </p>
+
+            <a
+              href={`tel:${ag.tel.replace(/[^+\d]/g, "")}`}
+              className="flex items-center gap-2 text-[13px] text-gray-600 transition-colors hover:text-[#1a3d0a]"
+            >
+              <Phone className="h-3.5 w-3.5 shrink-0 text-[#1a3d0a]" />
+              {ag.tel}
+            </a>
+
+            {ag.tel2 && (
+              <a
+                href={`tel:${ag.tel2.replace(/[^+\d]/g, "")}`}
+                className="flex items-center gap-2 text-[12px] text-gray-500 transition-colors hover:text-[#1a3d0a]"
+              >
+                <Phone className="h-3.5 w-3.5 shrink-0 text-[#1a3d0a]/60" />
+                {ag.tel2}
+              </a>
+            )}
+
+            {ag.email && (
+              <a
+                href={`mailto:${ag.email}`}
+                className="flex items-center gap-2 break-all text-[13px] text-gray-600 transition-colors hover:text-[#1a3d0a]"
+              >
+                <Mail className="h-3.5 w-3.5 shrink-0 text-[#1a3d0a]" />
+                {ag.email}
+              </a>
+            )}
+          </div>
+
+          {/* Barre de dégradé vert en bas de carte */}
+          <span className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-[#1a3d0a] via-[#3cb648] to-[#8cc83f]" />
+        </motion.div>
+      ))}
     </div>
   );
 }
@@ -96,44 +163,112 @@ function AgencesMap() {
 export function Footer() {
   const { t } = useI18n();
   const sectionRef = useRef<HTMLElement>(null);
-  const isInView   = useInView(sectionRef, { once:true, margin:"-60px" });
-  const fadeUp = (delay=0) => ({
-    initial:   { opacity:0, y:28 },
-    animate:   isInView ? { opacity:1, y:0 } : { opacity:0, y:28 },
-    transition:{ duration:0.6, delay, ease:[0.22,1,0.36,1] as const },
+  const isInView = useInView(sectionRef, { once: true, margin: "-60px" });
+  const fadeUp = (delay = 0) => ({
+    initial: { opacity: 0, y: 28 },
+    animate: isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 28 },
+    transition: { duration: 0.6, delay, ease: [0.22, 1, 0.36, 1] as const },
   });
 
   const navLinks = {
-    services: [
-      { href:"/activites/semences-et-plants",      label:"Semences & Plants" },
-      { href:"/activites/irrigation",              label:"Irrigation" },
-      { href:"/marques/fertivert",                 label:"Fertilisation" },
-      { href:"/activites/jardinage-et-machinisme", label:"Jardinage & Machinisme" },
-      { href:"/marques/pulvert",                   label:"Pulvérisation" },
+    Activités: [
+      { href: "/activites/semences-et-plants", label: "Semences & Plants" },
+      { href: "/activites/irrigation", label: "Irrigation" },
+      { href: "/marques/fertivert", label: "Fertilisation" },
+      { href: "/activites/pollinisation-et-protection-des-plantes", label: "Pollinisation & Protection" },
+      { href: "/marques/pulvert", label: "Pulvérisation" },
+      { href: "/activites/machinisme-et-jardinage", label: "Jardinage & Machinisme" },
     ],
-    marques: [
-      { href:"/marques/fertivert", label:"Fertivert" },
-      { href:"/marques/pulvert",   label:"Pulvert"   },
-      { href:"/marques/matar",     label:"Matar"     },
+    Marques: [
+      { href: "/marques/fertivert", label: "Fertivert" },
+      { href: "/marques/pulvert", label: "Pulvert" },
+      { href: "/marques/matar", label: "Matar" },
+      { href: "/marques/baddar-semences", label: "Baddar Semences" },
     ],
-    company: [
-      { href:"/qui-sommes-nous", label:t("nav.about") },
-      { href:"/contact",         label:t("nav.contact") },
-      { href:"/actualites",      label:t("footer.news") },
+    Entreprise: [
+      { href: "/qui-sommes-nous", label: t("nav.about") },
+      { href: "/contact", label: t("nav.contact") },
+      { href: "/rendez-vous", label: t("nav.appointment") },
+      { href: "/actualites", label: t("footer.news") },
     ],
   };
 
   return (
-    <footer ref={sectionRef} id="site-footer" className="relative bg-[#0f2607] text-white overflow-hidden mt-20">
+    <footer ref={sectionRef} id="site-footer" className="relative bg-[#fbfdf9] text-[#0f2607] overflow-hidden">
+      {/* Bande verte du haut */}
+      <div className="relative z-10 h-3 w-full bg-gradient-to-r from-[#1a3d0a] via-[#3cb648] to-[#8cc83f]" />
+
       {/* Déco fond */}
-      <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full opacity-[0.10] blur-3xl pointer-events-none"
-        style={{ background:"radial-gradient(circle,#3cb648,transparent)" }} />
-      <div className="absolute top-1/2 -right-32 w-72 h-72 rounded-full opacity-[0.07] blur-3xl pointer-events-none"
-        style={{ background:"radial-gradient(circle,#8cc83f,transparent)" }} />
+      <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full opacity-[0.12] blur-3xl pointer-events-none"
+        style={{ background: "radial-gradient(circle,#3cb648,transparent)" }} />
+      <div className="absolute top-1/2 -right-32 w-72 h-72 rounded-full opacity-[0.10] blur-3xl pointer-events-none"
+        style={{ background: "radial-gradient(circle,#8cc83f,transparent)" }} />
 
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 pt-16 pb-8">
+      {/* Motif de points — bas gauche */}
+      <svg className="absolute bottom-6 left-4 h-24 w-24 opacity-40 pointer-events-none" aria-hidden="true">
+        <pattern id="dots-bl" width="14" height="14" patternUnits="userSpaceOnUse">
+          <circle cx="2" cy="2" r="1.6" fill="#8cc83f" />
+        </pattern>
+        <rect width="100%" height="100%" fill="url(#dots-bl)" />
+      </svg>
 
-        {/* ── Carte agences ─────────────────────────────────────────── */}
+      {/* Motif de points — haut droit */}
+      <svg className="absolute top-4 right-6 h-20 w-20 opacity-40 pointer-events-none" aria-hidden="true">
+        <pattern id="dots-tr" width="14" height="14" patternUnits="userSpaceOnUse">
+          <circle cx="2" cy="2" r="1.6" fill="#8cc83f" />
+        </pattern>
+        <rect width="100%" height="100%" fill="url(#dots-tr)" />
+      </svg>
+
+      {/* Branche de feuilles décorative — bord droit */}
+      <svg
+        className="absolute -right-6 top-0 h-full w-40 opacity-70 pointer-events-none hidden lg:block"
+        viewBox="0 0 200 900"
+        fill="none"
+        aria-hidden="true"
+      >
+        <g stroke="#3cb648" strokeWidth="2" opacity="0.5">
+          <path d="M120 0 C 60 120, 160 220, 90 340 C 30 440, 150 520, 80 640 C 20 740, 140 800, 70 900" />
+        </g>
+        {[
+          { cx: 118, cy: 60, r: 34, rot: 20 },
+          { cx: 70, cy: 150, r: 30, rot: -30 },
+          { cx: 140, cy: 240, r: 36, rot: 15 },
+          { cx: 60, cy: 340, r: 28, rot: -20 },
+          { cx: 120, cy: 430, r: 32, rot: 25 },
+          { cx: 55, cy: 520, r: 26, rot: -15 },
+          { cx: 110, cy: 610, r: 30, rot: 10 },
+          { cx: 60, cy: 700, r: 24, rot: -25 },
+          { cx: 95, cy: 790, r: 28, rot: 18 },
+        ].map((leaf, idx) => (
+          <ellipse
+            key={idx}
+            cx={leaf.cx}
+            cy={leaf.cy}
+            rx={leaf.r}
+            ry={leaf.r * 0.42}
+            fill="#8cc83f"
+            fillOpacity="0.35"
+            transform={`rotate(${leaf.rot} ${leaf.cx} ${leaf.cy})`}
+          />
+        ))}
+      </svg>
+
+      {/* Feuilles isolées — coin bas gauche */}
+      <svg
+        className="absolute -left-4 bottom-0 h-48 w-48 opacity-60 pointer-events-none"
+        viewBox="0 0 200 200"
+        fill="none"
+        aria-hidden="true"
+      >
+        <ellipse cx="40" cy="160" rx="46" ry="18" fill="#8cc83f" fillOpacity="0.3" transform="rotate(-25 40 160)" />
+        <ellipse cx="90" cy="180" rx="38" ry="15" fill="#3cb648" fillOpacity="0.25" transform="rotate(15 90 180)" />
+        <ellipse cx="20" cy="120" rx="30" ry="12" fill="#8cc83f" fillOpacity="0.2" transform="rotate(-40 20 120)" />
+      </svg>
+
+      <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 pt-16 pb-8">
+
+        {/* ── Grille agences ─────────────────────────────────────────── */}
         <motion.div {...fadeUp(0.05)} className="mb-14">
           <AgencesMap />
         </motion.div>
@@ -144,15 +279,14 @@ export function Footer() {
           {/* Logo + tagline + socials */}
           <motion.div {...fadeUp(0.1)} className="lg:col-span-4 flex flex-col gap-6">
 
-            {/* ── LOGO sur fond sombre : version light (verts + blancs naturels) ── */}
-            <Link href="/" className="inline-block" style={{ lineHeight:0 }}>
+            <Link href="/" className="inline-block" style={{ lineHeight: 0 }}>
               <Image
-                src="/logos/logo-espace-vert.png"
+                src="/logos/logo espace vert.png"
                 alt="Groupe Espace Vert"
                 width={400} height={120}
                 style={{
                   height: "clamp(56px, 14vw, 90px)",
-                  width:  "auto",
+                  width: "auto",
                   maxWidth: "min(100%, 360px)",
                   objectFit: "contain",
                   display: "block",
@@ -161,26 +295,23 @@ export function Footer() {
               />
             </Link>
 
-            {/* Tagline */}
-            <p className="text-white/50 text-sm leading-relaxed max-w-[280px]">
-              {t("footer.tagline")}
-            </p>
-
             {/* Réseaux sociaux */}
             <div>
-              <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.18em] mb-4">{t("footer.follow")}</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.18em] mb-4">{t("footer.follow")}</p>
               <div className="flex gap-3 flex-wrap">
                 {socials.map((s, i) => (
                   <motion.a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer"
-                    initial={{ opacity:0, y:16 }} animate={isInView?{opacity:1,y:0}:{opacity:0,y:16}}
-                    transition={{ delay:0.14+i*0.06, duration:0.45, ease:[0.22,1,0.36,1] }}
-                    whileHover={{ y:-3, scale:1.08 }} whileTap={{ scale:0.9 }}
+                    initial={{ opacity: 0, y: 16 }} animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+                    transition={{ delay: 0.14 + i * 0.06, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{ y: -3, scale: 1.08 }} whileTap={{ scale: 0.9 }}
                     title={s.name}
-                    className="relative w-9 h-9 rounded-xl overflow-hidden group shadow-md hover:shadow-xl transition-shadow"
-                    style={{ background:(s as any).gradient??s.bg }}>
-                    <span className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity rounded-xl"
-                      style={{ background:"linear-gradient(135deg,#fff,transparent)" }} />
-                    <span className="relative z-10 flex items-center justify-center w-full h-full">{s.icon}</span>
+                    className="relative w-10 h-10 rounded-2xl overflow-hidden group shadow-md hover:shadow-xl transition-shadow flex items-center justify-center text-white"
+                    style={{ background: (s as any).gradient ?? s.bg }}>
+                    <span className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity"
+                      style={{ background: "linear-gradient(135deg,#fff 0%,transparent 60%)" }} />
+                    <motion.span className="relative z-10" whileHover={{ rotate: [0, -8, 8, 0] }} transition={{ duration: 0.3 }}>
+                      {s.icon}
+                    </motion.span>
                   </motion.a>
                 ))}
               </div>
@@ -189,12 +320,12 @@ export function Footer() {
 
           {/* Services */}
           <motion.div {...fadeUp(0.14)} className="lg:col-span-2">
-            <h4 className="text-[10px] font-black text-[#8cc83f] uppercase tracking-[0.18em] mb-5">{t("footer.services")}</h4>
-            <ul className="space-y-3">
-              {navLinks.services.map((l,i) => (
+            <h4 className="text-[10px] font-black text-[#1a7a2e] uppercase tracking-[0.18em] mb-5 border-b border-[#1a7a2e]/25 pb-2 inline-block">{t("footer.services")}</h4>
+            <ul className="space-y-3 mt-3">
+              {navLinks.Activités.map((l, i) => (
                 <li key={i}>
-                  <Link href={l.href} className="group flex items-center gap-2 text-white/55 hover:text-white text-sm font-medium transition-colors">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#3cb648]/60 group-hover:bg-[#8cc83f] transition-colors shrink-0" />
+                  <Link href={l.href} className="group flex items-center gap-2 text-gray-600 hover:text-[#1a3d0a] text-sm font-medium transition-colors">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#3cb648]/60 group-hover:bg-[#1a7a2e] transition-colors shrink-0" />
                     {l.label}
                   </Link>
                 </li>
@@ -204,12 +335,12 @@ export function Footer() {
 
           {/* Marques */}
           <motion.div {...fadeUp(0.17)} className="lg:col-span-2">
-            <h4 className="text-[10px] font-black text-[#8cc83f] uppercase tracking-[0.18em] mb-5">{t("footer.brands")}</h4>
-            <ul className="space-y-3">
-              {navLinks.marques.map((l,i) => (
+            <h4 className="text-[10px] font-black text-[#1a7a2e] uppercase tracking-[0.18em] mb-5 border-b border-[#1a7a2e]/25 pb-2 inline-block">{t("footer.brands")}</h4>
+            <ul className="space-y-3 mt-3">
+              {navLinks.Marques.map((l, i) => (
                 <li key={i}>
-                  <Link href={l.href} className="group flex items-center gap-2 text-white/55 hover:text-white text-sm font-medium transition-colors">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#3cb648]/60 group-hover:bg-[#8cc83f] transition-colors shrink-0" />
+                  <Link href={l.href} className="group flex items-center gap-2 text-gray-600 hover:text-[#1a3d0a] text-sm font-medium transition-colors">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#3cb648]/60 group-hover:bg-[#1a7a2e] transition-colors shrink-0" />
                     {l.label}
                   </Link>
                 </li>
@@ -219,12 +350,12 @@ export function Footer() {
 
           {/* Entreprise */}
           <motion.div {...fadeUp(0.20)} className="lg:col-span-2">
-            <h4 className="text-[10px] font-black text-[#8cc83f] uppercase tracking-[0.18em] mb-5">{t("footer.company")}</h4>
-            <ul className="space-y-3">
-              {navLinks.company.map((l,i) => (
+            <h4 className="text-[10px] font-black text-[#1a7a2e] uppercase tracking-[0.18em] mb-5 border-b border-[#1a7a2e]/25 pb-2 inline-block">{t("footer.company")}</h4>
+            <ul className="space-y-3 mt-3">
+              {navLinks.Entreprise.map((l, i) => (
                 <li key={i}>
-                  <Link href={l.href} className="group flex items-center gap-2 text-white/55 hover:text-white text-sm font-medium transition-colors">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#3cb648]/60 group-hover:bg-[#8cc83f] transition-colors shrink-0" />
+                  <Link href={l.href} className="group flex items-center gap-2 text-gray-600 hover:text-[#1a3d0a] text-sm font-medium transition-colors">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#3cb648]/60 group-hover:bg-[#1a7a2e] transition-colors shrink-0" />
                     {l.label}
                   </Link>
                 </li>
@@ -233,17 +364,18 @@ export function Footer() {
           </motion.div>
         </div>
 
-        {/* ── Barre de bas ────────────────────────────────────────────── */}
-        <motion.div {...fadeUp(0.26)}>
-          <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-6" />
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-white/25 text-xs text-center sm:text-left">
-              © {new Date().getFullYear()} Groupe Espace Vert. {t("footer.rights")}
-            </p>
-           
-          </div>
-        </motion.div>
+        {/* ── Espacement avant le bandeau ─────────────────────────────── */}
+        <div className="h-6" />
       </div>
+
+      {/* Bandeau vert du bas — contient le copyright */}
+      <motion.div {...fadeUp(0.26)} className="relative z-10 w-full bg-gradient-to-r from-[#1a3d0a] via-[#3cb648] to-[#8cc83f]">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 py-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-white/85 text-xs text-center sm:text-left">
+            © {new Date().getFullYear()} Groupe Espace Vert. {t("footer.rights")}
+          </p>
+        </div>
+      </motion.div>
     </footer>
   );
 }

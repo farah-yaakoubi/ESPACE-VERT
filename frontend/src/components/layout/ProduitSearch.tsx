@@ -32,6 +32,42 @@ const C = {
   highlight:    "rgba(125,192,64,0.24)",
 };
 
+const SEARCH_SUGGESTIONS = [
+  "fulvical…",
+  "Rechercher un système d'irrigation…",
+  "Rechercher des semences…",
+  "Rechercher un pulvérisateur…",
+  "Rechercher du matériel agricole…",
+  "tondeuse à gazon…",
+];
+
+// Effet machine à écrire : tape puis efface chaque suggestion tour à tour
+function useTypewriter(words: string[], typingSpeed = 55, deletingSpeed = 28, pause = 1500) {
+  const [text, setText] = useState("");
+  const [wordIndex, setWordIndex] = useState(0);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    const current = words[wordIndex % words.length];
+    let timeout: ReturnType<typeof setTimeout>;
+
+    if (!deleting && text.length < current.length) {
+      timeout = setTimeout(() => setText(current.slice(0, text.length + 1)), typingSpeed);
+    } else if (!deleting && text.length === current.length) {
+      timeout = setTimeout(() => setDeleting(true), pause);
+    } else if (deleting && text.length > 0) {
+      timeout = setTimeout(() => setText(current.slice(0, text.length - 1)), deletingSpeed);
+    } else {
+      setDeleting(false);
+      setWordIndex((i) => (i + 1) % words.length);
+    }
+
+    return () => clearTimeout(timeout);
+  }, [text, deleting, wordIndex, words, typingSpeed, deletingSpeed, pause]);
+
+  return text;
+}
+
 interface Resultat {
   id_produit: number;
   nom:        string;
@@ -161,22 +197,68 @@ export function ProduitSearch({
   const iconBorder = onHero ? "1.5px solid rgba(255,255,255,0.3)" : `1.5px solid ${palette.border}`;
   const iconBg     = onHero ? "rgba(255,255,255,0.12)"            : palette.sageLt;
 
+  const typed = useTypewriter(SEARCH_SUGGESTIONS);
+  const barTextColor = onHero ? "rgba(255,255,255,0.85)" : palette.textMuted;
+
   return (
     <>
-      {/* ── Bouton icône recherche (navbar) ── */}
+      <style>{`
+        @keyframes searchCaretBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .search-bar-caret {
+          display: inline-block;
+          width: 1px;
+          margin-left: 1px;
+          animation: searchCaretBlink 0.9s step-end infinite;
+        }
+      `}</style>
+
+      {/* ── Barre de recherche animée (navbar) ── */}
       <motion.button
         onClick={() => setOpen(true)}
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.92 }}
+        whileHover={{ scale: 1.015 }}
+        whileTap={{ scale: 0.985 }}
         title="Rechercher (⌘K)"
         style={{
-          width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center",
-          borderRadius: 10, cursor: "pointer", flexShrink: 0,
+          display: "flex", alignItems: "center", gap: 10,
+          width: 232, height: 40, padding: "0 10px 0 14px",
+          borderRadius: 9999, cursor: "pointer", flexShrink: 0,
           border: iconBorder, background: iconBg,
           color: onHero ? "#fff" : palette.sage,
         }}
       >
-        <SearchIcon color={onHero ? "#fff" : palette.sage} size={17} />
+        <SearchIcon color={onHero ? "#fff" : palette.sage} size={16} />
+        <span
+          style={{
+            flex: 1,
+            minWidth: 0,
+            textAlign: "left",
+            fontSize: 13,
+            fontWeight: 500,
+            color: barTextColor,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+          }}
+        >
+          {typed}
+          <span
+            className="search-bar-caret"
+            style={{ background: onHero ? "rgba(255,255,255,0.85)" : palette.sage, height: 14 }}
+          />
+        </span>
+        <kbd
+          style={{
+            fontSize: 10,
+            fontFamily: "monospace",
+            flexShrink: 0,
+            padding: "2px 6px",
+            borderRadius: 5,
+            color: onHero ? "rgba(255,255,255,0.75)" : palette.textSecondary,
+            background: onHero ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.6)",
+            border: onHero ? "1px solid rgba(255,255,255,0.25)" : `1px solid ${palette.border}`,
+          }}
+        >
+          ⌘K
+        </kbd>
       </motion.button>
 
       {/* ── Panel demi-écran (portal) ── */}

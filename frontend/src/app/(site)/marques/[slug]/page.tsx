@@ -160,7 +160,22 @@ export default async function MarqueDetailPage({ params }: PageProps) {
   const matarCategories = useIrrigationMatarCatalogue
     ? collectCategorieSubtree(irrigationCategories, matarCategory!.id_categorie)
     : [];
-  const tree = useIrrigationMatarCatalogue ? null : hideBaddarGenericCategory(await fetchMarqueTree(slug));
+
+  // ── Marque rattachée à Jardinage & Machinisme : même catalogue (mêmes
+  // cartes, même comportement de sidebar-au-clic) que sur la page de
+  // l'activité, simplement filtré sur cette marque. ──────────────────────
+  const machinismeActivite = (await activitesService.list()).find(
+    (activite) => activite.slug === "jardinage-et-machinisme"
+  );
+  const machinismeCategories = machinismeActivite
+    ? await categoriesService.list({ id_activite: machinismeActivite.id_activite })
+    : [];
+  const machinismeMarqueCategory = machinismeCategories.find(
+    (cat) => normalizeText(cat.slug) === normalizeText(`jm-${marque.slug}`)
+  ) ?? null;
+  const useMachinismeCatalogue = Boolean(machinismeActivite && machinismeMarqueCategory);
+
+  const tree = (useIrrigationMatarCatalogue || useMachinismeCatalogue) ? null : hideBaddarGenericCategory(await fetchMarqueTree(slug));
   const quickCategories = useIrrigationMatarCatalogue
     ? matarCategories.filter((cat) => cat.parent_id === matarCategory!.id_categorie)
     : tree?.categories ?? [];
@@ -233,6 +248,20 @@ export default async function MarqueDetailPage({ params }: PageProps) {
           activiteSlug={irrigation.slug}
           categories={matarCategories}
           categoryScopeId={matarCategory.id_categorie}
+        />
+      )}
+
+      {/* ── Catalogue Jardinage & Machinisme — même composant que la page
+       * d'activité, filtré sur cette marque (mêmes cartes, même comportement
+       * de sidebar affichée uniquement une fois la marque/sous-catégorie
+       * sélectionnée). ── */}
+      {useMachinismeCatalogue && machinismeActivite && machinismeMarqueCategory && (
+        <ActiviteProduitsSectionWrapper
+          id_activite={machinismeActivite.id_activite}
+          activiteSlug={machinismeActivite.slug}
+          categories={machinismeCategories}
+          categoryScopeId={machinismeMarqueCategory.id_categorie}
+          marques={[marque]}
         />
       )}
 

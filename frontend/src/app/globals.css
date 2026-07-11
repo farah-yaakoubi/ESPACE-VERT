@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -107,17 +106,31 @@
   }
   .h-section {
     font-family: var(--font-display), sans-serif;
-    @apply text-2xl sm:text-3xl md:text-4xl font-bold;
+    @apply text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold;
+    letter-spacing: 0;
+    line-height: 0.98;
   }
   .h-card {
     font-family: var(--font-display), sans-serif;
     @apply text-lg font-semibold leading-snug;
   }
 
+  /* Unified section title — used for every main section heading across the site */
+  .section-title {
+    font-family: var(--font-display), sans-serif;
+    font-weight: 300;
+    font-size: clamp(2.1rem, 4.6vw, 3.6rem);
+    line-height: 1;
+    letter-spacing: -0.015em;
+    color: #1b2118;
+  }
+  .section-title--light { color: #ffffff; }
+
   .site-heading {
     font-family: var(--font-display), sans-serif;
-    @apply text-2xl sm:text-3xl lg:text-[2.45rem] font-bold text-ev-950 leading-tight;
-    letter-spacing: -0.03em;
+    @apply text-3xl sm:text-4xl lg:text-[3.25rem] font-extrabold text-ev-950;
+    letter-spacing: 0;
+    line-height: 0.98;
   }
 
   .site-subheading {
@@ -346,3 +359,91 @@ html[data-theme="dark"] {
   .hero-image { object-position: center 32%; }
 }
 */
+
+/*
+ * ── Thème "Jardinage et machinisme" ─────────────────────────────────────
+ * Palette rouge/noir "Power Tool Sale" (maquette de référence),
+ * appliquée uniquement sous le wrapper `.theme-machinisme` (activité
+ * jardinage-et-machinisme + sa fiche produit). Aucune autre page/activité
+ * n'est affectée.
+ */
+.theme-machinisme .bg-ev-700,
+.theme-machinisme .bg-ev-600,
+.theme-machinisme .bg-ev-900 { background-color: #e30613 !important; }
+
+.theme-machinisme .hover\:bg-ev-800:hover,
+.theme-machinisme .hover\:bg-ev-700:hover { background-color: #0a0a0a !important; }
+
+.theme-machinisme .bg-ev-50,
+.theme-machinisme .bg-ev-100 { background-color: #f2f2f2 !important; }
+
+.theme-machinisme .hover\:bg-ev-50:hover,
+.theme-machinisme .hover\:bg-ev-100:hover { background-color: #e8e8e8 !important; }
+
+.theme-machinisme .text-ev-700,
+.theme-machinisme .text-ev-600,
+.theme-machinisme .hover\:text-ev-700:hover,
+.theme-machinisme .hover\:text-ev-800:hover,
+.theme-machinisme .hover\:text-ev-600:hover { color: #e30613 !important; }
+
+.theme-machinisme .text-ev-800,
+.theme-machinisme .text-ev-900,
+.theme-machinisme .text-ev-950 { color: #0a0a0a !important; }
+
+.theme-machinisme .text-ev-500,
+.theme-machinisme .text-ev-200 { color: #ff4d4d !important; }
+
+.theme-machinisme .border-ev-700,
+.theme-machinisme .border-ev-600,
+.theme-machinisme .border-ev-300,
+.theme-machinisme .border-ev-200,
+.theme-machinisme .border-ev-100,
+.theme-machinisme .hover\:border-ev-300:hover { border-color: #1a1a1a !important; }
+
+.theme-machinisme .ring-ev-200,
+.theme-machinisme .ring-ev-300 { --tw-ring-color: #e30613 !important; }
+
+.theme-machinisme .from-ev-50,
+.theme-machinisme .via-ev-50,
+.theme-machinisme .to-ev-50 { --tw-gradient-from: #f2f2f2 !important; --tw-gradient-to: #f2f2f2 !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important; }
+
+.theme-machinisme .focus\:ring-ev-400:focus,
+.theme-machinisme .focus\:ring-ev-500:focus { --tw-ring-color: #e30613 !important; }
+
+/* Typographie bold impactante, cohérente avec la maquette "POWER TOOL SALE" */
+.theme-machinisme h1,
+.theme-machinisme h2,
+.theme-machinisme h3 {
+  font-weight: 900 !important;
+}
+
+/* Carte produit (fond dégradé rouge/noir + ombre) */
+.theme-machinisme .produit-card-gradient {
+  background: linear-gradient(160deg, #1a1a1a 0%, #e30613 100%) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
+}
+.theme-machinisme .produit-card-gradient:hover {
+  box-shadow: 0 20px 40px rgba(227, 6, 19, 0.35) !important;
+}
+.theme-machinisme .produit-card-cta {
+  color: #e30613 !important;
+}
+
+/* Bandes diagonales / accents géométriques rouge-noir */
+.theme-machinisme .power-stripes {
+  background: repeating-linear-gradient(
+    -35deg,
+    #e30613 0px, #e30613 6px,
+    transparent 6px, transparent 12px
+  );
+}
+
+/* Badge promo type "70% OFF" */
+.theme-machinisme .promo-badge {
+  background: #e30613 !important;
+  color: #fff !important;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  clip-path: polygon(12% 0, 100% 0, 100% 100%, 0 100%);
+}

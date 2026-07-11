@@ -19,6 +19,7 @@ import {
 } from "@/components/catalogue/FilterPanel";
 import { getEtudeInstallationHref, isEtudeInstallationCategory } from "@/lib/etude-installation";
 import { SemencesRecommandationCard } from "./SemencesRecommandation";
+import { JardinageSidebar, JardinageCategoryGrid, JardinageProductGrid } from "./JardinageCatalogShowcase";
 import { useI18n } from "@/i18n/I18nProvider";
 import { translatedField } from "@/i18n/translated-field";
 import type { Locale } from "@/i18n/config";
@@ -57,6 +58,22 @@ function collectIds(node: CatNode): Set<number> {
   return ids;
 }
 
+/** Chemin racine → nœud (inclus), ou null si l'id n'existe pas dans l'arbre. */
+function findPath(nodes: CatNode[], id: number, path: CatNode[] = []): CatNode[] | null {
+  for (const n of nodes) {
+    const nextPath = [...path, n];
+    if (n.id_categorie === id) return nextPath;
+    const found = findPath(n.children ?? [], id, nextPath);
+    if (found) return found;
+  }
+  return null;
+}
+
+/** Les catégories "marque" de Jardinage & Machinisme utilisent le préfixe `jm-`. */
+function isMarqueNode(node: CatNode) {
+  return node.slug.startsWith("jm-");
+}
+
 function normalizeText(value: string | null | undefined) {
   return (value ?? "")
     .normalize("NFD")
@@ -65,9 +82,14 @@ function normalizeText(value: string | null | undefined) {
     .trim();
 }
 
-function shouldUseCatalogueView(node: CatNode | null) {
+function shouldUseCatalogueView(node: CatNode | null, isMachinisme = false) {
   if (!node || (node.children ?? []).length === 0) return false;
-  // Déclenche la vue grille si au moins une sous-catégorie a une image
+  // En Jardinage & Machinisme, les cartes catégories ont un pictogramme de
+  // secours quand il n'y a pas d'image : on peut donc toujours afficher la
+  // grille de sous-catégories dès qu'il y en a.
+  if (isMachinisme) return true;
+  // Ailleurs, la grille "cover" n'affiche que les sous-catégories illustrées
+  // : on ne bascule en vue grille que s'il y en a au moins une.
   return (node.children ?? []).some(child => !!child.image);
 }
 
@@ -111,7 +133,7 @@ function CatalogueCoverGrid({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {children.filter(child => !!child.image).map(child => {
           const count  = childCount(child);
           const imgSrc = child.image;
@@ -190,7 +212,7 @@ function BrandLinkGrid({
 
   return (
     <div className="mb-8">
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map(card => {
           const count = cardCount(card);
           const fallback = cardFirstImage(card);
@@ -262,7 +284,7 @@ function RootCatalogueGrid({
 
   return (
     <div className="mb-8">
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {nodes.filter(node => !!node.image).map(node => {
           const count = nodeCount(node);
           const imgSrc = node.image;
@@ -347,15 +369,38 @@ interface Props {
   categories: Categorie[];
   categoryScopeId?: number | null;
   brandCards?: BrandCard[];
+  marques?: { id_marque: number; nom: string; slug: string; logo?: string | null }[];
 }
 
 /* ══════════════════════════════════════════════════════════════════════════ */
-function ActiviteProduitsSection({ id_activite, activiteSlug, categories, categoryScopeId = null, brandCards = [] }: Props) {
+function ActiviteProduitsSection({ id_activite, activiteSlug, categories, categoryScopeId = null, brandCards = [], marques = [] }: Props) {
   const { locale, t } = useI18n();
   const searchParams = useSearchParams();
   const router = useRouter();
   const catParam = searchParams.get("cat");
   const isSemencesPage = activiteSlug === "semences-et-plants";
+  const isMachinisme = activiteSlug === "jardinage-et-machinisme";
+
+  const marqueLogoById = useMemo(
+    () => new Map(marques.map((m) => [m.id_marque, m.logo])),
+    [marques]
+  );
+  // Fallback : certaines tuiles catégorie ne sont pas liées via id_marque
+  // en base (ex. "Outils Wolf") — on retrouve alors le logo en comparant
+  // le nom/slug normalisés à ceux des marques.
+  const marqueLogoByKey = useMemo(() => {
+    const norm = (s: string) =>
+      (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const map = new Map<string, string | null | undefined>();
+    marques.forEach((m) => {
+      if (norm(m.nom)) map.set(norm(m.nom), m.logo);
+      if (norm(m.slug)) map.set(norm(m.slug), m.logo);
+    });
+    // Logos statiques de secours quand le champ `logo` est absent en base.
+    if (!map.get("wolf")) map.set("wolf", "/logosPartenaires1/WOLF.png");
+    if (!map.get("outilswolf")) map.set("outilswolf", "/logosPartenaires1/WOLF.png");
+    return map;
+  }, [marques]);
 
   const fullTree = useMemo(() => buildTree(categories), [categories]);
   const scopedNode = useMemo(
@@ -375,7 +420,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
     if (!catParam) return null;
     const id   = parseInt(catParam, 10);
     const node = findNode(tree, id);
-    if (shouldUseCatalogueView(node)) return id;
+    if (shouldUseCatalogueView(node, isMachinisme)) return id;
     return null;
   });
 
@@ -385,7 +430,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
     setPage(1);
     if (!id) { setCatalogueCatId(null); return; }
     const node = findNode(tree, id);
-    if (shouldUseCatalogueView(node)) setCatalogueCatId(id);
+    if (shouldUseCatalogueView(node, isMachinisme)) setCatalogueCatId(id);
     else setCatalogueCatId(null);
   }, [catParam, tree]);
 
@@ -433,12 +478,12 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
       router.push(getEtudeInstallationHref(activiteSlug));
       return;
     }
-    if (shouldUseCatalogueView(node)) {
+    if (shouldUseCatalogueView(node, isMachinisme)) {
       setCatalogueCatId(id); handleFiltersChange({ ...filters, categoryId: id });
     } else {
       setCatalogueCatId(null); handleFiltersChange({ ...filters, categoryId: id });
     }
-  }, [activiteSlug, filters, tree, handleFiltersChange, router]);
+  }, [activiteSlug, isMachinisme, filters, tree, handleFiltersChange, router]);
 
   const catalogueNode = useMemo(() => catalogueCatId ? findNode(tree, catalogueCatId) : null, [catalogueCatId, tree]);
   const activeNode    = useMemo(() => filters.categoryId ? findNode(tree, filters.categoryId) : null, [filters.categoryId, tree]);
@@ -452,6 +497,11 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
     !hasActiveFilters &&
     !catalogueCatId &&
     tree.some(n => !!n.image);
+  const showJardinageRootGrid =
+    isMachinisme &&
+    !categoryScopeId &&
+    !hasActiveFilters &&
+    !catalogueCatId;
   const showIrrigationBrandLinks =
     activiteSlug === "irrigation" &&
     !categoryScopeId &&
@@ -459,11 +509,142 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
     !hasActiveFilters &&
     !catalogueCatId;
 
+  // Jardinage & Machinisme : la sidebar catégories ne s'affiche qu'une fois
+  // qu'une marque a été sélectionnée (elle-même ou un de ses ancêtres dans
+  // l'arbre) — comme sur la maquette de référence, où la grille "Explore All
+  // Vehicles" occupe toute la largeur sans sidebar tant qu'on navigue par
+  // catégories/marques.
+  // Exception : si la page est déjà scoppée sur une marque (categoryScopeId,
+  // ex. page /marques/[slug]) on est d'emblée "dans" la marque — la sidebar
+  // doit donc apparaître dès le chargement, sans clic supplémentaire.
+  const activeCatId = catalogueCatId ?? filters.categoryId;
+  const activePath = useMemo(
+    () => (activeCatId ? findPath(tree, activeCatId) : null),
+    [activeCatId, tree]
+  );
+  const activeMarqueNode = useMemo(
+    () => activePath?.find(isMarqueNode) ?? (categoryScopeId ? tree.find(isMarqueNode) ?? null : null),
+    [activePath, categoryScopeId, tree]
+  );
+  const showMachinismeSidebar = isMachinisme && !!activeMarqueNode;
+  const useFullWidthLayout = isMachinisme && !showMachinismeSidebar;
+  const sidebarTree = activeMarqueNode
+    ? (activeMarqueNode.children?.length ? activeMarqueNode.children : [activeMarqueNode])
+    : tree;
+
   const reset = useCallback(() => { setCatalogueCatId(null); handleFiltersChange(DEFAULT_FILTERS); }, [handleFiltersChange]);
+
+  /* Grille produits (chargement / vide / erreur / pagination) — partagée
+   * entre le mode "pleine largeur" (aucune marque sélectionnée) et le mode
+   * "sidebar" (navigation dans une marque). */
+  const productGridContent = loading ? (
+    <GridSkeleton count={isSemencesPage ? pageSize : 8} cols={isSemencesPage ? 4 : undefined} />
+  ) : error ? (
+    <p className="text-center text-red-500 py-10">{error}</p>
+  ) : filtered.length === 0 ? (
+    <div className="text-center py-24 text-gray-400">
+      <Package size={40} className="mx-auto mb-3 opacity-25"/>
+      <p className="text-sm font-medium text-gray-500 mb-1">{t("catalog.noProducts", "Aucun produit trouvé")}</p>
+      <p className="text-xs text-gray-400 mb-4">{t("catalog.tryFilters", "Essayez de modifier ou d'effacer vos filtres.")}</p>
+      <button onClick={reset}
+        className="inline-flex items-center gap-1.5 text-xs text-ev-600 hover:text-ev-800 font-medium transition-colors">
+        <SlidersHorizontal size={12}/> {t("catalog.resetFilters", "Réinitialiser les filtres")}
+      </button>
+    </div>
+  ) : (
+    <>
+      {isMachinisme ? (
+        <JardinageProductGrid produits={paginated} />
+      ) : (
+        <div className={cn("grid gap-4", "grid-cols-2 sm:grid-cols-2 lg:grid-cols-4")}>
+          {paginated.map((p) => (
+            <ProduitCard
+              key={p.id_produit}
+              produit={p}
+              variant={isSemencesPage ? "seed" : "default"}
+            />
+          ))}
+        </div>
+      )}
+      <div className="mt-2">
+        {totalPages > 1 && (
+          <p className="text-xs text-gray-400 text-center mb-1">
+            Page {page} sur {totalPages} · {filtered.length} {productWord(filtered.length, t)}
+          </p>
+        )}
+        <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange}/>
+      </div>
+    </>
+  );
+
+  const isRootBrandGrid = useFullWidthLayout && !catalogueNode && showJardinageRootGrid;
 
   return (
     <section id="produits-activite" className="bg-sand-50 border-b border-sand-200">
+      {isRootBrandGrid && (
+        /* Bloc "Parcourir par marque" — centré, fond distinct, comme la
+         * section "Browse By Brands" de la maquette de référence. */
+        <div className="py-14 md:py-16" style={{ backgroundColor: "#f2f3f8" }}>
+          <div className="container-ev">
+            <div className="text-center mb-10 md:mb-12">
+              <p className="text-[12px] font-extrabold uppercase tracking-[0.22em] mb-3" style={{ color: "#e30613" }}>
+                Trouvez votre équipement par marque
+              </p>
+              <h2 className="text-3xl md:text-[2.35rem] font-black text-[#0c0c0e]" style={{ fontFamily: "var(--font-display)" }}>
+                Parcourir par marques
+              </h2>
+            </div>
+            <JardinageCategoryGrid
+              nodes={tree}
+              onSelect={(id) => handleCategorySelect(id)}
+              marqueLogoById={marqueLogoById}
+              marqueLogoByKey={marqueLogoByKey}
+              wide
+              centered
+            />
+          </div>
+        </div>
+      )}
       <div className="container-ev py-5">
+        {isMachinisme && (
+          <div className="mb-6 mt-2">
+            <p className="text-[12px] font-extrabold uppercase tracking-[0.22em] mb-2" style={{ color: "#e30613" }}>
+              Service de vente de confiance
+            </p>
+            <h2 className="text-2xl sm:text-[1.85rem] font-black text-[#0c0c0e]" style={{ fontFamily: "var(--font-display)" }}>
+              Explorer tous nos produits
+            </h2>
+          </div>
+        )}
+        {useFullWidthLayout ? (
+          <div className="mb-2">
+            {catalogueNode && (
+              <button
+                onClick={reset}
+                className="mb-6 flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors font-medium"
+              >
+                <ArrowLeft size={14} /> {t("catalog.allProducts", "Tous les produits")}
+              </button>
+            )}
+            {catalogueNode ? (
+              /* Sous-catégories / marques de la catégorie sélectionnée */
+              <JardinageCategoryGrid
+                nodes={catalogueNode.children ?? []}
+                onSelect={(id) => handleCategorySelect(id)}
+                marqueLogoById={marqueLogoById}
+                marqueLogoByKey={marqueLogoByKey}
+                wide
+              />
+            ) : showJardinageRootGrid ? (
+              /* Racine : les marques ont déjà leur bloc centré au-dessus —
+               * ici on affiche directement tous les produits, juste après. */
+              productGridContent
+            ) : (
+              /* Catégorie feuille sans marque : grille produits pleine largeur */
+              productGridContent
+            )}
+          </div>
+        ) : (
         <div
           className={cn(
             "flex flex-col gap-6 lg:gap-8",
@@ -473,15 +654,24 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
           )}
         >
 
-          {/* FilterPanel */}
-          <FilterPanel
-            tree={tree}
-            produits={scopedProduits}
-            filters={filters}
-            onChange={handleFiltersChange}
-            totalAll={scopedProduits.length}
-            onCategoryClick={handleCategorySelect}
-          />
+          {/* Sidebar catégories */}
+          {isMachinisme ? (
+            <JardinageSidebar
+              tree={sidebarTree}
+              activeId={filters.categoryId}
+              onSelect={(id) => handleCategorySelect(id)}
+              onReset={reset}
+            />
+          ) : (
+            <FilterPanel
+              tree={tree}
+              produits={scopedProduits}
+              filters={filters}
+              onChange={handleFiltersChange}
+              totalAll={scopedProduits.length}
+              onCategoryClick={handleCategorySelect}
+            />
+          )}
 
           {/* Zone principale */}
           <div className="flex-1 min-w-0">
@@ -529,12 +719,29 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
 
             {/* Mode catalogue visuel */}
             {catalogueNode && (
-              <CatalogueCoverGrid
-                node={catalogueNode}
-                allProduits={scopedProduits}
-                onSelectChild={(id) => handleCategorySelect(id)}
-                onClose={reset}
-              />
+              isMachinisme ? (
+                <div className="mb-8">
+                  <button
+                    onClick={reset}
+                    className="mb-5 flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors font-medium"
+                  >
+                    <ArrowLeft size={14} /> {t("catalog.allProducts", "Tous les produits")}
+                  </button>
+                  <JardinageCategoryGrid
+                    nodes={catalogueNode.children ?? []}
+                    onSelect={(id) => handleCategorySelect(id)}
+                    marqueLogoById={marqueLogoById}
+              marqueLogoByKey={marqueLogoByKey}
+                  />
+                </div>
+              ) : (
+                <CatalogueCoverGrid
+                  node={catalogueNode}
+                  allProduits={scopedProduits}
+                  onSelectChild={(id) => handleCategorySelect(id)}
+                  onClose={reset}
+                />
+              )
             )}
 
             {showIrrigationBrandLinks && (
@@ -544,7 +751,16 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
               />
             )}
 
-            {showRootCatalogueGrid && (
+            {showJardinageRootGrid && !catalogueNode && (
+              <JardinageCategoryGrid
+                nodes={tree}
+                onSelect={(id) => handleCategorySelect(id)}
+                marqueLogoById={marqueLogoById}
+              marqueLogoByKey={marqueLogoByKey}
+              />
+            )}
+
+            {!isMachinisme && showRootCatalogueGrid && (
               <RootCatalogueGrid
                 nodes={tree}
                 allProduits={scopedProduits}
@@ -553,51 +769,8 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
             )}
 
             {/* Mode grille produits */}
-            {showGrid && !showRootCatalogueGrid && !showIrrigationBrandLinks && (
-              <>
-                {loading ? (
-                  <GridSkeleton count={isSemencesPage ? pageSize : 8} cols={isSemencesPage ? 4 : undefined} />
-                ) : error ? (
-                  <p className="text-center text-red-500 py-10">{error}</p>
-                ) : filtered.length === 0 ? (
-                  <div className="text-center py-24 text-gray-400">
-                    <Package size={40} className="mx-auto mb-3 opacity-25"/>
-                    <p className="text-sm font-medium text-gray-500 mb-1">{t("catalog.noProducts", "Aucun produit trouvé")}</p>
-                    <p className="text-xs text-gray-400 mb-4">{t("catalog.tryFilters", "Essayez de modifier ou d'effacer vos filtres.")}</p>
-                    <button onClick={reset}
-                      className="inline-flex items-center gap-1.5 text-xs text-ev-600 hover:text-ev-800 font-medium transition-colors">
-                      <SlidersHorizontal size={12}/> {t("catalog.resetFilters", "Réinitialiser les filtres")}
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <div
-                      className={cn(
-                        "grid gap-5 sm:gap-6",
-                        isSemencesPage
-                          ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
-                          : "grid-cols-1 md:grid-cols-2"
-                      )}
-                    >
-                      {paginated.map((p) => (
-                        <ProduitCard
-                          key={p.id_produit}
-                          produit={p}
-                          variant={isSemencesPage ? "seed" : "default"}
-                        />
-                      ))}
-                    </div>
-                    <div className="mt-2">
-                      {totalPages > 1 && (
-                        <p className="text-xs text-gray-400 text-center mb-1">
-                          Page {page} sur {totalPages} · {filtered.length} {productWord(filtered.length, t)}
-                        </p>
-                      )}
-                      <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange}/>
-                    </div>
-                  </>
-                )}
-              </>
+            {showGrid && !showRootCatalogueGrid && !showIrrigationBrandLinks && !showJardinageRootGrid && (
+              productGridContent
             )}
           </div>
 
@@ -609,6 +782,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
             </div>
           )}
         </div>
+        )}
       </div>
     </section>
   );
@@ -620,6 +794,7 @@ export function ActiviteProduitsSectionWrapper(props: {
   categories: any[];
   categoryScopeId?: number | null;
   brandCards?: BrandCard[];
+  marques?: { id_marque: number; nom: string; slug: string; logo?: string | null }[];
 }) {
   return (
     <Suspense fallback={null}>

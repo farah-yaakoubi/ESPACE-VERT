@@ -278,8 +278,18 @@ function CatVisualGrid({
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-        {nodes.filter(node => !!node.image).map(node => {
+      {(() => {
+        const visibleNodes = nodes.filter(node => !!node.image);
+        const n = visibleNodes.length;
+        const gridClass =
+          n === 1 ? "flex justify-center" :
+          n === 2 ? "grid grid-cols-2 gap-5" :
+          n === 3 ? "grid grid-cols-3 gap-5" :
+          n === 4 ? "grid grid-cols-2 sm:grid-cols-4 gap-5" :
+          "grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-5";
+        return (
+        <div className={gridClass}>
+        {visibleNodes.map(node => {
           const count  = nodeCount(node);
           const imgSrc = node.image;
 
@@ -287,44 +297,48 @@ function CatVisualGrid({
             <button
               key={node.id_categorie}
               onClick={() => onSelect(node.id_categorie)}
-              className="group overflow-hidden rounded-2xl border border-sand-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-ev-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-ev-400 focus:ring-offset-2"
+              className="group relative flex flex-col overflow-hidden rounded-2xl bg-white border border-stone-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-ev-400 focus:ring-offset-2 text-left"
               aria-label={`${t("catalog.viewProducts", "Voir produits")} ${categoryLabel(node, locale)}`}
             >
-              <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br from-white via-ev-50 to-sand-100">
+              {/* Zone image */}
+              <div className="relative w-full overflow-hidden" style={{ aspectRatio: "4/3", background: "linear-gradient(145deg,#f0faf2,#e6f4ea)" }}>
+                {/* Cercle déco */}
+                <div className="absolute -bottom-8 -right-8 w-40 h-40 rounded-full opacity-30 transition-all duration-500 group-hover:opacity-60 group-hover:scale-110"
+                  style={{ background: "radial-gradient(circle,#7dc040,transparent 70%)" }} />
+
                 {imgSrc ? (
                   <Image
                     src={imgSrc}
                     alt={categoryLabel(node, locale)}
                     fill
-                    className="object-contain p-6 drop-shadow-md transition-transform duration-500 group-hover:scale-105"
-                    sizes="(max-width:640px) 100vw, (max-width:1280px) 50vw, 25vw"
+                    className="object-contain p-4 drop-shadow-lg transition-transform duration-500 group-hover:scale-105 relative z-10"
+                    sizes="(max-width:640px) 50vw, (max-width:1280px) 35vw, 25vw"
                   />
                 ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-3xl text-ev-200 shadow-sm">
-                    🌿
-                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center text-6xl opacity-15 z-10">🌿</div>
                 )}
-                <span className="absolute right-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-ev-800 shadow-sm">
+
+                {/* Badge */}
+                <span className="absolute top-3 left-3 z-20 rounded-full bg-ev-700/90 backdrop-blur-sm px-2.5 py-0.5 text-[11px] font-bold text-white shadow">
                   {count} {productWord(count, t)}
                 </span>
               </div>
 
-              <div className="flex min-h-[116px] flex-col p-4">
-                <div className="mb-3 flex items-start gap-2">
-                  <span className="mt-1 h-8 w-1 rounded-full bg-ev-600 shrink-0" />
-                  <p className="text-[15px] font-bold leading-snug text-gray-900 line-clamp-2 group-hover:text-ev-700 transition-colors">
-                    {categoryLabel(node, locale)}
-                  </p>
+              {/* Bas de carte */}
+              <div className="flex items-center justify-between px-4 py-3 border-t border-stone-50">
+                <p className="text-[15px] font-bold text-gray-900 group-hover:text-ev-700 transition-colors">
+                  {categoryLabel(node, locale)}
+                </p>
+                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-ev-50 group-hover:bg-ev-700 transition-colors shrink-0">
+                  <ChevronRight size={13} className="text-ev-700 group-hover:text-white transition-colors" />
                 </div>
-                <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-xl bg-ev-700 px-3.5 py-2 text-[12px] font-semibold text-white transition-colors group-hover:bg-ev-800">
-                  {t("catalog.viewProducts", "Voir produits")}
-                  <ChevronRight size={13} />
-                </span>
               </div>
             </button>
           );
         })}
       </div>
+        );
+      })()}
     </div>
   );
 }
@@ -347,7 +361,13 @@ function SousCatGrid({
     <div>
       {/* Sous-catégories AVEC image → cartes cliquables */}
       {avecImage.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
+        <div className={[
+          "mb-10",
+          avecImage.length === 1 ? "flex justify-center" :
+          avecImage.length === 2 ? "grid grid-cols-2 max-w-2xl mx-auto gap-6" :
+          avecImage.length === 3 ? "grid grid-cols-3 max-w-3xl mx-auto gap-6" :
+          "grid grid-cols-1 sm:grid-cols-2 gap-6",
+        ].join(" ")}>
           {avecImage.map(sc => (
             <button
               key={sc.id_categorie}
@@ -410,7 +430,7 @@ function SousCatGrid({
                 {produits.length} {productWord(produits.length, t)}
               </span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {produits.map(({ produit }) => (
                 <ProduitCard
                   key={produit.id_produit}
@@ -704,7 +724,7 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {paginated.map(({ produit, catNom }) => (
                 <ProduitCard key={produit.id_produit} produit={toProduitCard(produit, catNom, tree)} />
               ))}

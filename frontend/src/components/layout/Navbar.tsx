@@ -1,14 +1,16 @@
 "use client";
 import { getActivityHrefBySlug } from "@/lib/activity-links";
+import { localeLabels, localeNames, locales } from "@/i18n/config";
 import { useI18n } from "@/i18n/I18nProvider";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ProduitSearch } from "./ProduitSearch";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { Ico } from "@/components/icons/AgriIcons";
 
 const NAV_H = 80;
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
@@ -84,70 +86,6 @@ const TY = {
   } as React.CSSProperties,
 };
 
-const Ico = {
-  Leaf: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-    >
-      <path d="M20 5c0 0-8 0-13 5C4 13 4 19 4 19s6 0 9-3c5-5 5-11 7-11z" />
-      <path d="M4 19l7-7" />
-    </svg>
-  ),
-  Cal: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-    >
-      <rect x="3" y="4" width="18" height="18" rx="2" />
-      <path d="M16 2v4M8 2v4M3 10h18" />
-    </svg>
-  ),
-  Menu: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-    >
-      <path d="M3 12h18M3 6h18M3 18h18" />
-    </svg>
-  ),
-  X: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.5}
-      strokeLinecap="round"
-    >
-      <path d="M18 6L6 18M6 6l12 12" />
-    </svg>
-  ),
-  ChevR: (p: any) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.2}
-    >
-      <path d="M9 18l6-6-6-6" />
-    </svg>
-  ),
-};
-
 interface CatItem {
   id_categorie: number;
   nom: string;
@@ -180,6 +118,38 @@ const SLUGS_GROUPE = new Set([
   "fertivert",
   "pulvert",
 ]);
+
+/* ── Classification des marques par activité ───────────────────────────── */
+const BRAND_GROUPS: { label: string; match: string[] }[] = [
+  { label: "Semences & Plants", match: [
+    "baddarsemences", "caussadesemences", "coraseeds", "elornplants", "griffaton",
+    "lidea", "nexeeds", "sem", "seminart", "serviceplus", "southernseed",
+    "teraseeds", "turflinebydlf", "topgreen",
+  ]},
+  { label: "Jardinage & Machinisme", match: [
+    "weibang", "wiedenmann", "staub", "etesia", "active", "agricut", "outilswolf",
+  ]},
+  { label: "Irrigation", match: ["matar", "rivulis", "idroland", "zeta"] },
+  { label: "Pulvérisation", match: ["pulvert"] },
+  { label: "Fertilisation", match: ["fertivert"] },
+];
+
+function normKey(s: string) {
+  return (s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function getBrandGroupLabel(m: Marque): string {
+  const slugKey = normKey(m.slug);
+  const nameKey = normKey(m.nom);
+  for (const g of BRAND_GROUPS) {
+    if (g.match.some((k) => k === slugKey || k === nameKey)) return g.label;
+  }
+  return "Autres marques";
+}
 
 function TreePines({
   color = "#e2ede7",
@@ -256,7 +226,30 @@ function useHover(delay = 180) {
   return { open, show, hide, keep };
 }
 
-/* ── ActivitesDropdown — style minimaliste vert/blanc/noir ─────────────────── */
+/* ── Palette icônes — charte stricte : blanc + les 2 verts du logo ────────── */
+const BRAND_DARK = "#0f693a";
+const BRAND_LIME = "#8bc541";
+const BRAND_BG = "#eef8e4";
+
+const ACT_PALETTE = [
+  { accent: BRAND_DARK, bg: BRAND_BG, Icon: Ico.SeedBag },
+  { accent: BRAND_DARK, bg: BRAND_BG, Icon: Ico.HoseCoil },
+  { accent: BRAND_DARK, bg: BRAND_BG, Icon: Ico.WateringCan },
+  { accent: BRAND_DARK, bg: BRAND_BG, Icon: Ico.Spray },
+  { accent: BRAND_DARK, bg: BRAND_BG, Icon: Ico.Tractor },
+];
+
+function getActVisual(a: Activite, idx: number) {
+  const s = `${a.slug ?? ""} ${a.nom ?? ""}`.toLowerCase();
+  if (s.includes("semence") || s.includes("plant")) return ACT_PALETTE[0];
+  if (s.includes("irrigation")) return ACT_PALETTE[1];
+  if (s.includes("fertili")) return ACT_PALETTE[2];
+  if (s.includes("pulveris") || s.includes("pulvér") || s.includes("pulver")) return ACT_PALETTE[3];
+  if (s.includes("jardinage") || s.includes("machin")) return ACT_PALETTE[4];
+  return ACT_PALETTE[idx % ACT_PALETTE.length];
+}
+
+/* ── ActivitesDropdown — design pro vert/blanc ─────────────────────────────── */
 function ActivitesDropdown({
   activites,
   onClose,
@@ -267,303 +260,355 @@ function ActivitesDropdown({
   isDark: boolean;
 }) {
   const { t } = useI18n();
-  const [selectedAct, setSelectedAct] = useState<number | null>(null);
+  const [selectedAct, setSelectedAct] = useState<number | null>(() =>
+    activites.length > 0 ? activites[0].id_activite : null
+  );
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
+  const [swipeDir, setSwipeDir] = useState<1 | -1>(1);
+  const [listHovering, setListHovering] = useState(false);
 
   const act = activites.find((a) => a.id_activite === selectedAct);
   const hasCategories = (act?.categories?.length ?? 0) > 0;
 
+  const handleSelectAct = (id: number) => {
+    setListHovering(true);
+    if (selectedAct !== null) {
+      const prevIdx = activites.findIndex(a => a.id_activite === selectedAct);
+      const nextIdx = activites.findIndex(a => a.id_activite === id);
+      setSwipeDir(nextIdx > prevIdx ? 1 : -1);
+    }
+    setSelectedAct(id);
+  };
+
+  useEffect(() => { setSelectedCat(null); }, [selectedAct]);
   useEffect(() => {
-    setSelectedCat(null);
-  }, [selectedAct]);
+    if (activites.length > 0 && selectedAct === null)
+      setSelectedAct(activites[0].id_activite);
+  }, [activites]);
 
-  const cat = act?.categories?.find((c) => c.slug === selectedCat);
-  const hasSousCats = cat?.sous_cats && cat.sous_cats.length > 0;
+  const CAT_ICONS = [Ico.Sprout, Ico.GrassTuft, Ico.Cattail, Ico.Clover, Ico.Sunflower, Ico.Carrot];
 
-  /* shared row styles */
-  const col1W = 172;
-  const col2W = 192;
-  const col3W = 176;
-  const panelBg = isDark ? "#162117" : "#fff";
-  const panelAltBg = isDark ? "#1e2d22" : "#fafafa";
-  const panelBorder = isDark ? "rgba(255,255,255,0.08)" : "#111816";
-  const mutedBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(17,24,22,0.1)";
-  const titleColor = isDark ? C.darkInk3 : C.ink3;
-  const textColor = isDark ? C.darkInk : C.ink;
-  const softTextColor = isDark ? C.darkInk2 : C.ink2;
-  const rowHoverBg = isDark ? "#243520" : "#f5f5f5";
-  const shadow = isDark
-    ? "0 24px 60px rgba(0,0,0,0.38),0 0 0 1px rgba(255,255,255,0.03)"
-    : "4px 4px 0px #111816";
+  const COL1 = 300;
+  const COL2 = 380;
+
+  const actVisual = act ? getActVisual(act, activites.findIndex(x => x.id_activite === act.id_activite)) : ACT_PALETTE[0];
 
   return (
-    <div
-      style={{
-        display: "flex",
-        width: col1W + (hasCategories ? col2W : 0) + (hasSousCats ? col3W : 0),
-        transition: "width 0.18s cubic-bezier(.4,0,.2,1)",
-        background: panelBg,
-        borderRadius: 14,
-        overflow: "hidden",
-        border: `1.5px solid ${panelBorder}`,
-        boxShadow: shadow,
-      }}
-    >
-      {/* ── Col 1 — activités ── */}
+    <div style={{
+      display: "flex",
+      width: COL1 + (hasCategories ? COL2 : 0),
+      transition: "width 0.22s cubic-bezier(.4,0,.2,1)",
+      borderRadius: 20,
+      overflow: "hidden",
+      boxShadow: "0 28px 64px rgba(31,26,14,0.16), 0 0 0 1px rgba(226,214,181,0.6)",
+      background: "#fbf9f4",
+    }}>
+
+      {/* ── COL 1 — liste activités — cartes "sachet de graines" ── */}
       <div
         style={{
-          width: col1W,
-          flexShrink: 0,
-          borderRight: `1.5px solid ${panelBorder}`,
-          display: "flex",
-          flexDirection: "column",
+          width: COL1, flexShrink: 0,
+          background: "#fbf9f4",
+          display: "flex", flexDirection: "column",
+          padding: "8px 8px",
         }}
+        onMouseLeave={() => setListHovering(false)}
       >
-        <div style={{ flex: 1, overflowY: "auto", padding: "4px 0" }}>
-          {activites.length === 0 ? (
-            <p
-              style={{
-                padding: "10px 14px",
-                ...TY.ddItemDesc,
-                color: titleColor,
-              }}
-            >
-              {t("nav.loading")}
-            </p>
-          ) : (
-            activites.map((a, i) => {
-              const on = selectedAct === a.id_activite;
-              const href = getActivityHrefBySlug(a.slug);
-              const canExpand = (a.categories?.length ?? 0) > 0;
-              return (
-                <motion.div
-                  key={a.id_activite}
-                  initial={{ opacity: 0, x: -3 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.035 }}
+        {activites.length === 0 ? (
+          <p style={{ padding: "10px 12px", color: "#9ca3af", fontSize: 13 }}>
+            {t("nav.loading")}
+          </p>
+        ) : (
+          activites.map((a, i) => {
+            const on = selectedAct === a.id_activite;
+            const dim = listHovering && !on;
+            const href = getActivityHrefBySlug(a.slug);
+            const v = getActVisual(a, i);
+            const Icon = v.Icon;
+            const isImgUrl = !!a.image && (a.image.startsWith("/") || a.image.startsWith("http"));
+            const isEmoji = !!a.image && !isImgUrl;
+            return (
+              <motion.div
+                key={a.id_activite}
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.04, duration: 0.2 }}
+              >
+                <button
+                  type="button"
+                  onMouseEnter={() => handleSelectAct(a.id_activite)}
+                  onClick={() => { onClose(); window.location.href = href; }}
+                  style={{
+                    display: "flex", width: "100%", alignItems: "center", gap: 12,
+                    padding: "10px 12px",
+                    margin: "3px 0",
+                    borderRadius: 16,
+                    cursor: "pointer",
+                    border: `1px solid ${on ? `${v.accent}3a` : "#eee7d3"}`,
+                    borderLeft: `4px solid ${on ? v.accent : "#eee7d3"}`,
+                    fontFamily: "inherit", textAlign: "left",
+                    background: on ? "#fff" : "#fffdf9",
+                    boxShadow: on ? `0 10px 22px ${v.accent}26` : "0 1px 2px rgba(31,26,14,0.03)",
+                    opacity: dim ? 0.35 : 1,
+                    filter: dim ? "grayscale(45%)" : "none",
+                    transform: dim ? "scale(0.97)" : on ? "translateX(2px) scale(1)" : "scale(1)",
+                    transition: "opacity 0.22s ease, filter 0.22s ease, transform 0.18s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.18s ease",
+                    position: "relative",
+                  }}
                 >
-                  <button
-                    type="button"
-                    onMouseEnter={() => setSelectedAct(a.id_activite)}
-                    onClick={() => {
-                      onClose();
-                      window.location.href = href;
-                    }}
-                    style={{
-                      display: "flex",
-                      width: "100%",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "8px 10px 8px 14px",
-                      cursor: "pointer",
-                      background: on ? C.sage : "transparent",
-                      border: "none",
-                      transition: "background 0.12s",
-                      textDecoration: "none",
-                      fontFamily: "inherit",
-                      textAlign: "left",
-                    }}
-                  >
-                    <p
-                      style={{
-                        ...TY.ddItemName,
-                        fontSize: 13,
-                        color: on ? "#fff" : textColor,
-                        margin: 0,
-                        transition: "color 0.12s",
-                        flex: 1,
-                        minWidth: 0,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {a.nom}
-                    </p>
-                    {canExpand && (
-                      <Ico.ChevR
-                        style={{
-                          width: 11,
-                          height: 11,
-                          color: on ? "rgba(255,255,255,0.7)" : titleColor,
-                          flexShrink: 0,
-                        }}
-                      />
+                  {/* Icône */}
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 13, flexShrink: 0,
+                    background: on
+                      ? `radial-gradient(circle at 30% 25%, ${v.accent}, ${v.accent}dd)`
+                      : `linear-gradient(155deg, ${v.bg}, #fff)`,
+                    border: on ? "none" : `1px solid ${v.accent}22`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    overflow: "hidden",
+                    transition: "all 0.18s",
+                    transform: on ? "scale(1.05) rotate(-2deg)" : "scale(1)",
+                  }}>
+                    {isImgUrl ? (
+                      <img src={a.image!} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : isEmoji ? (
+                      <span style={{ fontSize: 21, lineHeight: 1 }}>{a.image}</span>
+                    ) : (
+                      <Icon style={{ width: 22, height: 22, color: on ? "#fff" : v.accent }} />
                     )}
-                  </button>
-                </motion.div>
-              );
-            })
-          )}
-        </div>
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{
+                      display: "block", fontSize: 14.5, fontWeight: 800, lineHeight: 1.25,
+                      color: v.accent, whiteSpace: "normal", wordBreak: "break-word",
+                      letterSpacing: "-0.01em",
+                    }}>
+                      {a.nom}
+                    </span>
+                    {a.description ? (
+                      <span style={{
+                        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+                        fontSize: 11.5, fontWeight: 400, lineHeight: 1.35,
+                        color: "#948d78", marginTop: 2, overflow: "hidden",
+                      } as React.CSSProperties}>
+                        {a.description}
+                      </span>
+                    ) : (
+                      <span style={{ display: "block", fontSize: 11, fontWeight: 500,
+                        color: "#b7ae90", marginTop: 2, letterSpacing: "0.02em" }}>
+                        Découvrir la gamme
+                      </span>
+                    )}
+                  </div>
+
+                  {(a.categories?.length ?? 0) > 0 && (
+                    <span style={{
+                      width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      background: on ? v.accent : "transparent",
+                      transition: "all 0.15s",
+                    }}>
+                      <Ico.ChevR style={{
+                        width: 11, height: 11,
+                        color: on ? "#fff" : v.accent,
+                      }} />
+                    </span>
+                  )}
+                </button>
+              </motion.div>
+            );
+          })
+        )}
       </div>
 
-      {/* ── Col 2 — catégories ── */}
+      {/* ── COL 2 — catégories en LISTE, sous-catégories dépliées sous chacune ── */}
       {hasCategories && (
-        <div
-          style={{
-            width: col2W,
-            flexShrink: 0,
-            borderRight: hasSousCats ? `1.5px solid ${panelBorder}` : "none",
-            display: "flex",
-            flexDirection: "column",
-            background: panelBg,
-          }}
-        >
-          <AnimatePresence mode="wait">
-            {act ? (
+        <div style={{
+          width: COL2, flexShrink: 0,
+          display: "flex", flexDirection: "column",
+          background: `linear-gradient(180deg, ${actVisual.bg}55 0%, #fbf9f4 60px)`,
+          borderLeft: "1px solid #efe8d6",
+        }}>
+          <AnimatePresence mode="wait" custom={swipeDir}>
+            {act && (
               <motion.div
                 key={act.id_activite}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.11 }}
-                style={{ display: "flex", flexDirection: "column", flex: 1 }}
+                custom={swipeDir}
+                initial={{ opacity: 0, y: swipeDir * 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: swipeDir * -12 }}
+                transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}
               >
-                <div style={{ flex: 1, overflowY: "auto", padding: "4px 0" }}>
-                  {act.categories && act.categories.length > 0
-                    ? act.categories.map((c) => {
-                        const onC = selectedCat === c.slug;
-                        const canExpandCat = (c.sous_cats?.length ?? 0) > 0;
-                        return (
-                          <button
-                            type="button"
-                            key={c.slug}
-                            onMouseEnter={() => setSelectedCat(c.slug)}
-                            onClick={() => {
-                              onClose();
-                              window.location.href = `/activites/${act.slug}?cat=${c.id_categorie}`;
-                            }}
-                            style={{
-                              display: "flex",
-                              width: "100%",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              padding: "8px 10px 8px 14px",
-                              cursor: "pointer",
-                              background: onC ? rowHoverBg : "transparent",
-                              border: "none",
-                              borderLeft: `2.5px solid ${onC ? C.sage : "transparent"}`,
-                              transition: "all 0.1s",
-                              fontFamily: "inherit",
-                              textAlign: "left",
-                            }}
-                          >
-                            <span
-                              style={{
-                              ...TY.ddItemName,
-                              fontSize: 13,
-                              color: onC ? C.sage : textColor,
-                              transition: "color 0.1s",
-                              flex: 1,
-                              minWidth: 0,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                            }}
-                            >
-                              {c.nom}
-                            </span>
-                            {canExpandCat && (
-                              <Ico.ChevR
+                <div style={{ flex: 1, overflowY: "auto", padding: "8px 8px 8px" }}>
+                  {act.categories?.map((c, ci) => {
+                    const expanded = selectedCat === c.slug;
+                    const hasSub = (c.sous_cats?.length ?? 0) > 0;
+                    const CatIcon = CAT_ICONS[ci % CAT_ICONS.length];
+                    return (
+                      <motion.div
+                        key={c.slug}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: ci * 0.03 }}
+                        style={{ marginBottom: 6 }}
+                      >
+                        <div style={{
+                          borderRadius: 14,
+                          border: `1px solid ${expanded ? BRAND_DARK : "#efe8d6"}`,
+                          background: "#fff",
+                          overflow: "hidden",
+                          boxShadow: expanded ? `0 8px 18px ${BRAND_DARK}1c` : "0 1px 2px rgba(31,26,14,0.03)",
+                          transition: "border-color 0.16s ease, box-shadow 0.16s ease",
+                        }}>
+                          <div style={{ position: "relative", overflow: "hidden" }}>
+                            {expanded && (
+                              <motion.div
+                                layoutId="catHoverSwipe"
+                                transition={{ type: "spring", stiffness: 420, damping: 36 }}
                                 style={{
-                                  width: 10,
-                                  height: 10,
-                                  color: onC ? C.sage : titleColor,
-                                  flexShrink: 0,
+                                  position: "absolute", inset: 0,
+                                  background: `linear-gradient(115deg, ${BRAND_DARK}1a 0%, ${BRAND_LIME}26 100%)`,
                                 }}
                               />
                             )}
-                          </button>
-                        );
-                      })
-                    : null}
+                            <button
+                              type="button"
+                              onMouseEnter={() => { if (hasSub) setSelectedCat(c.slug); }}
+                              onClick={() => { onClose(); window.location.href = `/activites/${act.slug}?cat=${c.id_categorie}`; }}
+                              style={{
+                                position: "relative", zIndex: 1,
+                                display: "flex", width: "100%", alignItems: "center", gap: 10,
+                                padding: "10px 12px",
+                                cursor: "pointer", border: "none", fontFamily: "inherit",
+                                textAlign: "left", background: "transparent",
+                              }}
+                            >
+                              <div style={{
+                                width: 30, height: 30, borderRadius: 9, flexShrink: 0,
+                                background: expanded ? "#fff" : BRAND_BG,
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                transition: "background 0.15s ease",
+                              }}>
+                                <CatIcon style={{ width: 15, height: 15, color: BRAND_DARK }} />
+                              </div>
+                              <span style={{
+                                fontSize: 13.5, fontWeight: 700, lineHeight: 1.3,
+                                color: "#20291f", flex: 1,
+                                whiteSpace: "normal", wordBreak: "break-word",
+                              }}>
+                                {c.nom}
+                              </span>
+                              {hasSub && (
+                                <span style={{
+                                  width: 20, height: 20, borderRadius: "50%", flexShrink: 0,
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  background: expanded ? BRAND_DARK : `${BRAND_DARK}14`,
+                                  transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
+                                  transition: "all 0.18s ease",
+                                }}>
+                                  <Ico.ChevR style={{
+                                    width: 10, height: 10,
+                                    color: expanded ? "#fff" : BRAND_DARK,
+                                  }} />
+                                </span>
+                              )}
+                            </button>
+                          </div>
+
+                          {/* Sous-catégories dépliées sous la catégorie */}
+                          <AnimatePresence initial={false}>
+                            {hasSub && expanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+                                style={{ overflow: "hidden" }}
+                              >
+                                <div style={{
+                                  padding: "2px 10px 8px 46px",
+                                  display: "flex", flexDirection: "column", gap: 2,
+                                }}>
+                                  {c.sous_cats!.map((sc, si) => (
+                                    <Link
+                                      key={sc.slug}
+                                      href={`/activites/${act.slug}?cat=${sc.id_categorie}`}
+                                      onClick={onClose}
+                                      style={{
+                                        display: "flex", alignItems: "center", gap: 7,
+                                        padding: "6px 8px", borderRadius: 8,
+                                        textDecoration: "none",
+                                        color: "#5a6357", transition: "all 0.12s",
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        (e.currentTarget as HTMLElement).style.background = actVisual.bg;
+                                        (e.currentTarget as HTMLElement).style.color = actVisual.accent;
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        (e.currentTarget as HTMLElement).style.background = "transparent";
+                                        (e.currentTarget as HTMLElement).style.color = "#5a6357";
+                                      }}
+                                    >
+                                      <span style={{
+                                        width: 5, height: 5, borderRadius: "50%", flexShrink: 0,
+                                        background: actVisual.accent, display: "inline-block",
+                                      }} />
+                                      <span style={{ fontSize: 12.5, fontWeight: 500, lineHeight: 1.4,
+                                        whiteSpace: "normal", wordBreak: "break-word" }}>
+                                        {sc.nom}
+                                      </span>
+                                    </Link>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+
+                {/* Bandeau CTA */}
+                <div style={{ margin: "12px 14px 16px" }}>
+                  <button
+                    type="button"
+                    onClick={() => { onClose(); window.location.href = getActivityHrefBySlug(act.slug); }}
+                    style={{
+                      position: "relative", overflow: "hidden",
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      width: "100%", gap: 10,
+                      background: `linear-gradient(115deg, ${actVisual.accent} 0%, #16321f 130%)`,
+                      border: "none", borderRadius: 16,
+                      padding: "15px 18px",
+                      cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+                    }}
+                  >
+                    <Ico.Leaf style={{
+                      position: "absolute", right: -16, top: -14,
+                      width: 88, height: 88, color: "#fff", opacity: 0.14,
+                      transform: "rotate(-14deg)",
+                    }} />
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: "#fff",
+                      position: "relative", zIndex: 1 }}>
+                      Voir toute la gamme — {act.nom}
+                    </span>
+                    <span style={{
+                      position: "relative", zIndex: 1,
+                      width: 27, height: 27, borderRadius: "50%", flexShrink: 0,
+                      background: "rgba(255,255,255,0.2)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                      <Ico.ChevR style={{ width: 12, height: 12, color: "#fff" }} />
+                    </span>
+                  </button>
                 </div>
               </motion.div>
-            ) : null}
+            )}
           </AnimatePresence>
         </div>
       )}
-
-      {/* ── Col 3 — sous-catégories ── */}
-      <AnimatePresence>
-        {hasSousCats && cat && act && (
-          <motion.div
-            key={cat.slug}
-            initial={{ opacity: 0, width: 0 }}
-            animate={{ opacity: 1, width: col3W }}
-            exit={{ opacity: 0, width: 0 }}
-            transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
-            style={{
-              flexShrink: 0,
-              display: "flex",
-              flexDirection: "column",
-              background: panelAltBg,
-              overflow: "hidden",
-              marginTop: 14,
-              marginBottom: 10,
-              borderTop: `1px solid ${mutedBorder}`,
-            }}
-          >
-            <div style={{ flex: 1, overflowY: "auto", padding: "4px 0" }}>
-              {cat.sous_cats!.map((sc, i) => (
-                <motion.div
-                  key={sc.slug}
-                  initial={{ opacity: 0, x: 4 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.03 }}
-                >
-                  <Link
-                    href={`/activites/${act.slug}?cat=${sc.id_categorie}`}
-                    onClick={onClose}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      padding: "7px 12px 7px 14px",
-                      textDecoration: "none",
-                      color: softTextColor,
-                      transition: "all 0.1s",
-                    }}
-                    onMouseEnter={(e) => {
-                      const el = e.currentTarget as HTMLElement;
-                      el.style.background = isDark ? "#243520" : C.sageLt;
-                      el.style.color = C.sage;
-                    }}
-                    onMouseLeave={(e) => {
-                      const el = e.currentTarget as HTMLElement;
-                      el.style.background = "transparent";
-                      el.style.color = softTextColor;
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: 4,
-                        height: 4,
-                        borderRadius: "50%",
-                        background: C.sageMd,
-                        flexShrink: 0,
-                        display: "inline-block",
-                      }}
-                    />
-                    <span
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 500,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {sc.nom}
-                    </span>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
@@ -578,29 +623,25 @@ function MarquesDropdown({
   onClose: () => void;
   isDark: boolean;
 }) {
-  const marquesGroupe = marques.filter((m) => SLUGS_GROUPE.has(m.slug));
-  const marquesPartenaire = marques.filter((m) => !SLUGS_GROUPE.has(m.slug));
-  const orderedMarques = [...marquesGroupe, ...marquesPartenaire];
+  const isGroup = (m: Marque) => SLUGS_GROUPE.has(m.slug);
+  const groupedEntries = BRAND_GROUPS
+    .map((g) => ({ label: g.label, items: marques.filter((m) => getBrandGroupLabel(m) === g.label) }))
+    .filter((g) => g.items.length > 0);
+  const others = marques.filter((m) => getBrandGroupLabel(m) === "Autres marques");
+  if (others.length > 0) groupedEntries.push({ label: "Autres marques", items: others });
 
-  const panelBg = isDark ? "#162117" : "#fff";
-  const panelBorder = isDark ? "rgba(255,255,255,0.08)" : "#111816";
-  const mutedBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(17,24,22,0.1)";
-  const titleColor = isDark ? C.darkInk3 : C.ink3;
-  const textColor = isDark ? C.darkInk : C.ink;
-  const shadow = isDark
-    ? "0 24px 60px rgba(0,0,0,0.38),0 0 0 1px rgba(255,255,255,0.03)"
-    : "4px 4px 0px #111816";
-  const col1W = 640;
+  const titleColor = "#948d78";
+  const textColor = "#20291f";
+  const col1W = 660;
 
   return (
     <div
       style={{
         display: "flex",
-        background: panelBg,
-        borderRadius: 14,
+        background: "#fbf9f4",
+        borderRadius: 20,
         overflow: "hidden",
-        border: `1.5px solid ${panelBorder}`,
-        boxShadow: shadow,
+        boxShadow: "0 28px 64px rgba(31,26,14,0.16), 0 0 0 1px rgba(226,214,181,0.6)",
         width: col1W,
       }}
     >
@@ -608,125 +649,135 @@ function MarquesDropdown({
         style={{
           width: col1W,
           flexShrink: 0,
-          padding: "14px",
+          padding: "16px",
           maxHeight: "calc(100vh - 150px)",
           overflowY: "auto",
         }}
       >
-        {orderedMarques.length === 0 ? (
+        {marques.length === 0 ? (
           <p style={{ padding: "10px 14px", ...TY.ddItemDesc, color: titleColor }}>
             Chargement...
           </p>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-              gap: 10,
-            }}
-          >
-            {orderedMarques.map((m, i) => {
-          const isGroup = SLUGS_GROUPE.has(m.slug);
-          return (
-          <motion.div
-            key={m.id_marque}
-            initial={{ opacity: 0, x: -3 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.025 }}
-            whileHover={{ y: -2 }}
-          >
-            <Link
-              href={`/marques/${m.slug}`}
-              onClick={onClose}
-              style={{
-                display: "flex",
-                position: "relative",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "flex-start",
-                gap: 7,
-                width: "100%",
-                minHeight: 122,
-                padding: "10px 8px",
-                cursor: "pointer",
-                background: isDark ? "#1e2d22" : "#fff",
-                border: `1.5px solid ${isDark ? "rgba(255,255,255,0.1)" : C.border}`,
-                borderRadius: 12,
-                textAlign: "center",
-                boxShadow: "0 2px 8px rgba(17,24,22,0.06)",
-                textDecoration: "none",
-                transition: "background 0.14s, border-color 0.14s, box-shadow 0.14s",
-              }}
-            >
-              <div
-                style={{
-                  width: "100%",
-                  height: 64,
-                  borderRadius: 10,
-                  background: isDark ? "#1e2d22" : "#fff",
-                  border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(17,24,22,0.08)"}`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                  flexShrink: 0,
-                }}
-              >
-                {m.logo ? (
-                  <Image
-                    src={m.logo}
-                    alt={m.nom}
-                    width={112}
-                    height={64}
-                    style={{
-                      objectFit: "contain",
-                      width: "100%",
-                      height: "100%",
-                      padding: 6,
-                    }}
-                  />
-                ) : (
-                  <span
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: C.sage,
-                      textAlign: "center",
-                    }}
+          groupedEntries.map((group, gi) => (
+            <div key={group.label} style={{ marginBottom: gi < groupedEntries.length - 1 ? 16 : 4 }}>
+              {/* Étiquette de classification — pas d'entête, juste un repère discret */}
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 4px 8px" }}>
+                <span style={{
+                  width: 5, height: 5, borderRadius: "50%", flexShrink: 0,
+                  background: BRAND_LIME, display: "inline-block",
+                }} />
+                <span style={{
+                  fontSize: 10.5, fontWeight: 800, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: BRAND_DARK,
+                }}>
+                  {group.label}
+                </span>
+              </div>
+
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {group.items.map((m, i) => (
+                  <motion.div
+                    key={m.id_marque}
+                    initial={{ opacity: 0, x: -3 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.02 }}
+                    whileHover={{ y: -2 }}
+                    style={{ width: 138 }}
                   >
-                    {m.nom.slice(0, 2)}
-                  </span>
-                )}
+                    <Link
+                      href={`/marques/${m.slug}`}
+                      onClick={onClose}
+                      style={{
+                        display: "flex",
+                        position: "relative",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "flex-start",
+                        gap: 6,
+                        width: "100%",
+                        padding: "8px 6px",
+                        borderRadius: 12,
+                        cursor: "pointer",
+                        textAlign: "center",
+                        textDecoration: "none",
+                        transition: "background 0.14s",
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.background = "#ffffffb0";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.background = "transparent";
+                      }}
+                    >
+                      {isGroup(m) && (
+                        <span style={{
+                          position: "absolute", top: 4, right: 4,
+                          fontSize: 8.5, fontWeight: 800, letterSpacing: "0.04em",
+                          textTransform: "uppercase", color: "#fff",
+                          background: BRAND_DARK, borderRadius: 99,
+                          padding: "2px 6px", lineHeight: 1.4,
+                        }}>
+                          Groupe
+                        </span>
+                      )}
+
+                      {/* Logo affiché tel quel : sans cadre, sans fond coloré */}
+                      <div
+                        style={{
+                          width: "100%",
+                          height: 56,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {m.logo ? (
+                          <Image
+                            src={m.logo}
+                            alt={m.nom}
+                            width={112}
+                            height={56}
+                            style={{
+                              objectFit: "contain",
+                              width: "100%",
+                              height: "100%",
+                            }}
+                          />
+                        ) : (
+                          <span
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 700,
+                              color: BRAND_DARK,
+                              textAlign: "center",
+                            }}
+                          >
+                            {m.nom.slice(0, 2)}
+                          </span>
+                        )}
+                      </div>
+                      <p
+                        style={{
+                          ...TY.ddItemName,
+                          fontSize: 12,
+                          color: textColor,
+                          margin: 0,
+                          width: "100%",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {m.nom}
+                      </p>
+                    </Link>
+                  </motion.div>
+                ))}
               </div>
-              <div style={{ width: "100%", minWidth: 0 }}>
-                <p
-                  style={{
-                    ...TY.ddItemName,
-                    fontSize: 12.5,
-                    color: textColor,
-                    margin: 0,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {m.nom}
-                </p>
-                <p
-                  style={{
-                    ...TY.ddItemDesc,
-                    fontSize: 10.5,
-                    color: titleColor,
-                    margin: "2px 0 0",
-                  }}
-                >
-                  {isGroup ? "Groupe" : "Partenaire"}
-                </p>
-              </div>
-            </Link>
-          </motion.div>
-        )})}
-          </div>
+            </div>
+          ))
         )}
         <Link
           href="/marques"
@@ -736,21 +787,99 @@ function MarquesDropdown({
             alignItems: "center",
             justifyContent: "center",
             gap: 4,
-            marginTop: 12,
+            marginTop: 8,
             padding: "10px 14px",
-            borderRadius: 10,
-            background: isDark ? "#1e2d22" : C.sageLt,
-            color: C.sage,
+            borderRadius: 12,
+            background: BRAND_BG,
+            color: BRAND_DARK,
             fontSize: 12,
             fontWeight: 700,
             textDecoration: "none",
-            border: `1px solid ${mutedBorder}`,
+            border: `1px solid ${BRAND_DARK}22`,
           }}
         >
           Voir toutes les marques
           <Ico.ChevR style={{ width: 9, height: 9 }} />
         </Link>
       </div>
+    </div>
+  );
+}
+
+/* ── LangDropdown — sélecteur de langue avec icône globe ─────────────────── */
+function LangDropdown({ onHero }: { onHero: boolean }) {
+  const { locale, setLocale, t } = useI18n();
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+  const btnColor = onHero ? "rgba(255,255,255,0.9)" : C.ink;
+  const borderColor = onHero ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.1)";
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        type="button"
+        aria-label={t("lang.label")}
+        onClick={() => setOpen(v => !v)}
+        style={{
+          display: "flex", alignItems: "center", gap: 5,
+          padding: "7px 10px", borderRadius: 10, cursor: "pointer",
+          background: onHero ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.85)",
+          border: `1.5px solid ${borderColor}`,
+          color: btnColor, fontWeight: 700, fontSize: 12,
+          backdropFilter: "blur(8px)",
+          transition: "all 0.15s",
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+        <span style={{ letterSpacing: "0.04em" }}>{locale.toUpperCase()}</span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s", opacity: 0.6 }}>
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 8px)", right: 0,
+          background: "#fff", borderRadius: 12, overflow: "hidden",
+          border: "1.5px solid rgba(0,0,0,0.08)",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+          minWidth: 110, zIndex: 100,
+        }}>
+          {locales.map(item => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => { setLocale(item); setOpen(false); }}
+              style={{
+                display: "flex", alignItems: "center", gap: 8,
+                width: "100%", padding: "9px 14px",
+                background: locale === item ? "#edf8f2" : "transparent",
+                border: "none", cursor: "pointer",
+                fontSize: 13, fontWeight: locale === item ? 700 : 500,
+                color: locale === item ? C.sageDk : C.ink,
+                transition: "background 0.1s",
+              }}
+            >
+              <span style={{
+                width: 22, height: 22, borderRadius: 6, background: locale === item ? C.sage : "#f0f0f0",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 10, fontWeight: 900, color: locale === item ? "#fff" : C.ink2,
+                flexShrink: 0,
+              }}>{localeLabels[item]}</span>
+              {localeNames[item]}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -931,25 +1060,72 @@ export function Navbar() {
   const nlBase: React.CSSProperties = {
     ...TY.navLink,
     color: navTextColor,
-    padding: "8px 14px",
+    padding: "8px 4px",
     borderRadius: 0,
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
     gap: 5,
     textDecoration: "none",
-    transition: "color 0.15s",
     border: "none",
     background: "transparent",
-    borderBottom: "2.5px solid transparent",
+    position: "relative",
   };
   const nlOn: React.CSSProperties = {
     ...nlBase,
     ...TY.navLinkOn,
     color: navActiveColor,
-    borderBottom: `2.5px solid ${navBorderActive}`,
   };
   const nlBtn: React.CSSProperties = { ...nlBase, fontFamily: "inherit" };
+
+  /* Wrapper avec effet hover soulignement glissant */
+  const NavItem = ({
+    href, active, onClick, children,
+  }: { href?: string; active: boolean; onClick?: () => void; children: React.ReactNode }) => {
+    const [hovered, setHovState] = React.useState(false);
+    const showLine = active || hovered;
+    const lineColor = onHero ? "#7dc040" : C.sage;
+    const wrapStyle: React.CSSProperties = {
+      ...(active ? nlOn : nlBase),
+      transform: hovered ? "scale(1.07)" : "scale(1)",
+      transition: "color 0.15s, transform 0.2s cubic-bezier(.34,1.56,.64,1)",
+    };
+    const inner = (
+      <>
+        {children}
+        {/* Trait vert animé */}
+        <span style={{
+          position: "absolute",
+          bottom: -1,
+          left: "50%",
+          transform: showLine ? "translateX(-50%) scaleX(1)" : "translateX(-50%) scaleX(0)",
+          transformOrigin: "center",
+          width: "80%",
+          height: 2.5,
+          borderRadius: 99,
+          background: lineColor,
+          transition: "transform 0.22s cubic-bezier(.4,0,.2,1), opacity 0.15s",
+          opacity: showLine ? 1 : 0,
+          pointerEvents: "none",
+        }} />
+      </>
+    );
+    if (href) return (
+      <Link href={href} style={wrapStyle}
+        onMouseEnter={() => setHovState(true)}
+        onMouseLeave={() => setHovState(false)}>
+        {inner}
+      </Link>
+    );
+    return (
+      <button style={{ ...wrapStyle, fontFamily: "inherit" }}
+        onMouseEnter={() => setHovState(true)}
+        onMouseLeave={() => setHovState(false)}
+        onClick={onClick}>
+        {inner}
+      </button>
+    );
+  };
 
   const navBg = onHero
     ? "transparent"
@@ -994,7 +1170,7 @@ export function Navbar() {
             >
               {!logoErr ? (
                 <Image
-                  src="/logos/logo-espace-vert.png"
+                  src="/logos/logo espace vert.png"
                   alt="Espace Vert"
                   width={300}
                   height={150}
@@ -1033,16 +1209,13 @@ export function Navbar() {
                 flex: 1,
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 0,
+                gap: "clamp(2px, 1.2vw, 18px)",
                 height: "100%",
               }}
             >
-              <Link
-                href="/qui-sommes-nous"
-                style={isActive("/qui-sommes-nous") ? nlOn : nlBase}
-              >
+              <NavItem href="/qui-sommes-nous" active={isActive("/qui-sommes-nous")}>
                 {t("nav.about")}
-              </Link>
+              </NavItem>
 
               {/* Activités */}
               <div
@@ -1050,10 +1223,7 @@ export function Navbar() {
                 onMouseEnter={acts.show}
                 onMouseLeave={acts.hide}
               >
-                <button
-                  onClick={() => scrollToSection("nos-activites")}
-                  style={acts.open || isActive("/activites") ? nlOn : nlBtn}
-                >
+                <NavItem active={acts.open || isActive("/activites")} onClick={() => scrollToSection("nos-activites")}>
                   {t("nav.activities")}
                   <motion.span
                     animate={{ rotate: acts.open ? 180 : 0 }}
@@ -1064,7 +1234,7 @@ export function Navbar() {
                       style={{ width: 12, height: 12, opacity: 0.5 }}
                     />
                   </motion.span>
-                </button>
+                </NavItem>
                 <AnimatePresence>
                   {acts.open && (
                     <motion.div
@@ -1100,10 +1270,7 @@ export function Navbar() {
                 onMouseEnter={marquesH.show}
                 onMouseLeave={marquesH.hide}
               >
-                <button
-                  onClick={() => scrollToSection("nos-marques")}
-                  style={marquesH.open || isActive("/marques") ? nlOn : nlBtn}
-                >
+                <NavItem active={marquesH.open || isActive("/marques")} onClick={() => scrollToSection("nos-marques")}>
                   {t("nav.brands")}
                   <motion.span
                     animate={{ rotate: marquesH.open ? 180 : 0 }}
@@ -1114,7 +1281,7 @@ export function Navbar() {
                       style={{ width: 12, height: 12, opacity: 0.5 }}
                     />
                   </motion.span>
-                </button>
+                </NavItem>
                 <AnimatePresence>
                   {marquesH.open && (
                     <motion.div
@@ -1144,12 +1311,9 @@ export function Navbar() {
                 </AnimatePresence>
               </div>
 
-              <Link
-                href="/contact"
-                style={isActive("/contact") ? nlOn : nlBase}
-              >
+              <NavItem href="/contact" active={isActive("/contact")}>
                 {t("nav.contact")}
-              </Link>
+              </NavItem>
             </div>
 
             {/* Right CTAs */}
@@ -1158,7 +1322,7 @@ export function Navbar() {
               style={{ alignItems: "center", gap: 8, marginLeft: "auto" }}
             >
               <ProduitSearch onHero={onHero} navTextColor={navTextColor} />
-              <LanguageSwitcher compact />
+              <LangDropdown onHero={onHero} />
 
               <Link
                 href="/rendez-vous"

@@ -13,6 +13,7 @@ import { ProduitGallery } from "./ProduitGallery";
 import { ProduitFicheSection } from "./ProduitFicheSection";
 import { ProduitTechTable } from "./ProduitTechTable";
 import { ProduitsSimilaires } from "@/components/ProduitsSimilaires";
+import { ProduitTabs, PrintFicheTechniqueButton } from "./ProduitTabs";
 import { SeedCalculatorWidget } from "@/components/widgets";
 import { detectPlant } from "@/lib/plant-detection";
 import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
@@ -300,6 +301,9 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
     produit.categorie?.slug?.includes("semence") ||
     produit.categorie?.nom?.toLowerCase().includes("semence");
 
+  const isMachinismeProduct = produit.categorie?.activite?.slug === "jardinage-et-machinisme";
+  const sku = (produit as any).sku as string | null | undefined;
+
   // Liens de retour : activité > marque > catégorie parent (en fonction de ce qui est disponible)
   const backHref = produit.categorie?.activite
     ? `/activites/${produit.categorie.activite!.slug}`
@@ -369,6 +373,138 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
       </div>
 
       <div className="container-ev py-5 sm:py-7">
+        {isMachinismeProduct ? (
+          <>
+            {/* ── Ligne du haut : galerie + colonne infos essentielles ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 xl:gap-12">
+              <div className="max-w-[460px]">
+                <ProduitGallery images={produit.images} nomProduit={produitNom} />
+              </div>
+
+              <div className="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start">
+                <div>
+                  <h1
+                    className="text-2xl md:text-[1.75rem] font-black text-[#0c0c0e] leading-tight"
+                    style={{ fontFamily: "var(--font-display)" }}
+                  >
+                    {produitNom || produit.slug}
+                  </h1>
+                  {sku && (
+                    <p className="mt-1.5 text-xs text-gray-400">
+                      Réf. <span className="font-semibold text-gray-500">{sku}</span>
+                    </p>
+                  )}
+                </div>
+
+                {/* Infos essentielles — réf. / catégorie / marque */}
+                <div
+                  className="rounded-2xl border border-sand-200 bg-white p-5 space-y-3.5"
+                  style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}
+                >
+                  {produit.marque && (
+                    <Link
+                      href={`/marques/${produit.marque.slug}`}
+                      className="flex items-center gap-3 pb-3.5 border-b border-sand-100 hover:opacity-80 transition-opacity"
+                    >
+                      {produit.marque.logo ? (
+                        <span className="relative h-8 w-24 shrink-0">
+                          <Image src={produit.marque.logo} alt={marqueNom ?? ""} fill className="object-contain object-left" />
+                        </span>
+                      ) : (
+                        <span className="text-sm font-black uppercase" style={{ color: "#e30613" }}>{marqueNom}</span>
+                      )}
+                    </Link>
+                  )}
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-400">Catégorie</span>
+                    <span className="font-semibold text-gray-800 text-right">{categorieNom ?? "—"}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-400">Référence</span>
+                    <span className="font-semibold text-gray-800 text-right">{sku ?? "—"}</span>
+                  </div>
+                </div>
+
+                <Link
+                  href={backHref}
+                  className="inline-flex items-center gap-2 text-sm text-ev-700 hover:text-ev-900 font-medium transition-colors mt-1"
+                >
+                  <ChevronRight size={14} className="rotate-180" />
+                  Retour vers {backLabel}
+                </Link>
+              </div>
+            </div>
+
+            {/* ── Onglets : Description / Caractéristiques ── */}
+            <div className="mt-8">
+              <ProduitTabs
+                tabs={[
+                  {
+                    id: "description",
+                    label: "Description",
+                    content: (
+                      <div className="grid grid-cols-1 sm:grid-cols-[1fr_240px] gap-6">
+                        <div>
+                          {produitDescription ? (
+                            <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                              {produitDescription}
+                            </p>
+                          ) : (
+                            <p className="text-sm text-gray-400 italic">
+                              Aucune description disponible pour ce produit.
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Documents — fiche technique imprimable / téléchargeable */}
+                        {(fichePdf || produit.fiche_technique) && (
+                          <div className="flex flex-col gap-2">
+                            {fichePdf ? (
+                              <a
+                                href={fichePdf}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                download
+                                className="flex items-center gap-3 rounded-xl border border-sand-200 bg-white px-4 py-3 transition hover:border-ev-300 hover:bg-ev-50 group"
+                              >
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sand-100 text-gray-500 group-hover:bg-ev-100 group-hover:text-ev-700 transition-colors">
+                                  <FileText size={16} />
+                                </span>
+                                <span className="text-sm font-semibold text-gray-700 group-hover:text-ev-800">
+                                  Fiche technique (PDF)
+                                </span>
+                              </a>
+                            ) : (
+                              produit.fiche_technique && (
+                                <PrintFicheTechniqueButton
+                                  html={produit.fiche_technique}
+                                  title={produitNom}
+                                />
+                              )
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ),
+                  },
+                  ...(produit.fiche_technique && !fichePdf
+                    ? [{
+                        id: "caracteristiques",
+                        label: "Caractéristiques",
+                        content: (
+                          <div
+                            className="text-sm text-gray-600 leading-relaxed prose prose-sm max-w-none prose-green"
+                            dangerouslySetInnerHTML={{ __html: produit.fiche_technique }}
+                          />
+                        ),
+                      }]
+                    : []),
+                ]}
+              />
+            </div>
+
+          </>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 xl:gap-10">
 
           {/* ── Galerie ─────────────────────────────────────────── */}
@@ -550,6 +686,7 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
 
           </div>
         </div>
+        )}
       </div>
 
    {isSemenceProduct && (

@@ -49,7 +49,7 @@ const SOCIETES = [
   { name: "",           image: "/logos/FERTIVERT LOGO.png" },
   { name: "",              image: "/logosPartenaires/logo stajap.png" },
   { name: "", image: "/logosPartenaires/logo mendial irrigation.png" },
-  { name: "",     image: "/logosPartenaires/logo baddar agricole.png" },
+  { name: "",     image: "/logosPartenaires/agricole baddar.png" },
 ];
 
 function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
@@ -68,10 +68,7 @@ function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 function SectionTitle({ label, light = false }: { label: string; light?: boolean }) {
   return (
     <div className="mb-6">
-      <h2
-        className={`text-[1.7rem] font-black tracking-[-0.04em] sm:text-[2rem] ${light ? "text-white" : "text-[#161616]"}`}
-        style={{ fontFamily: "var(--font-display)" }}
-      >
+      <h2 className={`section-title text-[2rem] sm:text-[2.4rem] ${light ? "section-title--light" : ""}`}>
         {label}
       </h2>
       <div className={`mt-2.5 h-[3px] w-10 rounded-full ${light ? "bg-[#9dce78]" : "bg-[#5d8a45]"}`} />

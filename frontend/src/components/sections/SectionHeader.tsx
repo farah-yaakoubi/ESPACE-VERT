@@ -12,10 +12,7 @@ export function SectionHeader({ eyebrow, title, subtitle, align = "center", clas
   return (
     <div className={cn("mb-6", align === "center" ? "text-center" : "text-left", className)}>
       {eyebrow && <p className="eyebrow mb-3">{eyebrow}</p>}
-      <h2
-        className="h-section"
-        style={{ color: "#111810" }}
-      >
+      <h2 className="section-title">
         {title}
       </h2>
       {/* Accent line */}

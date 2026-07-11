@@ -204,16 +204,17 @@ function ProduitsGrid({ sousCat, onBack, parentNom }: {
 }
 
 /* ── Carte sous-catégorie (inchangée) ─────────────────────────────────────── */
-function SousCatCoverCard({ souscat, onClick }: { souscat: CategorieDetailSousCat; onClick: () => void }) {
+function SousCatCoverCard({ souscat, onClick, large = false }: { souscat: CategorieDetailSousCat; onClick: () => void; large?: boolean }) {
   const count    = souscat.produits?.length ?? 0;
   const previews = !souscat.image
     ? (souscat.produits ?? []).slice(0, 4).flatMap(p => p.images.slice(0, 1))
     : [];
+  const imgH = large ? "h-64" : "h-48";
 
   return (
     <button onClick={onClick}
       className="group flex flex-col overflow-hidden rounded-2xl border border-sand-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-ev-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-ev-400 focus:ring-offset-2">
-      <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br from-white via-ev-50 to-sand-100">
+      <div className={`relative flex ${imgH} items-center justify-center overflow-hidden bg-gradient-to-br from-white via-ev-50 to-sand-100`}>
         {souscat.image ? (
           <Image src={souscat.image} alt={souscat.nom} fill
             className="object-contain p-6 drop-shadow-md transition-transform duration-500 group-hover:scale-105"
@@ -290,9 +291,25 @@ export function CategorieCatalogSection({ cat }: { cat: CategorieDetail }) {
   return (
     <section className="container-ev pb-16">
       {sousCatsAvecImage.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 mb-12">
+        <div className={[
+          "mb-12",
+          sousCatsAvecImage.length === 1
+            ? "flex justify-center"
+            : sousCatsAvecImage.length === 2
+            ? "grid grid-cols-2 max-w-2xl mx-auto gap-5"
+            : sousCatsAvecImage.length === 3
+            ? "grid grid-cols-3 max-w-3xl mx-auto gap-5"
+            : sousCatsAvecImage.length === 4
+            ? "grid grid-cols-2 sm:grid-cols-4 gap-5"
+            : "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5",
+        ].join(" ")}>
           {sousCatsAvecImage.map(sc => (
-            <SousCatCoverCard key={sc.id_categorie} souscat={sc} onClick={() => setSelectedSousCat(sc)} />
+            <SousCatCoverCard
+              key={sc.id_categorie}
+              souscat={sc}
+              onClick={() => setSelectedSousCat(sc)}
+              large={sousCatsAvecImage.length <= 2}
+            />
           ))}
         </div>
       )}
