@@ -95,7 +95,7 @@ const MARQUES = [
   {
     href: "/marques/baddar-semences",
     label: "Baddar Semences",
-    image: "/logosPartenaires/logo baddar agricole.png",
+    image: "/logosPartenaires/baddar semences.png",
     themeLabel: "Semences",
     tagline: "La première graine d'une bonne récolte.",
     accent: WHEAT,

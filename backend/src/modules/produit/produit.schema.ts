@@ -8,6 +8,7 @@ export const CreateProduitSchema = z.object({
   description:          z.string().optional().nullable(),
   translations:         TranslationsSchema,
   fiche_technique:      z.string().optional().nullable(),
+  image_description:    z.string().max(500).optional().nullable(),
   id_categorie:         z.number().int().positive(),
   division:             z.enum(["standard", "pro", "garden"]).default("standard"),
   tags:                 z.array(z.string()).optional().default([]),

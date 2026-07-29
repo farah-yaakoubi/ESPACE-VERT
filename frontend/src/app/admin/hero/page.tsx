@@ -21,6 +21,10 @@ interface HeroSlide {
   ctaLabel?:  string;
   ordre:      number;
   actif:      boolean;
+  /** Point de recadrage vertical (0 = haut de l'image, 100 = bas), par format d'écran. */
+  focalYMobile?:   number;
+  focalYTablette?: number;
+  focalYDesktop?:  number;
 }
 
 interface MarqueItem  { id_marque:   number; nom: string; slug: string; logo: string | null }
@@ -47,13 +51,33 @@ function authHeaders(): Record<string, string> {
   return base;
 }
 
+const hasImage = (value: unknown): value is string =>
+  typeof value === "string" && value.trim().length > 0;
+
+const toApiSlidePayload = (slide: Partial<HeroSlide>) => {
+  const {
+    page,
+    image,
+    href,
+    titre,
+    sousTitre,
+    ctaLabel,
+    ordre,
+    actif,
+    focalYMobile,
+    focalYTablette,
+    focalYDesktop,
+  } = slide;
+  return { page, image, href, titre, sousTitre, ctaLabel, ordre, actif, focalYMobile, focalYTablette, focalYDesktop };
+};
+
 const api = {
   list:    (page: string) =>
     fetch(`${BASE}/admin/hero-slides?page=${encodeURIComponent(page)}`, { headers: authHeaders() }).then(r => r.json()),
   create:  (body: Omit<HeroSlide, "id">) =>
-    fetch(`${BASE}/admin/hero-slides`, { method: "POST", headers: authHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
+    fetch(`${BASE}/admin/hero-slides`, { method: "POST", headers: authHeaders(), body: JSON.stringify(toApiSlidePayload(body)) }).then(r => r.json()),
   update:  (id: number, body: Partial<HeroSlide>) =>
-    fetch(`${BASE}/admin/hero-slides/${id}`, { method: "PUT", headers: authHeaders(), body: JSON.stringify(body) }).then(r => r.json()),
+    fetch(`${BASE}/admin/hero-slides/${id}`, { method: "PUT", headers: authHeaders(), body: JSON.stringify(toApiSlidePayload(body)) }).then(r => r.json()),
   delete:  (id: number) =>
     fetch(`${BASE}/admin/hero-slides/${id}`, { method: "DELETE", headers: authHeaders() }),
   reorder: (ids: number[]) =>
@@ -66,7 +90,24 @@ const api = {
 
 const EMPTY = (page: string): Omit<HeroSlide, "id"> => ({
   page, image: "", href: "", titre: "", sousTitre: "", ctaLabel: "", actif: true, ordre: 0,
+  focalYMobile: 38, focalYTablette: 42, focalYDesktop: 45,
 });
+
+const normalizeSlide = (s: any): HeroSlide | null => {
+  const id = Number(s?.id ?? s?.id_slide);
+  if (!Number.isFinite(id)) return null;
+
+  return {
+    ...s,
+    id,
+    image: typeof s?.image === "string" ? s.image : "",
+    ordre: Number.isFinite(Number(s?.ordre)) ? Number(s.ordre) : 0,
+    actif: Boolean(s?.actif),
+    focalYMobile: Number.isFinite(Number(s?.focalYMobile)) ? Number(s.focalYMobile) : 38,
+    focalYTablette: Number.isFinite(Number(s?.focalYTablette)) ? Number(s.focalYTablette) : 42,
+    focalYDesktop: Number.isFinite(Number(s?.focalYDesktop)) ? Number(s.focalYDesktop) : 45,
+  };
+};
 
 /* ─── Composant principal ──────────────────────────────────────── */
 export default function HeroAdminPage() {
@@ -98,7 +139,8 @@ export default function HeroAdminPage() {
     try {
       const raw  = await api.list(page);
       const data: HeroSlide[] = (Array.isArray(raw) ? raw : [])
-        .map((s: any) => ({ ...s, id: s.id ?? s.id_slide }))
+        .map(normalizeSlide)
+        .filter((s): s is HeroSlide => s !== null)
         .sort((a: HeroSlide, b: HeroSlide) => a.ordre - b.ordre);
       setSlides(data);
     } catch { pushToast({ type: "error", title: "Erreur", message: "Impossible de charger les slides" }); }
@@ -128,13 +170,14 @@ export default function HeroAdminPage() {
   };
 
   /* ── Formulaire ── */
-  const F = (k: keyof Omit<HeroSlide, "id">, v: string | boolean) =>
+  const F = (k: keyof Omit<HeroSlide, "id">, v: string | boolean | number) =>
     setForm(f => ({ ...f, [k]: v }));
 
   const openCreate = () => { setForm(EMPTY(activePage)); setEditing(null); setCreating(true); };
   const openEdit   = (s: HeroSlide) => {
-    setForm({ page: s.page, image: s.image, href: s.href ?? "", titre: s.titre ?? "",
-              sousTitre: s.sousTitre ?? "", ctaLabel: s.ctaLabel ?? "", actif: s.actif, ordre: s.ordre });
+    setForm({ page: s.page, image: hasImage(s.image) ? s.image : "", href: s.href ?? "", titre: s.titre ?? "",
+              sousTitre: s.sousTitre ?? "", ctaLabel: s.ctaLabel ?? "", actif: s.actif, ordre: s.ordre,
+              focalYMobile: s.focalYMobile ?? 38, focalYTablette: s.focalYTablette ?? 42, focalYDesktop: s.focalYDesktop ?? 45 });
     setEditing(s); setCreating(false);
   };
   const closePanel = () => { setEditing(null); setCreating(false); };
@@ -142,14 +185,15 @@ export default function HeroAdminPage() {
   /* ── Sauvegarde ── */
   const save = async () => {
     if (!form.image) return pushToast({ type: "error", title: "Erreur", message: "L'image est obligatoire" });
-    const mapSlide = (s: any): HeroSlide => ({ ...s, id: s.id ?? s.id_slide });
     try {
       if (creating) {
-        const newSlide = mapSlide(await api.create({ ...form, page: activePage, ordre: slides.length + 1 }));
+        const newSlide = normalizeSlide(await api.create({ ...form, page: activePage, ordre: slides.length + 1 }));
+        if (!newSlide) throw new Error("Slide invalide");
         setSlides(s => [...s, newSlide]);
         pushToast({ type: "success", title: "Succès", message: "Slide créé" });
       } else if (editing) {
-        const updated = mapSlide(await api.update(editing.id, form));
+        const updated = normalizeSlide(await api.update(editing.id, form));
+        if (!updated) throw new Error("Slide invalide");
         setSlides(s => s.map(x => x.id === editing.id ? updated : x));
         pushToast({ type: "success", title: "Succès", message: "Slide mis à jour" });
       }
@@ -202,6 +246,8 @@ export default function HeroAdminPage() {
     ?? (marqueInfo   ? `Marque — ${marqueInfo.nom}`    : null)
     ?? (activiteInfo ? `Activité — ${activiteInfo.nom}` : null)
     ?? activePage;
+  const activeSlides = slides.filter(s => s.actif);
+  const previewSlide = activeSlides.find(s => hasImage(s.image));
 
   /* ──────────────────────────────────────────────────────────────── */
   return (
@@ -421,8 +467,8 @@ export default function HeroAdminPage() {
                   <GripVertical size={16} className="text-gray-300 cursor-grab shrink-0" />
 
                   <div className="w-20 h-14 rounded-lg overflow-hidden bg-gray-100 shrink-0 relative">
-                    {s.image
-                      ? <Image src={s.image} alt="" fill style={{ objectFit: "cover" }} />
+                    {hasImage(s.image)
+                      ? <Image src={s.image} alt="" fill sizes="80px" style={{ objectFit: "cover" }} />
                       : <div className="flex items-center justify-center h-full"><ImageIcon size={18} className="text-gray-300" /></div>
                     }
                   </div>
@@ -474,27 +520,28 @@ export default function HeroAdminPage() {
           )}
 
           {/* Aperçu */}
-          {slides.filter(s => s.actif).length > 0 && (
+          {previewSlide && (
             <div className="mt-5 rounded-xl overflow-hidden border border-gray-200">
               <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
                 <span className="text-xs font-semibold text-gray-500">APERÇU</span>
-                <span className="text-xs text-gray-400">{slides.filter(s => s.actif).length} slide(s) actif(s)</span>
+                <span className="text-xs text-gray-400">{activeSlides.length} slide(s) actif(s)</span>
               </div>
               <div className="relative h-44 bg-gray-900">
                 <Image
-                  src={slides.find(s => s.actif)!.image}
+                  src={previewSlide.image}
                   alt="preview" fill
+                  sizes="(max-width: 768px) 100vw, 640px"
                   style={{ objectFit: "cover", opacity: 0.6 }}
                 />
                 <div className="absolute inset-0 flex items-end p-5">
                   <div>
-                    {slides.find(s => s.actif)?.titre && (
+                    {previewSlide.titre && (
                       <p className="text-white font-bold text-lg leading-tight">
-                        {slides.find(s => s.actif)!.titre}
+                        {previewSlide.titre}
                       </p>
                     )}
-                    {slides.find(s => s.actif)?.sousTitre && (
-                      <p className="text-white/70 text-sm mt-1">{slides.find(s => s.actif)!.sousTitre}</p>
+                    {previewSlide.sousTitre && (
+                      <p className="text-white/70 text-sm mt-1">{previewSlide.sousTitre}</p>
                     )}
                   </div>
                 </div>
@@ -533,7 +580,13 @@ export default function HeroAdminPage() {
                 </label>
                 {form.image && (
                   <div className="relative w-full h-32 rounded-xl overflow-hidden mb-2 bg-gray-100">
-                    <Image src={form.image} alt="" fill style={{ objectFit: "cover" }} />
+                    <Image
+                      src={form.image}
+                      alt=""
+                      fill
+                      sizes="384px"
+                      style={{ objectFit: "cover", objectPosition: `center ${form.focalYDesktop ?? 45}%` }}
+                    />
                   </div>
                 )}
                 <ImageUploader onUpload={url => F("image", url)} />
@@ -545,6 +598,48 @@ export default function HeroAdminPage() {
                   className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-ev-400"
                 />
               </div>
+
+              {/* Point de recadrage — mobile / tablette / desktop */}
+              {form.image && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                    Point de recadrage (cadrage vertical de l'image)
+                  </label>
+                  <p className="text-xs text-gray-400 mb-2">
+                    Réglez où l'image se cadre selon le format d'écran. La ligne repère indique le centre du cadrage.
+                  </p>
+                  {([
+                    { key: "focalYMobile" as const,   label: "Mobile" },
+                    { key: "focalYTablette" as const,  label: "Tablette" },
+                    { key: "focalYDesktop" as const,   label: "Desktop" },
+                  ]).map(({ key, label }) => (
+                    <div key={key} className="mb-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-gray-600">{label}</span>
+                        <span className="text-xs text-gray-400">{form[key] ?? 45}%</span>
+                      </div>
+                      <div className="relative w-full h-20 rounded-lg overflow-hidden mb-1.5 bg-gray-100">
+                        <Image
+                          src={form.image}
+                          alt=""
+                          fill
+                          sizes="384px"
+                          style={{ objectFit: "cover", objectPosition: `center ${form[key] ?? 45}%` }}
+                        />
+                        <div
+                          className="absolute left-0 right-0 h-0.5 bg-ev-500 shadow-[0_0_0_1px_rgba(255,255,255,0.8)]"
+                          style={{ top: `${form[key] ?? 45}%` }}
+                        />
+                      </div>
+                      <input
+                        type="range" min={0} max={100} value={form[key] ?? 45}
+                        onChange={e => F(key, Number(e.target.value))}
+                        className="w-full accent-ev-600"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Titre */}
               <div>

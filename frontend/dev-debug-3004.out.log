@@ -1,0 +1,11 @@
+
+> espace-vert-frontend@1.0.0 dev
+> next dev -p 3004
+
+   ▲ Next.js 15.5.18
+   - Local:        http://localhost:3004
+   - Network:      http://192.168.229.1:3004
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 2.1s

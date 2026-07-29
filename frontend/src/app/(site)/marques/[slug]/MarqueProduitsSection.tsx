@@ -414,10 +414,11 @@ function Pagination({
 interface Props {
   id_marque: number;
   categories: MarqueCategorie[];
+  cardVariant?: "default" | "seed" | "light";
 }
 
 /* ══════════════════════════════════════════════════════════════════════════ */
-export function MarqueProduitsSection({ id_marque, categories }: Props) {
+export function MarqueProduitsSection({ id_marque, categories, cardVariant = "default" }: Props) {
   const { locale, t } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
@@ -659,9 +660,9 @@ export function MarqueProduitsSection({ id_marque, categories }: Props) {
                   </div>
                 ) : (
                   <>
-                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       {paginated.map((p) => (
-                        <ProduitCard key={p.id_produit} produit={p} />
+                        <ProduitCard key={p.id_produit} produit={p} variant={cardVariant} />
                       ))}
                     </div>
                     <div className="mt-2">
@@ -694,10 +695,29 @@ export function MarqueProduitsSection({ id_marque, categories }: Props) {
 export function MarqueProduitsSectionWrapper(props: {
   id_marque: number;
   categories: any[];
+  hideUntilCategorySelected?: boolean;
+  cardVariant?: "default" | "seed" | "light";
 }) {
   return (
     <Suspense fallback={null}>
-      <MarqueProduitsSection {...props} />
+      <MarqueProduitsSectionGate {...props} />
     </Suspense>
   );
+}
+
+function MarqueProduitsSectionGate({
+  hideUntilCategorySelected = false,
+  ...props
+}: {
+  id_marque: number;
+  categories: any[];
+  hideUntilCategorySelected?: boolean;
+  cardVariant?: "default" | "seed" | "light";
+}) {
+  const searchParams = useSearchParams();
+  const catParam = searchParams.get("cat");
+
+  if (hideUntilCategorySelected && !catParam) return null;
+
+  return <MarqueProduitsSection {...props} />;
 }

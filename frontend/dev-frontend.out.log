@@ -1,41 +1,37 @@
 
 > espace-vert-frontend@1.0.0 dev
-> next dev
+> next dev -p 3000
 
    ▲ Next.js 15.5.18
-   - Local:        http://localhost:3001
-   - Network:      http://192.168.229.1:3001
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.229.1:3000
    - Environments: .env.local
 
  ✓ Starting...
- ✓ Ready in 2.1s
- ○ Compiling /activites/[slug]/etude-installation ...
- ✓ Compiled /activites/[slug]/etude-installation in 4.5s (1650 modules)
- GET /activites/irrigation/etude-installation 200 in 5978ms
- GET /activites/irrigation?cat=180 200 in 6041ms
- ✓ Compiled in 5.2s (743 modules)
+ ✓ Ready in 2.3s
  ○ Compiling /marques/[slug] ...
- ✓ Compiled /marques/[slug] in 1729ms (1616 modules)
- GET /marques/baddar-semences 200 in 4483ms
- ✓ Compiled in 2.8s (746 modules)
- ✓ Compiled in 1614ms (746 modules)
- ○ Compiling /contact ...
- ✓ Compiled /contact in 4.3s (1599 modules)
- GET /contact 200 in 6457ms
- GET /devis 200 in 6468ms
- ✓ Compiled in 3.4s (776 modules)
- ✓ Compiled in 2.5s (776 modules)
- ✓ Compiled in 3.2s (776 modules)
- ✓ Compiled in 1657ms (776 modules)
- ✓ Compiled in 2.1s (776 modules)
- ✓ Compiled in 1640ms (776 modules)
- ✓ Compiled in 3.8s (776 modules)
- ✓ Compiled in 460ms (776 modules)
- ✓ Compiled in 1995ms (776 modules)
- ✓ Compiled in 578ms (776 modules)
- ✓ Compiled in 579ms (776 modules)
- ✓ Compiled in 569ms (776 modules)
- ✓ Compiled in 504ms (776 modules)
- ✓ Compiled in 755ms (776 modules)
- ✓ Compiled in 1508ms (776 modules)
- ✓ Compiled in 703ms (776 modules)
+ ✓ Compiled /marques/[slug] in 10s (1626 modules)
+ ✓ Compiled in 196ms (889 modules)
+ ✓ Compiled in 500ms (710 modules)
+ GET /marques/pulvert?cat=204 200 in 13534ms
+ GET /marques/pulvert?cat=204 200 in 810ms
+ GET /marques/pulvert?cat=204 200 in 788ms
+ GET /marques/pulvert?cat=204 200 in 264ms
+ GET /marques/pulvert?cat=204 200 in 241ms
+ ○ Compiling /activites/[slug]/[marque]/[slug-produit] ...
+ ✓ Compiled /activites/[slug]/[marque]/[slug-produit] in 3.3s (1703 modules)
+ GET /activites/pulverisation/pulvert/pulverisateur-5-litres 200 in 4717ms
+ GET /activites/pulverisation/pulvert/pulverisateur-2-litres 200 in 287ms
+ GET /marques/pulvert 200 in 293ms
+ GET /marques/pulvert?cat=205 200 in 158ms
+ GET /marques/pulvert?cat=204 200 in 150ms
+ GET /activites/pulverisation/pulvert/pulverisateur-5-litres 200 in 309ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1708ms (1742 modules)
+ GET / 200 in 1913ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 6.6s (1757 modules)
+ GET /logosPartenaires/logo baddar agricole.png 404 in 7428ms
+ ✓ Compiled in 2.4s (770 modules)
+ ✓ Compiled in 1682ms (1756 modules)
+[?25h

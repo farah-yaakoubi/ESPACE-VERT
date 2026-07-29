@@ -27,6 +27,7 @@ export default {
       fontFamily: {
         display: ["var(--font-display)", "Cairo", "sans-serif"],
         body:    ["var(--font-body)", "Cairo", "system-ui", "sans-serif"],
+        serif:   ["var(--font-serif)", "Georgia", "serif"],
       },
       maxWidth: {
         "container": "1200px",

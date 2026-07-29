@@ -450,9 +450,11 @@ interface CategoryTreeProps {
   tree: MarqueTree;
   produitBasePath?: string;
   showProduits?: boolean;
+  cardVariant?: "default" | "seed" | "light";
+  rootTabsOnly?: boolean;
 }
 
-export function CategoryTree({ tree }: CategoryTreeProps) {
+export function CategoryTree({ tree, cardVariant = "default", rootTabsOnly = false }: CategoryTreeProps) {
   const { locale, t } = useI18n();
   const router       = useRouter();
   const pathname     = usePathname();
@@ -530,6 +532,11 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
   );
 
   const selectedNode = catFromUrl ? findNodeC(tree.categories, catFromUrl) : null;
+  const rootTabs = rootTabsOnly
+    ? tree.categories
+        .filter((cat) => countAll(cat) > 0)
+        .slice(0, 2)
+    : [];
 
   return (
     <div className="flex gap-0 min-h-[600px] relative">
@@ -539,7 +546,7 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
       )}
 
       {/* ── Sidebar redesignée ──────────────────────────────────── */}
-      <aside className={`
+      {(!rootTabsOnly || catFromUrl || search) && <aside className={`
         fixed lg:sticky top-0 lg:top-20 z-50 lg:z-auto h-screen lg:h-[calc(100vh-5rem)]
         w-72 lg:w-64 xl:w-72 bg-white border-r border-stone-100 flex flex-col
         transition-transform duration-300 ease-in-out lg:translate-x-0
@@ -635,23 +642,44 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
             </div>
           </div>
         )}
-      </aside>
+      </aside>}
 
       {/* ── Zone principale ─────────────────────────────────────── */}
-      <div className="flex-1 min-w-0 flex flex-col lg:pl-6">
+      <div className={cn("flex-1 min-w-0 flex flex-col", (!rootTabsOnly || catFromUrl || search) && "lg:pl-6")}>
 
         {/* Barre filtres */}
         <div className="flex items-center gap-3 mb-6 flex-wrap">
+          {rootTabsOnly && rootTabs.length > 0 && (
+            <div className="inline-flex overflow-hidden rounded-lg border border-ev-700 bg-white p-0.5 shadow-sm">
+              {rootTabs.map((cat) => {
+                const active = catFromUrl === cat.id_categorie;
+                return (
+                  <button
+                    key={cat.id_categorie}
+                    onClick={() => handleSelect(cat.id_categorie)}
+                    className={cn(
+                      "min-w-24 px-5 py-2 text-sm font-black transition-colors",
+                      active
+                        ? "bg-ev-700 text-white"
+                        : "text-ev-700 hover:bg-ev-50",
+                    )}
+                  >
+                    {categoryLabel(cat, locale)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Bouton ouvrir sidebar (mobile) */}
-          <button
+          {(!rootTabsOnly || catFromUrl || search) && <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden flex items-center gap-2 px-3.5 py-2.5 bg-white border border-stone-200 rounded-xl text-[13px] font-medium text-gray-700 hover:border-ev-400 hover:text-ev-700 transition-all shadow-sm"
           >
             <SlidersHorizontal size={14} />
             {t("catalog.filters", "Filtres")}
             {catFromUrl && <span className="w-1.5 h-1.5 rounded-full bg-ev-500 ml-0.5" />}
-          </button>
+          </button>}
 
           {/* Badge catégorie active */}
           {catFromUrl && selectedNode && (
@@ -667,7 +695,7 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
           )}
 
           {/* Recherche */}
-          <div className="relative flex-1 min-w-[200px] max-w-sm ml-auto">
+          {(!rootTabsOnly || catFromUrl || search) && <div className="relative flex-1 min-w-[200px] max-w-sm ml-auto">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             <input
               value={search}
@@ -680,7 +708,7 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
                 <X size={13} />
               </button>
             )}
-          </div>
+          </div>}
 
           {/* Compteur — masqué en vue grille catégories */}
           {(catFromUrl || search) && (
@@ -692,7 +720,7 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
         </div>
 
         {/* Grille visuelle catégories racines (premier chargement) */}
-        {!catFromUrl && !search && tree.categories.filter(n => !!n.image).length > 0 ? (
+        {!rootTabsOnly && !catFromUrl && !search && tree.categories.filter(n => !!n.image).length > 0 ? (
           <CatVisualGrid
             nodes={tree.categories}
             allProduitsFlat={tree.categories.flatMap(collectProduits)}
@@ -724,9 +752,16 @@ export function CategoryTree({ tree }: CategoryTreeProps) {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className={cn(
+              "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4",
+              cardVariant === "seed" && "items-start"
+            )}>
               {paginated.map(({ produit, catNom }) => (
-                <ProduitCard key={produit.id_produit} produit={toProduitCard(produit, catNom, tree)} />
+                <ProduitCard
+                  key={produit.id_produit}
+                  produit={toProduitCard(produit, catNom, tree)}
+                  variant={cardVariant}
+                />
               ))}
             </div>
             <div className="mt-4">

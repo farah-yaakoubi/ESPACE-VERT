@@ -120,58 +120,80 @@ export function ProduitCard({
   const description = translatedField(produit as any, "description", locale) || produit.description;
 
   if (variant === "seed") {
+    const AMBER = "#c9a24a";
+    const isNew =
+      !!produit.created_at &&
+      Date.now() - new Date(produit.created_at).getTime() < 1000 * 60 * 60 * 24 * 30;
+
     return (
       <Link href={href} className={cn("block group", className)}>
         <article
-          className="relative flex h-full flex-col overflow-hidden rounded-[26px] border border-[#edf1ec] bg-white"
+          className="relative flex w-full flex-col overflow-hidden rounded-2xl"
           style={{
             boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
-            transition: "transform 0.26s ease, box-shadow 0.26s ease, border-color 0.26s ease",
+            transition: "transform 0.26s ease, box-shadow 0.26s ease",
           }}
           onMouseEnter={e => {
             const el = e.currentTarget as HTMLElement;
             el.style.transform = "translateY(-5px)";
             el.style.boxShadow = "0 18px 38px rgba(15, 23, 42, 0.10)";
-            el.style.borderColor = "#dbe7d4";
           }}
           onMouseLeave={e => {
             const el = e.currentTarget as HTMLElement;
             el.style.transform = "translateY(0)";
             el.style.boxShadow = "0 10px 30px rgba(15, 23, 42, 0.06)";
-            el.style.borderColor = "#edf1ec";
           }}
         >
-          <div className="relative flex h-[190px] items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_top,#f9fcf7_0%,#ffffff_76%)] px-5 pt-6 sm:h-[210px]">
-            {img ? (
-              <Image
-                src={img.url}
-                alt={img.alt ?? nom}
-                fill
-                className="object-contain p-5 transition-transform duration-300 group-hover:scale-[1.02]"
-                sizes="(max-width:640px)50vw,(max-width:1024px)33vw,300px"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-5xl opacity-20">🌱</div>
-            )}
-          </div>
+          {/* Image — taille/ratio naturel, non recadrée */}
+          <div className="w-full" style={{ backgroundColor: "#f9fcf7" }}>
+            <div className="relative w-full">
+              {img ? (
+                <Image
+                  src={img.url}
+                  alt={img.alt ?? nom}
+                  width={800}
+                  height={800}
+                  className="block w-full h-auto object-contain transition-transform duration-500 group-hover:scale-105"
+                  style={{ height: "auto" }}
+                  sizes="(max-width:640px) 50vw, (max-width:1280px) 25vw, 20vw"
+                />
+              ) : (
+                <div className="flex aspect-square w-full items-center justify-center text-5xl opacity-20">🌱</div>
+              )}
 
-          <div className="flex flex-1 flex-col px-6 pb-6 pt-1 text-left">
-            <h3
-              className="min-h-[2.9rem] text-[1rem] font-bold leading-snug text-[#162118] transition-colors group-hover:text-ev-700"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              {nom}
-            </h3>
-            <p className="mt-2 line-clamp-2 text-[12.5px] leading-5 text-gray-400">
-              {description ?? "Decouvrez cette reference semences adaptee a vos besoins de culture."}
-            </p>
-            <div className="mt-auto pt-4">
-              <span
-                className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,#2e7d4f,#1f6a3e)] px-5 py-2.5 text-[12px] font-semibold text-white shadow-[0_10px_20px_rgba(46,125,79,0.18)] transition-all duration-200 group-hover:translate-y-[-1px] group-hover:shadow-[0_14px_28px_rgba(46,125,79,0.24)]"
+              {isNew && (
+                <span
+                  className="absolute top-3 left-3 z-10 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
+                  style={{ backgroundColor: AMBER }}
+                >
+                  Nouveau
+                </span>
+              )}
+            </div>
+
+            {/* Texte + CTA — juste sous l'image, ne recouvrent aucun pixel de la photo */}
+            <div className="flex flex-col px-4 pb-4 pt-3">
+              {produit.categorie?.nom && (
+                <p className="text-[10px] font-bold uppercase tracking-wide text-ev-700 mb-1">
+                  {produit.categorie.nom}
+                </p>
+              )}
+              <h3
+                className="text-[16px] sm:text-[17px] font-bold leading-tight text-[#162118]"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                Voir le produit
-              </span>
+                {nom}
+              </h3>
+
+              <div className="mt-3 flex items-center justify-between">
+                <span className="text-[12px] font-semibold text-[#162118]">Voir le produit</span>
+                <span
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white transition-transform duration-200 group-hover:translate-x-0.5"
+                  style={{ backgroundColor: "#2e6e1a" }}
+                >
+                  <ChevronRight size={14} strokeWidth={2.4} />
+                </span>
+              </div>
             </div>
           </div>
         </article>

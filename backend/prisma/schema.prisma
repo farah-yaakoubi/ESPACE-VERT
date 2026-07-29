@@ -254,10 +254,35 @@ model Categorie {
   parent    Categorie?  @relation("SousCategories", fields: [parent_id], references: [id_categorie], onDelete: Cascade)
   sous_cats Categorie[] @relation("SousCategories")
   produits  Produit[]
+  // ── Parents secondaires (multi-rattachement) ───────────────────
+  // Une catégorie garde un unique parent "principal" (parent_id, ci-dessus,
+  // utilisé partout ailleurs sur le site sans changement). Elle peut en plus
+  // être rattachée à un ou plusieurs parents secondaires (ex. "Tomate"
+  // rattachée à la fois à "Semences hybrides" ET "Semences standard"),
+  // purement additif : n'affecte que les vues qui vont explicitement lire
+  // cette relation (catalogue Semences).
+  parents_extra  CategorieParentExtra[] @relation("EnfantExtra")
+  enfants_extra  CategorieParentExtra[] @relation("ParentExtra")
   @@index([id_activite])
   @@index([id_marque])
   @@index([parent_id])
   @@map("categories")
+}
+
+// ─── RATTACHEMENT MULTI-PARENT (additif) ───────────────────────────────────
+// Table de liaison permettant à une catégorie d'apparaître sous plusieurs
+// catégories parentes en plus de son parent_id principal.
+model CategorieParentExtra {
+  id            Int       @id @default(autoincrement())
+  id_categorie  Int       // l'enfant
+  id_parent     Int       // le parent secondaire
+  created_at    DateTime  @default(now())
+  categorie Categorie @relation("EnfantExtra", fields: [id_categorie], references: [id_categorie], onDelete: Cascade)
+  parent    Categorie @relation("ParentExtra", fields: [id_parent],    references: [id_categorie], onDelete: Cascade)
+  @@unique([id_categorie, id_parent])
+  @@index([id_categorie])
+  @@index([id_parent])
+  @@map("categorie_parents_extra")
 }
 
 model Produit {
@@ -266,6 +291,7 @@ model Produit {
   description          String?  @db.Text
   translations         Json?
   fiche_technique      String?  @db.Text
+  image_description    String?  @db.VarChar(500)  // image illustrant la description, affichée à côté du texte sur la fiche produit
   slug                 String   @unique @db.VarChar(220)
   id_categorie         Int
   division             Division @default(standard)
@@ -358,6 +384,21 @@ model Faq {
   @@map("faqs")
 }
 
+model TutorialVideo {
+  id_video    Int      @id @default(autoincrement())
+  titre       String   @db.VarChar(200)
+  description String?  @db.Text
+  url         String   @db.VarChar(500)
+  thumbnail   String?  @db.VarChar(500)
+  page        String   @default("pulvert") @db.VarChar(80)
+  ordre       Int      @default(0)
+  actif       Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  @@index([page, actif])
+  @@map("tutorial_videos")
+}
+
 // ─── CRM ──────────────────────────────────────────────────────────────────────
 model DevisDemande {
   id_devis      Int         @id @default(autoincrement())
@@ -448,8 +489,12 @@ model HeroSlide {
   sousTitre  String?  @db.VarChar(400)
   ctaLabel   String?  @db.VarChar(80)
   translations Json?
+  imageFit   String   @default("cover") @db.VarChar(20)
   ordre      Int      @default(0)
   actif      Boolean  @default(true)
+  focalYMobile   Int  @default(38)
+  focalYTablette Int  @default(42)
+  focalYDesktop  Int  @default(45)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   @@map("hero_slides")

@@ -6,9 +6,10 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   Package, ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight,
-  X, SlidersHorizontal, ArrowLeft, LayoutGrid,
+  X, SlidersHorizontal, ArrowLeft, LayoutGrid, Check, Sprout,
 } from "lucide-react";
 import { ProduitCard }   from "@/components/cards/ProduitCard";
+import { Reveal }        from "@/components/ui/Reveal";
 import { GridSkeleton }  from "@/components/ui/Skeleton";
 import { useProducts }   from "@/hooks/useProducts";
 import type { Categorie } from "@/types/api";
@@ -18,7 +19,9 @@ import {
   type FilterState, type CatNode,
 } from "@/components/catalogue/FilterPanel";
 import { getEtudeInstallationHref, isEtudeInstallationCategory } from "@/lib/etude-installation";
-import { SemencesRecommandationCard } from "./SemencesRecommandation";
+// Widget "Quelle semence pour moi ?" masqué pour le moment — décommenter
+// pour le réactiver dans le layout ci-dessous.
+// import { SemencesRecommandationCard } from "./SemencesRecommandation";
 import { JardinageSidebar, JardinageCategoryGrid, JardinageProductGrid } from "./JardinageCatalogShowcase";
 import { useI18n } from "@/i18n/I18nProvider";
 import { translatedField } from "@/i18n/translated-field";
@@ -35,9 +38,26 @@ function buildTree(cats: Categorie[]): CatNode[] {
     if (node.parent_id && map.has(node.parent_id)) map.get(node.parent_id)!.children.push(node);
     else roots.push(node);
   });
-  const sort = (nodes: CatNode[]) => {
+  // Rattachements secondaires (additifs) : une catégorie (ex. "Tomate") peut
+  // en plus apparaître sous d'autres parents que son parent_id principal
+  // (ex. rattachée à la fois à "Semences hybrides" et "Semences standard").
+  // Elle garde sa place principale ; elle est simplement dupliquée dans les
+  // `children` du/des parent(s) secondaire(s).
+  map.forEach(node => {
+    (node.parent_ids_extra ?? []).forEach(extraParentId => {
+      if (extraParentId === node.id_categorie) return;
+      const extraParent = map.get(extraParentId);
+      if (extraParent && !extraParent.children.includes(node)) extraParent.children.push(node);
+    });
+  });
+  const sort = (nodes: CatNode[], ancestors: Set<number> = new Set()) => {
     nodes.sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0) || a.nom.localeCompare(b.nom, "fr"));
-    nodes.forEach(n => sort(n.children));
+    nodes.forEach(n => {
+      // Garde-fou : si un rattachement secondaire crée accidentellement un
+      // cycle, on coupe la récursion plutôt que de boucler à l'infini.
+      if (ancestors.has(n.id_categorie)) { n.children = []; return; }
+      sort(n.children, new Set(ancestors).add(n.id_categorie));
+    });
     return nodes;
   };
   return sort(roots);
@@ -133,7 +153,7 @@ function CatalogueCoverGrid({
         </span>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
         {children.filter(child => !!child.image).map(child => {
           const count  = childCount(child);
           const imgSrc = child.image;
@@ -142,40 +162,45 @@ function CatalogueCoverGrid({
             <button
               key={child.id_categorie}
               onClick={() => onSelectChild(child.id_categorie)}
-              className="group overflow-hidden rounded-2xl border border-sand-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-ev-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-ev-400 focus:ring-offset-2"
+              className="group flex flex-col items-center text-center focus:outline-none"
               aria-label={`${t("catalog.viewProducts", "Voir produits")} ${catLabel(child, locale)}`}
             >
-              <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br from-white via-ev-50 to-sand-100">
+              <div className="relative h-44 w-full flex items-center justify-center">
                 {imgSrc ? (
                   <Image
                     src={imgSrc}
                     alt={catLabel(child, locale)}
                     fill
-                    className="object-contain p-6 drop-shadow-md transition-transform duration-500 group-hover:scale-105"
+                    className="object-contain transition-transform duration-500 ease-out group-hover:-translate-y-1.5 group-hover:scale-[1.06]"
                     sizes="(max-width:640px) 100vw, (max-width:1280px) 50vw, 25vw"
                   />
                 ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-3xl text-ev-200 shadow-sm">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-ev-50 text-3xl text-ev-300">
                     🌿
                   </div>
                 )}
-                <span className="absolute right-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-ev-800 shadow-sm">
-                  {count} {productWord(count, t)}
-                </span>
               </div>
 
-              <div className="flex min-h-[116px] flex-col p-4">
-                <div className="mb-3 flex items-start gap-2">
-                  <span className="mt-1 h-8 w-1 rounded-full bg-ev-600 shrink-0" />
-                  <p className="text-[15px] font-bold leading-snug text-gray-900 line-clamp-2 group-hover:text-ev-700 transition-colors">
-                    {catLabel(child, locale)}
-                  </p>
-                </div>
-                <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-xl bg-ev-700 px-3.5 py-2 text-[12px] font-semibold text-white transition-colors group-hover:bg-ev-800">
-                  {t("catalog.viewProducts", "Voir produits")}
+              <p
+                className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+                style={{ fontFamily: "var(--font-serif)" }}
+              >
+                {catLabel(child, locale)}
+              </p>
+              {count > 0 && (
+                <span className="mt-0.5 text-[11px] text-gray-400">
+                  {count} {productWord(count, t)}
+                </span>
+              )}
+
+              {/* Bouton "Voir produits" — pastille outline, se remplit et
+                  fait pivoter la flèche à 45° au survol */}
+              <span className="mt-4 inline-flex items-center rounded-full border-2 border-ev-700 py-1.5 pl-4 pr-1.5 text-[11px] font-bold uppercase tracking-wider text-ev-700 transition-colors duration-300 group-hover:bg-ev-700 group-hover:text-white">
+                {t("catalog.viewProducts", "Voir produits")}
+                <span className="ml-2 flex h-6 w-6 items-center justify-center rounded-full bg-ev-700 text-white transition-transform duration-300 ease-out group-hover:rotate-45 group-hover:bg-white group-hover:text-ev-700">
                   <ChevronRight size={13} />
                 </span>
-              </div>
+              </span>
             </button>
           );
         })}
@@ -335,6 +360,103 @@ function RootCatalogueGrid({
   );
 }
 
+/* ── SemencesCategoryTiles ────────────────────────────────────────────────
+ * Rangée de tuiles catégories, fixe en haut de la page Semences & Plants
+ * (façon "Shop by Category"). On reste sur cette même vue en permanence :
+ * cliquer une tuile filtre juste les produits affichés juste en dessous,
+ * sans jamais remplacer les tuiles par une sous-grille. Les images de fond
+ * sont fournies par catégorie (cat.image) ; tant qu'aucune n'est définie,
+ * un dégradé de secours est utilisé. */
+function SemencesCategoryTiles({
+  nodes, activeId, allProduits, onSelect,
+}: {
+  nodes: CatNode[];
+  activeId: number | null;
+  allProduits: import("@/types/api").ProduitCard[];
+  onSelect: (id: number | null) => void;
+}) {
+  const { locale, t } = useI18n();
+  // On n'affiche que les catégories illustrées : une sous-catégorie sans
+  // image ne doit pas apparaître dans cette rangée de tuiles (pas de
+  // pictogramme de secours ici, contrairement à d'autres écrans du site).
+  const illustrated = nodes.filter(n => !!n.image);
+  if (illustrated.length === 0) return null;
+
+  return (
+    <div className="relative left-1/2 right-1/2 -mx-[50vw] w-screen mb-8 py-9 md:py-11" style={{ backgroundColor: "#ecdfc0" }}>
+      <div className="container-ev">
+        <Reveal>
+          <p className="text-center text-[11.5px] font-extrabold uppercase tracking-[0.28em] text-[#8a6d3b] mb-6">
+            {t("catalog.shopByCategory", "Parcourir par catégorie")} :
+          </p>
+        </Reveal>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
+          {illustrated.map((node, i) => {
+            const isActive = activeId === node.id_categorie;
+            const imgSrc = node.image;
+            const hasChildren = (node.children ?? []).length > 0;
+            const desc =
+              translatedField(node as any, "description", locale) || (node as any).description;
+            return (
+              <Reveal key={node.id_categorie} delay={i * 0.06} y={24}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(isActive ? null : node.id_categorie)}
+                  aria-pressed={isActive}
+                  className={cn(
+                    "group relative aspect-[3/4] w-full overflow-hidden rounded-xl text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-ev-600 focus:ring-offset-2",
+                    isActive ? "ring-2 ring-ev-600" : "ring-0"
+                  )}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-ev-100 via-white to-sand-100" />
+                  {imgSrc ? (
+                    <Image
+                      src={imgSrc}
+                      alt={catLabel(node, locale)}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 20vw"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Sprout size={40} className="text-ev-300" strokeWidth={1.5} />
+                    </div>
+                  )}
+                  {/* Voile dégradé — assure la lisibilité du texte posé sur l'image */}
+                  <div
+                    className="absolute inset-x-0 bottom-0"
+                    style={{
+                      height: "62%",
+                      background: "linear-gradient(to top, rgba(15,20,12,0.86) 0%, rgba(15,20,12,0.38) 55%, rgba(15,20,12,0) 100%)",
+                    }}
+                  />
+                  {isActive && hasChildren && (
+                    <span className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-white text-ev-700 shadow">
+                      <Check size={13} strokeWidth={3} />
+                    </span>
+                  )}
+                  {/* Texte — posé directement sur l'image, pas de carte blanche */}
+                  <div className="absolute inset-x-0 bottom-0 p-4">
+                    <p
+                      className="text-white text-[16px] sm:text-[17px] font-bold leading-tight"
+                      style={{ fontFamily: "var(--font-display)" }}
+                    >
+                      {catLabel(node, locale)}
+                    </p>
+                    <p className="mt-1.5 text-[11.5px] leading-snug text-white/75 line-clamp-2">
+                      {desc || t("catalog.discoverRange", "Découvrez notre sélection.")}
+                    </p>
+                  </div>
+                </button>
+              </Reveal>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Pagination ─────────────────────────────────────────────────────────── */
 function Pagination({ page, totalPages, onPageChange }: {
   page: number; totalPages: number; onPageChange: (p: number) => void;
@@ -380,6 +502,10 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
   const catParam = searchParams.get("cat");
   const isSemencesPage = activiteSlug === "semences-et-plants";
   const isMachinisme = activiteSlug === "jardinage-et-machinisme";
+  const isFertilisationPage = activiteSlug === "fertilisation";
+  // Cartes produits "plein format" (image en ratio naturel, non recadrée) —
+  // utilisées pour Semences et, désormais, Fertilisation.
+  const useFullSizeCards = isSemencesPage || isFertilisationPage;
 
   const marqueLogoById = useMemo(
     () => new Map(marques.map((m) => [m.id_marque, m.logo])),
@@ -450,6 +576,18 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
     [scopedProduits, filters, tree, locale]
   );
 
+  // Semences : la liste utilisée pour dériver les facettes (tags / gammes) du
+  // panneau de filtres ne doit contenir que les produits de la catégorie
+  // active — pas tout le catalogue Semences — pour n'afficher que "son"
+  // filtrage, comme demandé.
+  const facetProduits = useMemo(() => {
+    if (!isSemencesPage || !filters.categoryId) return scopedProduits;
+    const node = findNode(tree, filters.categoryId);
+    if (!node) return scopedProduits;
+    const ids = collectIds(node);
+    return scopedProduits.filter(p => ids.has((p as any).id_categorie));
+  }, [isSemencesPage, filters.categoryId, tree, scopedProduits]);
+
   const totalPages = Math.ceil(filtered.length / pageSize);
   const paginated  = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
 
@@ -487,11 +625,22 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
 
   const catalogueNode = useMemo(() => catalogueCatId ? findNode(tree, catalogueCatId) : null, [catalogueCatId, tree]);
   const activeNode    = useMemo(() => filters.categoryId ? findNode(tree, filters.categoryId) : null, [filters.categoryId, tree]);
+  // Semences : la catégorie "racine" affichée dans le panneau de filtres —
+  // reste ancrée sur la catégorie de premier niveau cliquée au départ, même
+  // si l'utilisateur sélectionne ensuite une sous-catégorie plus profonde
+  // (sinon le panneau se recalcule sur la feuille active et disparaît dès
+  // que celle-ci n'a pas elle-même de sous-catégories).
+  const semencesRootNode = useMemo(() => {
+    if (!filters.categoryId) return null;
+    const path = findPath(tree, filters.categoryId);
+    return path ? path[0] : null;
+  }, [filters.categoryId, tree]);
 
   const showGrid        = !catalogueCatId;
   const hasActiveFilters = filters.categoryId !== null || filters.tags.length > 0
     || filters.divisions.length > 0 || filters.search.trim() !== "";
   const showRootCatalogueGrid =
+    !isSemencesPage &&
     !categoryScopeId &&
     brandCards.length === 0 &&
     !hasActiveFilters &&
@@ -508,6 +657,11 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
     brandCards.length > 0 &&
     !hasActiveFilters &&
     !catalogueCatId;
+
+  // Semences : la carte "Quelle semence pour moi ?" (widget IA) et le panneau
+  // de filtres ne s'affichent qu'une fois une catégorie choisie — au départ,
+  // la grille produits occupe toute la largeur, comme sur le site de référence.
+  const semencesHasSideRail = isSemencesPage && filters.categoryId !== null;
 
   // Jardinage & Machinisme : la sidebar catégories ne s'affiche qu'une fois
   // qu'une marque a été sélectionnée (elle-même ou un de ses ancêtres dans
@@ -556,12 +710,18 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
       {isMachinisme ? (
         <JardinageProductGrid produits={paginated} />
       ) : (
-        <div className={cn("grid gap-4", "grid-cols-2 sm:grid-cols-2 lg:grid-cols-4")}>
+        <div className={cn(
+          "grid gap-4",
+          semencesHasSideRail
+            ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
+            : "grid-cols-2 sm:grid-cols-2 lg:grid-cols-4",
+          useFullSizeCards && "items-start"
+        )}>
           {paginated.map((p) => (
             <ProduitCard
               key={p.id_produit}
               produit={p}
-              variant={isSemencesPage ? "seed" : "default"}
+              variant={useFullSizeCards ? "seed" : "default"}
             />
           ))}
         </div>
@@ -578,6 +738,47 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
   );
 
   const isRootBrandGrid = useFullWidthLayout && !catalogueNode && showJardinageRootGrid;
+
+  const activeFiltersBar = hasActiveFilters ? (
+    <div className="mb-4 flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-1 text-xs text-gray-500">
+        <button onClick={reset}
+          className="hover:text-ev-700 transition-colors flex items-center gap-1 font-medium">
+          <LayoutGrid size={10} /> Tous
+        </button>
+        {activeNode && (
+          <>
+            {activeNode.parent_id && (() => {
+              const parent = findNode(tree, activeNode.parent_id!);
+              return parent ? (
+                <><ChevronRight size={10} />
+                  <button onClick={() => handleCategorySelect(parent.id_categorie)}
+                    className="hover:text-ev-700 transition-colors">{catLabel(parent, locale)}</button></>
+              ) : null;
+            })()}
+            <ChevronRight size={10} />
+            <span className="text-gray-800 font-semibold">{catLabel(activeNode, locale)}</span>
+          </>
+        )}
+      </div>
+      {filters.tags.map(tg => (
+        <span key={tg} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-ev-100 text-ev-800 text-xs font-medium">
+          {tg}<button onClick={() => handleFiltersChange({ ...filters, tags: filters.tags.filter(x => x !== tg) })}><X size={10}/></button>
+        </span>
+      ))}
+      {filters.divisions.map(d => (
+        <span key={d} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-ev-100 text-ev-800 text-xs font-medium">
+          {d}<button onClick={() => handleFiltersChange({ ...filters, divisions: filters.divisions.filter(x => x !== d) })}><X size={10}/></button>
+        </span>
+      ))}
+      <span className="text-xs text-gray-400 ml-auto">
+        {showGrid ? `${filtered.length} résultat${filtered.length > 1 ? "s" : ""}` : ""}
+      </span>
+      <button onClick={reset} className="text-xs text-gray-400 hover:text-ev-700 flex items-center gap-1 transition-colors">
+        <X size={10}/> Effacer
+      </button>
+    </div>
+  ) : null;
 
   return (
     <section id="produits-activite" className="bg-sand-50 border-b border-sand-200">
@@ -605,7 +806,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
           </div>
         </div>
       )}
-      <div className="container-ev py-5">
+      <div className={cn("container-ev", isSemencesPage ? "pb-5" : "py-5")}>
         {isMachinisme && (
           <div className="mb-6 mt-2">
             <p className="text-[12px] font-extrabold uppercase tracking-[0.22em] mb-2" style={{ color: "#e30613" }}>
@@ -616,7 +817,88 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
             </h2>
           </div>
         )}
-        {useFullWidthLayout ? (
+        {isSemencesPage ? (
+          <div className="mb-2">
+            <SemencesCategoryTiles
+              nodes={tree}
+              activeId={filters.categoryId}
+              allProduits={scopedProduits}
+              onSelect={(id) => handleCategorySelect(id)}
+            />
+
+            {!semencesHasSideRail ? (
+              /* Vue initiale : pas de catégorie choisie — pas de widget IA,
+               * pas de panneau de filtres, la grille produits prend toute
+               * la largeur, comme sur le site de référence. */
+              <>
+                {activeFiltersBar}
+                {productGridContent}
+              </>
+            ) : (
+              <div className="flex flex-col gap-6 lg:gap-8 md:grid md:grid-cols-[15rem_minmax(0,1fr)] md:items-start">
+                {/* Filtres (tags / gamme / tri) — bornés aux seuls produits
+                    de la catégorie active. L'arbre de catégories affiché
+                    dans le panneau est lui aussi borné : uniquement les
+                    sous-catégories de la catégorie racine cliquée au
+                    départ (pas tout l'arbre du site), et seulement si
+                    elle en a. Ancré sur la racine, pas sur la feuille
+                    active, pour ne pas disparaître en descendant l'arbre. */}
+                <FilterPanel
+                  tree={semencesRootNode?.children ?? []}
+                  produits={facetProduits}
+                  filters={filters}
+                  onChange={handleFiltersChange}
+                  totalAll={facetProduits.length}
+                  onCategoryClick={handleCategorySelect}
+                  hideCategoryTree={!(semencesRootNode && (semencesRootNode.children ?? []).length > 0) || !!catalogueNode}
+                />
+
+                {/* Zone principale */}
+                <div className="flex-1 min-w-0">
+                  {catalogueNode ? (
+                    /* Catégorie avec sous-catégories (issues de la BDD, pas en dur) :
+                       on affiche la grille de sous-catégories au lieu des produits,
+                       jusqu'à ce qu'une sous-catégorie feuille soit choisie. */
+                    <CatalogueCoverGrid
+                      node={catalogueNode}
+                      allProduits={facetProduits}
+                      onSelectChild={(id) => handleCategorySelect(id)}
+                      onClose={() => handleCategorySelect(null)}
+                    />
+                  ) : (
+                    <>
+                      {activeNode && (
+                        <div className="mb-4 rounded-2xl border border-sand-200 bg-white px-5 py-4">
+                          <h2
+                            className="text-[1.15rem] font-bold text-[#162118]"
+                            style={{ fontFamily: "var(--font-display)" }}
+                          >
+                            {catLabel(activeNode, locale)}
+                          </h2>
+                          {(() => {
+                            const desc =
+                              translatedField(activeNode as any, "description", locale) ||
+                              (activeNode as any).description;
+                            return desc ? (
+                              <p className="mt-1.5 text-[13px] leading-5 text-gray-500">{desc}</p>
+                            ) : null;
+                          })()}
+                          <p className="mt-2 text-[12px] font-semibold text-ev-700">
+                            {facetProduits.length} {productWord(facetProduits.length, t)}
+                          </p>
+                        </div>
+                      )}
+                      {activeFiltersBar}
+                      {productGridContent}
+                    </>
+                  )}
+                </div>
+
+                {/* Widget "Quelle semence pour moi ?" masqué pour le moment. */}
+              </div>
+            )}
+          </div>
+        ) : useFullWidthLayout ? (
           <div className="mb-2">
             {catalogueNode && (
               <button
@@ -646,12 +928,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
           </div>
         ) : (
         <div
-          className={cn(
-            "flex flex-col gap-6 lg:gap-8",
-            isSemencesPage
-              ? "md:grid md:grid-cols-[15rem_minmax(0,1fr)] md:items-start xl:grid-cols-[15rem_minmax(0,1fr)_17rem]"
-              : "md:flex-row"
-          )}
+          className="flex flex-col gap-6 lg:gap-8 md:flex-row"
         >
 
           {/* Sidebar catégories */}
@@ -676,46 +953,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
           {/* Zone principale */}
           <div className="flex-1 min-w-0">
             {/* Breadcrumb filtres actifs */}
-            {hasActiveFilters && (
-              <div className="mb-4 flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1 text-xs text-gray-500">
-                  <button onClick={reset}
-                    className="hover:text-ev-700 transition-colors flex items-center gap-1 font-medium">
-                    <LayoutGrid size={10} /> Tous
-                  </button>
-                  {activeNode && (
-                    <>
-                      {activeNode.parent_id && (() => {
-                        const parent = findNode(tree, activeNode.parent_id!);
-                        return parent ? (
-                          <><ChevronRight size={10} />
-                            <button onClick={() => handleCategorySelect(parent.id_categorie)}
-                              className="hover:text-ev-700 transition-colors">{catLabel(parent, locale)}</button></>
-                        ) : null;
-                      })()}
-                      <ChevronRight size={10} />
-                      <span className="text-gray-800 font-semibold">{catLabel(activeNode, locale)}</span>
-                    </>
-                  )}
-                </div>
-                {filters.tags.map(t => (
-                  <span key={t} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-ev-100 text-ev-800 text-xs font-medium">
-                    {t}<button onClick={() => handleFiltersChange({ ...filters, tags: filters.tags.filter(x => x !== t) })}><X size={10}/></button>
-                  </span>
-                ))}
-                {filters.divisions.map(d => (
-                  <span key={d} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-ev-100 text-ev-800 text-xs font-medium">
-                    {d}<button onClick={() => handleFiltersChange({ ...filters, divisions: filters.divisions.filter(x => x !== d) })}><X size={10}/></button>
-                  </span>
-                ))}
-                <span className="text-xs text-gray-400 ml-auto">
-                  {showGrid ? `${filtered.length} résultat${filtered.length > 1 ? "s" : ""}` : ""}
-                </span>
-                <button onClick={reset} className="text-xs text-gray-400 hover:text-ev-700 flex items-center gap-1 transition-colors">
-                  <X size={10}/> Effacer
-                </button>
-              </div>
-            )}
+            {activeFiltersBar}
 
             {/* Mode catalogue visuel */}
             {catalogueNode && (
@@ -773,14 +1011,6 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
               productGridContent
             )}
           </div>
-
-          {isSemencesPage && (
-            <div className="md:col-span-2 xl:col-span-1 xl:pl-1">
-              <div className="xl:sticky xl:top-24">
-                <SemencesRecommandationCard products={scopedProduits} />
-              </div>
-            </div>
-          )}
         </div>
         )}
       </div>

@@ -31,6 +31,20 @@ export const findAll = (page?: HeroPage) =>
 export const findById = (id: number) =>
   prisma.heroSlide.findUnique({ where: { id_slide: id } });
 
+const pickHeroSlideData = (data: Record<string, unknown>) => ({
+  page: data.page,
+  image: data.image,
+  href: data.href,
+  titre: data.titre,
+  sousTitre: data.sousTitre,
+  ctaLabel: data.ctaLabel,
+  ordre: data.ordre,
+  actif: data.actif,
+  focalYMobile: data.focalYMobile,
+  focalYTablette: data.focalYTablette,
+  focalYDesktop: data.focalYDesktop,
+});
+
 export const create = async (data: {
   page: HeroPage;
   image: string;
@@ -40,7 +54,10 @@ export const create = async (data: {
   ctaLabel?: string;
   ordre: number;
   actif: boolean;
-}) => prisma.heroSlide.create({ data: { ...data } });
+  focalYMobile?: number;
+  focalYTablette?: number;
+  focalYDesktop?: number;
+}) => prisma.heroSlide.create({ data: pickHeroSlideData(data) as any });
 
 export const update = async (
   id: number,
@@ -53,8 +70,11 @@ export const update = async (
     ctaLabel: string;
     ordre: number;
     actif: boolean;
+    focalYMobile: number;
+    focalYTablette: number;
+    focalYDesktop: number;
   }>
-) => prisma.heroSlide.update({ where: { id_slide: id }, data });
+) => prisma.heroSlide.update({ where: { id_slide: id }, data: pickHeroSlideData(data) as any });
 
 export const remove = (id: number) =>
   prisma.heroSlide.delete({ where: { id_slide: id } });

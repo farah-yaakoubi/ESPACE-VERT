@@ -7,6 +7,10 @@ import { activitesService, categoriesService, marquesService } from "@/services"
 import { ActiviteProduitsSectionWrapper } from "./ActiviteProduitsSection";
 import { PageHeroStatic } from "@/components/sections/PageHeroStatic";
 import { JardinageHeroShowcase } from "./JardinageHeroShowcase";
+import { SemencesHeroShowcase } from "./SemencesHeroShowcase";
+import { FertilisationHeroShowcase } from "./FertilisationHeroShowcase";
+import { PulverisationShowcase } from "./PulverisationShowcase";
+import { PollinisationProtectionShowcase } from "./PollinisationProtectionShowcase";
 import { SemencesRecommandation } from "./SemencesRecommandation";
 import { getEtudeInstallationHref, isEtudeInstallationCategory } from "@/lib/etude-installation";
 import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
@@ -73,6 +77,22 @@ export async function generateStaticParams() {
 /* ── Metadata ────────────────────────────────────────────────────── */
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
+
+  if (
+    [
+      "pollinisation-et-protection-des-plantes",
+      "pollinisation-protection-des-plantes",
+      "polinisation-protection-des-plantes",
+      "polinisation-et-protection-des-plantes",
+    ].includes(slug)
+  ) {
+    return {
+      title: "Pollinisation & Protection des Plantes",
+      description:
+        "Pollinisation, protection biologique et suivi terrain pour accompagner vos cultures avec précision.",
+    };
+  }
+
   try {
     const acts = await activitesService.list();
     const act  = acts.find((a) => a.slug === slug);
@@ -87,6 +107,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 /* ── Page ────────────────────────────────────────────────────────── */
 export default async function ActiviteDetailPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+
+  // ── Page 100% statique — Pollinisation & Protection des Plantes ────
+  // Le catalogue (catégories/produits) n'est pas encore prêt en base.
+  // On court-circuite ici, avant tout appel backend, pour que cette page
+  // s'affiche toujours, quel que soit l'état de la base de données.
+  // On tolère les deux orthographes vues en pratique sur ce projet
+  // (avec/sans "et", un ou deux "l") pour éviter tout nouveau mismatch.
+  // À retirer quand les vraies données seront en place.
+  const POLLINISATION_SLUGS = new Set([
+    "pollinisation-et-protection-des-plantes",
+    "pollinisation-protection-des-plantes",
+    "polinisation-protection-des-plantes",
+    "polinisation-et-protection-des-plantes",
+  ]);
+  if (POLLINISATION_SLUGS.has(slug)) {
+    return (
+      <PollinisationProtectionShowcase
+        title="Pollinisation & Protection des Plantes"
+        subtitle="Pollinisation, protection biologique et suivi terrain pour accompagner vos cultures avec précision, de la fleur à la récolte."
+      />
+    );
+  }
+
   const locale = await currentLocale();
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const categoryParam = resolvedSearchParams.cat;
@@ -167,6 +210,9 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
   const isIrrigation = activite.slug === "irrigation";
   const isSemences = activite.slug === "semences-et-plants";
   const isMachinisme = activite.slug === "jardinage-et-machinisme";
+  const isFertilisation = activite.slug === "fertilisation";
+  const isPulverisation = activite.slug === "pulverisation";
+  const isPollinisationProtection = activite.slug === "pollinisation-et-protection-des-plantes";
   const heroSettings = getActiviteHeroSettings(activite.slug);
   const activiteNom = translatedField(activite as any, "nom", locale) || activite.nom;
   const activiteDescription = translatedField(activite as any, "description", locale) || activite.description;
@@ -176,6 +222,18 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
       {/* ── Hero ── */}
       {isMachinisme ? (
         <JardinageHeroShowcase activiteSlug={activite.slug} categories={rootCategories} />
+      ) : isSemences ? (
+        <SemencesHeroShowcase activiteSlug={activite.slug} />
+      ) : isFertilisation ? (
+        <FertilisationHeroShowcase activiteSlug={activite.slug} categories={rootCategories} />
+      ) : isPulverisation ? (
+        <PulverisationShowcase categories={categories} />
+      ) : isPollinisationProtection ? (
+        <PollinisationProtectionShowcase
+          title={activiteNom}
+          subtitle={activiteDescription}
+          categories={rootCategories}
+        />
       ) : (
         <PageHeroStatic
           page={`activite:${activite.slug}`}
@@ -187,6 +245,10 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
           {...heroSettings}
         />
       )}
+
+      {/* Le "Parcourir par catégorie" pour Semences est géré par
+          SemencesCategoryTiles, plus bas, dans ActiviteProduitsSection —
+          on ne le duplique pas ici. */}
 
       {/* CTA Irrigation / Matar */}
       {isIrrigation && (
@@ -206,7 +268,7 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
       )}
 
       {/* ── Categories quick nav ─────────────────────────────────── */}
-      {!isMachinisme && (rootCategories.length > 0 || isIrrigation) && (
+      {!isMachinisme && !isSemences && !isFertilisation && !isPulverisation && !isPollinisationProtection && (rootCategories.length > 0 || isIrrigation) && (
         <section className="bg-white border-b border-sand-200">
           <div className="container-ev py-4">
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
@@ -224,20 +286,30 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
                   {translatedField(cat as any, "nom", locale) || cat.nom}
                 </a>
               ))}
-              {isSemences && <SemencesRecommandation />}
             </div>
           </div>
         </section>
       )}
 
+      {/* ── Widget recommandation IA (Semences) — masqué pour le moment ── */}
+      {false && isSemences && (
+        <section className="bg-white border-b border-sand-200">
+          <div className="container-ev py-3.5 flex justify-center">
+            <SemencesRecommandation />
+          </div>
+        </section>
+      )}
+
       {/* ── Products section (client component) ─────────────────── */}
-      <ActiviteProduitsSectionWrapper
-        id_activite={activite.id_activite}
-        activiteSlug={activite.slug}
-        categories={categories}
-        brandCards={irrigationBrandCards}
-        marques={marques}
-      />
+      {!isPulverisation && (
+        <ActiviteProduitsSectionWrapper
+          id_activite={activite.id_activite}
+          activiteSlug={activite.slug}
+          categories={categories}
+          brandCards={irrigationBrandCards}
+          marques={marques}
+        />
+      )}
     </div>
   );
 }

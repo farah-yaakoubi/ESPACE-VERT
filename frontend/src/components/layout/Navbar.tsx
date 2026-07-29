@@ -260,15 +260,50 @@ function ActivitesDropdown({
   isDark: boolean;
 }) {
   const { t } = useI18n();
-  const [selectedAct, setSelectedAct] = useState<number | null>(() =>
-    activites.length > 0 ? activites[0].id_activite : null
-  );
+  const [selectedAct, setSelectedAct] = useState<number | null>(null);
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [swipeDir, setSwipeDir] = useState<1 | -1>(1);
   const [listHovering, setListHovering] = useState(false);
+  const [col2Top, setCol2Top] = useState(0);
+  const [col2MaxHeight, setCol2MaxHeight] = useState<number | undefined>(undefined);
+
+  const col1ContainerRef = useRef<HTMLDivElement | null>(null);
+  const itemRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   const act = activites.find((a) => a.id_activite === selectedAct);
   const hasCategories = (act?.categories?.length ?? 0) > 0;
+
+  // Aligne le haut de la colonne 2 sur le haut de l'activité survolée dans la colonne 1.
+  // La borne n'est PAS la hauteur de la colonne 1 (sinon, sur la dernière activité, la
+  // colonne 2 se retrouve poussée AU-DESSUS du point survolé, cassant l'alignement) :
+  // la vraie limite, c'est le bas visible de l'écran. On aligne toujours sur le survol,
+  // et on ne borne/scrolle que si ça dépasserait réellement le viewport.
+  const MIN_COL2_VISIBLE = 160;
+  const SAFE_BOTTOM_MARGIN = 24;
+
+  useEffect(() => {
+    if (selectedAct == null) return;
+
+    const recompute = () => {
+      const containerEl = col1ContainerRef.current;
+      const itemEl = itemRefs.current[selectedAct];
+      if (!containerEl || !itemEl) return;
+      const containerTop = containerEl.getBoundingClientRect().top;
+      const itemTop = itemEl.getBoundingClientRect().top;
+      const rawTop = Math.max(0, itemTop - containerTop);
+
+      const availableBelow = window.innerHeight - containerTop - SAFE_BOTTOM_MARGIN;
+      const maxTop = Math.max(0, availableBelow - MIN_COL2_VISIBLE);
+      const top = Math.min(rawTop, maxTop);
+
+      setCol2Top(top);
+      setCol2MaxHeight(Math.max(MIN_COL2_VISIBLE, availableBelow - top));
+    };
+
+    recompute();
+    window.addEventListener("resize", recompute);
+    return () => window.removeEventListener("resize", recompute);
+  }, [selectedAct]);
 
   const handleSelectAct = (id: number) => {
     setListHovering(true);
@@ -281,10 +316,6 @@ function ActivitesDropdown({
   };
 
   useEffect(() => { setSelectedCat(null); }, [selectedAct]);
-  useEffect(() => {
-    if (activites.length > 0 && selectedAct === null)
-      setSelectedAct(activites[0].id_activite);
-  }, [activites]);
 
   const CAT_ICONS = [Ico.Sprout, Ico.GrassTuft, Ico.Cattail, Ico.Clover, Ico.Sunflower, Ico.Carrot];
 
@@ -296,19 +327,18 @@ function ActivitesDropdown({
   return (
     <div style={{
       display: "flex",
+      alignItems: "flex-start",
       width: COL1 + (hasCategories ? COL2 : 0),
       transition: "width 0.22s cubic-bezier(.4,0,.2,1)",
       borderRadius: 20,
       overflow: "hidden",
-      boxShadow: "0 28px 64px rgba(31,26,14,0.16), 0 0 0 1px rgba(226,214,181,0.6)",
-      background: "#fbf9f4",
     }}>
 
       {/* ── COL 1 — liste activités — cartes "sachet de graines" ── */}
       <div
+        ref={col1ContainerRef}
         style={{
           width: COL1, flexShrink: 0,
-          background: "#fbf9f4",
           display: "flex", flexDirection: "column",
           padding: "8px 8px",
         }}
@@ -330,6 +360,7 @@ function ActivitesDropdown({
             return (
               <motion.div
                 key={a.id_activite}
+                ref={(el) => { itemRefs.current[a.id_activite] = el as HTMLDivElement | null; }}
                 initial={{ opacity: 0, x: -6 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.04, duration: 0.2 }}
@@ -380,7 +411,7 @@ function ActivitesDropdown({
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <span style={{
                       display: "block", fontSize: 14.5, fontWeight: 800, lineHeight: 1.25,
-                      color: v.accent, whiteSpace: "normal", wordBreak: "break-word",
+                      color: "#000", whiteSpace: "normal", wordBreak: "break-word",
                       letterSpacing: "-0.01em",
                     }}>
                       {a.nom}
@@ -425,9 +456,12 @@ function ActivitesDropdown({
       {hasCategories && (
         <div style={{
           width: COL2, flexShrink: 0,
+          height: "auto", alignSelf: "flex-start",
           display: "flex", flexDirection: "column",
-          background: `linear-gradient(180deg, ${actVisual.bg}55 0%, #fbf9f4 60px)`,
-          borderLeft: "1px solid #efe8d6",
+          marginTop: col2Top,
+          maxHeight: col2MaxHeight,
+          transition: "margin-top 0.22s cubic-bezier(.4,0,.2,1), max-height 0.22s cubic-bezier(.4,0,.2,1)",
+          overflow: "hidden",
         }}>
           <AnimatePresence mode="wait" custom={swipeDir}>
             {act && (
@@ -438,9 +472,16 @@ function ActivitesDropdown({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: swipeDir * -12 }}
                 transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-                style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}
+                style={{ display: "flex", flexDirection: "column", minHeight: 0, maxHeight: col2MaxHeight }}
               >
-                <div style={{ flex: 1, overflowY: "auto", padding: "8px 8px 8px" }}>
+                <div
+                  style={{
+                    overflowY: "auto",
+                    overflowX: "hidden",
+                    padding: "8px 8px 8px",
+                    scrollbarWidth: "thin",
+                  }}
+                >
                   {act.categories?.map((c, ci) => {
                     const expanded = selectedCat === c.slug;
                     const hasSub = (c.sous_cats?.length ?? 0) > 0;
@@ -486,7 +527,7 @@ function ActivitesDropdown({
                             >
                               <div style={{
                                 width: 30, height: 30, borderRadius: 9, flexShrink: 0,
-                                background: expanded ? "#fff" : BRAND_BG,
+                                background: expanded ? "#fff" : `${BRAND_LIME}30`,
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 transition: "background 0.15s ease",
                               }}>
@@ -494,7 +535,7 @@ function ActivitesDropdown({
                               </div>
                               <span style={{
                                 fontSize: 13.5, fontWeight: 700, lineHeight: 1.3,
-                                color: "#20291f", flex: 1,
+                                color: "#000", flex: 1,
                                 whiteSpace: "normal", wordBreak: "break-word",
                               }}>
                                 {c.nom}
@@ -552,7 +593,7 @@ function ActivitesDropdown({
                                     >
                                       <span style={{
                                         width: 5, height: 5, borderRadius: "50%", flexShrink: 0,
-                                        background: actVisual.accent, display: "inline-block",
+                                        background: BRAND_LIME, display: "inline-block",
                                       }} />
                                       <span style={{ fontSize: 12.5, fontWeight: 500, lineHeight: 1.4,
                                         whiteSpace: "normal", wordBreak: "break-word" }}>
@@ -570,40 +611,6 @@ function ActivitesDropdown({
                   })}
                 </div>
 
-                {/* Bandeau CTA */}
-                <div style={{ margin: "12px 14px 16px" }}>
-                  <button
-                    type="button"
-                    onClick={() => { onClose(); window.location.href = getActivityHrefBySlug(act.slug); }}
-                    style={{
-                      position: "relative", overflow: "hidden",
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      width: "100%", gap: 10,
-                      background: `linear-gradient(115deg, ${actVisual.accent} 0%, #16321f 130%)`,
-                      border: "none", borderRadius: 16,
-                      padding: "15px 18px",
-                      cursor: "pointer", fontFamily: "inherit", textAlign: "left",
-                    }}
-                  >
-                    <Ico.Leaf style={{
-                      position: "absolute", right: -16, top: -14,
-                      width: 88, height: 88, color: "#fff", opacity: 0.14,
-                      transform: "rotate(-14deg)",
-                    }} />
-                    <span style={{ fontSize: 12.5, fontWeight: 700, color: "#fff",
-                      position: "relative", zIndex: 1 }}>
-                      Voir toute la gamme — {act.nom}
-                    </span>
-                    <span style={{
-                      position: "relative", zIndex: 1,
-                      width: 27, height: 27, borderRadius: "50%", flexShrink: 0,
-                      background: "rgba(255,255,255,0.2)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      <Ico.ChevR style={{ width: 12, height: 12, color: "#fff" }} />
-                    </span>
-                  </button>
-                </div>
               </motion.div>
             )}
           </AnimatePresence>

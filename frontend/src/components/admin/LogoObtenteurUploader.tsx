@@ -11,9 +11,22 @@ import { adminUpload } from "@/lib/admin-api";
 interface Props {
   value?: string | null;
   onChange: (url: string) => void;
+  /** Texte affiché dans la zone de dépôt (défaut : "Glissez le logo ici…") */
+  dropLabel?: string;
+  /** Texte alt de la prévisualisation (défaut : "Logo obtenteur") */
+  altText?: string;
+  /** Libellé "prêt" affiché une fois l'upload terminé (défaut : "Logo prêt") */
+  readyLabel?: string;
 }
 
-export function LogoObtenteurUploader({ value, onChange }: Props) {
+export function LogoObtenteurUploader({
+  value, onChange,
+  dropLabel  = "Glissez le logo ici ou",
+  altText    = "Logo obtenteur",
+  readyLabel = "Logo prêt",
+  previewMaxWidth = 240,
+  previewMaxHeight = 120,
+}: Props & { previewMaxWidth?: number; previewMaxHeight?: number }) {
   const [mode,      setMode]      = useState<"file" | "url">("file");
   const [urlInput,  setUrlInput]  = useState(value ?? "");
   const [preview,   setPreview]   = useState<string | null>(value ?? null);
@@ -108,7 +121,7 @@ export function LogoObtenteurUploader({ value, onChange }: Props) {
                 <ImageIcon size={18} className="text-green-600" />
               </div>
               <p className="text-sm font-semibold text-gray-700">
-                Glissez le logo ici ou{" "}
+                {dropLabel}{" "}
                 <span className="text-green-700 underline">cliquez pour choisir</span>
               </p>
               <p className="text-[11px] text-gray-400">PNG · SVG · JPG · WEBP — taille originale conservée</p>
@@ -144,7 +157,7 @@ export function LogoObtenteurUploader({ value, onChange }: Props) {
             <div className="flex items-center gap-1.5">
               {done && <CheckCircle size={12} className="text-green-700" />}
               <span className="text-[11px] font-bold text-green-800">
-                {done ? "Logo prêt" : "Aperçu"}
+                {done ? readyLabel : "Aperçu"}
               </span>
             </div>
             <button type="button" onClick={reset}
@@ -156,8 +169,8 @@ export function LogoObtenteurUploader({ value, onChange }: Props) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={preview}
-              alt="Logo obtenteur"
-              style={{ maxWidth: 240, maxHeight: 120, width: "auto", height: "auto", display: "block" }}
+              alt={altText}
+              style={{ maxWidth: previewMaxWidth, maxHeight: previewMaxHeight, width: "auto", height: "auto", display: "block" }}
               onError={() => setErr("Impossible de charger l'image")}
             />
           </div>

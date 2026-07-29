@@ -1,14 +1,13 @@
 "use client";
 import { useState } from "react";
 import {
-  Barcode, Scale, Package,
+  Scale, Package,
   FlaskConical, Target, Star,
   Sprout, Zap, TestTube, Globe, Waves, Leaf, Wrench,
   CheckCircle2, Wheat, Apple, Grape, TreePine, Carrot, Sun,
 } from "lucide-react";
 
 interface TechTableProps {
-  sku?:                string | null;
   poids?:              string | null;
   nature?:             string | null;
   composition_chimique?: string | null;
@@ -151,10 +150,10 @@ const TABS: { key: Tab; label: string; Icon: React.ElementType }[] = [
 
 /* ── Composant principal ─────────────────────────────────────── */
 export function ProduitTechTable({
-  sku, poids, nature, composition_chimique, usage,
+  poids, nature, composition_chimique, usage,
   biologique, conditionnement, slug, categorie, tags, isMachinisme,
 }: TechTableProps) {
-  const hasData = !!(sku || poids || nature || composition_chimique || usage || conditionnement || biologique === true);
+  const hasData = !!(poids || nature || composition_chimique || usage || conditionnement || biologique === true);
   if (!hasData) return null;
 
   const pal = getPalette(slug, nature, categorie, isMachinisme);
@@ -173,7 +172,6 @@ export function ProduitTechTable({
   const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
 
   const metaItems = [
-    { Icon: Barcode, label: "Référence",       value: sku          },
     { Icon: Scale,   label: "Poids / Volume",  value: poids        },
     { Icon: Package, label: "Conditionnement", value: conditionnement },
   ].filter(({ value }) => value);

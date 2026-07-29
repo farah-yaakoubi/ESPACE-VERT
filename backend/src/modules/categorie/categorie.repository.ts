@@ -16,6 +16,7 @@ type CatFlat = {
   id_marque: number | null;
   id_activite: number | null;
   parent_id: number | null;
+  parent_ids_extra?: number[];
   ordre: number;
   actif: boolean;
   created_at: Date;
@@ -24,6 +25,12 @@ type CatFlat = {
 
 /** Nœud enrichi utilisé dans l'arbre renvoyé aux clients */
 export type CatNode = CatFlat & { sous_cats: CatNode[] };
+
+/** Aplati `parents_extra: {id_parent}[]` (issu de Prisma) en `parent_ids_extra: number[]` */
+function withParentIdsExtra<T extends { parents_extra?: { id_parent: number }[] }>(row: T) {
+  const { parents_extra, ...rest } = row as any;
+  return { ...rest, parent_ids_extra: (parents_extra ?? []).map((p: any) => p.id_parent) };
+}
 
 // ─── Utilitaire buildTree (O(n)) ─────────────────────────────────────────────
 //
@@ -49,14 +56,34 @@ function buildTree(flat: CatFlat[]): CatNode[] {
     }
   });
 
-  // Tri récursif par ordre à chaque niveau
-  function sortNodesByOrder(nodesList: CatNode[]): CatNode[] {
+  // Rattachements secondaires (additifs) : un nœud peut en plus apparaître
+  // sous d'autres parents que son parent_id principal. On ne le retire pas
+  // de son emplacement principal — il est simplement dupliqué (même id)
+  // dans les sous_cats du/des parent(s) secondaire(s) qui existent dans
+  // ce même jeu de données.
+  map.forEach(node => {
+    (node.parent_ids_extra ?? []).forEach(extraParentId => {
+      if (extraParentId === node.id_categorie) return; // garde-fou anti auto-référence
+      const extraParent = map.get(extraParentId);
+      if (extraParent && !extraParent.sous_cats.includes(node)) {
+        extraParent.sous_cats.push(node);
+      }
+    });
+  });
+
+  // Tri récursif par ordre à chaque niveau. `ancestors` protège contre un
+  // cycle accidentel introduit par un rattachement secondaire mal choisi
+  // dans l'admin (ex. parent secondaire = un de ses propres descendants).
+  function sortNodesByOrder(nodesList: CatNode[], ancestors: Set<number> = new Set()): CatNode[] {
     return nodesList
       .sort((first, second) => first.ordre - second.ordre)
-      .map(node => ({
-        ...node,
-        sous_cats: sortNodesByOrder(node.sous_cats),
-      }));
+      .map(node => {
+        if (ancestors.has(node.id_categorie)) return { ...node, sous_cats: [] };
+        return {
+          ...node,
+          sous_cats: sortNodesByOrder(node.sous_cats, new Set(ancestors).add(node.id_categorie)),
+        };
+      });
   }
 
   return sortNodesByOrder(roots);
@@ -93,6 +120,7 @@ const catSelect = {
   ordre:        true,
   actif:        true,
   created_at:   true,
+  parents_extra: { select: { id_parent: true } },
 } as const;
 
 // ─── Repository ──────────────────────────────────────────────────────────────
@@ -143,7 +171,8 @@ export const categorieRepository = {
       (rows as any[]).sort((a: any, b: any) => (a.ordre - b.ordre) || a.nom.localeCompare(b.nom, "fr"));
     }
 
-    return params.tree ? buildTree(rows as unknown as CatFlat[]) : rows;
+    const normalized = (rows as any[]).map(withParentIdsExtra);
+    return params.tree ? buildTree(normalized as unknown as CatFlat[]) : normalized;
   },
 
   // ── ARBRE COMPLET D'UNE MARQUE ─────────────────────────────────────────────
@@ -251,20 +280,22 @@ export const categorieRepository = {
     if (params.id_activite) where.id_activite = params.id_activite;
     if (params.scope === "root") where.parent_id = null;
 
-    return prisma.categorie.findMany({
+    const rows = await prisma.categorie.findMany({
       where,
       orderBy: [{ parent_id: "asc" }, { ordre: "asc" }, { nom: "asc" }],
       include: {
         marque:   { select: { nom: true, slug: true, translations: true } },
         activite: { select: { nom: true, slug: true, translations: true } },
         parent:   { select: { nom: true, id_categorie: true, translations: true } },
+        parents_extra: { select: { id_parent: true, parent: { select: { id_categorie: true, nom: true } } } },
         _count:   { select: { produits: true, sous_cats: true } },
       },
     });
+    return rows.map(r => ({ ...r, parent_ids_extra: r.parents_extra.map(p => p.id_parent) }));
   },
 
   async findById(id_categorie: number) {
-    return prisma.categorie.findUnique({
+    const cat = await prisma.categorie.findUnique({
       where:   { id_categorie },
       include: {
         marque:    true,
@@ -272,9 +303,12 @@ export const categorieRepository = {
         parent:    true,
         sous_cats: { orderBy: { ordre: "asc" } },
         produits:  { take: 5, include: { images: { where: { is_principale: true }, take: 1 } } },
+        parents_extra: { select: { id_parent: true, parent: { select: { id_categorie: true, nom: true } } } },
         _count:    { select: { produits: true, sous_cats: true } },
       },
     });
+    if (!cat) return null;
+    return { ...cat, parent_ids_extra: cat.parents_extra.map(p => p.id_parent) };
   },
 
   async findBySlug(slug: string) {
@@ -367,13 +401,36 @@ export const categorieRepository = {
   },
 
   async create(data: CreateCategorieDto) {
+    const { parent_ids_extra, ...rest } = data;
     return prisma.categorie.create({
-      data: { ...data, slug: data.slug.toLowerCase(), actif: true },
+      data: {
+        ...rest,
+        slug: rest.slug.toLowerCase(),
+        actif: true,
+        ...(parent_ids_extra && parent_ids_extra.length > 0
+          ? { parents_extra: { create: parent_ids_extra.map(id_parent => ({ id_parent })) } }
+          : {}),
+      },
     });
   },
 
   async update(id_categorie: number, data: UpdateCategorieDto) {
-    return prisma.categorie.update({ where: { id_categorie }, data });
+    const { parent_ids_extra, ...rest } = data;
+    return prisma.$transaction(async (tx) => {
+      const cat = await tx.categorie.update({ where: { id_categorie }, data: rest });
+      // parent_ids_extra non fourni (undefined) → on ne touche pas aux liens existants.
+      // Fourni (même vide []) → on remplace entièrement la liste.
+      if (parent_ids_extra !== undefined) {
+        await tx.categorieParentExtra.deleteMany({ where: { id_categorie } });
+        const cleaned = [...new Set(parent_ids_extra)].filter(id => id !== id_categorie);
+        if (cleaned.length > 0) {
+          await tx.categorieParentExtra.createMany({
+            data: cleaned.map(id_parent => ({ id_categorie, id_parent })),
+          });
+        }
+      }
+      return cat;
+    });
   },
 
   async delete(id_categorie: number) {

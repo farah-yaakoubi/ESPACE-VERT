@@ -6,6 +6,7 @@ import type {
   Categorie, CategorieDetail,
   Produit, ProduitCard,
   Actualite, ActualiteDetail,
+  TutorialVideo,
   ApiMeta,
   CreateDevisPayload,
   CreateContactPayload,
@@ -94,6 +95,13 @@ export const actualitesService = {
   },
   bySlug: (slug: string) =>
     unwrapOrThrow(get<ActualiteDetail>(`/actualites/${slug}`, { revalidate: 120 })),
+};
+
+// ── Videos tutoriels ─────────────────────────────────────────────────────────
+
+export const tutorialVideosService = {
+  list: (page = "pulvert") =>
+    unwrapOrThrow(get<TutorialVideo[]>(`/tutorial-videos?page=${encodeURIComponent(page)}`, { revalidate: 120 })),
 };
 
 // ── DevisDemande ──────────────────────────────────────────────────────────────

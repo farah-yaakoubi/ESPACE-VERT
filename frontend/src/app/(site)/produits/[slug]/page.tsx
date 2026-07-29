@@ -302,7 +302,6 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
     produit.categorie?.nom?.toLowerCase().includes("semence");
 
   const isMachinismeProduct = produit.categorie?.activite?.slug === "jardinage-et-machinisme";
-  const sku = (produit as any).sku as string | null | undefined;
 
   // Liens de retour : activité > marque > catégorie parent (en fonction de ce qui est disponible)
   const backHref = produit.categorie?.activite
@@ -389,14 +388,9 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
                   >
                     {produitNom || produit.slug}
                   </h1>
-                  {sku && (
-                    <p className="mt-1.5 text-xs text-gray-400">
-                      Réf. <span className="font-semibold text-gray-500">{sku}</span>
-                    </p>
-                  )}
                 </div>
 
-                {/* Infos essentielles — réf. / catégorie / marque */}
+                {/* Infos essentielles — catégorie / marque */}
                 <div
                   className="rounded-2xl border border-sand-200 bg-white p-5 space-y-3.5"
                   style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}
@@ -419,10 +413,6 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
                     <span className="text-gray-400">Catégorie</span>
                     <span className="font-semibold text-gray-800 text-right">{categorieNom ?? "—"}</span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Référence</span>
-                    <span className="font-semibold text-gray-800 text-right">{sku ?? "—"}</span>
-                  </div>
                 </div>
 
                 <Link
@@ -443,7 +433,7 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
                     id: "description",
                     label: "Description",
                     content: (
-                      <div className="grid grid-cols-1 sm:grid-cols-[1fr_240px] gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-[1fr_280px] gap-6 items-start">
                         <div>
                           {produitDescription ? (
                             <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
@@ -456,31 +446,51 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
                           )}
                         </div>
 
-                        {/* Documents — fiche technique imprimable / téléchargeable */}
-                        {(fichePdf || produit.fiche_technique) && (
-                          <div className="flex flex-col gap-2">
-                            {fichePdf ? (
-                              <a
-                                href={fichePdf}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                download
-                                className="flex items-center gap-3 rounded-xl border border-sand-200 bg-white px-4 py-3 transition hover:border-ev-300 hover:bg-ev-50 group"
+                        {((produit as any).image_description || fichePdf || produit.fiche_technique) && (
+                          <div className="flex flex-col gap-3">
+                            {/* Image illustrant la description */}
+                            {(produit as any).image_description && (
+                              <div
+                                className="relative w-full overflow-hidden rounded-2xl border border-sand-200 bg-white"
+                                style={{ aspectRatio: "4 / 3", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}
                               >
-                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sand-100 text-gray-500 group-hover:bg-ev-100 group-hover:text-ev-700 transition-colors">
-                                  <FileText size={16} />
-                                </span>
-                                <span className="text-sm font-semibold text-gray-700 group-hover:text-ev-800">
-                                  Fiche technique (PDF)
-                                </span>
-                              </a>
-                            ) : (
-                              produit.fiche_technique && (
-                                <PrintFicheTechniqueButton
-                                  html={produit.fiche_technique}
-                                  title={produitNom}
+                                <Image
+                                  src={(produit as any).image_description}
+                                  alt={produitNom || ""}
+                                  fill
+                                  className="object-cover"
+                                  sizes="(max-width: 640px) 100vw, 280px"
                                 />
-                              )
+                              </div>
+                            )}
+
+                            {/* Documents — fiche technique imprimable / téléchargeable */}
+                            {(fichePdf || produit.fiche_technique) && (
+                              <div className="flex flex-col gap-2">
+                                {fichePdf ? (
+                                  <a
+                                    href={fichePdf}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    download
+                                    className="flex items-center gap-3 rounded-xl border border-sand-200 bg-white px-4 py-3 transition hover:border-ev-300 hover:bg-ev-50 group"
+                                  >
+                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sand-100 text-gray-500 group-hover:bg-ev-100 group-hover:text-ev-700 transition-colors">
+                                      <FileText size={16} />
+                                    </span>
+                                    <span className="text-sm font-semibold text-gray-700 group-hover:text-ev-800">
+                                      Fiche technique (PDF)
+                                    </span>
+                                  </a>
+                                ) : (
+                                  produit.fiche_technique && (
+                                    <PrintFicheTechniqueButton
+                                      html={produit.fiche_technique}
+                                      title={produitNom}
+                                    />
+                                  )
+                                )}
+                              </div>
                             )}
                           </div>
                         )}
@@ -590,12 +600,30 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
             )}
 
             {/* Description */}
-            {produitDescription && (
+            {(produitDescription || (produit as any).image_description) && (
               <div className="rounded-2xl bg-white border border-sand-200 p-5"
                 style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
-                <p className="text-gray-600 leading-relaxed text-sm whitespace-pre-line">
-                  {produitDescription}
-                </p>
+                <div className={(produit as any).image_description ? "grid grid-cols-1 sm:grid-cols-[1fr_220px] gap-5 items-start" : ""}>
+                  {produitDescription && (
+                    <p className="text-gray-600 leading-relaxed text-sm whitespace-pre-line">
+                      {produitDescription}
+                    </p>
+                  )}
+                  {(produit as any).image_description && (
+                    <div
+                      className="relative w-full overflow-hidden rounded-xl border border-sand-200 bg-sand-50 shrink-0"
+                      style={{ aspectRatio: "4 / 3" }}
+                    >
+                      <Image
+                        src={(produit as any).image_description}
+                        alt={produitNom || ""}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 100vw, 220px"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -603,7 +631,6 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
 
             {/* Tableau technique */}
             <ProduitTechTable
-              sku={(produit as any).sku}
               poids={(produit as any).poids}
               nature={(produit as any).nature}
               composition_chimique={(produit as any).composition_chimique}

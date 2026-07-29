@@ -192,24 +192,23 @@ export function ProduitGallery({
           {view === "main" && (
             <motion.div key="main" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div
-                className="relative aspect-square rounded-3xl bg-white border border-sand-200 overflow-hidden shadow-card group cursor-zoom-in"
+                className="relative rounded-3xl bg-white border border-sand-200 overflow-hidden shadow-card group cursor-zoom-in flex items-center justify-center"
                 onClick={() => { setLightbox(true); setZoom(1); }}
                 style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}
               >
                 <AnimatePresence mode="wait" initial={false}>
-                  <motion.div
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <motion.img
                     key={`${safeActive}-${transType}`}
+                    src={mainImg.url}
+                    alt={mainImg.alt ?? nomProduit}
                     variants={trans.variants}
                     initial="initial"
                     animate="animate"
                     exit="exit"
                     transition={trans.transition}
-                    className="absolute inset-0"
-                  >
-                    <Image src={mainImg.url} alt={mainImg.alt ?? nomProduit} fill priority
-                      className="object-contain p-4 sm:p-8"
-                      sizes="(max-width:1024px)100vw,50vw" />
-                  </motion.div>
+                    className="block w-full h-auto max-h-[70vh] object-contain"
+                  />
                 </AnimatePresence>
 
                 {mainImg.conditionnement && (

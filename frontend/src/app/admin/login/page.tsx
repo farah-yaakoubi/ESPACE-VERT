@@ -239,6 +239,8 @@ export default function AdminLoginPage() {
             width={1000}
             height={45}
             className="object-contain"
+            priority
+            style={{ width: "auto", height: "auto", maxWidth: "100%" }}
           />
           <p
             className="text-[10px] mt-2.5 font-medium tracking-widest uppercase"
@@ -391,6 +393,8 @@ export default function AdminLoginPage() {
               width={120}
               height={45}
               className="object-contain"
+              priority
+              style={{ width: "auto", height: "auto", maxWidth: "100%" }}
             />
           </div>
 

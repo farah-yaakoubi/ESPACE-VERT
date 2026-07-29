@@ -60,7 +60,11 @@ async function generateSku(id_categorie: number): Promise<string> {
   });
 
   // 2. Construire les préfixes
-  const prefixMarque   = slugToPrefix(categorie?.marque?.slug ?? "gen", 4);
+  // Une catégorie peut n'avoir aucune marque associée (ex: catégorie rattachée
+  // uniquement à une activité) → on retombe sur un préfixe générique "GEN".
+  const prefixMarque   = categorie?.marque
+    ? slugToPrefix(categorie.marque.slug, 4)
+    : "GEN";
   const prefixActivite = categorie?.activite
     ? slugToPrefix(categorie.activite.slug, 4)
     : "GEN";
@@ -143,9 +147,10 @@ export const produitService = {
     });
 
     if (!categorie) throw { status: 404, message: "Catégorie introuvable" };
-    if (!categorie.marque) throw { status: 400, message: "La catégorie sélectionnée n'a pas de marque associée" };
 
-    const prefixMarque   = slugToPrefix(categorie.marque.slug, 4);
+    // La marque est optionnelle : une catégorie rattachée uniquement à une
+    // activité (sans marque propre) utilise un préfixe générique "GEN".
+    const prefixMarque   = categorie.marque ? slugToPrefix(categorie.marque.slug, 4) : "GEN";
     const prefixActivite = categorie.activite ? slugToPrefix(categorie.activite.slug, 4) : "GEN";
     const base           = `${prefixMarque}-${prefixActivite}`;
 
@@ -206,13 +211,15 @@ export const produitService = {
     // On passe id_categorie pour extraire le préfixe activité (ex: FV-FERT-0001)
     const sku = await generateSku(data.id_categorie);
 
-    // Récupérer la catégorie pour connaître l'activité associée (si présente)
+    // Récupérer la catégorie pour connaître l'activité et la marque associées.
+    // La marque est optionnelle : une catégorie peut n'être rattachée qu'à une
+    // activité (ex: catégories de semences génériques sans marque propre).
     const categorie = await prisma.categorie.findUnique({
       where: { id_categorie: data.id_categorie },
       select: { id_activite: true, id_marque: true },
     });
-    if (!categorie?.id_marque) {
-      throw { status: 400, message: "La catégorie sélectionnée n'a pas de marque associée" };
+    if (!categorie) {
+      throw { status: 404, message: "Catégorie introuvable" };
     }
 
     // Créer le produit et, si nécessaire, créer la liaison ActiviteMarque dans une transaction
@@ -241,7 +248,7 @@ export const produitService = {
     await logAudit({
       id_admin, action: "CREATE", entity_name: "produit",
       entity_id: produit.id_produit,
-      detail: { nom: data.nom, sku, id_categorie: data.id_categorie, id_marque: categorie.id_marque },
+      detail: { nom: data.nom, sku, id_categorie: data.id_categorie, id_marque: categorie.id_marque ?? null },
     });
     await trySyncProduitEmbedding(produit.id_produit);
     return produit;

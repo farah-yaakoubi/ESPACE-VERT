@@ -17,6 +17,7 @@ export interface CatNode {
   nom:          string;
   slug:         string;
   parent_id:    number | null;
+  parent_ids_extra?: number[];
   translations?: ProduitCard["translations"];
   ordre?:       number;
   image?:       string | null;
@@ -49,6 +50,7 @@ interface FilterPanelProps {
   onChange:         (f: FilterState) => void;
   totalAll:         number;
   onCategoryClick?: (id: number | null) => void; // intercept category selection
+  hideCategoryTree?: boolean; // masque l'arbre de catégories (ex: page Semences, où les catégories sont déjà affichées en tuiles au-dessus)
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
@@ -275,7 +277,7 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 
 /* ── Main FilterPanel ────────────────────────────────────────────────────── */
 
-export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCategoryClick }: FilterPanelProps) {
+export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCategoryClick, hideCategoryTree = false }: FilterPanelProps) {
   const { locale, t } = useI18n();
   const [openSet,      setOpenSet]      = useState<Set<number>>(new Set());
   const [mobileOpen,   setMobileOpen]   = useState(false);
@@ -408,7 +410,7 @@ export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCat
       </div>
 
       {/* Categories */}
-      {tree.length > 0 && (
+      {!hideCategoryTree && tree.length > 0 && (
         <FilterSection label={t("catalog.categories", "Catégories")} icon={<LayoutGrid size={11} />}>
           <div className="space-y-0.5">
             {tree.map(node => (

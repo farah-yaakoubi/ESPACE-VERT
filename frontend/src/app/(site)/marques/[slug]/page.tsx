@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import Link from "next/link";
-import { activitesService, categoriesService, marquesService } from "@/services";
+import { activitesService, categoriesService, marquesService, tutorialVideosService } from "@/services";
 import { CategoryTree } from "@/components/catalogue/CategoryTree";
 import { fetchMarqueTree } from "@/lib/api/catalogue";
 import { PageHeroStatic } from "@/components/sections/PageHeroStatic";
+import { FertilisantHeroShowcase } from "@/components/sections/FertilisantHeroShowcase";
+import { PulvertHero } from "@/components/sections/PulvertHero";
+import { PulvertFeatureSections } from "@/components/sections/PulvertFeatureSections";
 import { ActiviteProduitsSectionWrapper } from "../../activites/[slug]/ActiviteProduitsSection";
+import { MarqueProduitsSectionWrapper } from "./MarqueProduitsSection";
 import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
 import { translatedField } from "@/i18n/translated-field";
 import type { MarqueTree } from "@/types/catalogue";
@@ -144,6 +148,8 @@ export default async function MarqueDetailPage({ params }: PageProps) {
   }
 
   const isMatar = marque.slug === "matar";
+  const isFertivert = marque.slug === "fertivert";
+  const isPulvert = marque.slug === "pulvert";
   const heroSettings = getMarqueHeroSettings(marque.slug);
   const irrigation = isMatar
     ? (await activitesService.list()).find((activite) => activite.slug === "irrigation")
@@ -176,6 +182,7 @@ export default async function MarqueDetailPage({ params }: PageProps) {
   const useMachinismeCatalogue = Boolean(machinismeActivite && machinismeMarqueCategory);
 
   const tree = (useIrrigationMatarCatalogue || useMachinismeCatalogue) ? null : hideBaddarGenericCategory(await fetchMarqueTree(slug));
+  const pulvertTutorialVideos = isPulvert ? await tutorialVideosService.list("pulvert").catch(() => []) : [];
   const quickCategories = useIrrigationMatarCatalogue
     ? matarCategories.filter((cat) => cat.parent_id === matarCategory!.id_categorie)
     : tree?.categories ?? [];
@@ -190,15 +197,31 @@ export default async function MarqueDetailPage({ params }: PageProps) {
   return (
     <>
       {/* ── Hero — récupère le slide "marque:{slug}" depuis l'admin Hero ── */}
-      <PageHeroStatic
-        page={`marque:${slug}`}
-        eyebrow="Marque"
-        title={marqueNom}
-        subtitle={marqueDescription ?? undefined}
-        fallbackImage="/images/hero/fertivert.webp"
-        contentMaxWidth="44rem"
-        {...heroSettings}
-      />
+      {isFertivert ? (
+        <FertilisantHeroShowcase
+          title="Optimisez vos récoltes avec nos engrais naturels"
+          subtitle="Des solutions de fertilisation durables pour une croissance exceptionnelle."
+          heroSlideKey="marque:fertivert"
+          categories={tree?.categories ?? []}
+          categoryAnchor="produits-marque"
+          ctaHref="#produits-marque"
+          fichesTechniquesHref="/contact"
+          showTypeCards={false}
+          minimalHero
+        />
+      ) : isPulvert ? (
+        <PulvertHero categories={tree?.categories ?? []} ctaHref="#categories-pulvert" />
+      ) : (
+        <PageHeroStatic
+          page={`marque:${slug}`}
+          eyebrow="Marque"
+          title={marqueNom}
+          subtitle={marqueDescription ?? undefined}
+          fallbackImage="/images/hero/fertivert.webp"
+          contentMaxWidth="44rem"
+          {...heroSettings}
+        />
+      )}
 
       {/* CTA Matar RDV — affiché sous le hero si besoin */}
       {isMatar && (
@@ -217,8 +240,17 @@ export default async function MarqueDetailPage({ params }: PageProps) {
         </div>
       )}
 
+      {isPulvert && (
+        <PulvertFeatureSections
+          categories={tree?.categories ?? []}
+          videos={pulvertTutorialVideos}
+          showVideos={false}
+          categoriesAnchorId="categories-pulvert"
+        />
+      )}
+
       {/* ── Categories quick nav ───────────────────────────────── */}
-      {shownQuickCategories.length > 0 && (
+      {!isPulvert && shownQuickCategories.length > 0 && (
         <section className="bg-white border-b border-sand-200">
           <div className="container-ev py-4">
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
@@ -265,14 +297,32 @@ export default async function MarqueDetailPage({ params }: PageProps) {
         />
       )}
 
+      {isPulvert && tree && (
+        <MarqueProduitsSectionWrapper
+          id_marque={marque.id_marque}
+          categories={tree.categories ?? []}
+          hideUntilCategorySelected
+          cardVariant="seed"
+        />
+      )}
+
+      {isPulvert && (
+        <PulvertFeatureSections
+          videos={pulvertTutorialVideos}
+          showCategories={false}
+        />
+      )}
+
       {/* ── Arbre catégories / produits ────────────────────────── */}
-      {tree && (
-        <section className="bg-sand-50 border-b border-sand-200">
+      {tree && !isPulvert && (
+        <section id="produits-marque" className="bg-sand-50 border-b border-sand-200">
           <div className="container-ev py-8">
             <CategoryTree
               tree={tree}
               produitBasePath="/produits"
               showProduits={true}
+              cardVariant={isFertivert ? "seed" : "default"}
+              rootTabsOnly={isFertivert}
             />
           </div>
         </section>

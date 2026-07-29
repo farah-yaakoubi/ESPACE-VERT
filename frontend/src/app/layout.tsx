@@ -1,6 +1,7 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Fraunces } from "next/font/google";
 import { cookies } from "next/headers";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { defaultLocale, getDirection, isLocale, type Locale } from "@/i18n/config";
@@ -38,6 +39,14 @@ const fontBody = localFont({
   display: "swap",
 });
 
+const fontSerif = Fraunces({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-serif",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: { default: "Espace Vert — Solutions Agricoles", template: "%s | Espace Vert" },
   description: "Leader tunisien en irrigation, fertilisation, semences et machinisme agricole.",
@@ -50,7 +59,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale: Locale = isLocale(cookieLocale) ? cookieLocale : defaultLocale;
 
   return (
-    <html lang={locale} dir={getDirection(locale)} className={`scroll-smooth ${fontDisplay.variable} ${fontBody.variable}`}>
+    <html lang={locale} dir={getDirection(locale)} data-scroll-behavior="smooth" className={`scroll-smooth ${fontDisplay.variable} ${fontBody.variable} ${fontSerif.variable}`}>
       <body className="flex flex-col min-h-screen">
         <I18nProvider initialLocale={locale}>{children}</I18nProvider>
       </body>

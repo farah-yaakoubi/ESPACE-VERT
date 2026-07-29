@@ -22,6 +22,47 @@ async function resolveActiviteFromMarque(id_marque: number): Promise<number | nu
   return liaison?.id_activite ?? null;
 }
 
+/**
+ * Valide les parents secondaires (parent_ids_extra) : ils doivent exister,
+ * ne pas être la catégorie elle-même, et ne pas être un de ses descendants
+ * (ce qui créerait un cycle dans l'arbre affiché).
+ */
+async function assertValidExtraParents(id_categorie: number | null, parent_ids_extra: number[] | undefined) {
+  if (!parent_ids_extra || parent_ids_extra.length === 0) return;
+
+  const all = await categorieRepository.findAll({} as any);
+  const byId = new Map(all.map((c: any) => [c.id_categorie, c]));
+
+  for (const pid of parent_ids_extra) {
+    if (id_categorie !== null && pid === id_categorie) {
+      throw { status: 422, message: "Une catégorie ne peut pas être son propre parent secondaire." };
+    }
+    if (!byId.has(pid)) {
+      throw { status: 404, message: `Catégorie parente secondaire introuvable (id ${pid}).` };
+    }
+  }
+
+  if (id_categorie === null) return; // création : pas encore de descendants possibles
+
+  // Empêche de choisir un descendant (via parent_id) comme parent secondaire → cycle.
+  const descendants = new Set<number>();
+  const collect = (pid: number) => {
+    all.forEach((c: any) => {
+      if (c.parent_id === pid && !descendants.has(c.id_categorie)) {
+        descendants.add(c.id_categorie);
+        collect(c.id_categorie);
+      }
+    });
+  };
+  collect(id_categorie);
+
+  for (const pid of parent_ids_extra) {
+    if (descendants.has(pid)) {
+      throw { status: 422, message: "Un parent secondaire ne peut pas être une sous-catégorie de cette catégorie (cycle)." };
+    }
+  }
+}
+
 export const categorieService = {
 
   async listPublic(params: CategorieQueryDto) {
@@ -69,6 +110,8 @@ export const categorieService = {
     const existing = await categorieRepository.findBySlug(data.slug);
     if (existing) throw { status: 409, message: "Ce slug est déjà utilisé" };
 
+    await assertValidExtraParents(null, data.parent_ids_extra);
+
     // Résolution automatique de l'activité depuis la marque
     // si id_activite n'est pas explicitement fourni mais qu'une marque est liée
     if (!data.id_activite && data.id_marque) {
@@ -94,6 +137,8 @@ export const categorieService = {
     if (data.parent_id !== undefined && data.parent_id === id) {
       throw { status: 422, message: "Une catégorie ne peut pas être son propre parent." };
     }
+
+    await assertValidExtraParents(id, data.parent_ids_extra);
 
     // Résolution automatique de l'activité si on change la marque sans préciser l'activité
     const targetMarque = data.id_marque ?? (before as any).id_marque;

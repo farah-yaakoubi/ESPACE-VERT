@@ -44,6 +44,7 @@ const EMPTY = {
   id_activite: "",
   id_marque: "",
   parent_id: "",
+  parent_ids_extra: [] as number[],
   ordre: 0,
   actif: true,
 };
@@ -503,6 +504,7 @@ export default function AdminCategoriesPage() {
       id_activite: c.id_activite ? String(c.id_activite) : "",
       id_marque:   c.id_marque   ? String(c.id_marque)   : "",
       parent_id:   c.parent_id   ? String(c.parent_id)   : "",
+      parent_ids_extra: c.parent_ids_extra ?? [],
       ordre:       c.ordre,
       actif:       c.actif,
     });
@@ -527,6 +529,7 @@ export default function AdminCategoriesPage() {
         id_activite: form.id_activite ? Number(form.id_activite) : null,
         id_marque:   form.id_marque   ? Number(form.id_marque)   : null,
         parent_id:   form.parent_id   ? Number(form.parent_id)   : null,
+        parent_ids_extra: form.parent_ids_extra.filter((id) => String(id) !== form.parent_id),
         ordre:       form.ordre,
         ...(modal === "edit" ? { actif: form.actif } : {}),
       };
@@ -834,6 +837,50 @@ export default function AdminCategoriesPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Catégories parentes supplémentaires{" "}
+                  <span className="text-gray-400 font-normal">
+                    (optionnel — la catégorie apparaîtra aussi sous celles-ci, en plus de son parent principal)
+                  </span>
+                </label>
+                <div className="max-h-40 overflow-y-auto rounded-xl border border-gray-200 p-2 space-y-0.5">
+                  {parentOptionsOrdered
+                    .filter(({ cat }) => String(cat.id_categorie) !== form.parent_id)
+                    .map(({ cat, depth }) => {
+                      const checked = form.parent_ids_extra.includes(cat.id_categorie);
+                      return (
+                        <label
+                          key={cat.id_categorie}
+                          className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-50 cursor-pointer text-sm"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) =>
+                              setForm({
+                                ...form,
+                                parent_ids_extra: e.target.checked
+                                  ? [...form.parent_ids_extra, cat.id_categorie]
+                                  : form.parent_ids_extra.filter((id) => id !== cat.id_categorie),
+                              })
+                            }
+                            className="accent-ev-600"
+                          />
+                          <span>
+                            {"　".repeat(depth)}
+                            {depth > 0 ? "└ " : ""}
+                            {cat.nom}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  {parentOptionsOrdered.length === 0 && (
+                    <p className="text-xs text-gray-400 px-2 py-1">Aucune autre catégorie disponible.</p>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -25,7 +25,7 @@ function toSlug(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
     .replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 }
-const EMPTY = { nom:"",slug:"",id_categorie:"",division:"standard",description:"",fiche_technique:"",ordre:0,actif:true,
+const EMPTY = { nom:"",slug:"",id_categorie:"",division:"standard",description:"",fiche_technique:"",image_description:"",ordre:0,actif:true,
   sku:"",poids:"",nature:"",composition_chimique:"",usage:"",biologique:false,conditionnement:"",
   saison:"",obtenteur:"",obtenteur_logo:"",type_semence:"",productivite:"",longueur_fruit:"",resistance:"",descriptif_var:"",
   calendrier_semis:"000000000000",calendrier_recolte:"000000000000" };
@@ -453,10 +453,10 @@ export default function AdminProduitsPage() {
   const [err,      setErr]      = useState("");
   const [confirmDel, setConfirmDel] = useState<number|null>(null);
 
-  interface CatNode extends CategorieAdmin { children:CatNode[]; depth:number }
+  interface CatNode extends CategorieAdmin { children:CatNode[]; depth:number; optKey:string; isExtraLink?:boolean }
   const catsFlat = (() => {
     const map=new Map<number,CatNode>();
-    categories.forEach(c=>map.set(c.id_categorie,{...c,children:[],depth:0}));
+    categories.forEach(c=>map.set(c.id_categorie,{...c,children:[],depth:0,optKey:String(c.id_categorie)}));
     const roots:CatNode[]=[];
     map.forEach(node=>{
       if(node.parent_id&&map.has(node.parent_id)){map.get(node.parent_id)!.children.push(node);}
@@ -465,7 +465,33 @@ export default function AdminProduitsPage() {
     const sort=(arr:CatNode[])=>arr.sort((a,b)=>a.ordre-b.ordre||a.nom.localeCompare(b.nom,"fr"));
     const assignDepth=(nodes:CatNode[],d:number)=>{sort(nodes);nodes.forEach(n=>{n.depth=d;assignDepth(n.children,d+1);});};
     assignDepth(roots,0);
-    const flat:CatNode[]=[], walk=(arr:CatNode[])=>arr.forEach(n=>{flat.push(n);walk(n.children);});
+
+    // Rattachements secondaires (parent_ids_extra) : une sous-catégorie (ex. une
+    // "espèce") rattachée à plusieurs catégories parentes doit apparaître dans
+    // CHACUNE d'elles ici aussi, pas seulement sous son parent principal —
+    // sinon on ne peut pas lui associer un produit depuis ces autres parents.
+    const extraChildrenByParent = new Map<number, CatNode[]>();
+    categories.forEach(c=>{
+      (c.parent_ids_extra ?? []).forEach(pid=>{
+        if(pid===c.id_categorie || !map.has(pid)) return;
+        const arr = extraChildrenByParent.get(pid) ?? [];
+        arr.push(map.get(c.id_categorie)!);
+        extraChildrenByParent.set(pid, arr);
+      });
+    });
+
+    const flat:CatNode[]=[];
+    const walk=(arr:CatNode[])=>arr.forEach(n=>{
+      flat.push(n);
+      walk(n.children);
+      const extras = extraChildrenByParent.get(n.id_categorie);
+      if(extras && extras.length){
+        sort(extras);
+        extras.forEach(ex=>{
+          flat.push({...ex, depth:n.depth+1, isExtraLink:true, optKey:`${ex.id_categorie}-extra-${n.id_categorie}`});
+        });
+      }
+    });
     walk(roots); return flat;
   })();
 
@@ -504,6 +530,7 @@ export default function AdminProduitsPage() {
       id_categorie:catId ? String(catId) : "",
       division:p.division,
       description:(p as any).description??"", fiche_technique:(p as any).fiche_technique??"",
+      image_description:(p as any).image_description??"",
       ordre:p.ordre, actif:p.actif,
       sku:(p as any).sku??"",
       poids:(p as any).poids??"",
@@ -533,6 +560,7 @@ export default function AdminProduitsPage() {
       const base={ nom:form.nom, slug:form.slug, id_categorie:Number(form.id_categorie),
         division:form.division, ordre:form.ordre,
         description:form.description||null, fiche_technique:form.fiche_technique||null,
+        image_description:(form as any).image_description||null,
         sku:(form as any).sku||null,
         poids:(form as any).poids||null,
         nature:(form as any).nature||null,
@@ -739,8 +767,8 @@ export default function AdminProduitsPage() {
                 <select value={form.id_categorie} onChange={e=>setForm({...form,id_categorie:e.target.value})}
                   className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white">
                   <option value="">— Choisir —</option>
-                  {catsFlat.map(c=><option key={c.id_categorie} value={c.id_categorie}>
-                    {"　".repeat(c.depth)}{c.depth>0?"└ ":""}{c.nom}{c.marque?.nom?` 🏷 ${(c.marque as any).nom}`:""}{c.activite?.nom?` ⚡ ${(c.activite as any).nom}`:""}
+                  {catsFlat.map(c=><option key={c.optKey} value={c.id_categorie}>
+                    {"　".repeat(c.depth)}{c.depth>0?(c.isExtraLink?"⇢ ":"└ "):""}{c.nom}{c.marque?.nom?` 🏷 ${(c.marque as any).nom}`:""}{c.activite?.nom?` ⚡ ${(c.activite as any).nom}`:""}
                   </option>)}
                 </select>
               </div>
@@ -784,6 +812,24 @@ export default function AdminProduitsPage() {
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Description</label>
                 <textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} rows={3}
                   className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"/>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                  Image de description
+                </label>
+                <p className="text-[11px] text-gray-400 mb-2">
+                  Affichée à côté du texte de description sur la fiche produit publique.
+                </p>
+                <LogoObtenteurUploader
+                  value={(form as any).image_description || ""}
+                  onChange={v => setForm({ ...form, image_description: v } as any)}
+                  dropLabel="Glissez l'image ici ou"
+                  altText="Illustration de la description"
+                  readyLabel="Image prête"
+                  previewMaxWidth={320}
+                  previewMaxHeight={220}
+                />
               </div>
 
 

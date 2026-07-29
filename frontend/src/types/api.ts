@@ -103,6 +103,9 @@ export interface Categorie {
   id_marque:    number | null;
   id_activite:  number | null;
   parent_id:    number | null;
+  /** Parents secondaires (additif) : cette catégorie apparaît aussi sous
+   *  ces catégories, en plus de son parent principal (parent_id). */
+  parent_ids_extra?: number[];
   ordre:        number;
 }
 
@@ -144,9 +147,10 @@ export interface Produit {
   id_produit:      number;
   nom:             string;
   slug:            string;
-  description:     string | null;
-  translations?:   EntityTranslations | null;
-  fiche_technique: string | null;
+  description:       string | null;
+  translations?:     EntityTranslations | null;
+  fiche_technique:   string | null;
+  image_description: string | null;
   division:        string;
   tags:            string[];
   actif:           boolean;
@@ -196,6 +200,19 @@ export interface Actualite {
 
 export interface ActualiteDetail extends Actualite {
   admin: { nom: string } | null;
+}
+
+export interface TutorialVideo {
+  id_video:    number;
+  titre:       string;
+  description: string | null;
+  url:         string;
+  thumbnail:   string | null;
+  page:        string;
+  ordre:       number;
+  actif:       boolean;
+  created_at:  string;
+  updated_at:  string;
 }
 
 // ── DevisDemande  (POST /api/devis) ───────────────────────────────────────────

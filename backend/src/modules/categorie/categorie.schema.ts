@@ -12,6 +12,11 @@ const CategorieBaseSchema = z.object({
   id_activite: z.number().int().positive().optional().nullable(),
   id_marque:   z.number().int().positive().optional().nullable(),
   parent_id:   z.number().int().positive().optional().nullable(),
+  // Parents secondaires (additif) : permet à une catégorie d'apparaître
+  // sous plusieurs catégories parentes en plus de parent_id ci-dessus
+  // (ex. "Tomate" rattachée à la fois à "Semences hybrides" et
+  // "Semences standard"). N'affecte pas parent_id ni le reste du site.
+  parent_ids_extra: z.array(z.number().int().positive()).max(20).optional(),
   ordre:       z.number().int().min(0).optional().default(0),
 });
 

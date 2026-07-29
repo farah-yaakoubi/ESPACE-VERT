@@ -182,6 +182,18 @@ export const adminActualitesCreate = {
   getById: (id: number) => request<ActualiteDetail>(`/admin/actualites/${id}`),
 };
 
+// ── Vidéos tutoriels ─────────────────────────────────────────────────────────
+export const adminTutorialVideos = {
+  list:   (p?: Record<string, string>) =>
+    request<TutorialVideoAdmin[]>(`/admin/tutorial-videos${qs(p)}`),
+  create: (data: { titre: string; description?: string | null; url: string; thumbnail?: string | null; page?: string; ordre?: number; actif?: boolean }) =>
+    request<TutorialVideoAdmin>("/admin/tutorial-videos", { method: "POST", body: JSON.stringify(data) }),
+  update: (id: number, data: Partial<{ titre: string; description: string | null; url: string; thumbnail: string | null; page: string; ordre: number; actif: boolean }>) =>
+    request<TutorialVideoAdmin>(`/admin/tutorial-videos/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  remove: (id: number) =>
+    request<void>(`/admin/tutorial-videos/${id}`, { method: "DELETE" }),
+};
+
 // ── Gestion des administrateurs ───────────────────────────────────────────────
 export const adminAdmins = {
   list:     () => request<AdminUser[]>("/admin/admins"),
@@ -216,9 +228,9 @@ export const adminActivites = {
 // ── Catégories ────────────────────────────────────────────────────────────────
 export const adminCategories = {
   list:   (p?: Record<string, string>) => request<CategorieAdmin[]>(`/admin/categories${qs(p)}`),
-  create: (data: { nom: string; slug: string; description?: string | null; image?: string | null; id_activite?: number | null; id_marque?: number | null; parent_id?: number | null; ordre?: number }) =>
+  create: (data: { nom: string; slug: string; description?: string | null; image?: string | null; id_activite?: number | null; id_marque?: number | null; parent_id?: number | null; parent_ids_extra?: number[]; ordre?: number }) =>
     request<CategorieAdmin>("/admin/categories", { method: "POST", body: JSON.stringify(data) }),
-  update: (id: number, data: Partial<{ nom: string; slug: string; description: string | null; image: string | null; id_activite: number | null; id_marque: number | null; parent_id: number | null; ordre: number; actif: boolean }>) =>
+  update: (id: number, data: Partial<{ nom: string; slug: string; description: string | null; image: string | null; id_activite: number | null; id_marque: number | null; parent_id: number | null; parent_ids_extra: number[]; ordre: number; actif: boolean }>) =>
     request<CategorieAdmin>(`/admin/categories/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   remove: (id: number) => request<void>(`/admin/categories/${id}`, { method: "DELETE" }),
   removeBulk: (ids: number[]) =>
@@ -550,6 +562,19 @@ export interface ActualiteDetail extends ActualiteAdmin {
   contenu: string;
 }
 
+export interface TutorialVideoAdmin {
+  id_video:    number;
+  titre:       string;
+  description: string | null;
+  url:         string;
+  thumbnail:   string | null;
+  page:        string;
+  ordre:       number;
+  actif:       boolean;
+  created_at:  string;
+  updated_at:  string;
+}
+
 export interface AdminUser {
   id_admin:   number;
   nom:        string;
@@ -606,6 +631,9 @@ export interface CategorieAdmin {
   id_activite:  number | null;
   id_marque:    number | null;
   parent_id:    number | null;
+  /** Parents secondaires (additif) : cette catégorie apparaît aussi sous
+   *  ces catégories, en plus de son parent principal (parent_id). */
+  parent_ids_extra?: number[];
   ordre:        number;
   actif:        boolean;
   created_at:   string;

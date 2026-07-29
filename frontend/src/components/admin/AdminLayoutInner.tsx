@@ -8,7 +8,7 @@ import {
   Package, Newspaper, LogOut, Menu, X, Users,
   Shield, ExternalLink, Tag, Layers, Activity, HelpCircle,
   ChevronRight, BarChart3, Globe, ImageIcon, Bot, Crown,
-  Sparkles,
+  Sparkles, PlaySquare,
 } from "lucide-react";
 import { tokenStore, adminAuth, isSuperAdmin, type Admin } from "@/lib/admin-api";
 import { hasPermission, hasAnyPermission, PERMISSIONS } from "@/lib/permissions";
@@ -52,6 +52,7 @@ const NAV_GROUPS: NavGroup[] = [
   { label: "CONTENU", items: [
     { href: "/admin/hero",       icon: ImageIcon,  label: "Hero Slides",   permission: PERMISSIONS.ACTUALITES_WRITE },
     { href: "/admin/actualites", icon: Newspaper,  label: "Actualités",   permission: PERMISSIONS.ACTUALITES_WRITE },
+    { href: "/admin/tutorial-videos", icon: PlaySquare, label: "Vidéos tutoriels", permission: PERMISSIONS.ACTUALITES_WRITE },
     { href: "/admin/faq",        icon: HelpCircle, label: "FAQ",          permission: PERMISSIONS.FAQ_WRITE },
   ]},
   { label: "CRM & CONTACTS", items: [
@@ -74,6 +75,7 @@ function pageLabel(p: string) {
     categories: "Catégories", produits: "Produits", catalogue: "Médias",
     hero: "Hero Slides",
     actualites: "Actualités", faq: "FAQ", devis: "Devis", rdv: "Rendez-vous",
+    "tutorial-videos": "Vidéos tutoriels",
     contact: "Messages", visiteurs: "Visiteurs", audit: "Journal d'audit",
     admins: "Administrateurs", analytics: "Analytiques", compte: "Mon compte",
     chat: "Chat", chatbot: "Assistant IA",
@@ -158,7 +160,14 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex items-center justify-center" style={{ background: "#0f1a14" }}>
       <div className="flex flex-col items-center gap-4">
         <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white overflow-hidden">
-          <Image src="/logos/logo-espace-vert.png" alt="Espace Vert" width={44} height={44} style={{ objectFit: "contain" }} />
+          <Image
+            src="/logos/logo-espace-vert.png"
+            alt="Espace Vert"
+            width={44}
+            height={44}
+            priority
+            style={{ objectFit: "contain", width: "auto", height: "auto", maxWidth: "100%", maxHeight: "100%" }}
+          />
         </div>
         <div className="flex gap-1">
           {[0, 1, 2].map(i => <span key={i} className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: A.accent, animationDelay: `${i * 0.15}s` }} />)}
@@ -202,7 +211,8 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
               alt="Espace Vert"
               width={30}
               height={30}
-              style={{ objectFit: "contain" }}
+              priority
+              style={{ objectFit: "contain", width: "auto", height: "auto", maxWidth: "100%", maxHeight: "100%" }}
             />
           </div>
           {!collapsed && (
