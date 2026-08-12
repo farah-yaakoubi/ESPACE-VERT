@@ -14,6 +14,8 @@ import {
   Wrench,
 } from "lucide-react";
 import type { Categorie } from "@/types/api";
+import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
+import type { IcoName } from "@/components/icons/AgriIcons";
 
 interface PulverisationShowcaseProps {
   categories: Categorie[];
@@ -250,7 +252,9 @@ export function PulverisationShowcase({ categories }: PulverisationShowcaseProps
         <BackgroundField />
         <div className="relative mx-auto max-w-[930px] px-4">
           <div className="border-t border-slate-200 pt-6">
-            <h2 className="text-2xl font-black uppercase text-[#10214a]">Contactez-nous</h2>
+            <h2 className="text-2xl font-black uppercase text-[#10214a]">
+              <SectionTitleLine icon="Barn" color="#149a3b" align="left">Contactez-nous</SectionTitleLine>
+            </h2>
             <div className="mt-4 grid gap-4 text-sm font-semibold text-[#10214a] md:grid-cols-3">
               <p>Besoin d'assistance ? Nous sommes là pour vous aider.</p>
               <a href="tel:1234567890" className="inline-flex items-center gap-2 text-slate-700 hover:text-[#149a3b]">
@@ -269,16 +273,18 @@ export function PulverisationShowcase({ categories }: PulverisationShowcaseProps
   );
 }
 
-function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
+function SectionTitle({ title, subtitle, icon = "Spray" }: { title: string; subtitle?: string; icon?: IcoName }) {
   return (
     <div className="text-center">
       <div className="flex items-center gap-4">
         <span className="h-px flex-1 bg-slate-300" />
         <h2
-          className="text-xl font-black uppercase tracking-wide text-[#10214a] md:text-2xl"
+          className="flex items-center gap-3 text-xl font-black uppercase tracking-wide text-[#10214a] md:text-2xl"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          {title}
+          <SectionTitleLine icon={icon} color="#149a3b">
+            {title}
+          </SectionTitleLine>
         </h2>
         <span className="h-px flex-1 bg-slate-300" />
       </div>

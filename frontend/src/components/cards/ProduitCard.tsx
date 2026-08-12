@@ -18,84 +18,139 @@ const DIVISION_BADGE: Record<string, { label: string; cls: string }> = {
 
 function mod(n: number, m: number) { return ((n % m) + m) % m; }
 
-/* ── Carousel images — affiché uniquement dans la zone image au hover ──────── */
-function ImageCarousel({ images, nom }: { images: { url: string; alt: string | null }[]; nom: string }) {
+/* ── Aperçu image — glisse (swipe) au survol du produit, flèches manuelles ── */
+export function SeedImagePreview({
+  images,
+  nom,
+  active = false,
+}: {
+  images: { url: string; alt: string | null }[];
+  nom: string;
+  active?: boolean;
+}) {
   const [current, setCurrent] = useState(0);
+  const [direction, setDirection] = useState(1);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const start = useCallback(() => {
-    if (images.length < 2) return;
-    timerRef.current = setInterval(() => setCurrent(c => mod(c + 1, images.length)), 2800);
-  }, [images.length]);
-
-  const stop = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
   }, []);
 
-  useEffect(() => { start(); return stop; }, [start, stop]);
+  const start = useCallback(() => {
+    if (timerRef.current || images.length < 2) return;
+    timerRef.current = setInterval(() => {
+      setDirection(1);
+      setCurrent((c) => mod(c + 1, images.length));
+    }, 1400);
+  }, [images.length]);
 
-  const go = (dir: 1 | -1, e: React.MouseEvent) => {
-    e.preventDefault(); e.stopPropagation();
-    stop();
-    setCurrent(c => mod(c + dir, images.length));
-    start();
+  // Piloté par le survol de toute la carte (prop `active`), pas seulement
+  // de la zone image — sinon l'effet ne se déclenche jamais en pratique.
+  useEffect(() => {
+    if (active) {
+      start();
+    } else {
+      clearTimer();
+      setCurrent(0);
+    }
+    return clearTimer;
+  }, [active, start, clearTimer]);
+
+  const go = useCallback(
+    (dir: 1 | -1, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      clearTimer();
+      setDirection(dir);
+      setCurrent((c) => mod(c + dir, images.length));
+      start();
+    },
+    [clearTimer, start, images.length],
+  );
+
+  if (images.length === 0) {
+    return (
+      <div className="flex h-44 w-full items-center justify-center rounded-full bg-ev-50 text-3xl text-ev-300">
+        🌱
+      </div>
+    );
+  }
+
+  const variants = {
+    enter:  (dir: number) => ({ x: dir > 0 ? "12%" : "-12%", opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit:   (dir: number) => ({ x: dir > 0 ? "-12%" : "12%", opacity: 0 }),
   };
 
-  if (images.length === 0) return null;
-
   return (
-    <div className="relative w-full h-full bg-[#f0f0f0]">
-      {/* Image active */}
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
+    <div className="relative w-full">
+      <AnimatePresence mode="wait" initial={false} custom={direction}>
+        <motion.img
           key={current}
-          initial={{ opacity: 0, x: 18 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -18 }}
-          transition={{ type: "spring", stiffness: 320, damping: 28, mass: 0.8 }}
-          className="absolute inset-0"
-        >
-          <Image
-            src={images[current].url}
-            alt={images[current].alt ?? nom}
-            fill
-            className="object-contain p-2"
-            sizes="(max-width:640px)100vw,(max-width:1024px)50vw,25vw"
-          />
-        </motion.div>
+          src={images[current].url}
+          alt={images[current].alt ?? nom}
+          custom={direction}
+          variants={variants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{
+            x: { type: "tween", duration: 0.45, ease: [0.65, 0, 0.35, 1] },
+            opacity: { duration: 0.35, ease: "easeInOut" },
+          }}
+          className={cn(
+            "block w-full h-auto object-contain transition-transform ease-[cubic-bezier(0.22,1,0.36,1)]",
+            active ? "scale-[1.08] duration-[1400ms]" : "scale-100 duration-700",
+          )}
+        />
       </AnimatePresence>
 
-      {/* Flèches — uniquement si > 1 image */}
+      {/* Flèches — uniquement si plusieurs photos, visibles quand la carte est survolée */}
       {images.length > 1 && (
         <>
           <button
-            onClick={e => go(-1, e)}
-            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 flex items-center justify-center rounded-full bg-white/90 shadow-md hover:bg-white transition-all text-gray-700 font-bold text-sm"
+            type="button"
+            onClick={(e) => go(-1, e)}
+            aria-label="Photo précédente"
+            className={cn(
+              "absolute left-2 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-sm font-bold text-gray-700 shadow-md transition-opacity duration-200 hover:bg-white",
+              active ? "opacity-100" : "opacity-0 pointer-events-none",
+            )}
           >
             ‹
           </button>
           <button
-            onClick={e => go(1, e)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-7 h-7 flex items-center justify-center rounded-full bg-white/90 shadow-md hover:bg-white transition-all text-gray-700 font-bold text-sm"
+            type="button"
+            onClick={(e) => go(1, e)}
+            aria-label="Photo suivante"
+            className={cn(
+              "absolute right-2 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-sm font-bold text-gray-700 shadow-md transition-opacity duration-200 hover:bg-white",
+              active ? "opacity-100" : "opacity-0 pointer-events-none",
+            )}
           >
             ›
           </button>
-
-          {/* Dots */}
-          <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1 pointer-events-none">
-            {images.map((_, i) => (
-              <span
-                key={i}
-                className="rounded-full transition-all duration-300"
-                style={{
-                  width:      i === current ? 14 : 5,
-                  height:     5,
-                  background: i === current ? "#1b5e38" : "rgba(0,0,0,0.18)",
-                }}
-              />
-            ))}
-          </div>
         </>
+      )}
+
+      {/* Points — indiquent qu'il y a plusieurs photos */}
+      {images.length > 1 && (
+        <div className="pointer-events-none absolute bottom-2 left-0 right-0 flex justify-center gap-1">
+          {images.map((_, i) => (
+            <span
+              key={i}
+              className="rounded-full transition-all duration-500"
+              style={{
+                width: i === current ? 12 : 4,
+                height: 4,
+                background: i === current ? "#1b5e38" : "rgba(0,0,0,0.15)",
+              }}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
@@ -120,83 +175,32 @@ export function ProduitCard({
   const description = translatedField(produit as any, "description", locale) || produit.description;
 
   if (variant === "seed") {
-    const AMBER = "#c9a24a";
-    const isNew =
-      !!produit.created_at &&
-      Date.now() - new Date(produit.created_at).getTime() < 1000 * 60 * 60 * 24 * 30;
-
     return (
-      <Link href={href} className={cn("block group", className)}>
-        <article
-          className="relative flex w-full flex-col overflow-hidden rounded-2xl"
-          style={{
-            boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
-            transition: "transform 0.26s ease, box-shadow 0.26s ease",
-          }}
-          onMouseEnter={e => {
-            const el = e.currentTarget as HTMLElement;
-            el.style.transform = "translateY(-5px)";
-            el.style.boxShadow = "0 18px 38px rgba(15, 23, 42, 0.10)";
-          }}
-          onMouseLeave={e => {
-            const el = e.currentTarget as HTMLElement;
-            el.style.transform = "translateY(0)";
-            el.style.boxShadow = "0 10px 30px rgba(15, 23, 42, 0.06)";
-          }}
+      <Link
+        href={href}
+        className={cn("group flex h-full flex-col items-center text-center focus:outline-none", className)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        {/* Zone image — taille réelle, non recadrée, non comprimée */}
+        <SeedImagePreview
+          images={produit.images.length ? [img, ...produit.images.filter((i) => i !== img)] : []}
+          nom={nom}
+          active={hovered}
+        />
+
+        <p
+          className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+          style={{ fontFamily: "var(--font-serif)" }}
         >
-          {/* Image — taille/ratio naturel, non recadrée */}
-          <div className="w-full" style={{ backgroundColor: "#f9fcf7" }}>
-            <div className="relative w-full">
-              {img ? (
-                <Image
-                  src={img.url}
-                  alt={img.alt ?? nom}
-                  width={800}
-                  height={800}
-                  className="block w-full h-auto object-contain transition-transform duration-500 group-hover:scale-105"
-                  style={{ height: "auto" }}
-                  sizes="(max-width:640px) 50vw, (max-width:1280px) 25vw, 20vw"
-                />
-              ) : (
-                <div className="flex aspect-square w-full items-center justify-center text-5xl opacity-20">🌱</div>
-              )}
+          {nom}
+        </p>
 
-              {isNew && (
-                <span
-                  className="absolute top-3 left-3 z-10 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
-                  style={{ backgroundColor: AMBER }}
-                >
-                  Nouveau
-                </span>
-              )}
-            </div>
-
-            {/* Texte + CTA — juste sous l'image, ne recouvrent aucun pixel de la photo */}
-            <div className="flex flex-col px-4 pb-4 pt-3">
-              {produit.categorie?.nom && (
-                <p className="text-[10px] font-bold uppercase tracking-wide text-ev-700 mb-1">
-                  {produit.categorie.nom}
-                </p>
-              )}
-              <h3
-                className="text-[16px] sm:text-[17px] font-bold leading-tight text-[#162118]"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                {nom}
-              </h3>
-
-              <div className="mt-3 flex items-center justify-between">
-                <span className="text-[12px] font-semibold text-[#162118]">Voir le produit</span>
-                <span
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white transition-transform duration-200 group-hover:translate-x-0.5"
-                  style={{ backgroundColor: "#2e6e1a" }}
-                >
-                  <ChevronRight size={14} strokeWidth={2.4} />
-                </span>
-              </div>
-            </div>
-          </div>
-        </article>
+        {/* Bouton "Voir le produit" — plein, avec flèche qui glisse au survol */}
+        <span className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
+          Voir le produit
+          <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
+        </span>
       </Link>
     );
   }
@@ -232,94 +236,40 @@ export function ProduitCard({
   }
 
   return (
-    <Link href={href} className={cn("block group", className)}>
-      <article
-        className="produit-card-gradient relative flex h-full flex-col overflow-hidden rounded-[28px] p-4 sm:p-5"
-        style={{
-          background: "linear-gradient(160deg, #4f7a55 0%, #3d6647 100%)",
-          transform: "translateY(0)",
-          transition: "transform 0.3s ease, box-shadow 0.3s ease",
-          boxShadow: "0 8px 20px rgba(31,77,52,0.18)",
-        }}
-        onMouseEnter={e => {
-          setHovered(true);
-          const el = e.currentTarget as HTMLElement;
-          el.style.transform = "translateY(-8px)";
-          el.style.boxShadow = "0 20px 40px rgba(31,77,52,0.28)";
-        }}
-        onMouseLeave={e => {
-          setHovered(false);
-          const el = e.currentTarget as HTMLElement;
-          el.style.transform = "translateY(0)";
-          el.style.boxShadow = "0 8px 20px rgba(31,77,52,0.18)";
-        }}
-      >
-        {/* ── Zone image — panneau blanc arrondi ── */}
-        <div className="relative shrink-0 overflow-hidden rounded-2xl bg-white h-[200px] sm:h-[220px] lg:h-[240px]">
-
-          {divBadge && (
-            <span className={cn("absolute top-3 left-3 z-10 px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wide uppercase", divBadge.cls)}>
-              {divBadge.label}
-            </span>
-          )}
-
-          <AnimatePresence mode="wait" initial={false}>
-            {!hovered ? (
-              <motion.div
-                key="static"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="absolute inset-0"
-              >
-                {img ? (
-                  <Image
-                    src={img.url}
-                    alt={img.alt ?? nom}
-                    fill
-                    className="object-contain p-2"
-                    sizes="(max-width:640px)100vw,(max-width:1024px)50vw,25vw"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-6xl opacity-20">🌿</div>
-                )}
-              </motion.div>
-            ) : (
-              <motion.div
-                key="carousel"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="absolute inset-0"
-              >
-                <ImageCarousel images={produit.images} nom={nom} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* ── Texte ── */}
-        <div className="flex flex-col items-center gap-1 px-2 pt-4 pb-1 text-center">
-          <h3
-            className="text-[1rem] sm:text-[1.05rem] font-bold leading-snug text-white line-clamp-2"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            {nom}
-          </h3>
-        </div>
-
-        {/* ── CTA — pilule blanche ── */}
-        <div className="mt-auto flex justify-center px-2 pt-3 pb-1">
-          <span
-            className="produit-card-cta inline-flex items-center justify-center gap-1.5 rounded-full bg-white px-5 py-2 text-[12.5px] font-semibold text-[#2f5c3e] transition-all duration-200 group-hover:gap-2.5"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            Voir le produit <ChevronRight size={14} />
+    <Link
+      href={href}
+      className={cn("group flex h-full flex-col items-center text-center focus:outline-none", className)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* ── Zone image — même comportement que les autres pages (swipe + zoom au survol) ── */}
+      <div className="relative w-full">
+        {divBadge && (
+          <span className={cn("absolute top-0 left-0 z-10 px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wide uppercase", divBadge.cls)}>
+            {divBadge.label}
           </span>
-        </div>
-      </article>
+        )}
+
+        <SeedImagePreview
+          images={produit.images?.length ? (img ? [img, ...produit.images.filter((i) => i !== img)] : produit.images) : []}
+          nom={nom}
+          active={hovered}
+        />
+      </div>
+
+      {/* ── Nom ── */}
+      <p
+        className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] line-clamp-2 transition-colors group-hover:text-ev-700"
+        style={{ fontFamily: "var(--font-serif)" }}
+      >
+        {nom}
+      </p>
+
+      {/* ── Bouton "Voir le produit" — plein, avec flèche qui glisse au survol ── */}
+      <span className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
+        Voir le produit
+        <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
+      </span>
     </Link>
   );
 }

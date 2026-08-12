@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { PageHeroStatic } from "@/components/sections/PageHeroStatic";
+import { ContactHero } from "@/components/sections/ContactHero";
+import { AgencesContactSection } from "@/components/sections/AgencesContactSection";
 import { ContactRequestToggle } from "@/components/forms/ContactRequestToggle";
-import { AgencesShowcase } from "@/components/sections/AgencesShowcase";
 import { AGENCES } from "@/config/agences";
 
 export const metadata: Metadata = {
@@ -12,18 +12,15 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <>
-      {/* Hero image fixe + zoom-in */}
-      <PageHeroStatic
-        page="contact"
+      {/* Bandeau plat + chevrons décoratifs */}
+      <ContactHero
         eyebrow="Groupe Espace Vert"
         title="Contactez-nous"
-        subtitle="Notre équipe vous répond dans les plus brefs délais."
-        fallbackImage="/images/hero/fertivert.webp"
-        imagePosition="center 38%"
-        imagePositionTablet="center 34%"
-        imagePositionMobile="center 26%"
-        contentMaxWidth="40rem"
+        subtitle="Notre équipe vous répond dans les plus brefs délais — produits, disponibilité, installation ou devis."
       />
+
+      {/* Sélecteur d'agences interactif + carte dynamique — toutes les coordonnées, un seul endroit */}
+      <AgencesContactSection agences={AGENCES} />
 
       <section className="section bg-[linear-gradient(180deg,#faf9f7_0%,#f2f7ee_48%,#ffffff_100%)]">
         <div className="container-ev">
@@ -32,8 +29,6 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
-
-      <AgencesShowcase agences={AGENCES} />
     </>
   );
 }

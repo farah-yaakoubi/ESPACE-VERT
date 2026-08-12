@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Package, ChevronRight, Layers } from "lucide-react";
+import { ArrowLeft, Package, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { CategorieDetail, CategorieDetailSousCat } from "@/types/api";
 import { getProductHref } from "@/lib/product-url";
@@ -36,7 +36,7 @@ function ImageCarousel({ images, nom }: { images: { url: string; alt: string | n
   if (!images.length) return null;
 
   return (
-    <div className="relative w-full h-full bg-gray-50">
+    <div className="relative w-full h-full">
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={current}
@@ -50,7 +50,7 @@ function ImageCarousel({ images, nom }: { images: { url: string; alt: string | n
             src={images[current].url}
             alt={images[current].alt ?? nom}
             fill
-            className="object-contain p-4"
+            className="object-contain transition-transform duration-500 ease-out group-hover:-translate-y-1.5 group-hover:scale-[1.06]"
             sizes="(max-width:640px)100vw,(max-width:1024px)50vw,25vw"
           />
         </motion.div>
@@ -85,23 +85,16 @@ function ProduitHoverCard({ p }: { p: { id_produit: number; slug: string; nom: s
 
   return (
     <Link href={getProductHref(p)}
-      className="group block rounded-2xl border overflow-hidden bg-white transition-all duration-300"
-      style={{
-        borderColor: hovered ? "#7dc040" : "#f3f4f6",
-        boxShadow:   hovered ? "0 16px 40px rgba(61,165,53,0.16), 0 4px 12px rgba(61,165,53,0.10)" : "0 1px 3px rgba(0,0,0,0.05)",
-        transform:   hovered ? "translateY(-6px)" : "translateY(0)",
-        transition:  "transform 0.3s cubic-bezier(.22,1,.36,1), box-shadow 0.3s ease, border-color 0.25s ease",
-      }}
+      className="group flex h-full flex-col items-center text-center focus:outline-none"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Zone image */}
-      <div className="relative h-48 bg-gray-50 overflow-hidden">
+      <div className="relative flex h-44 w-full items-center justify-center overflow-hidden">
         <AnimatePresence mode="wait" initial={false}>
           {!hovered ? (
             <motion.div key="static" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="absolute inset-0">
               {img
-                ? <Image src={img.url} alt={img.alt ?? p.nom} fill className="object-contain p-4" sizes="(max-width:640px)100vw,(max-width:1024px)50vw,25vw" />
+                ? <Image src={img.url} alt={img.alt ?? p.nom} fill className="object-contain transition-transform duration-500 ease-out group-hover:-translate-y-1.5 group-hover:scale-[1.06]" sizes="(max-width:640px)100vw,(max-width:1024px)50vw,25vw" />
                 : <div className="absolute inset-0 flex items-center justify-center text-5xl opacity-10 select-none">🌱</div>
               }
             </motion.div>
@@ -114,27 +107,19 @@ function ProduitHoverCard({ p }: { p: { id_produit: number; slug: string; nom: s
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Trait vert bas */}
-        <div className="absolute inset-x-0 bottom-0 h-[2px] origin-left transition-transform duration-500"
-          style={{ background: "linear-gradient(to right,#7dc040,#1b5e38,#7dc040)", transform: hovered ? "scaleX(1)" : "scaleX(0)" }} />
       </div>
 
-      {/* Infos */}
-      <div className="p-4">
-        <p className="font-semibold text-gray-800 text-sm leading-snug transition-colors line-clamp-2"
-          style={{ color: hovered ? "#15803d" : "#1f2937" }}>
-          {p.nom}
-        </p>
-        {p.description && (
-          <p className="text-xs text-gray-400 mt-1 line-clamp-2">{p.description}</p>
-        )}
-        <div className="mt-3 flex items-center gap-1 text-ev-600 text-xs font-semibold transition-opacity duration-200"
-          style={{ opacity: hovered ? 1 : 0 }}>
-          <span>Voir le produit</span>
-          <ChevronRight size={11} />
-        </div>
-      </div>
+      <p
+        className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] line-clamp-2 transition-colors group-hover:text-ev-700"
+        style={{ fontFamily: "var(--font-serif)" }}
+      >
+        {p.nom}
+      </p>
+
+      <span className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
+        Voir le produit
+        <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
+      </span>
     </Link>
   );
 }
@@ -159,34 +144,6 @@ function ProduitsGrid({ sousCat, onBack, parentNom }: {
         <span className="text-gray-800 font-semibold">{sousCat.nom}</span>
       </div>
 
-      <div className="mb-7 overflow-hidden rounded-2xl border border-sand-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center">
-          {sousCat.image && (
-            <div className="relative h-32 w-full shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-white via-ev-50 to-sand-100 sm:w-44">
-              <Image
-                src={sousCat.image}
-                alt={sousCat.nom}
-                fill
-                className="object-contain p-4 drop-shadow-sm"
-                sizes="176px"
-              />
-            </div>
-          )}
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <Layers size={18} className="text-ev-600" />
-              <h2 className="text-xl font-bold text-gray-900">{sousCat.nom}</h2>
-            </div>
-            <p className="text-xs font-semibold text-ev-700">
-              {produits.length} produit{produits.length > 1 ? "s" : ""}
-            </p>
-            {sousCat.description && (
-              <p className="mt-2 text-gray-500 text-sm leading-relaxed max-w-xl">{sousCat.description}</p>
-            )}
-          </div>
-        </div>
-      </div>
-
       {produits.length === 0 ? (
         <div className="flex flex-col items-center py-20 text-gray-400 gap-3">
           <Package size={40} strokeWidth={1.5} className="opacity-40" />
@@ -203,68 +160,55 @@ function ProduitsGrid({ sousCat, onBack, parentNom }: {
   );
 }
 
-/* ── Carte sous-catégorie (inchangée) ─────────────────────────────────────── */
+/* ── Carte sous-catégorie — sans cadre, flotte, style aligné sur "Semences" ── */
 function SousCatCoverCard({ souscat, onClick, large = false }: { souscat: CategorieDetailSousCat; onClick: () => void; large?: boolean }) {
-  const count    = souscat.produits?.length ?? 0;
   const previews = !souscat.image
     ? (souscat.produits ?? []).slice(0, 4).flatMap(p => p.images.slice(0, 1))
     : [];
-  const imgH = large ? "h-64" : "h-48";
 
   return (
-    <button onClick={onClick}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-sand-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-ev-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-ev-400 focus:ring-offset-2">
-      <div className={`relative flex ${imgH} items-center justify-center overflow-hidden bg-gradient-to-br from-white via-ev-50 to-sand-100`}>
+    <button
+      onClick={onClick}
+      className="group flex flex-col items-center text-center focus:outline-none"
+    >
+      <div className="relative flex h-44 w-full items-center justify-center">
         {souscat.image ? (
-          <Image src={souscat.image} alt={souscat.nom} fill
-            className="object-contain p-6 drop-shadow-md transition-transform duration-500 group-hover:scale-105"
-            sizes="(max-width:640px)100vw,(max-width:1280px)50vw,25vw" />
+          <Image
+            src={souscat.image}
+            alt={souscat.nom}
+            fill
+            className="object-contain transition-transform duration-500 ease-out group-hover:-translate-y-1.5 group-hover:scale-[1.06]"
+            sizes="(max-width:640px) 100vw, (max-width:1280px) 50vw, 25vw"
+          />
         ) : previews.length > 0 ? (
-          <div className="absolute inset-0 grid grid-cols-2 gap-2 p-4">
+          <div className="grid grid-cols-2 gap-2">
             {previews.map((img, i) => (
-              <div key={i} className="relative bg-white rounded-lg overflow-hidden">
+              <div key={i} className="relative aspect-square bg-ev-50 rounded-lg overflow-hidden">
                 <Image src={img.url} alt="" fill className="object-contain p-1" sizes="80px" />
               </div>
             ))}
             {previews.length < 4 && Array.from({ length: 4 - previews.length }).map((_, i) => (
-              <div key={`empty-${i}`} className="bg-ev-50 rounded-lg" />
+              <div key={`empty-${i}`} className="aspect-square bg-ev-50 rounded-lg" />
             ))}
           </div>
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-6xl opacity-15 select-none">🌿</div>
+          <div className="flex h-44 w-full items-center justify-center rounded-full bg-ev-50 text-3xl text-ev-300">
+            🌿
+          </div>
         )}
-        <div className="absolute right-3 top-3">
-          <span className="rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-ev-800 shadow-sm">
-            {count > 0 ? `${count} produit${count > 1 ? "s" : ""}` : "Voir"}
-          </span>
-        </div>
       </div>
-      <div className="flex min-h-[116px] flex-col p-4">
-        <div className="mb-3 flex items-start gap-2">
-          <span className="mt-1 h-8 w-1 rounded-full bg-ev-600 shrink-0" />
-          <p className="text-[15px] font-bold leading-snug text-gray-900 line-clamp-2 group-hover:text-ev-700 transition-colors">
-            {souscat.nom}
-          </p>
-        </div>
-        <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-xl bg-ev-700 px-3.5 py-2 text-[12px] font-semibold text-white transition-colors group-hover:bg-ev-800">
-          Voir produits
-          <ChevronRight size={13} />
-        </span>
-      </div>
-      {souscat.image && (souscat.produits ?? []).length > 0 && (
-        <div className="px-4 pb-4 flex items-center gap-1.5 border-t border-gray-50 pt-3">
-          {(souscat.produits ?? []).slice(0, 5).map(p => {
-            const img = p.images?.[0];
-            return (
-              <div key={p.id_produit} className="relative w-7 h-7 rounded-md bg-gray-50 border border-gray-100 overflow-hidden flex-shrink-0">
-                {img ? <Image src={img.url} alt={p.nom} fill className="object-contain p-0.5" sizes="28px" />
-                     : <div className="absolute inset-0 flex items-center justify-center text-xs opacity-20">🌱</div>}
-              </div>
-            );
-          })}
-          {count > 5 && <span className="text-[10px] text-ev-600 font-bold">+{count - 5}</span>}
-        </div>
-      )}
+
+      <p
+        className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+        style={{ fontFamily: "var(--font-serif)" }}
+      >
+        {souscat.nom}
+      </p>
+
+      <span className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
+        Voir produits
+        <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
+      </span>
     </button>
   );
 }

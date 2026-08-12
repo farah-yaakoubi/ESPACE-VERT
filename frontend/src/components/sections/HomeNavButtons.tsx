@@ -26,6 +26,7 @@ const ACTIVITES = [
   {
     href: "/activites/semences-et-plants",
     label: "Semences & Plants",
+    tagline: "Des semences de qualité pour des cultures performantes",
     image: "/images/activites/semences-plants.webp",
     icon: Ico.SeedBag,
     accent: WHEAT,
@@ -33,6 +34,7 @@ const ACTIVITES = [
   {
     href: "/activites/fertilisation",
     label: "Fertilisation",
+    tagline: "Des nutriments essentiels pour des plantes en pleine santé",
     image: "/images/activites/fertilisation.webp",
     icon: Ico.WateringCan,
     accent: FOREST,
@@ -40,6 +42,7 @@ const ACTIVITES = [
   {
     href: "/activites/pollinisation-et-protection-des-plantes",
     label: "Pollinisation & Protection des plantes",
+    tagline: "Protéger vos cultures et favoriser la pollinisation naturelle",
     image: "/images/activites/pollinisation.webp",
     icon: Flower2,
     accent: AMBER,
@@ -47,6 +50,7 @@ const ACTIVITES = [
   {
     href: "/activites/irrigation",
     label: "Irrigation",
+    tagline: "L'eau qu'il faut, quand il faut pour des rendements optimaux",
     image: "/images/activites/irrigation.webp",
     icon: Ico.HoseCoil,
     accent: "#3f7bb0",
@@ -54,6 +58,7 @@ const ACTIVITES = [
   {
     href: "/activites/pulverisation",
     label: "Pulvérisation",
+    tagline: "Des solutions efficaces pour protéger vos cultures",
     image: "/images/activites/pulverisation.webp",
     icon: Ico.Spray,
     accent: SAGE,
@@ -61,6 +66,7 @@ const ACTIVITES = [
   {
     href: "/activites/machinisme-et-jardinage",
     label: "Machinisme",
+    tagline: "Des équipements fiables pour une agriculture performante",
     image: "/images/activites/machinisme.webp",
     icon: Ico.Tractor,
     accent: INK,
@@ -106,8 +112,6 @@ const MARQUES = [
     // TODO: déposer le logo réel dans /public/logos/ et corriger ce chemin
     image: "/images/marques/TAKELSA.png",
     themeLabel: "Pépinière",
-    Weight: 1000,
-    height: 80,
     tagline: "Des plants sains, prêts pour la terre.",
     accent: "#4d7c3f",
   },
@@ -204,51 +208,69 @@ function ActivityTile({
         }}
       />
 
-      {/* Titre — luxueux : italique fin, grand, trait doré */}
+      {/* Titre — icône + label gras + trait + légende, comme la maquette de référence */}
       <motion.div
         className="absolute bottom-0 left-0 p-6 sm:p-8"
-        animate={{ opacity: hovered ? 1 : 0.9, y: hovered ? -4 : 6 }}
+        animate={{ opacity: hovered ? 1 : 0.95, y: hovered ? -4 : 6 }}
         transition={{ duration: 0.5, ease: EASE_SMOOTH }}
       >
-        <h3
-          className="text-[1.5rem] italic leading-tight tracking-[0.02em] text-white sm:text-[1.9rem]"
-          style={{
-            fontFamily: "var(--font-display)",
-            fontWeight: 300,
-            textShadow: "0 2px 18px rgba(0,0,0,0.35)",
-          }}
-        >
-          {item.label}
-        </h3>
+        <div className="mb-2 flex items-center gap-2.5">
+          <item.icon
+            className="h-5 w-5 sm:h-6 sm:w-6 shrink-0"
+            strokeWidth={1.8}
+            style={{ color: item.accent === INK ? WHEAT : "#ffffff" }}
+          />
+          <h3
+            className="text-[1.25rem] font-semibold leading-tight tracking-[0.015em] text-white sm:text-[1.55rem]"
+            style={{
+              fontFamily: "var(--font-display), 'Cairo', sans-serif",
+              textShadow: "0 2px 18px rgba(0,0,0,0.35)",
+            }}
+          >
+            {item.label}
+          </h3>
+        </div>
         <motion.div
-          className="mt-3 h-px"
+          className="h-px"
           style={{ background: WHEAT }}
           animate={{ width: hovered ? 60 : 28, opacity: hovered ? 1 : 0.65 }}
           transition={{ duration: 0.5, ease: EASE_SMOOTH }}
         />
+        <p
+          className="mt-2 max-w-[15rem] text-[13px] font-light leading-snug text-white/90 sm:max-w-[17rem] sm:text-[13.5px]"
+          style={{ textShadow: "0 1px 8px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.35)" }}
+        >
+          {item.tagline}
+        </p>
       </motion.div>
     </motion.div>
   );
 }
 
 // ─── Marque — logo posé directement sur la photo, sans cadre ────────────
-function MarqueLogoItem({ item }: { item: (typeof MARQUES)[number] }) {
+function MarqueLogoItem({ item, index }: { item: (typeof MARQUES)[number]; index: number }) {
   const [hovered, setHovered] = useState(false);
 
   return (
     <motion.div
-      className="group relative flex basis-[7.5rem] flex-col items-center gap-4 text-center sm:basis-[8.5rem] lg:flex-1 lg:basis-0"
+      className="group relative flex basis-[12rem] flex-col items-center gap-4 text-center sm:basis-[14.5rem] lg:basis-auto lg:w-full"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       variants={{
-        hidden: { opacity: 0, y: 24 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: EASE_SMOOTH } },
+        hidden: { opacity: 0, y: 28 },
+        visible: {
+          opacity: 1,
+          y: 0,
+          transition: { duration: 0.7, ease: EASE_LUXE },
+        },
       }}
+      animate={{ y: hovered ? -4 : 0 }}
+      transition={{ duration: 0.4, ease: EASE_LUXE }}
     >
       <Link href={item.href} className="absolute inset-0 z-10" aria-label={item.label} />
 
       <motion.div
-        className="relative h-14 w-36 sm:h-16 sm:w-40 lg:h-20 lg:w-48"
+        className="relative flex h-20 w-48 items-center justify-center sm:h-24 sm:w-56 lg:h-24 lg:w-56"
         animate={{ scale: hovered ? 1.07 : 1 }}
         transition={{ duration: 0.5, ease: EASE_LUXE }}
         style={{ filter: "drop-shadow(0 6px 14px rgba(27,33,24,0.12))" }}
@@ -257,29 +279,33 @@ function MarqueLogoItem({ item }: { item: (typeof MARQUES)[number] }) {
           src={item.image}
           alt={item.label}
           fill
-          sizes="(max-width: 1024px) 40vw, 200px"
+          sizes="(max-width: 1024px) 45vw, 260px"
           className="object-contain"
         />
       </motion.div>
 
-      <span
-        className="text-[10px] font-light uppercase tracking-[0.32em]"
-        style={{ color: "#ffffff", textShadow: "0 1px 6px rgba(0,0,0,0.55), 0 1px 2px rgba(0,0,0,0.4)" }}
-      >
-        {item.themeLabel}
-      </span>
+      <div className="flex flex-col items-center gap-2 rounded-2xl bg-white/75 px-4 py-3 backdrop-blur-sm">
+        <motion.span
+          className="text-[12.5px] font-bold uppercase tracking-[0.24em]"
+          style={{ color: INK }}
+          animate={{ opacity: hovered ? 1 : 0.9 }}
+          transition={{ duration: 0.3, ease: EASE_SMOOTH }}
+        >
+          {item.themeLabel}
+        </motion.span>
 
-      <p
-        className="max-w-[11rem] text-[13px] font-light leading-relaxed sm:max-w-[12rem]"
-        style={{ color: "#ffffff", textShadow: "0 1px 8px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.35)" }}
-      >
-        {item.tagline}
-      </p>
+        <p
+          className="flex max-w-[13rem] items-start justify-center text-[15px] font-normal leading-relaxed sm:max-w-[14.5rem]"
+          style={{ color: INK }}
+        >
+          {item.tagline}
+        </p>
+      </div>
 
       <motion.div
         className="h-px"
         style={{ background: item.accent }}
-        animate={{ width: hovered ? 36 : 18, opacity: hovered ? 1 : 0.55 }}
+        animate={{ width: hovered ? 40 : 20, opacity: hovered ? 1 : 0.6 }}
         transition={{ duration: 0.4, ease: EASE_SMOOTH }}
       />
     </motion.div>
@@ -343,17 +369,17 @@ export default function HomeNavButtonsNewStyle() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: activitiesInView ? 1 : 0, y: activitiesInView ? 0 : 40 }}
             transition={{ duration: 0.8, ease: EASE_SMOOTH }}
-            className="flex flex-col gap-6 pt-14 sm:pt-16 pb-8 sm:pb-10"
+            className="flex flex-col gap-6 pt-10 sm:pt-12 pb-5 sm:pb-6"
           >
             <h2
-              className="section-title overflow-hidden"
+              className="section-title overflow-y-hidden"
               style={{ color: INK }}
             >
               <motion.span
-                className="inline-flex items-center gap-4"
+                className="inline-flex items-center gap-2 sm:gap-4"
                 initial={{ y: "120%" }}
                 animate={{ y: activitiesInView ? "0%" : "120%" }}
-                transition={{ duration: 1, ease: EASE_SMOOTH, delay: 0.1 }}
+                transition={{ duration: 0.9, ease: EASE_SMOOTH, delay: 0.1 }}
               >
                 <motion.span
                   animate={{ rotate: activitiesInView ? [0, 20, 0] : 0 }}
@@ -361,7 +387,19 @@ export default function HomeNavButtonsNewStyle() {
                 >
                   <Leaf className="h-8 w-8 sm:h-9 sm:w-9" strokeWidth={1.2} style={{ color: FOREST }} />
                 </motion.span>
-                Nos activités
+                Une solution pour
+              </motion.span>{" "}
+              <motion.span
+                className="inline-block font-bold"
+                style={{ color: FOREST }}
+                initial={{ y: "120%", opacity: 0 }}
+                animate={{
+                  y: activitiesInView ? "0%" : "120%",
+                  opacity: activitiesInView ? 1 : 0,
+                }}
+                transition={{ duration: 0.9, ease: EASE_SMOOTH, delay: 0.35 }}
+              >
+                chaque besoin
               </motion.span>
             </h2>
           </motion.div>
@@ -375,7 +413,7 @@ export default function HomeNavButtonsNewStyle() {
             hidden: {},
             visible: { transition: { staggerChildren: 0.06, delayChildren: 0.7 } },
           }}
-          className="relative grid grid-cols-1 gap-px bg-white sm:grid-cols-2 lg:grid-cols-4 lg:[grid-template-rows:minmax(280px,1fr)_minmax(280px,1fr)_minmax(240px,1fr)] lg:[grid-template-areas:'a_a_b_c'_'a_a_d_c'_'e_e_f_f']"
+          className="relative grid grid-cols-1 gap-1 bg-white p-1 sm:grid-cols-2 lg:grid-cols-4 lg:[grid-template-rows:minmax(280px,1fr)_minmax(280px,1fr)_minmax(240px,1fr)] lg:[grid-template-areas:'a_a_b_c'_'a_a_d_c'_'e_e_f_f']"
         >
           {ACTIVITES.map((item, index) => (
             <ActivityTile key={item.href} item={item} areaClass={AREA_CLASSES[index]} index={index} />
@@ -387,11 +425,11 @@ export default function HomeNavButtonsNewStyle() {
           NOS MARQUES — logos posés sur une photo de champ, sans cadre
           ═══════════════════════════════════════════════════════════════════ */}
       <div id="nos-marques" className="relative overflow-hidden" style={{ background: LINEN }}>
-        {/* Photo de fond — vivante : léger zoom + dérive continue, façon vidéo */}
+        {/* Photo de fond — nouvelle illustration à 5 bandes (une par marque), léger souffle */}
         <div className="pointer-events-none absolute inset-0" aria-hidden>
           <motion.div
             className="absolute inset-0"
-            animate={{ scale: [1, 1.07, 1], x: [0, 10, 0], y: [0, -8, 0] }}
+            animate={{ scale: [1, 1.02, 1] }}
             transition={{
               duration: 24,
               ease: "easeInOut",
@@ -403,22 +441,13 @@ export default function HomeNavButtonsNewStyle() {
           </motion.div>
         </div>
 
-        {/* Léger voile bas — juste assez pour lire logos/textes, sans délaver la photo */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-2/3"
-          style={{
-            background: "linear-gradient(180deg, rgba(16,24,18,0) 0%, rgba(16,24,18,0.18) 40%, rgba(16,24,18,0.55) 100%)",
-          }}
-        />
-
         <div className="container-ev relative z-10">
           <motion.div
             ref={marquesRef}
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: marquesInView ? 1 : 0, y: marquesInView ? 0 : 40 }}
             transition={{ duration: 0.8, ease: EASE_SMOOTH }}
-            className="flex flex-col items-center gap-4 pt-14 pb-8 text-center sm:pt-16 sm:pb-10"
+            className="flex flex-col items-center gap-3 pt-8 pb-3 text-center sm:pt-9 sm:pb-4"
           >
             <motion.span
               animate={{ rotate: marquesInView ? [0, 20, 0] : 0 }}
@@ -428,24 +457,36 @@ export default function HomeNavButtonsNewStyle() {
             </motion.span>
 
             <h2
-              className="section-title overflow-hidden"
+              className="section-title overflow-y-hidden"
               style={{ color: INK }}
             >
               <motion.span
                 initial={{ y: "120%" }}
                 animate={{ y: marquesInView ? "0%" : "120%" }}
-                transition={{ duration: 1, ease: EASE_SMOOTH, delay: 0.1 }}
+                transition={{ duration: 0.9, ease: EASE_SMOOTH, delay: 0.1 }}
                 className="inline-block"
               >
-                Nos marques
+                Chaque marque,{" "}
+              </motion.span>
+              <motion.span
+                initial={{ y: "120%", opacity: 0 }}
+                animate={{
+                  y: marquesInView ? "0%" : "120%",
+                  opacity: marquesInView ? 1 : 0,
+                }}
+                transition={{ duration: 0.9, ease: EASE_SMOOTH, delay: 0.35 }}
+                className="inline-block font-bold"
+                style={{ color: FOREST }}
+              >
+                une expertise
               </motion.span>
             </h2>
 
             <motion.p
               className="mx-auto max-w-md text-center text-[15px] leading-8 font-light"
-              style={{ color: BODY }}
+              style={{ color: INK }}
               initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: marquesInView ? 0.85 : 0, y: marquesInView ? 0 : 16 }}
+              animate={{ opacity: marquesInView ? 1 : 0, y: marquesInView ? 0 : 16 }}
               transition={{ duration: 0.7, ease: EASE_SMOOTH, delay: 0.3 }}
             >
               Cinq marques complémentaires, chacune spécialisée sur un maillon de la chaîne agricole.
@@ -472,31 +513,67 @@ export default function HomeNavButtonsNewStyle() {
               hidden: {},
               visible: { transition: { staggerChildren: 0.1, delayChildren: 0.5 } },
             }}
-            className="flex flex-wrap items-start justify-center gap-x-8 gap-y-10 pb-12 sm:gap-x-10 sm:pb-14 lg:flex-nowrap lg:justify-between lg:gap-x-6"
+            className="flex flex-wrap items-center justify-center gap-x-8 gap-y-10 pt-4 pb-14 sm:gap-x-10 sm:pb-16 lg:grid lg:grid-cols-5 lg:items-center lg:justify-items-center lg:gap-x-4 xl:gap-x-6"
           >
-            {MARQUES.map((item) => (
-              <MarqueLogoItem key={item.href} item={item} />
+            {MARQUES.map((item, index) => (
+              <MarqueLogoItem key={item.href} item={item} index={index} />
             ))}
           </motion.div>
 
-          {/* Bandeau de valeurs — pilule translucide, discrète */}
+          {/* Bandeau de valeurs — pilule avec cadre, entrée en cascade + interaction au survol */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: marquesInView ? 1 : 0, y: marquesInView ? 0 : 20 }}
-            transition={{ duration: 0.7, ease: EASE_SMOOTH, delay: 0.8 }}
-            className="mx-auto mb-14 sm:mb-16 flex w-fit flex-wrap items-center justify-center gap-x-6 gap-y-3 rounded-full px-8 py-4 sm:gap-x-9"
-            style={{ background: "rgba(255,255,255,0.6)", backdropFilter: "blur(10px)" }}
+            initial="hidden"
+            animate={marquesInView ? "visible" : "hidden"}
+            variants={{
+              hidden: {},
+              visible: { transition: { staggerChildren: 0.12, delayChildren: 0.8 } },
+            }}
+            className="mx-auto mb-14 sm:mb-16 flex w-fit flex-wrap items-center justify-center gap-x-8 gap-y-4 rounded-full border px-10 py-5 shadow-sm sm:gap-x-12 sm:px-12 sm:py-6"
+            style={{
+              background: "rgba(255,255,255,0.92)",
+              backdropFilter: "blur(10px)",
+              borderColor: LINE,
+            }}
           >
             {VALEURS.map((valeur, index) => (
-              <div key={valeur.label} className="flex items-center gap-6 sm:gap-9">
-                {index > 0 && <span className="h-4 w-px" style={{ background: LINE }} />}
-                <div className="flex items-center gap-2">
-                  <valeur.icon className="h-4 w-4" strokeWidth={1.4} style={{ color: FOREST }} />
-                  <span className="text-[13px] font-light" style={{ color: INK }}>
+              <motion.div
+                key={valeur.label}
+                className="flex items-center gap-6 sm:gap-9"
+                variants={{
+                  hidden: { opacity: 0, y: 16 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE_SMOOTH } },
+                }}
+              >
+                {index > 0 && <span className="h-5 w-px" style={{ background: LINE }} />}
+                <motion.div
+                  className="flex items-center gap-2.5"
+                  whileHover="hover"
+                  initial="rest"
+                  animate="rest"
+                >
+                  <motion.span
+                    className="flex items-center"
+                    variants={{
+                      rest: { rotate: 0, scale: 1 },
+                      hover: { rotate: [0, -12, 12, 0], scale: 1.15 },
+                    }}
+                    transition={{ duration: 0.5, ease: EASE_SMOOTH }}
+                  >
+                    <valeur.icon className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.6} style={{ color: FOREST }} />
+                  </motion.span>
+                  <motion.span
+                    className="text-base sm:text-lg font-bold"
+                    style={{ color: INK }}
+                    variants={{
+                      rest: { color: INK },
+                      hover: { color: FOREST },
+                    }}
+                    transition={{ duration: 0.3 }}
+                  >
                     {valeur.label}
-                  </span>
-                </div>
-              </div>
+                  </motion.span>
+                </motion.div>
+              </motion.div>
             ))}
           </motion.div>
         </div>

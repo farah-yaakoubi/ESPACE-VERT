@@ -67,15 +67,15 @@ export default function NewsCarousel() {
     <section className="w-full bg-[#fdfdfc] py-20 overflow-hidden">
       <div className="mx-auto max-w-[1400px] px-6">
         {/* Header avec Icône Feuille */}
-        <div ref={headerRef} className="mb-12 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div ref={headerRef} className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={headerInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="flex items-center gap-4"
           >
             <Leaf className="text-green-800 w-10 h-10 md:w-12 md:h-12" strokeWidth={1.2} />
-            <h2 className="text-4xl md:text-6xl font-normal text-[#1b2118] tracking-tight">
+            <h2 className="section-title">
               Nos actualités
             </h2>
           </motion.div>
@@ -144,7 +144,7 @@ export default function NewsCarousel() {
                     
                     {/* Badge Date */}
                     <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm">
-                       <p className="text-[10px] font-bold text-gray-600 flex items-center gap-2">
+                       <p className="text-xs font-bold text-gray-600 flex items-center gap-2">
                          <Calendar size={12} className="text-green-800" />
                          {fmtDate(item.published_at ?? item.created_at)}
                        </p>
@@ -153,7 +153,7 @@ export default function NewsCarousel() {
 
                   {/* Infos */}
                   <div className="space-y-3 px-1">
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${CATEGORIES[index % CATEGORIES.length].color}`}>
+                    <span className={`text-xs font-black uppercase tracking-wide ${CATEGORIES[index % CATEGORIES.length].color}`}>
                       {CATEGORIES[index % CATEGORIES.length].name}
                     </span>
                     

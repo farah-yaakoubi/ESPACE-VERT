@@ -52,7 +52,6 @@ export function ContactRequestToggle() {
             <h2 className="site-subheading mb-2 text-ev-950">{activeMode.title}</h2>
             <p className="max-w-xl text-sm leading-7 text-gray-600">{activeMode.description}</p>
           </div>
-
           <div className="grid grid-cols-2 rounded-2xl border border-white/90 bg-white/80 p-1.5 shadow-[0_12px_34px_rgba(10,92,46,0.10)] backdrop-blur">
             {MODES.map(({ id, label, icon: Icon }) => {
               const active = id === mode;
@@ -77,31 +76,32 @@ export function ContactRequestToggle() {
           </div>
         </div>
       </div>
-
       <div className="grid gap-0 lg:grid-cols-[0.9fr_1.6fr]">
-        <aside className="border-b border-ev-100 bg-sand-50/70 p-5 sm:p-8 lg:border-b-0 lg:border-r lg:p-10">
-          <div className="space-y-5">
+        <aside className="relative overflow-hidden border-b border-ev-900 bg-[linear-gradient(160deg,#0a3c08_0%,#062504_100%)] p-5 sm:p-8 lg:border-b-0 lg:border-r lg:p-10">
+          {/* Halo décoratif */}
+          <div aria-hidden className="pointer-events-none absolute -bottom-16 -left-16 h-52 w-52 rounded-full bg-ev-400/10 blur-3xl" />
+
+          <div className="relative space-y-5">
             <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-ev-700">Réponse rapide</p>
-              <h3 className="mt-2 text-lg font-black text-ev-950">Un conseiller vous oriente vers la bonne solution.</h3>
-              <p className="mt-2 text-sm leading-7 text-gray-600">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-ev-300">Réponse rapide</p>
+              <h3 className="mt-2 text-lg font-black text-white">Un conseiller vous oriente vers la bonne solution.</h3>
+              <p className="mt-2 text-sm leading-7 text-white/70">
                 Produits, disponibilité, installation ou devis: ajoutez les détails utiles et l'équipe vous recontacte.
               </p>
             </div>
 
             <div className="space-y-3 text-sm">
-              <div className="flex items-center gap-3 rounded-xl border border-ev-100 bg-white px-4 py-3 text-gray-700">
-                <Phone size={16} className="text-ev-700" />
+              <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-white/90 backdrop-blur-sm">
+                <Phone size={16} className="text-ev-300" />
                 <span>Conseil commercial et technique</span>
               </div>
-              <div className="flex items-center gap-3 rounded-xl border border-ev-100 bg-white px-4 py-3 text-gray-700">
-                <Mail size={16} className="text-ev-700" />
+              <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-white/90 backdrop-blur-sm">
+                <Mail size={16} className="text-ev-300" />
                 <span>Suivi par e-mail ou téléphone</span>
               </div>
             </div>
           </div>
         </aside>
-
         <div className="p-5 sm:p-8 lg:p-10">
           {mode === "contact" ? <ContactForm /> : <DevisForm />}
         </div>

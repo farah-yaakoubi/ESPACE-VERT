@@ -196,9 +196,9 @@ export function ProduitSearch({
 
   const iconBorder = onHero ? "1.5px solid rgba(255,255,255,0.3)" : `1.5px solid ${palette.border}`;
   const iconBg     = onHero ? "rgba(255,255,255,0.12)"            : palette.sageLt;
-
   const typed = useTypewriter(SEARCH_SUGGESTIONS);
   const barTextColor = onHero ? "rgba(255,255,255,0.85)" : palette.textMuted;
+
 
   return (
     <>
@@ -212,53 +212,21 @@ export function ProduitSearch({
         }
       `}</style>
 
-      {/* ── Barre de recherche animée (navbar) ── */}
+      {/* ── Icône de recherche compacte (navbar) ── */}
       <motion.button
         onClick={() => setOpen(true)}
-        whileHover={{ scale: 1.015 }}
-        whileTap={{ scale: 0.985 }}
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.94 }}
         title="Rechercher (⌘K)"
         style={{
-          display: "flex", alignItems: "center", gap: 10,
-          width: 232, height: 40, padding: "0 10px 0 14px",
-          borderRadius: 9999, cursor: "pointer", flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          width: 38, height: 38, flexShrink: 0,
+          borderRadius: 9999, cursor: "pointer",
           border: iconBorder, background: iconBg,
           color: onHero ? "#fff" : palette.sage,
         }}
       >
-        <SearchIcon color={onHero ? "#fff" : palette.sage} size={16} />
-        <span
-          style={{
-            flex: 1,
-            minWidth: 0,
-            textAlign: "left",
-            fontSize: 13,
-            fontWeight: 500,
-            color: barTextColor,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-          }}
-        >
-          {typed}
-          <span
-            className="search-bar-caret"
-            style={{ background: onHero ? "rgba(255,255,255,0.85)" : palette.sage, height: 14 }}
-          />
-        </span>
-        <kbd
-          style={{
-            fontSize: 10,
-            fontFamily: "monospace",
-            flexShrink: 0,
-            padding: "2px 6px",
-            borderRadius: 5,
-            color: onHero ? "rgba(255,255,255,0.75)" : palette.textSecondary,
-            background: onHero ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.6)",
-            border: onHero ? "1px solid rgba(255,255,255,0.25)" : `1px solid ${palette.border}`,
-          }}
-        >
-          ⌘K
-        </kbd>
+        <SearchIcon color={onHero ? "#fff" : palette.sage} size={17} />
       </motion.button>
 
       {/* ── Panel demi-écran (portal) ── */}

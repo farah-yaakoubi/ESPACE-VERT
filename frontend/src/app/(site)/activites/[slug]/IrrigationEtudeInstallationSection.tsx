@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
 import {
   Droplet,
   Droplets,
@@ -379,7 +380,7 @@ export function IrrigationEtudeInstallationPageContent() {
           <div className="rounded-[2rem] border border-[#dbe8db] bg-[#0b3f24] p-6 text-white shadow-[0_18px_52px_rgba(10,39,16,0.16)] lg:col-span-2">
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#9adf74]">Services</p>
             <h2 className="mt-3 text-3xl font-black" style={{ fontFamily: "var(--font-display)" }}>
-              Une equipe pour chaque phase.
+              <SectionTitleLine icon="HoseCoil" color="#7dc040" align="left">Une equipe pour chaque phase.</SectionTitleLine>
             </h2>
             <p className="mt-4 text-sm leading-7 text-white/75">
               Etude, conception, installation et accompagnement sont presentes comme un seul flux de travail.
@@ -412,7 +413,7 @@ export function IrrigationEtudeInstallationPageContent() {
             <div className="border-b border-[#dbe8db] p-6 sm:p-8 lg:border-b-0 lg:border-r">
               <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#6ba92e]">Contact projet</p>
               <h2 className="mt-3 text-3xl font-black text-[#17341d]" style={{ fontFamily: "var(--font-display)" }}>
-                Lancer une etude d'irrigation
+                <SectionTitleLine icon="Droplet" color="#0f693a" align="left">Lancer une etude d&apos;irrigation</SectionTitleLine>
               </h2>
               <p className="mt-3 text-sm leading-7 text-[#607064]">
                 Pour preparer l'etude, l'equipe peut partir de la surface, du type de culture,

@@ -41,7 +41,7 @@ export async function fetchCategories(params?: {
     if (params?.id_activite) qs.set("id_activite", String(params.id_activite));
     if (params?.tree)        qs.set("tree", "true");
 
-    const res = await fetch(`${API_BASE}/public/categories?${qs.toString()}`, {
+    const res = await fetch(`${API_BASE}/categories?${qs.toString()}`, {
       next: { revalidate: 60 },
     });
     if (!res.ok) return [];

@@ -77,17 +77,6 @@ function UnifiedSlideshow({ slides, nomProduit }: { slides: SlideItem[]; nomProd
         onMouseEnter={() => setAutoPlay(false)}
         onMouseLeave={() => setAutoPlay(true)}
       >
-        {/* Badge conditionnement */}
-        {slide.condLabel && (
-          <div
-            className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-md"
-            style={{ background: "rgba(17,24,39,0.78)" }}
-          >
-            <Package size={11} />
-            {slide.condLabel}
-          </div>
-        )}
-
         {/* Compteur */}
         <div className="absolute top-3 right-3 z-10 bg-black/30 backdrop-blur-sm text-white text-xs font-semibold px-2.5 py-1 rounded-full">
           {current + 1} / {slides.length}

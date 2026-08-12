@@ -93,7 +93,7 @@ export default function AdminLoginPage() {
   return (
     <div
       className="min-h-screen flex"
-      style={{ fontFamily: "'Inter', sans-serif" }}
+      style={{ fontFamily: "var(--font-body), 'Cairo', sans-serif" }}
     >
       {/* ── CSS Animations ───────────────────────────────────────────── */}
       <style>{`

@@ -16,6 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { Categorie } from "@/types/api";
+import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
 
 interface PollinisationProtectionShowcaseProps {
   title: string;
@@ -199,7 +200,7 @@ export function PollinisationProtectionShowcase({
                 Recherche de solutions
               </p>
               <h2 className="mt-3 text-2xl font-black leading-tight text-[#2f4a37]">
-                De la fleur à la récolte, chaque intervention compte.
+                <SectionTitleLine icon="FlowerHead" color="#6a9c78" align="left">De la fleur à la récolte, chaque intervention compte.</SectionTitleLine>
               </h2>
 
               <div className="mt-5 flex items-center gap-2 rounded border border-[#e3e6d3] bg-white px-4 py-3">
@@ -244,7 +245,7 @@ export function PollinisationProtectionShowcase({
                 Nos expertises
               </p>
               <h2 className="site-heading text-[1.9rem] text-[#2f4a37] lg:text-[2.5rem]">
-                Un programme complet autour de la plante
+                <SectionTitleLine icon="Sunflower" color="#4f7d5c" align="left">Un programme complet autour de la plante</SectionTitleLine>
               </h2>
             </div>
           </div>
@@ -354,7 +355,7 @@ export function PollinisationProtectionShowcase({
           <div>
             <p className="eyebrow mb-3">Aller plus loin</p>
             <h2 className="site-heading text-[2rem] lg:text-[2.65rem]">
-              La pollinisation ne fonctionne pas seule
+              <SectionTitleLine icon="Leaf" color="#5a8f68" align="left">La pollinisation ne fonctionne pas seule</SectionTitleLine>
             </h2>
             <p className="mt-4 max-w-[560px] text-[15px] font-semibold leading-8 text-gray-600">
               Elle donne de meilleurs résultats reliée à la nutrition de la plante (Fertivert) et au
@@ -393,7 +394,7 @@ export function PollinisationProtectionShowcase({
               Besoin d'aide ?
             </p>
             <h2 className="mt-2 text-2xl font-black leading-tight">
-              Trouver la bonne solution pour votre culture
+              <SectionTitleLine icon="Spray" color="#2f4a37" align="left">Trouver la bonne solution pour votre culture</SectionTitleLine>
             </h2>
           </div>
           <Link

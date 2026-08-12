@@ -135,7 +135,7 @@ export function ProduitGallery({
   }, [lightbox, prev, next]);
 
   if (!displayImages.length) return (
-    <div className="aspect-square rounded-3xl bg-sand-100 flex flex-col items-center justify-center gap-3 text-gray-300">
+    <div className="aspect-[4/5] rounded-3xl bg-sand-100 flex flex-col items-center justify-center gap-3 text-gray-300">
       <div className="text-5xl opacity-30">🌿</div>
       <p className="text-sm">Aucune image disponible</p>
     </div>
@@ -192,7 +192,7 @@ export function ProduitGallery({
           {view === "main" && (
             <motion.div key="main" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div
-                className="relative rounded-3xl bg-white border border-sand-200 overflow-hidden shadow-card group cursor-zoom-in flex items-center justify-center"
+                className="relative w-full aspect-square rounded-3xl bg-white border border-sand-200 overflow-hidden shadow-card group cursor-zoom-in"
                 onClick={() => { setLightbox(true); setZoom(1); }}
                 style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}
               >
@@ -207,17 +207,9 @@ export function ProduitGallery({
                     animate="animate"
                     exit="exit"
                     transition={trans.transition}
-                    className="block w-full h-auto max-h-[70vh] object-contain"
+                    className="absolute inset-0 h-full w-full object-cover"
                   />
                 </AnimatePresence>
-
-                {mainImg.conditionnement && (
-                  <div className="absolute top-3 left-3 z-10 pointer-events-none">
-                    <span className="bg-ev-700/90 backdrop-blur-sm text-white text-[10px] font-semibold px-2.5 py-1 rounded-full">
-                      {mainImg.conditionnement}
-                    </span>
-                  </div>
-                )}
 
                 <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                   <div className="bg-white/90 backdrop-blur-sm rounded-xl p-2 shadow-lg flex items-center gap-1.5 text-xs font-semibold text-ev-700">
@@ -247,7 +239,7 @@ export function ProduitGallery({
                   {displayImages.map((img, i) => (
                     <button key={i} onClick={() => setActive(i)}
                       className={`relative w-16 h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${i === safeActive ? "border-ev-600 shadow-md ring-2 ring-ev-200" : "border-sand-200 hover:border-ev-300"}`}>
-                    <Image src={img.url} alt={img.alt ?? `${nomProduit} ${i + 1}`} fill className="object-contain p-1.5" sizes="64px" />
+                    <Image src={img.url} alt={img.alt ?? `${nomProduit} ${i + 1}`} fill className="object-cover" sizes="64px" />
                   </button>
                 ))}
                 </div>
@@ -262,12 +254,7 @@ export function ProduitGallery({
                   <div key={i} onClick={() => { setActive(i); setView("main"); }}
                     className={`relative aspect-square rounded-2xl overflow-hidden cursor-pointer border-2 transition-all hover:shadow-lg ${i === safeActive ? "border-ev-600 ring-2 ring-ev-200" : "border-sand-200 hover:border-ev-300"}`}
                     style={{ background: "#fff" }}>
-                    <Image src={img.url} alt={img.alt ?? `${nomProduit} ${i + 1}`} fill className="object-contain p-3 sm:p-4" sizes="(max-width:768px)50vw,25vw" />
-                    {img.conditionnement && (
-                      <div className="absolute bottom-1.5 left-1.5">
-                        <span className="bg-ev-700/80 text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full">{img.conditionnement}</span>
-                      </div>
-                    )}
+                    <Image src={img.url} alt={img.alt ?? `${nomProduit} ${i + 1}`} fill className="object-cover" sizes="(max-width:768px)50vw,25vw" />
                     {i === safeActive && <div className="absolute top-2 right-2"><span className="bg-ev-700 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">Actif</span></div>}
                   </div>
                 ))}
@@ -283,7 +270,7 @@ export function ProduitGallery({
                   {displayImages.map((img, i) => (
                     <button key={i} onClick={() => setActive(i)}
                       className={`relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${i === safeActive ? "border-ev-600" : "border-sand-200 hover:border-ev-300"}`}>
-                      <Image src={img.url} alt={img.alt ?? `${nomProduit} ${i + 1}`} fill className="object-contain p-1.5" sizes="56px" />
+                      <Image src={img.url} alt={img.alt ?? `${nomProduit} ${i + 1}`} fill className="object-cover" sizes="56px" />
                     </button>
                   ))}
                 </div>

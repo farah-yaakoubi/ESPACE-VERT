@@ -18,6 +18,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ArrowRight, ChevronRight, Droplet, Leaf, ShieldCheck } from "lucide-react";
+import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
 
 const FALLBACK_IMAGE = "/images/hero/bg-fertivert.webp";
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
@@ -263,7 +264,7 @@ export function FertilisantHeroShowcase({
                 >
                   Protégez et pollinisez vos cultures
                 </p>
-                <p className="mt-2 max-w-[640px] text-sm font-bold leading-snug text-[#1b2118]/80 sm:text-base">
+                <p className="mt-2 max-w-[640px] text-sm font-normal leading-snug text-[#1b2118]/80 sm:text-base">
                   Explorez nos solutions complètes pour la pollinisation et la protection biologique de vos plantes.
                 </p>
               </div>
@@ -285,7 +286,9 @@ export function FertilisantHeroShowcase({
           <div className="container-ev py-10 lg:py-14">
             <p className="eyebrow mb-2">Gamme</p>
             <h2 className="site-heading text-[1.6rem] sm:text-[2rem] lg:text-[2.2rem]">
-              Nos types d&apos;engrais
+              <SectionTitleLine icon="Sprout" align="left">
+                Nos types d&apos;engrais
+              </SectionTitleLine>
             </h2>
 
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

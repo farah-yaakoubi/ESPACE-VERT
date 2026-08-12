@@ -57,7 +57,7 @@ export function PrintFicheTechniqueButton({
           <title>${title} — Fiche technique</title>
           <meta charset="utf-8" />
           <style>
-            body { font-family: system-ui, sans-serif; color: #1a1a1a; padding: 32px; max-width: 780px; margin: 0 auto; }
+            body { font-family: "Cairo", system-ui, sans-serif; color: #1a1a1a; padding: 32px; max-width: 780px; margin: 0 auto; }
             h1 { font-size: 20px; margin-bottom: 24px; }
             img { max-width: 100%; }
           </style>

@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Droplets, Gauge, ShieldCheck, SprayCan, Tractor, Trees, Wind } from "lucide-react";
 import type { TutorialVideo } from "@/types/api";
+import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
+import type { IcoName } from "@/components/icons/AgriIcons";
 
 interface PulvertCategory {
   id_categorie: number;
@@ -167,16 +169,18 @@ export function PulvertFeatureSections({
   );
 }
 
-function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
+function SectionTitle({ title, subtitle, icon = "Spray" }: { title: string; subtitle?: string; icon?: IcoName }) {
   return (
     <div className="text-center">
       <div className="flex items-center gap-4">
         <span className="h-px flex-1 bg-slate-300" />
         <h2
-          className="text-xl font-black uppercase tracking-wide text-[#10214a] md:text-2xl"
+          className="flex items-center gap-3 text-xl font-black uppercase tracking-wide text-[#10214a] md:text-2xl"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          {title}
+          <SectionTitleLine icon={icon} color="#10214a">
+            {title}
+          </SectionTitleLine>
         </h2>
         <span className="h-px flex-1 bg-slate-300" />
       </div>

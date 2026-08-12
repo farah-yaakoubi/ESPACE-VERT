@@ -3,6 +3,7 @@ import { MarqueCard } from "@/components/cards/MarqueCard";
 import { Hero } from "@/components/sections/Hero";
 import { Reveal } from "@/components/ui/Reveal";
 import { marquesService } from "@/services";
+import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
 
 export const revalidate = 300;
 
@@ -33,7 +34,7 @@ export default async function MarquesPage() {
               Groupe Espace Vert
             </span>
             <h2 className="section-title text-[2rem] sm:text-[2.4rem]">
-              Nos marques du groupe
+              <SectionTitleLine icon="Leaf" align="left">Nos marques du groupe</SectionTitleLine>
             </h2>
             <p className="text-gray-500 mt-1 text-sm">
               Marques développées et détenues par le Groupe Espace Vert.
@@ -57,7 +58,7 @@ export default async function MarquesPage() {
                 Partenaires
               </span>
               <h2 className="section-title text-[2rem] sm:text-[2.4rem]">
-                Nos marques partenaires
+                <SectionTitleLine icon="Barn" color="#d97706" align="left">Nos marques partenaires</SectionTitleLine>
               </h2>
               <p className="text-gray-500 mt-1 text-sm">
                 Marques distribuées et représentées par Espace Vert.
@@ -66,7 +67,7 @@ export default async function MarquesPage() {
 
             <Reveal delay={0.1} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {marquesPartenaire.map((m) => (
-                <MarqueCard key={m.id_marque} marque={m} />
+                <MarqueCard key={m.id_marque} marque={m} compactLogo />
               ))}
             </Reveal>
           </div>

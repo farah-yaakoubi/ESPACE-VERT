@@ -1,21 +1,4 @@
 "use client";
-/**
- * app/admin/contact/page.tsx — CORRIGÉ v2
- * ─────────────────────────────────────────────────────────────────────────────
- * CORRECTIONS :
- *  • Suppression des appels à PUT /admin/contact/:id/statut qui N'EXISTE PAS
- *    dans le backend (route inexistante → 404 silencieux)
- *  • Le statut est désormais calculé localement depuis les champs réels :
- *    - lu=false                     → "Non lu"
- *    - lu=true, replied_at=null     → "Lu"
- *    - replied_at présent           → "Répondu"
- *    - deleted (futur)              → "Archivé"
- *  • Le seul changement d'état réel disponible = envoyer une réponse (reply)
- *  • quickStatus supprimé (n'appelait qu'une route inexistante)
- *  • Panneau "Pipeline statut" remplacé par un indicateur simple et honnête
- * ─────────────────────────────────────────────────────────────────────────────
- */
-
 import { useEffect, useState, useCallback } from "react";
 import { adminContact, type ContactItem } from "@/lib/admin-api";
 import {

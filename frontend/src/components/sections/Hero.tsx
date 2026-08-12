@@ -61,9 +61,7 @@ const SLIDES_FALLBACK: HeroSlide[] = [
     actif: true,
   },
 ];
-
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
-
 function useHeroSlides() {
   const [slides, setSlides] = useState<HeroSlide[]>(SLIDES_FALLBACK);
 
@@ -213,7 +211,10 @@ export function Hero() {
           }
 
           .hero-image {
-            object-position: center bottom;
+            /* !important : sur mobile, le cadrage responsive doit toujours
+               l'emporter sur une objectPosition personnalisée (style inline)
+               définie pour le rendu desktop depuis l'admin. */
+            object-position: center bottom !important;
           }
 
           .hero-copy {
@@ -234,7 +235,7 @@ export function Hero() {
           }
 
           .hero-image {
-            object-position: center 28%;
+            object-position: center 28% !important;
           }
 
           .hero-cta-fixed {
@@ -274,18 +275,19 @@ export function Hero() {
           animation: heroTextIn 1.2s 0.6s ease-out both;
         }
 
-        @keyframes ctaColorShift {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
+        /* Zoom-in + fade doux, même easing/rythme que la transition des bannières hero (opacity 1.8s ease-in-out) */
+        @keyframes heroCtaZoomFade {
+          0%, 100% { transform: scale(1);     opacity: 1;    }
+          50%      { transform: scale(1.045); opacity: 0.88; }
         }
 
         .hero-cta {
           position: relative;
           overflow: hidden;
-          background: linear-gradient(120deg, #1f4d34, #c9a24a, #7c8f6a, #1f4d34);
-          background-size: 300% 300%;
-          animation: ctaColorShift 6s ease-in-out infinite;
-          border: 1px solid rgba(255,255,255,0.55);
+          background: linear-gradient(145deg, #14512f 0%, #0f693a 55%, #0a3c21 100%);
+          border: 1.5px solid #8bc541;
+          box-shadow: 0 0 0 3px rgba(139,197,65,0.18), 0 10px 24px -10px rgba(10,60,33,0.55);
+          animation: heroCtaZoomFade 3.6s ease-in-out infinite;
           transition: transform 0.5s cubic-bezier(.16,1,.3,1),
                       box-shadow 0.5s cubic-bezier(.16,1,.3,1),
                       background 0.4s ease;
@@ -294,7 +296,7 @@ export function Hero() {
         .hero-cta:hover {
           animation-play-state: paused;
           transform: translateY(-3px);
-          box-shadow: 0 16px 34px -10px rgba(31,77,52,0.55);
+          box-shadow: 0 0 0 3px rgba(139,197,65,0.28), 0 16px 34px -10px rgba(10,60,33,0.6);
         }
 
         .hero-cta-arrow {
@@ -310,7 +312,8 @@ export function Hero() {
           .hero-slide,
           .hero-slide__image,
           .hero-text-enter,
-          .hero-cta {
+          .hero-cta,
+          .hero-cta-arrow {
             animation: none !important;
             transition: opacity 0.01ms !important;
           }

@@ -332,6 +332,8 @@ function ActivitesDropdown({
       transition: "width 0.22s cubic-bezier(.4,0,.2,1)",
       borderRadius: 20,
       overflow: "hidden",
+      background: "#eef8e4",
+      boxShadow: "0 28px 64px rgba(31,26,14,0.14), 0 0 0 1px rgba(207,229,181,0.7)",
     }}>
 
       {/* ── COL 1 — liste activités — cartes "sachet de graines" ── */}
@@ -370,7 +372,7 @@ function ActivitesDropdown({
                   onMouseEnter={() => handleSelectAct(a.id_activite)}
                   onClick={() => { onClose(); window.location.href = href; }}
                   style={{
-                    display: "flex", width: "100%", alignItems: "center", gap: 12,
+                    display: "flex", width: "100%", alignItems: "stretch", gap: 12,
                     padding: "10px 12px",
                     margin: "3px 0",
                     borderRadius: 16,
@@ -387,9 +389,9 @@ function ActivitesDropdown({
                     position: "relative",
                   }}
                 >
-                  {/* Icône */}
+                  {/* Icône — hauteur "auto" pour épouser exactement la hauteur du bloc texte (titre + description) */}
                   <div style={{
-                    width: 44, height: 44, borderRadius: 13, flexShrink: 0,
+                    width: 44, height: "auto", alignSelf: "stretch", borderRadius: 13, flexShrink: 0,
                     background: on
                       ? `radial-gradient(circle at 30% 25%, ${v.accent}, ${v.accent}dd)`
                       : `linear-gradient(155deg, ${v.bg}, #fff)`,
@@ -410,7 +412,7 @@ function ActivitesDropdown({
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <span style={{
-                      display: "block", fontSize: 14.5, fontWeight: 800, lineHeight: 1.25,
+                      display: "block", fontSize: 15.5, fontWeight: 600, lineHeight: 1.25,
                       color: "#000", whiteSpace: "normal", wordBreak: "break-word",
                       letterSpacing: "-0.01em",
                     }}>
@@ -435,6 +437,7 @@ function ActivitesDropdown({
                   {(a.categories?.length ?? 0) > 0 && (
                     <span style={{
                       width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
+                      alignSelf: "center",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       background: on ? v.accent : "transparent",
                       transition: "all 0.15s",
@@ -534,7 +537,7 @@ function ActivitesDropdown({
                                 <CatIcon style={{ width: 15, height: 15, color: BRAND_DARK }} />
                               </div>
                               <span style={{
-                                fontSize: 13.5, fontWeight: 700, lineHeight: 1.3,
+                                fontSize: 14, fontWeight: 500, lineHeight: 1.3,
                                 color: "#000", flex: 1,
                                 whiteSpace: "normal", wordBreak: "break-word",
                               }}>
@@ -645,10 +648,10 @@ function MarquesDropdown({
     <div
       style={{
         display: "flex",
-        background: "#fbf9f4",
+        background: "#eef8e4",
         borderRadius: 20,
         overflow: "hidden",
-        boxShadow: "0 28px 64px rgba(31,26,14,0.16), 0 0 0 1px rgba(226,214,181,0.6)",
+        boxShadow: "0 28px 64px rgba(31,26,14,0.14), 0 0 0 1px rgba(207,229,181,0.7)",
         width: col1W,
       }}
     >
@@ -891,7 +894,7 @@ function LangDropdown({ onHero }: { onHero: boolean }) {
   );
 }
 
-/* ── Navbar principale — INCHANGÉE ────────────────────────────────────────── */
+/* ── Navbar principale ────────────────────────────────────────── */
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -1090,33 +1093,20 @@ export function Navbar() {
     href, active, onClick, children,
   }: { href?: string; active: boolean; onClick?: () => void; children: React.ReactNode }) => {
     const [hovered, setHovState] = React.useState(false);
-    const showLine = active || hovered;
-    const lineColor = onHero ? "#7dc040" : C.sage;
+    const showBadge = active || hovered;
+    // Badge arrondi plein (comme la forme du logo) au lieu du soulignement.
+    const badgeBg = onHero ? "rgba(255,255,255,0.2)" : C.sageDk;
     const wrapStyle: React.CSSProperties = {
       ...(active ? nlOn : nlBase),
-      transform: hovered ? "scale(1.07)" : "scale(1)",
-      transition: "color 0.15s, transform 0.2s cubic-bezier(.34,1.56,.64,1)",
+      padding: "8px 10px",
+      borderRadius: 12,
+      background: showBadge ? badgeBg : "transparent",
+      color: showBadge ? "#ffffff" : active ? navActiveColor : navTextColor,
+      transform: hovered ? "scale(1.05)" : "scale(1)",
+      transition:
+        "background 0.22s cubic-bezier(.34,1.56,.64,1), color 0.15s, transform 0.2s cubic-bezier(.34,1.56,.64,1)",
     };
-    const inner = (
-      <>
-        {children}
-        {/* Trait vert animé */}
-        <span style={{
-          position: "absolute",
-          bottom: -1,
-          left: "50%",
-          transform: showLine ? "translateX(-50%) scaleX(1)" : "translateX(-50%) scaleX(0)",
-          transformOrigin: "center",
-          width: "80%",
-          height: 2.5,
-          borderRadius: 99,
-          background: lineColor,
-          transition: "transform 0.22s cubic-bezier(.4,0,.2,1), opacity 0.15s",
-          opacity: showLine ? 1 : 0,
-          pointerEvents: "none",
-        }} />
-      </>
-    );
+    const inner = <>{children}</>;
     if (href) return (
       <Link href={href} style={wrapStyle}
         onMouseEnter={() => setHovState(true)}
@@ -1163,13 +1153,13 @@ export function Navbar() {
           }}
         />
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-16">
-          <div style={{ display: "flex", alignItems: "center", height: NAV_H }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: NAV_H }}>
             <Link
               href="/"
               style={{
                 display: "flex",
                 alignItems: "center",
-                marginRight: "clamp(16px,3vw,40px)",
+                marginRight: "clamp(6px,1vw,16px)",
                 flexShrink: 0,
                 textDecoration: "none",
                 lineHeight: 0,
@@ -1213,13 +1203,64 @@ export function Navbar() {
             <div
               className="hidden xl:flex"
               style={{
-                flex: 1,
+                // La pilule s'ajuste à son contenu (liens + CTA) et la ligne
+                // parente (space-between) l'ancre au bord droit du conteneur,
+                // exactement comme le logo est ancré au bord gauche : plus de
+                // grande bande vide à droite sur les larges écrans.
+                flex: "0 0 auto",
+                // Espace MINIMUM entre le logo et le début de la navbar : sert
+                // de garde-fou quand l'écran est étroit, sinon c'est
+                // justify-content: space-between (sur la ligne parente) qui
+                // répartit l'espace disponible.
+                marginLeft: "clamp(12px, 1.5vw, 28px)",
                 alignItems: "center",
-                justifyContent: "center",
-                gap: "clamp(2px, 1.2vw, 18px)",
-                height: "100%",
+                height: "clamp(33px,4.4vw,57px)",
+                position: "relative",
+                minWidth: 0,
+                // nav.png ne s'affiche QUE sur le hero (onHero) : c'est un
+                // habillage du menu qui se pose sur la photo hero. Une fois
+                // qu'on scrolle, le <nav> a déjà son fond blanc/normal
+                // (navBg) et il ne doit plus rester aucune trace de vert
+                // derrière les liens — donc pas d'image du tout ici.
+                ...(onHero
+                  ? {
+                      backgroundImage: "url(/images/nav.png)",
+                      backgroundSize: "auto 100%",
+                      backgroundPosition: "right center",
+                      backgroundRepeat: "no-repeat",
+                    }
+                  : {
+                      backgroundImage: "none",
+                    }),
+                borderRadius: "999px 0 0 999px",
+                // (overflow retiré : "hidden" ici coupait aussi les menus
+                // déroulants "Nos activités"/"Nos marques" qui s'ouvrent sous
+                // la pilule au survol — le fond décoratif reste cadré par le
+                // border-radius sans avoir besoin de overflow:hidden.)
+                // Padding gauche réduit au minimum : nav.png ne couvre que sa
+                // largeur naturelle (ancrée à droite) — moins l'ensemble
+                // liens+CTA est large, plus "Qui sommes-nous" reste à
+                // l'intérieur de la zone verte couverte par l'image.
+                padding: "0 130px 0 6px",
+                // Le contenu (liens + CTA) démarre juste après le logo, collé au
+                // bord GAUCHE de la pilule : ça supprime le vide vert mort entre
+                // le logo et "Qui sommes-nous".
+                justifyContent: "flex-start",
+                gap: "clamp(4px, 0.6vw, 10px)",
               }}
             >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "clamp(4px, 0.6vw, 10px)",
+                  height: "100%",
+                  flex: "0 0 auto",
+                  minWidth: 0,
+                  position: "relative",
+                  zIndex: 2,
+                }}
+              >
               <NavItem href="/qui-sommes-nous" active={isActive("/qui-sommes-nous")}>
                 {t("nav.about")}
               </NavItem>
@@ -1321,24 +1362,26 @@ export function Navbar() {
               <NavItem href="/contact" active={isActive("/contact")}>
                 {t("nav.contact")}
               </NavItem>
-            </div>
+              </div>
 
-            {/* Right CTAs */}
-            <div
-              className="hidden xl:flex"
-              style={{ alignItems: "center", gap: 8, marginLeft: "auto" }}
-            >
+              {/* Right CTAs */}
+              <div
+                style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, position: "relative", zIndex: 2 }}
+              >
               <ProduitSearch onHero={onHero} navTextColor={navTextColor} />
               <LangDropdown onHero={onHero} />
 
               <Link
                 href="/rendez-vous"
+                aria-label={t("nav.appointment")}
+                title={t("nav.appointment")}
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 6,
-                  padding: "10px 18px",
-                  borderRadius: 10,
+                  justifyContent: "center",
+                  width: 38,
+                  height: 38,
+                  borderRadius: "50%",
                   background: onHero
                     ? "rgba(255,255,255,0.18)"
                     : `linear-gradient(135deg,${C.logoDk},${C.logo})`,
@@ -1346,20 +1389,17 @@ export function Navbar() {
                     ? "1.5px solid rgba(255,255,255,0.35)"
                     : "none",
                   color: "#fff",
-                  fontWeight: 700,
-                  fontSize: 13.5,
-                  letterSpacing: "-0.01em",
                   textDecoration: "none",
                   boxShadow: onHero
                     ? "none"
                     : `0 3px 10px rgba(125,192,64,0.3)`,
                   transition: "all 0.3s",
-                  whiteSpace: "nowrap",
+                  flexShrink: 0,
                 }}
               >
-                <Ico.Cal style={{ width: 14, height: 14 }} />
-                {t("nav.appointment")}
+                <Ico.Cal style={{ width: 16, height: 16 }} />
               </Link>
+              </div>
             </div>
 
             {/* Burger */}

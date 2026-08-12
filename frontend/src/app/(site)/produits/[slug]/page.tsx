@@ -375,12 +375,12 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
         {isMachinismeProduct ? (
           <>
             {/* ── Ligne du haut : galerie + colonne infos essentielles ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 xl:gap-12">
-              <div className="max-w-[460px]">
+            <div className="flex flex-col lg:flex-row lg:w-fit lg:mx-auto lg:items-start gap-8 xl:gap-12">
+              <div className="w-full lg:w-[460px] lg:shrink-0">
                 <ProduitGallery images={produit.images} nomProduit={produitNom} />
               </div>
 
-              <div className="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start">
+              <div className="flex w-full flex-col items-center gap-4 text-center lg:w-[320px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start">
                 <div>
                   <h1
                     className="text-2xl md:text-[1.75rem] font-black text-[#0c0c0e] leading-tight"
@@ -390,30 +390,38 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
                   </h1>
                 </div>
 
-                {/* Infos essentielles — catégorie / marque */}
-                <div
-                  className="rounded-2xl border border-sand-200 bg-white p-5 space-y-3.5"
-                  style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}
-                >
-                  {produit.marque && (
-                    <Link
-                      href={`/marques/${produit.marque.slug}`}
-                      className="flex items-center gap-3 pb-3.5 border-b border-sand-100 hover:opacity-80 transition-opacity"
-                    >
-                      {produit.marque.logo ? (
-                        <span className="relative h-8 w-24 shrink-0">
-                          <Image src={produit.marque.logo} alt={marqueNom ?? ""} fill className="object-contain object-left" />
-                        </span>
-                      ) : (
-                        <span className="text-sm font-black uppercase" style={{ color: "#e30613" }}>{marqueNom}</span>
-                      )}
-                    </Link>
-                  )}
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Catégorie</span>
-                    <span className="font-semibold text-gray-800 text-right">{categorieNom ?? "—"}</span>
+                {/* Logo marque — seul, sans cadre ni catégorie */}
+                {produit.marque && (
+                  <Link
+                    href={`/marques/${produit.marque.slug}`}
+                    className="hover:opacity-80 transition-opacity"
+                  >
+                    {produit.marque.logo ? (
+                      <span className="relative block h-9 w-32">
+                        <Image src={produit.marque.logo} alt={marqueNom ?? ""} fill className="object-contain" />
+                      </span>
+                    ) : (
+                      <span className="text-sm font-black uppercase" style={{ color: "#e30613" }}>{marqueNom}</span>
+                    )}
+                  </Link>
+                )}
+
+                {/* Description image — affichée en haut, près des photos
+                    produit et centrée sous le titre. Taille naturelle
+                    (pas de recadrage) pour rester lisible. */}
+                {(produit as any).image_description && (
+                  <div
+                    className="w-full overflow-hidden rounded-2xl border border-sand-200 bg-white"
+                    style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={(produit as any).image_description}
+                      alt={produitNom || ""}
+                      className="block h-auto w-full"
+                    />
                   </div>
-                </div>
+                )}
 
                 <Link
                   href={backHref}
@@ -429,74 +437,58 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
             <div className="mt-8">
               <ProduitTabs
                 tabs={[
-                  {
-                    id: "description",
-                    label: "Description",
-                    content: (
-                      <div className="grid grid-cols-1 sm:grid-cols-[1fr_280px] gap-6 items-start">
-                        <div>
-                          {produitDescription ? (
-                            <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                              {produitDescription}
-                            </p>
-                          ) : (
-                            <p className="text-sm text-gray-400 italic">
-                              Aucune description disponible pour ce produit.
-                            </p>
-                          )}
-                        </div>
+                  ...(produitDescription || fichePdf || produit.fiche_technique
+                    ? [{
+                        id: "description",
+                        label: "Description",
+                        content: (
+                          <div className="grid grid-cols-1 sm:grid-cols-[1fr_280px] gap-6 items-start">
+                            <div>
+                              {produitDescription ? (
+                                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
+                                  {produitDescription}
+                                </p>
+                              ) : (
+                                <p className="text-sm text-gray-400 italic">
+                                  Aucune description disponible pour ce produit.
+                                </p>
+                              )}
+                            </div>
 
-                        {((produit as any).image_description || fichePdf || produit.fiche_technique) && (
-                          <div className="flex flex-col gap-3">
-                            {/* Image illustrant la description */}
-                            {(produit as any).image_description && (
-                              <div
-                                className="relative w-full overflow-hidden rounded-2xl border border-sand-200 bg-white"
-                                style={{ aspectRatio: "4 / 3", boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}
-                              >
-                                <Image
-                                  src={(produit as any).image_description}
-                                  alt={produitNom || ""}
-                                  fill
-                                  className="object-cover"
-                                  sizes="(max-width: 640px) 100vw, 280px"
-                                />
-                              </div>
-                            )}
-
-                            {/* Documents — fiche technique imprimable / téléchargeable */}
                             {(fichePdf || produit.fiche_technique) && (
-                              <div className="flex flex-col gap-2">
-                                {fichePdf ? (
-                                  <a
-                                    href={fichePdf}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    download
-                                    className="flex items-center gap-3 rounded-xl border border-sand-200 bg-white px-4 py-3 transition hover:border-ev-300 hover:bg-ev-50 group"
-                                  >
-                                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sand-100 text-gray-500 group-hover:bg-ev-100 group-hover:text-ev-700 transition-colors">
-                                      <FileText size={16} />
-                                    </span>
-                                    <span className="text-sm font-semibold text-gray-700 group-hover:text-ev-800">
-                                      Fiche technique (PDF)
-                                    </span>
-                                  </a>
-                                ) : (
-                                  produit.fiche_technique && (
-                                    <PrintFicheTechniqueButton
-                                      html={produit.fiche_technique}
-                                      title={produitNom}
-                                    />
-                                  )
-                                )}
+                              <div className="flex flex-col gap-3">
+                                {/* Documents — fiche technique imprimable / téléchargeable */}
+                                <div className="flex flex-col gap-2">
+                                  {fichePdf ? (
+                                    <a
+                                      href={fichePdf}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      download
+                                      className="flex items-center gap-3 rounded-xl border border-sand-200 bg-white px-4 py-3 transition hover:border-ev-300 hover:bg-ev-50 group"
+                                    >
+                                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sand-100 text-gray-500 group-hover:bg-ev-100 group-hover:text-ev-700 transition-colors">
+                                        <FileText size={16} />
+                                      </span>
+                                      <span className="text-sm font-semibold text-gray-700 group-hover:text-ev-800">
+                                        Fiche technique (PDF)
+                                      </span>
+                                    </a>
+                                  ) : (
+                                    produit.fiche_technique && (
+                                      <PrintFicheTechniqueButton
+                                        html={produit.fiche_technique}
+                                        title={produitNom}
+                                      />
+                                    )
+                                  )}
+                                </div>
                               </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                    ),
-                  },
+                        ),
+                      }]
+                    : []),
                   ...(produit.fiche_technique && !fichePdf
                     ? [{
                         id: "caracteristiques",
@@ -515,7 +507,7 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
 
           </>
         ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 xl:gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 xl:gap-10 items-start">
 
           {/* ── Galerie ─────────────────────────────────────────── */}
           <div className="space-y-4">
@@ -610,16 +602,12 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
                     </p>
                   )}
                   {(produit as any).image_description && (
-                    <div
-                      className="relative w-full overflow-hidden rounded-xl border border-sand-200 bg-sand-50 shrink-0"
-                      style={{ aspectRatio: "4 / 3" }}
-                    >
-                      <Image
+                    <div className="w-full overflow-hidden rounded-xl border border-sand-200 bg-sand-50 shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
                         src={(produit as any).image_description}
                         alt={produitNom || ""}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 640px) 100vw, 220px"
+                        className="block h-auto w-full"
                       />
                     </div>
                   )}

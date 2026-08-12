@@ -4,6 +4,7 @@ import { authenticate, requirePermission } from "../../middleware/authMiddleware
 import * as ctrl from "./rdv.controller";
 
 export const rdvPublicRouter = Router();
+rdvPublicRouter.get("/creneaux", ctrl.getCreneaux);
 rdvPublicRouter.post("/", ctrl.book);
 
 export const rdvAdminRouter = Router();

@@ -281,14 +281,19 @@ function CatVisualGrid({
       {(() => {
         const visibleNodes = nodes.filter(node => !!node.image);
         const n = visibleNodes.length;
-        const gridClass =
-          n === 1 ? "flex justify-center" :
-          n === 2 ? "grid grid-cols-2 gap-5" :
-          n === 3 ? "grid grid-cols-3 gap-5" :
-          n === 4 ? "grid grid-cols-2 sm:grid-cols-4 gap-5" :
-          "grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-5";
+        // Flexbox + justify-center plutôt que CSS Grid : une dernière ligne
+        // incomplète (ex. 5 catégories sur 4 colonnes → 1 restante) reste
+        // centrée au lieu de coller à gauche, quel que soit le nombre
+        // d'éléments. Pour un petit nombre de cartes (≤4), on garde une
+        // largeur généreuse plutôt que la largeur "4 colonnes" par défaut.
+        const itemWidthClass =
+          n === 1 ? "w-full max-w-sm" :
+          n === 2 ? "w-[calc(50%-10px)] max-w-sm" :
+          n === 3 ? "w-[calc(33.333%-14px)] max-w-sm" :
+          n === 4 ? "w-[calc(50%-10px)] sm:w-[calc(25%-15px)]" :
+          "w-[calc(50%-10px)] sm:w-[calc(33.333%-14px)] xl:w-[calc(25%-15px)]";
         return (
-        <div className={gridClass}>
+        <div className="flex flex-wrap justify-center gap-5">
         {visibleNodes.map(node => {
           const count  = nodeCount(node);
           const imgSrc = node.image;
@@ -297,7 +302,10 @@ function CatVisualGrid({
             <button
               key={node.id_categorie}
               onClick={() => onSelect(node.id_categorie)}
-              className="group relative flex flex-col overflow-hidden rounded-2xl bg-white border border-stone-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-ev-400 focus:ring-offset-2 text-left"
+              className={cn(
+                "group relative flex flex-col overflow-hidden rounded-2xl bg-white border border-stone-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-ev-400 focus:ring-offset-2 text-left",
+                itemWidthClass
+              )}
               aria-label={`${t("catalog.viewProducts", "Voir produits")} ${categoryLabel(node, locale)}`}
             >
               {/* Zone image */}
@@ -479,15 +487,14 @@ export function CategoryTree({ tree, cardVariant = "default", rootTabsOnly = fal
   }, [router, pathname, searchParams]);
 
   const handleSelect = useCallback((id: number) => {
-    const newCat = catFromUrl === id ? null : id;
     setOpenIds(prev => {
       const next = new Set(prev);
-      if (newCat) next.add(newCat);
+      next.add(id);
       return next;
     });
-    navigate(newCat, 1);
+    navigate(id, 1);
     setSidebarOpen(false);
-  }, [catFromUrl, navigate]);
+  }, [navigate]);
 
   const handleToggle = useCallback((id: number) => {
     setOpenIds(prev => {

@@ -80,8 +80,18 @@ function AgencesMap() {
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
           transition={{ duration: 0.5, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
           whileHover={{ y: -4 }}
-          className="group relative overflow-hidden rounded-3xl bg-white shadow-lg transition-shadow duration-300 hover:shadow-2xl"
+          className="group relative overflow-hidden rounded-lg border border-[#3cb648]/35 bg-white shadow-sm transition-shadow duration-300 hover:shadow-lg hover:border-[#3cb648]/60"
         >
+          {/* En-tête : icône + nom de la ville */}
+          <div className="flex items-center gap-3 px-5 pb-3 pt-4">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#3cb648]">
+              <BuildingIcon className="h-5 w-5 text-white" />
+            </span>
+            <h3 className="text-2xl font-bold leading-none text-[#0f2607]">
+              {ag.nom}
+            </h3>
+          </div>
+
           {/* Mini-carte cliquable — ouvre Google Maps dans un nouvel onglet */}
           <a
             href={ag.maps}
@@ -92,39 +102,31 @@ function AgencesMap() {
           >
             <iframe
               src={`https://maps.google.com/maps?q=${ag.lat},${ag.lng}&z=15&output=embed`}
-              className="pointer-events-none absolute inset-0 h-full w-full scale-[1.15] transition-transform duration-700 ease-out group-hover:scale-[1.32]"
+              className="pointer-events-none absolute inset-0 h-full w-full scale-[1.22] transition-transform duration-700 ease-out group-hover:scale-[1.38]"
               style={{ border: 0 }}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
               title={`Carte ${ag.nom}`}
             />
+            {/* Masque de bas de carte : neutralise le logo/les contrôles Google qui
+                peuvent déborder selon la localisation (visible sur Tunis / Soliman) */}
+            <span className="pointer-events-none absolute inset-x-0 bottom-0 h-9 bg-gradient-to-t from-white via-white/80 to-transparent" />
             <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 text-[10px] font-semibold text-white opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100">
               <ArrowTopRightOnSquare className="h-3 w-3" />
               Maps
             </span>
           </a>
 
-          {/* Icône bâtiment superposée */}
-          <div className="relative -mt-6 pl-5">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e8f5e9] shadow-md ring-4 ring-white">
-              <BuildingIcon className="h-6 w-6 text-[#1a3d0a]" />
-            </span>
-          </div>
-
           {/* Informations — liens réellement fonctionnels */}
-          <div className="flex flex-col gap-2 px-5 pb-6 pt-3">
-            <h3 className="text-[15px] font-black text-gray-900">
-              {ag.nom}
-            </h3>
-
-            <p className="flex items-start gap-2 text-[13px] leading-snug text-gray-600">
+          <div className="flex flex-col gap-2 px-5 pb-6 pt-4">
+            <p className="flex items-start gap-2 text-[13px] font-bold leading-snug text-gray-600">
               <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#1a3d0a]" />
               {ag.adresse}
             </p>
 
             <a
               href={`tel:${ag.tel.replace(/[^+\d]/g, "")}`}
-              className="flex items-center gap-2 text-[13px] text-gray-600 transition-colors hover:text-[#1a3d0a]"
+              className="flex items-center gap-2 text-[13px] font-bold text-gray-600 transition-colors hover:text-[#1a3d0a]"
             >
               <Phone className="h-3.5 w-3.5 shrink-0 text-[#1a3d0a]" />
               {ag.tel}
@@ -133,7 +135,7 @@ function AgencesMap() {
             {ag.tel2 && (
               <a
                 href={`tel:${ag.tel2.replace(/[^+\d]/g, "")}`}
-                className="flex items-center gap-2 text-[12px] text-gray-500 transition-colors hover:text-[#1a3d0a]"
+                className="flex items-center gap-2 text-[12px] font-bold text-gray-500 transition-colors hover:text-[#1a3d0a]"
               >
                 <Phone className="h-3.5 w-3.5 shrink-0 text-[#1a3d0a]/60" />
                 {ag.tel2}
@@ -143,16 +145,13 @@ function AgencesMap() {
             {ag.email && (
               <a
                 href={`mailto:${ag.email}`}
-                className="flex items-center gap-2 break-all text-[13px] text-gray-600 transition-colors hover:text-[#1a3d0a]"
+                className="flex items-center gap-2 break-all text-[13px] font-bold text-gray-600 transition-colors hover:text-[#1a3d0a]"
               >
                 <Mail className="h-3.5 w-3.5 shrink-0 text-[#1a3d0a]" />
                 {ag.email}
               </a>
             )}
           </div>
-
-          {/* Barre de dégradé vert en bas de carte */}
-          <span className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-[#1a3d0a] via-[#3cb648] to-[#8cc83f]" />
         </motion.div>
       ))}
     </div>
@@ -203,68 +202,6 @@ export function Footer() {
         style={{ background: "radial-gradient(circle,#3cb648,transparent)" }} />
       <div className="absolute top-1/2 -right-32 w-72 h-72 rounded-full opacity-[0.10] blur-3xl pointer-events-none"
         style={{ background: "radial-gradient(circle,#8cc83f,transparent)" }} />
-
-      {/* Motif de points — bas gauche */}
-      <svg className="absolute bottom-6 left-4 h-24 w-24 opacity-40 pointer-events-none" aria-hidden="true">
-        <pattern id="dots-bl" width="14" height="14" patternUnits="userSpaceOnUse">
-          <circle cx="2" cy="2" r="1.6" fill="#8cc83f" />
-        </pattern>
-        <rect width="100%" height="100%" fill="url(#dots-bl)" />
-      </svg>
-
-      {/* Motif de points — haut droit */}
-      <svg className="absolute top-4 right-6 h-20 w-20 opacity-40 pointer-events-none" aria-hidden="true">
-        <pattern id="dots-tr" width="14" height="14" patternUnits="userSpaceOnUse">
-          <circle cx="2" cy="2" r="1.6" fill="#8cc83f" />
-        </pattern>
-        <rect width="100%" height="100%" fill="url(#dots-tr)" />
-      </svg>
-
-      {/* Branche de feuilles décorative — bord droit */}
-      <svg
-        className="absolute -right-6 top-0 h-full w-40 opacity-70 pointer-events-none hidden lg:block"
-        viewBox="0 0 200 900"
-        fill="none"
-        aria-hidden="true"
-      >
-        <g stroke="#3cb648" strokeWidth="2" opacity="0.5">
-          <path d="M120 0 C 60 120, 160 220, 90 340 C 30 440, 150 520, 80 640 C 20 740, 140 800, 70 900" />
-        </g>
-        {[
-          { cx: 118, cy: 60, r: 34, rot: 20 },
-          { cx: 70, cy: 150, r: 30, rot: -30 },
-          { cx: 140, cy: 240, r: 36, rot: 15 },
-          { cx: 60, cy: 340, r: 28, rot: -20 },
-          { cx: 120, cy: 430, r: 32, rot: 25 },
-          { cx: 55, cy: 520, r: 26, rot: -15 },
-          { cx: 110, cy: 610, r: 30, rot: 10 },
-          { cx: 60, cy: 700, r: 24, rot: -25 },
-          { cx: 95, cy: 790, r: 28, rot: 18 },
-        ].map((leaf, idx) => (
-          <ellipse
-            key={idx}
-            cx={leaf.cx}
-            cy={leaf.cy}
-            rx={leaf.r}
-            ry={leaf.r * 0.42}
-            fill="#8cc83f"
-            fillOpacity="0.35"
-            transform={`rotate(${leaf.rot} ${leaf.cx} ${leaf.cy})`}
-          />
-        ))}
-      </svg>
-
-      {/* Feuilles isolées — coin bas gauche */}
-      <svg
-        className="absolute -left-4 bottom-0 h-48 w-48 opacity-60 pointer-events-none"
-        viewBox="0 0 200 200"
-        fill="none"
-        aria-hidden="true"
-      >
-        <ellipse cx="40" cy="160" rx="46" ry="18" fill="#8cc83f" fillOpacity="0.3" transform="rotate(-25 40 160)" />
-        <ellipse cx="90" cy="180" rx="38" ry="15" fill="#3cb648" fillOpacity="0.25" transform="rotate(15 90 180)" />
-        <ellipse cx="20" cy="120" rx="30" ry="12" fill="#8cc83f" fillOpacity="0.2" transform="rotate(-40 20 120)" />
-      </svg>
 
       <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-16 pt-16 pb-8">
 
@@ -320,11 +257,11 @@ export function Footer() {
 
           {/* Services */}
           <motion.div {...fadeUp(0.14)} className="lg:col-span-2">
-            <h4 className="text-[10px] font-black text-[#1a7a2e] uppercase tracking-[0.18em] mb-5 border-b border-[#1a7a2e]/25 pb-2 inline-block">{t("footer.services")}</h4>
+            <h4 className="text-sm font-bold text-[#1a7a2e] mb-5 border-b border-[#1a7a2e]/25 pb-2 inline-block">{t("footer.services")}</h4>
             <ul className="space-y-3 mt-3">
               {navLinks.Activités.map((l, i) => (
                 <li key={i}>
-                  <Link href={l.href} className="group flex items-center gap-2 text-gray-600 hover:text-[#1a3d0a] text-sm font-medium transition-colors">
+                  <Link href={l.href} className="group flex items-center gap-2 text-gray-600 hover:text-[#1a3d0a] text-sm font-bold transition-colors">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#3cb648]/60 group-hover:bg-[#1a7a2e] transition-colors shrink-0" />
                     {l.label}
                   </Link>
@@ -335,11 +272,11 @@ export function Footer() {
 
           {/* Marques */}
           <motion.div {...fadeUp(0.17)} className="lg:col-span-2">
-            <h4 className="text-[10px] font-black text-[#1a7a2e] uppercase tracking-[0.18em] mb-5 border-b border-[#1a7a2e]/25 pb-2 inline-block">{t("footer.brands")}</h4>
+            <h4 className="text-sm font-bold text-[#1a7a2e] mb-5 border-b border-[#1a7a2e]/25 pb-2 inline-block">{t("footer.brands")}</h4>
             <ul className="space-y-3 mt-3">
               {navLinks.Marques.map((l, i) => (
                 <li key={i}>
-                  <Link href={l.href} className="group flex items-center gap-2 text-gray-600 hover:text-[#1a3d0a] text-sm font-medium transition-colors">
+                  <Link href={l.href} className="group flex items-center gap-2 text-gray-600 hover:text-[#1a3d0a] text-sm font-bold transition-colors">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#3cb648]/60 group-hover:bg-[#1a7a2e] transition-colors shrink-0" />
                     {l.label}
                   </Link>
@@ -350,11 +287,11 @@ export function Footer() {
 
           {/* Entreprise */}
           <motion.div {...fadeUp(0.20)} className="lg:col-span-2">
-            <h4 className="text-[10px] font-black text-[#1a7a2e] uppercase tracking-[0.18em] mb-5 border-b border-[#1a7a2e]/25 pb-2 inline-block">{t("footer.company")}</h4>
+            <h4 className="text-sm font-bold text-[#1a7a2e] mb-5 border-b border-[#1a7a2e]/25 pb-2 inline-block">{t("footer.company")}</h4>
             <ul className="space-y-3 mt-3">
               {navLinks.Entreprise.map((l, i) => (
                 <li key={i}>
-                  <Link href={l.href} className="group flex items-center gap-2 text-gray-600 hover:text-[#1a3d0a] text-sm font-medium transition-colors">
+                  <Link href={l.href} className="group flex items-center gap-2 text-gray-600 hover:text-[#1a3d0a] text-sm font-bold transition-colors">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#3cb648]/60 group-hover:bg-[#1a7a2e] transition-colors shrink-0" />
                     {l.label}
                   </Link>

@@ -1,4 +1,6 @@
 import { cn } from "@/lib/utils";
+import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
+import type { IcoName } from "@/components/icons/AgriIcons";
 
 interface SectionHeaderProps {
   eyebrow?:  string;
@@ -6,14 +8,22 @@ interface SectionHeaderProps {
   subtitle?: string;
   align?:    "left" | "center";
   className?: string;
+  /** Icône minimaliste affichée en début de ligne du titre (facultatif) */
+  icon?: IcoName;
 }
 
-export function SectionHeader({ eyebrow, title, subtitle, align = "center", className }: SectionHeaderProps) {
+export function SectionHeader({ eyebrow, title, subtitle, align = "center", className, icon }: SectionHeaderProps) {
   return (
     <div className={cn("mb-6", align === "center" ? "text-center" : "text-left", className)}>
       {eyebrow && <p className="eyebrow mb-3">{eyebrow}</p>}
       <h2 className="section-title">
-        {title}
+        {icon ? (
+          <SectionTitleLine icon={icon} align={align}>
+            {title}
+          </SectionTitleLine>
+        ) : (
+          title
+        )}
       </h2>
       {/* Accent line */}
       <div

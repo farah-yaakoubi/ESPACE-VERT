@@ -123,11 +123,6 @@ function CategoriesGrid({
   const { locale, t } = useI18n();
   if (nodes.length === 0) return null;
 
-  function nodeCount(n: CatNode) {
-    const ids = collectIds(n);
-    return allProduits.filter((p) => ids.has((p as any).id_categorie)).length;
-  }
-
   function nodeFirstImage(n: CatNode) {
     const ids = collectIds(n);
     const first = allProduits.find(
@@ -137,9 +132,8 @@ function CategoriesGrid({
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div className="mb-8 flex flex-wrap justify-center gap-x-6 gap-y-10">
       {nodes.map((node) => {
-        const count = nodeCount(node);
         const fallback = nodeFirstImage(node);
         const imgSrc = node.image || fallback?.url || null;
 
@@ -147,40 +141,36 @@ function CategoriesGrid({
           <button
             key={node.id_categorie}
             onClick={() => onSelect(node.id_categorie)}
-            className="group overflow-hidden rounded-2xl border border-sand-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-ev-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-ev-400 focus:ring-offset-2"
+            className="group flex w-[calc(50%-8px)] flex-col items-center text-center lg:w-[calc(25%-12px)] focus:outline-none"
             aria-label={`${t("catalog.viewProducts", "Voir produits")} ${catLabel(node, locale)}`}
           >
-            <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br from-white via-ev-50 to-sand-100">
+            <div className="relative flex h-44 w-full items-center justify-center">
               {imgSrc ? (
                 <Image
                   src={imgSrc}
                   alt={catLabel(node, locale)}
                   fill
-                  className="object-contain p-6 drop-shadow-md transition-transform duration-500 group-hover:scale-105"
+                  className="object-contain transition-transform duration-500 ease-out group-hover:-translate-y-1.5 group-hover:scale-[1.06]"
                   sizes="(max-width:640px) 100vw, (max-width:1280px) 50vw, 25vw"
                 />
               ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-3xl text-ev-200 shadow-sm">
+                <div className="flex h-44 w-full items-center justify-center rounded-full bg-ev-50 text-3xl text-ev-300">
                   🌿
                 </div>
               )}
-              <span className="absolute right-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-ev-800 shadow-sm">
-                {count} {productWord(count, t)}
-              </span>
             </div>
 
-            <div className="flex min-h-[116px] flex-col p-4">
-              <div className="mb-3 flex items-start gap-2">
-                <span className="mt-1 h-8 w-1 rounded-full bg-ev-600 shrink-0" />
-                <p className="text-[15px] font-bold leading-snug text-gray-900 line-clamp-2 group-hover:text-ev-700 transition-colors">
-                  {catLabel(node, locale)}
-                </p>
-              </div>
-              <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-xl bg-ev-700 px-3.5 py-2 text-[12px] font-semibold text-white transition-colors group-hover:bg-ev-800">
-                {t("catalog.viewProducts", "Voir produits")}
-                <ChevronRight size={13} />
-              </span>
-            </div>
+            <p
+              className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+              style={{ fontFamily: "var(--font-serif)" }}
+            >
+              {catLabel(node, locale)}
+            </p>
+
+            <span className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
+              {t("catalog.viewProducts", "Voir produits")}
+              <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
+            </span>
           </button>
         );
       })}
@@ -208,11 +198,6 @@ function SubCategoriesGrid({
     (sc) => !sc.image || sc.image.trim() === "",
   );
 
-  function nodeCount(n: CatNode) {
-    const ids = collectIds(n);
-    return allProduits.filter((p) => ids.has((p as any).id_categorie)).length;
-  }
-
   if (subCatsWithImages.length === 0 && subCatsNoImages.length === 0)
     return null;
 
@@ -228,41 +213,36 @@ function SubCategoriesGrid({
 
       {/* Sous-catégories AVEC images */}
       {subCatsWithImages.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="mb-8 flex flex-wrap justify-center gap-x-6 gap-y-10">
           {subCatsWithImages.map((subCat) => {
-            const count = nodeCount(subCat);
             return (
               <button
                 key={subCat.id_categorie}
                 onClick={() => onSelect(subCat.id_categorie)}
-                className="group overflow-hidden rounded-2xl border border-sand-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-ev-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-ev-400 focus:ring-offset-2"
+                className="group flex w-[calc(50%-8px)] flex-col items-center text-center lg:w-[calc(25%-12px)] focus:outline-none"
                 aria-label={`${t("catalog.viewProducts", "Voir produits")} ${catLabel(subCat, locale)}`}
               >
-                <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br from-white via-ev-50 to-sand-100">
+                <div className="relative flex h-44 w-full items-center justify-center">
                   <Image
                     src={subCat.image!}
                     alt={catLabel(subCat, locale)}
                     fill
-                    className="object-contain p-6 drop-shadow-md transition-transform duration-500 group-hover:scale-105"
+                    className="object-contain transition-transform duration-500 ease-out group-hover:-translate-y-1.5 group-hover:scale-[1.06]"
                     sizes="(max-width:640px) 100vw, (max-width:1280px) 50vw, 25vw"
                   />
-                  <span className="absolute right-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-ev-800 shadow-sm">
-                    {count} {productWord(count, t)}
-                  </span>
                 </div>
 
-                <div className="flex min-h-[116px] flex-col p-4">
-                  <div className="mb-3 flex items-start gap-2">
-                    <span className="mt-1 h-8 w-1 rounded-full bg-ev-600 shrink-0" />
-                    <p className="text-[15px] font-bold leading-snug text-gray-900 line-clamp-2 group-hover:text-ev-700 transition-colors">
-                      {catLabel(subCat, locale)}
-                    </p>
-                  </div>
-                  <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-xl bg-ev-700 px-3.5 py-2 text-[12px] font-semibold text-white transition-colors group-hover:bg-ev-800">
-                    {t("catalog.viewProducts", "Voir produits")}
-                    <ChevronRight size={13} />
-                  </span>
-                </div>
+                <p
+                  className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+                  style={{ fontFamily: "var(--font-serif)" }}
+                >
+                  {catLabel(subCat, locale)}
+                </p>
+
+                <span className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
+                  {t("catalog.viewProducts", "Voir produits")}
+                  <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
+                </span>
               </button>
             );
           })}

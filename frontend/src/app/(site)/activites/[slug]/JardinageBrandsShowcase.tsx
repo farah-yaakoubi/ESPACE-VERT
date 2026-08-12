@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Marque } from "@/types/api";
+import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
 
 const RED = "#e30613";
 
@@ -45,7 +46,7 @@ export function JardinageBrandsShowcase({ marques }: { marques: Marque[] }) {
             className="text-3xl md:text-[2.35rem] font-black text-[#0c0c0e]"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            Parcourir par marques
+            <SectionTitleLine icon="Tractor" color={RED} align="center">Parcourir par marques</SectionTitleLine>
           </h2>
         </div>
 

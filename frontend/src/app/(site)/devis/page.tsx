@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Clock3, FileText, Headphones, ShieldCheck } from "lucide-react";
 import { PageHeroStatic } from "@/components/sections/PageHeroStatic";
 import { DevisForm } from "@/components/forms/DevisForm";
+import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
 
 export const metadata: Metadata = {
   title: "Demander un devis",
@@ -48,7 +49,9 @@ export default function DevisPage() {
                     <FileText size={13} />
                     Devis personnalisé
                   </span>
-                  <h2 className="site-subheading mt-3">Comment ça marche ?</h2>
+                  <h2 className="site-subheading mt-3">
+                    <SectionTitleLine icon="Cal" size="sm" align="left">Comment ça marche ?</SectionTitleLine>
+                  </h2>
                   <p className="mt-2 text-sm leading-7 text-gray-600">
                     Une demande claire nous aide à vous proposer le bon produit, service ou accompagnement.
                   </p>
@@ -85,7 +88,7 @@ export default function DevisPage() {
                 <div className="border-b border-ev-100 bg-[linear-gradient(135deg,#f5fbf1_0%,#eaf6e3_50%,#fff7e6_100%)] px-5 py-5 sm:px-8">
                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-ev-700">Votre besoin</p>
                   <h2 className="site-subheading mt-1 text-[1.35rem]">
-                    Demande de devis
+                    <SectionTitleLine icon="SeedBag" size="sm" align="left">Demande de devis</SectionTitleLine>
                   </h2>
                   <p className="mt-2 max-w-2xl text-sm leading-7 text-gray-600">
                     Indiquez le domaine, les quantités ou les contraintes du projet pour recevoir une réponse plus précise.

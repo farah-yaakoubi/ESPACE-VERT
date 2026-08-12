@@ -4,8 +4,12 @@
 
 /* ── Design tokens ──────────────────────────────────────────────────────────── */
 :root {
-  --font-display: "Cairo";
-  --font-body:    "Cairo";
+  /* Cairo — unique typo du site (chargée dans layout.tsx). Alex Brush a été retirée :
+     la hiérarchie visuelle passe désormais par la graisse et la taille, pas par le mélange de polices. */
+  --font-display: var(--font-cairo);
+  --font-body:    var(--font-cairo);
+  --font-serif:   var(--font-cairo);
+  --font-script:  var(--font-cairo);
 
   /* ── Espace Vert Brand Palette (logo: forest #0a5c2e + leaf #7dc040) ── */
   --ev-50:  #f2faf0;
@@ -58,6 +62,11 @@
     font-family: var(--font-body), "Cairo", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     scroll-behavior: smooth;
+    /* Corrige un bug connu de la police Cairo en graisse Bold/Black : sans ceci,
+       le "i" minuscule perd son point dans certaines combinaisons de lettres
+       (ex. "Tunis" → "Tunls"), à cause des "contextual alternates" (calt) de la police. */
+    font-feature-settings: "calt" 0, "liga" 0;
+    font-variant-ligatures: none;
   }
 
   body {
@@ -91,9 +100,9 @@
   .section    { @apply py-8 md:py-12 lg:py-14; }
   .section-sm { @apply py-5 md:py-8 lg:py-10; }
 
-  /* Eyebrow label */
+  /* Eyebrow label — sous-titre au-dessus des titres de section */
   .eyebrow {
-    @apply text-xs font-bold tracking-[.16em] uppercase;
+    @apply text-sm font-extrabold tracking-[.14em] uppercase;
     color: var(--leaf);
     font-family: var(--font-display), sans-serif;
   }
@@ -115,14 +124,18 @@
     @apply text-lg font-semibold leading-snug;
   }
 
-  /* Unified section title — used for every main section heading across the site */
+  /* Unified section title — used for every main section heading across the site.
+     Taille resserrée : le titre doit occuper peu d'espace dans la section,
+     la hiérarchie restant assurée par la graisse (700) plutôt que par une
+     taille démesurée. */
   .section-title {
-    font-family: var(--font-display), sans-serif;
-    font-weight: 300;
-    font-size: clamp(2.1rem, 4.6vw, 3.6rem);
-    line-height: 1;
-    letter-spacing: -0.015em;
+    font-family: var(--font-script), sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.5rem, 5vw, 2.75rem);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
     color: #1b2118;
+    max-width: 100%;
   }
   .section-title--light { color: #ffffff; }
 
@@ -229,7 +242,7 @@
 /* ── Badges ──────────────────────────────────────────────────────────────────── */
 @layer components {
   .badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+    @apply inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold;
     font-family: var(--font-display), sans-serif;
   }
   .badge-green  { @apply bg-ev-100  text-ev-800;  }

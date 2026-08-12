@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarDays, Droplets, Info } from "lucide-react";
 import { RdvForm } from "@/components/forms/RdvForm";
+import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
 
 export const metadata: Metadata = {
   title: "Prendre rendez-vous — Matar Irrigation",
@@ -53,7 +54,7 @@ export default function RendezVousPage() {
               {/* What to expect */}
               <div>
                 <h2 className="site-subheading mb-4 text-[1.35rem]">
-                  Ce que vous obtiendrez
+                  <SectionTitleLine icon="Droplet" size="sm" color="#0284c7" align="left">Ce que vous obtiendrez</SectionTitleLine>
                 </h2>
                 <ul className="space-y-3">
                   {[
@@ -90,7 +91,7 @@ export default function RendezVousPage() {
             <div className="lg:col-span-3">
               <div className="card p-5 sm:p-8">
                 <h2 className="site-subheading mb-6 text-[1.35rem]">
-                  Votre demande de rendez-vous
+                  <SectionTitleLine icon="Cal" size="sm" color="#0284c7" align="left">Votre demande de rendez-vous</SectionTitleLine>
                 </h2>
                 <RdvForm />
               </div>

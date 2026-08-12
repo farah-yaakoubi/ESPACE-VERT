@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getProductHref } from "@/lib/product-url";
+import { ProduitCard } from "@/components/cards/ProduitCard";
 import type { CatNode } from "@/components/catalogue/FilterPanel";
 import type { ProduitCard as ProduitCardType } from "@/types/api";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -31,6 +32,52 @@ const RED       = "#e30613";
 const RED_DARK  = "#b3050f";
 const INK       = "#0c0c0e";
 const RED_SOFT  = "#fdeced";
+
+/** Déclenche un état "révélé" la première fois que l'élément entre dans le
+ *  viewport — utilisé pour animer en douceur (fade + léger slide-up) les
+ *  textes des cartes (titres, noms de marque, CTA) au fil du scroll plutôt
+ *  que de les afficher d'un coup. */
+function useRevealOnView<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null);
+  const [inView, setInView] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || inView) return;
+
+    // Respecte les préférences d'accessibilité : pas d'animation si
+    // l'utilisateur a demandé de réduire les mouvements.
+    if (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      setInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setInView(true);
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [inView]);
+
+  return { ref, inView };
+}
+
+/** Classes utilitaires appliquées aux blocs de texte pour un fondu + léger
+ *  glissement vers le haut, fluide (600ms, ease-out). */
+function textRevealClass(inView: boolean) {
+  return cn(
+    "transition-all duration-[600ms] ease-out",
+    inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+  );
+}
 
 function normalizeText(value: string | null | undefined) {
   return (value ?? "")
@@ -133,7 +180,7 @@ function SidebarRow({
           {depth === 0 && (
             <Icon size={16} strokeWidth={2} style={{ color: isActive ? RED : "#6b7280" }} className="shrink-0" />
           )}
-          <span className="truncate">{labelOf(node, locale)}</span>
+          <span className={cn("truncate transition-colors duration-300")}>{labelOf(node, locale)}</span>
         </button>
         {hasKids && (
           <button
@@ -145,7 +192,7 @@ function SidebarRow({
         )}
       </div>
       {hasKids && (
-        <div className={cn("overflow-hidden transition-all", isOpen ? "max-h-[600px]" : "max-h-0")}>
+        <div className={cn("overflow-hidden transition-all duration-300 ease-out", isOpen ? "max-h-[600px]" : "max-h-0")}>
           {(node.children ?? []).map((child) => (
             <SidebarRow
               key={child.id_categorie}
@@ -177,12 +224,13 @@ export function JardinageSidebar({
   const [openSet, setOpenSet] = useState<Set<number>>(new Set());
   const toggle = (id: number) =>
     setOpenSet((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const { ref: headingRef, inView: headingInView } = useRevealOnView<HTMLHeadingElement>();
 
   return (
     <aside className="w-full md:w-64 shrink-0">
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="px-4 py-3.5 border-b border-gray-100" style={{ backgroundColor: INK }}>
-          <h2 className="text-[15px] font-extrabold text-white">
+          <h2 ref={headingRef} className={cn("text-[15px] font-extrabold text-white", textRevealClass(headingInView))}>
             {t("catalog.categories", "Catégories")}
           </h2>
         </div>
@@ -263,38 +311,34 @@ export function JardinageCategoryCard({
 }) {
   const { locale, t } = useI18n();
   const { Icon, color } = pictoFor(node.nom);
-  const isBrandCard = node.slug.startsWith("jm-");
+  const isBrandCard = (node.slug ?? "").startsWith("jm-");
   const normKey = (s: string) => normalizeText(s).replace(/[^a-z0-9]/g, "");
   const brandLogo =
     marqueLogoById?.get((node as any).id_marque) ??
     marqueLogoByKey?.get(normKey(node.nom)) ??
-    marqueLogoByKey?.get(normKey(node.slug.replace(/^jm-/, ""))) ??
+    marqueLogoByKey?.get(normKey((node.slug ?? "").replace(/^jm-/, ""))) ??
     node.image;
+  const { ref: textRef, inView: textInView } = useRevealOnView<HTMLParagraphElement>();
 
   if (isBrandCard) {
     return (
       <button
         onClick={() => onSelect(node.id_categorie)}
-        className="group flex flex-col items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-        onMouseEnter={(e) => (e.currentTarget.style.borderColor = RED)}
-        onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e5e7eb")}
+        className="group flex w-full items-center justify-center px-2 py-4 transition-transform duration-300 hover:-translate-y-1"
       >
-        <span className="relative mx-auto flex h-10 w-full max-w-[140px] items-center justify-center overflow-hidden">
+        <span className="relative mx-auto flex h-16 w-full max-w-[172px] items-center justify-center overflow-hidden">
           {brandLogo ? (
             <Image
               src={brandLogo}
               alt={labelOf(node, locale)}
               fill
-              className="object-contain"
-              sizes="140px"
+              className="object-contain transition-transform duration-500 group-hover:scale-[1.06]"
+              sizes="172px"
             />
           ) : (
-            <Icon size={28} strokeWidth={1.8} style={{ color }} />
+            <Icon size={34} strokeWidth={1.8} style={{ color }} />
           )}
         </span>
-        <p className="text-[14.5px] font-bold text-gray-900 text-center leading-snug">
-          {labelOf(node, locale)}
-        </p>
       </button>
     );
   }
@@ -302,15 +346,15 @@ export function JardinageCategoryCard({
   return (
     <button
       onClick={() => onSelect(node.id_categorie)}
-      className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+      className="group flex w-full flex-col items-center text-center focus:outline-none"
     >
-      <div className="relative flex h-36 w-full items-center justify-center bg-gray-50">
+      <div className="relative flex h-44 w-full items-center justify-center">
         {node.image ? (
           <Image
             src={node.image}
             alt={labelOf(node, locale)}
             fill
-            className="object-contain p-4 transition-transform duration-500 group-hover:scale-105"
+            className="object-contain transition-transform duration-500 ease-out group-hover:-translate-y-1.5 group-hover:scale-[1.06]"
             sizes="(max-width:640px) 50vw, (max-width:1280px) 25vw, 20vw"
           />
         ) : (
@@ -323,17 +367,19 @@ export function JardinageCategoryCard({
         )}
       </div>
 
-      <div className="flex flex-1 flex-col p-4">
-        <p className="text-[14.5px] font-bold text-gray-900 leading-snug">
+      <div ref={textRef as any} className={cn("flex flex-1 flex-col items-center", textRevealClass(textInView))}>
+        <p
+          className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+          style={{ fontFamily: "var(--font-serif)" }}
+        >
           {labelOf(node, locale)}
         </p>
 
         <span
-          className="mt-3 inline-flex w-fit items-center gap-1 text-[12px] font-bold uppercase tracking-wide transition-colors"
-          style={{ color: RED }}
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5"
         >
           {t("catalog.viewProducts", "Voir les produits")}
-          <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+          <ArrowRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
         </span>
       </div>
     </button>
@@ -353,7 +399,7 @@ export function JardinageCategoryGrid({
    *  dernière ligne incomplète (ex. 7 marques = 6 + 1) reste collée à gauche. */
   centered?: boolean;
 }) {
-  const visibleNodes = nodes.filter((node) => !isHiddenTile(node.nom));
+  const visibleNodes = (nodes ?? []).filter((node) => !isHiddenTile(node.nom));
   if (visibleNodes.length === 0) return null;
 
   if (centered) {
@@ -393,23 +439,28 @@ export function JardinageCategoryGrid({
     );
   }
 
+  // Flexbox + justify-center plutôt que CSS Grid : quand la dernière ligne
+  // n'est pas complète (ex. 6 catégories en grille 4 colonnes → 2 restantes),
+  // le Grid les collait à gauche. Le Flexbox centre chaque ligne, y compris
+  // la dernière, quel que soit le nombre d'éléments.
   return (
-    <div
-      className={cn(
-        "grid gap-5 md:gap-6",
-        wide
-          ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"
-          : "grid-cols-2 sm:grid-cols-2 lg:grid-cols-4"
-      )}
-    >
+    <div className="flex flex-wrap justify-center gap-5">
       {visibleNodes.map((node) => (
-        <JardinageCategoryCard
+        <div
           key={node.id_categorie}
-          node={node}
-          onSelect={onSelect}
-          marqueLogoById={marqueLogoById}
-          marqueLogoByKey={marqueLogoByKey}
-        />
+          className={cn(
+            wide
+              ? "w-[calc(50%-10px)] sm:w-[calc(33.333%-14px)] md:w-[calc(25%-15px)] lg:w-[calc(16.666%-16.666px)]"
+              : "w-[calc(50%-10px)] lg:w-[calc(25%-15px)]"
+          )}
+        >
+          <JardinageCategoryCard
+            node={node}
+            onSelect={onSelect}
+            marqueLogoById={marqueLogoById}
+            marqueLogoByKey={marqueLogoByKey}
+          />
+        </div>
       ))}
     </div>
   );
@@ -429,6 +480,7 @@ export function JardinageProductCard({
   const marqueNom = produit.marque
     ? translatedField(produit.marque as any, "nom", locale) || produit.marque.nom
     : null;
+  const { ref: textRef, inView: textInView } = useRevealOnView<HTMLDivElement>();
 
   return (
     <Link
@@ -460,7 +512,7 @@ export function JardinageProductCard({
       </div>
 
       {/* ── Contenu ─────────────────────────────────────────────────── */}
-      <div className="flex flex-1 flex-col p-4">
+      <div ref={textRef} className={cn("flex flex-1 flex-col p-4", textRevealClass(textInView))}>
         <p className="text-[15px] font-extrabold text-gray-900 leading-snug line-clamp-2">
           {nom}
         </p>
@@ -478,11 +530,11 @@ export function JardinageProductCard({
         {/* CTA */}
         <div className="mt-4 flex items-center border-t border-gray-100 pt-3">
           <span
-            className="inline-flex items-center gap-1.5 text-[12.5px] font-extrabold uppercase tracking-wide transition-colors"
+            className="inline-flex items-center gap-1.5 text-[12.5px] font-extrabold uppercase tracking-wide transition-colors duration-300"
             style={{ color: RED }}
           >
             {t("catalog.viewProduct", "Voir détails")}
-            <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
+            <ArrowRight size={14} className="transition-transform duration-300 group-hover:translate-x-0.5" />
           </span>
         </div>
       </div>
@@ -497,9 +549,9 @@ export function JardinageProductGrid({
 }) {
   if (produits.length === 0) return null;
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {produits.map((p) => (
-        <JardinageProductCard key={p.id_produit} produit={p} />
+        <ProduitCard key={p.id_produit} produit={p} />
       ))}
     </div>
   );

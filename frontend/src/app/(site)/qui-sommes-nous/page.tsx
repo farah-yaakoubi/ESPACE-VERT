@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { AnimatedCount } from "@/components/qui-sommes-nous/AnimatedCount";
 import AgenceSection from "@/components/qui-sommes-nous/AgenceSection";
+import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
+import type { IcoName } from "@/components/icons/AgriIcons";
 
 const MISSION_IMAGE = "/images/notre-mission.webp";
 const HISTORY_IMAGE = "/images/hero/semences-desktop.webp";
@@ -65,11 +67,17 @@ function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   );
 }
 
-function SectionTitle({ label, light = false }: { label: string; light?: boolean }) {
+function SectionTitle({ label, light = false, icon }: { label: string; light?: boolean; icon?: IcoName }) {
   return (
     <div className="mb-6">
       <h2 className={`section-title text-[2rem] sm:text-[2.4rem] ${light ? "section-title--light" : ""}`}>
-        {label}
+        {icon ? (
+          <SectionTitleLine icon={icon} color={light ? "#9dce78" : "#5d8a45"} align="left">
+            {label}
+          </SectionTitleLine>
+        ) : (
+          label
+        )}
       </h2>
       <div className={`mt-2.5 h-[3px] w-10 rounded-full ${light ? "bg-[#9dce78]" : "bg-[#5d8a45]"}`} />
     </div>
@@ -274,7 +282,7 @@ export default function QuiSommesNousPage() {
               <div className="h-full flex flex-col gap-0 rounded-2xl overflow-hidden border-2 border-[#1b5430] shadow-[0_4px_24px_rgba(15,58,30,0.15)]">
                 {/* Header vert */}
                 <div className="bg-[#1b5430] px-7 pt-7 pb-5">
-                  <SectionTitle label="Notre mission" light />
+                  <SectionTitle label="Notre mission" light icon="Sprout" />
                   <p className="text-[1.05rem] leading-8 text-white/85">
                     Accompagner les projets agricoles et faciliter leur performance
                     avec conseil, proximité et solutions complètes.
@@ -291,7 +299,7 @@ export default function QuiSommesNousPage() {
             {/* Histoire */}
             <Reveal delay={0.06}>
               <Card className="h-full">
-                <SectionTitle label="Notre histoire" />
+                <SectionTitle label="Notre histoire" icon="Cal" />
                 <div className="grid gap-5 sm:grid-cols-[1fr_1fr]">
 
                   {/* Timeline */}
@@ -350,7 +358,7 @@ export default function QuiSommesNousPage() {
             {/* Chiffres — fond vert clair avec accent */}
             <Reveal delay={0.04}>
               <div className="rounded-2xl border-2 border-[#5d8a45] bg-[#f5faf0] p-7 sm:p-8 shadow-[0_4px_24px_rgba(93,138,69,0.12)]">
-                <SectionTitle label="En chiffres" />
+                <SectionTitle label="En chiffres" icon="GrassTuft" />
                 <div className="grid grid-cols-2 gap-4">
                   {STATS.map((s, i) => {
                     const Icon = s.icon;
@@ -384,7 +392,7 @@ export default function QuiSommesNousPage() {
             {/* Principes */}
             <Reveal delay={0.06}>
               <Card>
-                <SectionTitle label="Nos principes" />
+                <SectionTitle label="Nos principes" icon="Clover" />
                 <div className="grid grid-cols-2 gap-4">
                   {PRINCIPLES.map((item, i) => {
                     const Icon = item.icon;
@@ -421,7 +429,7 @@ export default function QuiSommesNousPage() {
           {/* ── LIGNE 4 : Sociétés ── */}
           <Reveal delay={0.05}>
             <Card className="mb-6 border-2 border-[#ddd5c4]">
-              <SectionTitle label="Nos sociétés" />
+              <SectionTitle label="Nos sociétés" icon="Barn" />
               <LogoMarquee />
             </Card>
           </Reveal>
@@ -445,7 +453,7 @@ export default function QuiSommesNousPage() {
                     className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-black leading-tight tracking-[-0.03em] text-white"
                     style={{ fontFamily: "var(--font-display)" }}
                   >
-                    Cultivons la performance ensemble
+                    <SectionTitleLine icon="Leaf" color="#9dce78" align="left">Cultivons la performance ensemble</SectionTitleLine>
                   </h2>
                   <p className="mt-3 text-[1.05rem] leading-8 text-white/75">
                     Ensemble, préparons l'agriculture de demain.

@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, Search, Truck } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight, Truck } from "lucide-react";
 
-const FALLBACK_IMAGE = "/images/hero/jardinage-desktop.webp";
+const FALLBACK_IMAGE = "/images/hero/machinisme.jpeg";
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 /** Rouge / anthracite figés — volontairement hors palette `ev-*` afin de ne
@@ -24,10 +25,6 @@ interface JardinageHeroShowcaseProps {
   ctaHref?: string;
   categories?: JardinageHeroCategory[];
 }
-
-const TABS = [
-  { label: "Tous les produits", active: true },
-];
 
 export function JardinageHeroShowcase({
   activiteSlug,
@@ -50,52 +47,63 @@ export function JardinageHeroShowcase({
     return () => { cancelled = true; };
   }, [activiteSlug]);
 
-  const topCategories = categories.slice(0, 6);
-
   return (
     <section className="relative overflow-hidden" style={{ backgroundColor: INK }}>
-      <div className="relative min-h-[560px] lg:min-h-[620px] flex items-stretch pb-24 lg:pb-28">
+      <div className="relative min-h-[560px] lg:min-h-[620px] flex items-stretch pb-10 lg:pb-12">
         {/* ── Photo plein format ─────────────────────────────────────── */}
         <div className="absolute inset-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={image} alt="Équipements de jardinage et machinisme" className="h-full w-full object-cover" />
         </div>
 
-        {/* ── Voile sombre diagonal (côté gauche) ──────────────────────── */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `linear-gradient(100deg, ${INK} 0%, ${INK} 40%, rgba(12,12,14,0.72) 56%, rgba(12,12,14,0.15) 78%, rgba(12,12,14,0) 92%)`,
-          }}
-        />
-
         {/* ── Contenu texte ───────────────────────────────────────────── */}
         <div
           className="relative z-10 container-ev flex items-center w-full"
           style={{ paddingTop: "calc(var(--nav-h, 80px) + 28px)" }}
         >
-          <div className="max-w-xl">
-            <p
+          <motion.div
+            className="max-w-xl"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+          >
+            <motion.p
               className="text-[12px] sm:text-[13px] font-extrabold tracking-[0.22em] uppercase mb-3"
               style={{ color: RED }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.05 }}
             >
               Matériel professionnel, location
-            </p>
+            </motion.p>
 
-            <h1
+            <motion.h1
               className="font-black uppercase leading-[1.06] tracking-tight text-[clamp(2rem,4.2vw,3.1rem)]"
               style={{ fontFamily: "var(--font-display)" }}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.15 }}
             >
               <span className="block text-white">Notre collection</span>
               <span className="block" style={{ color: RED }}>Premium d&apos;équipements..</span>
-            </h1>
+            </motion.h1>
 
-            <p className="mt-4 text-[13.5px] sm:text-sm font-medium text-white/70 max-w-md">
+            <motion.p
+              className="mt-4 text-[13.5px] sm:text-sm font-medium text-white/70 max-w-md"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.28 }}
+            >
               Tondeuses, motoculture, outillage thermique et électrique — le matériel où les
               professionnels et les particuliers exigeants trouvent robustesse et performance.
-            </p>
+            </motion.p>
 
-            <div className="mt-7 flex flex-wrap items-center gap-3">
+            <motion.div
+              className="mt-7 flex flex-wrap items-center gap-3"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
               <a
                 href={ctaHref}
                 className="inline-flex items-center gap-2 rounded-lg px-6 py-3.5 text-[13.5px] font-bold text-white uppercase tracking-wide transition-colors duration-200"
@@ -106,8 +114,8 @@ export function JardinageHeroShowcase({
                 Voir le catalogue
                 <ArrowRight size={16} />
               </a>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
 
         {/* ── Carte produit vedette flottante ─────────────────────────── */}
@@ -124,62 +132,6 @@ export function JardinageHeroShowcase({
         </div>
       </div>
 
-      {/* ── Barre de recherche flottante (style "MotorX") ─────────────── */}
-      <div className="relative z-20 container-ev">
-        <div className="-mt-20 lg:-mt-24">
-          {/* Onglets */}
-          <div className="flex items-center gap-1 mb-0">
-            {TABS.map((tab) => (
-              <a
-                key={tab.label}
-                href={ctaHref}
-                className="px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide rounded-t-lg transition-colors"
-                style={
-                  tab.active
-                    ? { backgroundColor: INK_2, color: "#fff" }
-                    : { backgroundColor: "rgba(255,255,255,0.9)", color: "#1f2023" }
-                }
-              >
-                {tab.label}
-              </a>
-            ))}
-          </div>
-
-          {/* Barre */}
-          <div className="rounded-xl rounded-tl-none bg-white shadow-2xl px-4 py-4 sm:px-6 sm:py-5">
-            <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
-              <div className="flex-1">
-                <label className="flex flex-col gap-1 border border-gray-200 rounded-lg px-3.5 py-2 focus-within:border-[--jm-red] transition-colors" style={{ ["--jm-red" as any]: RED }}>
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Catégorie</span>
-                  <select
-                    defaultValue=""
-                    onChange={(e) => {
-                      if (e.target.value) window.location.hash = "";
-                    }}
-                    className="text-[13px] font-semibold text-gray-800 bg-transparent outline-none -mt-0.5"
-                  >
-                    <option value="">Toutes les catégories</option>
-                    {topCategories.map((c) => (
-                      <option key={c.id_categorie} value={c.id_categorie}>{c.nom}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
-              <a
-                href={ctaHref}
-                className="inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3.5 text-[13px] font-bold text-white uppercase tracking-wide shrink-0 transition-colors duration-200"
-                style={{ backgroundColor: RED }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = RED_DARK)}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = RED)}
-              >
-                <Search size={16} />
-                Voir les produits
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
     </section>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { motion, useInView, AnimatePresence } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import {
   Building2,
@@ -44,14 +44,29 @@ function TransparentLogo({
   return <img src={src} alt={alt} className={className} />;
 }
 
-/** Les 5 sociétés du groupe, disposées en alvéoles autour du hub central */
+/** Les 5 sociétés du groupe, présentées en ordre chronologique */
 const SOCIETES = [
   {
     name: "Espace Vert",
     image: "/logos/logo espace vert.png",
     description: "Spécialisée dans les solutions agricoles et l'aménagement paysager depuis les origines du groupe.",
+    year: "1995",
+    label: "Fondation",
   },
-  {
+    {
+    name: "Baddar Agricole",
+    image: "/logosPartenaires/agricole baddar.png",
+    description: "Fournisseur de semences et d'intrants agricoles de qualité pour les producteurs tunisiens.",
+    year: "1999",
+    compact: true,
+  },
+   {
+    name: "Stajap",
+    image: "/logosPartenaires/logo stajap.png",
+    description: "Spécialiste des équipements et solutions pour l'agriculture professionnelle.",
+    year: "2000",
+  },
+   {
     name: "Mondiale Irrigation",
     image: "/logosPartenaires/logo mendial irrigation.png",
     description: "Expert en systèmes d'irrigation pour une gestion optimale de l'eau au champ.",
@@ -60,31 +75,9 @@ const SOCIETES = [
     name: "Fertivert",
     image: "/logos/LOGO FERTVERT copy.png",
     description: "Dédiée à la fertilisation et à la nutrition des sols pour des cultures plus saines et productives.",
-  },
-  {
-    name: "Stajap",
-    image: "/logosPartenaires/logo stajap.png",
-    description: "Spécialiste des équipements et solutions pour l'agriculture professionnelle.",
-  },
-  {
-    name: "Baddar Agricole",
-    image: "/logosPartenaires/agricole baddar.png",
-    description: "Fournisseur de semences et d'intrants agricoles de qualité pour les producteurs tunisiens.",
-  },
-];
-
-/**
- * Position de chaque alvéole (en %) : Espace Vert au centre (société mère),
- * les 4 autres autour d'elle en croix.
- * Valeurs 8/92 (au lieu de 13/87) pour laisser plus d'air entre les alvéoles
- * et éviter tout chevauchement visuel avec le hub central.
- */
-const HIVE_LAYOUT = [
-  { x: 50, y: 50 }, // centre            → Espace Vert
-  { x: 50, y: 8 },  // haut              → Mondiale Irrigation
-  { x: 92, y: 50 }, // droite            → Fertivert
-  { x: 50, y: 92 }, // bas               → Stajap
-  { x: 8, y: 50 },  // gauche            → Baddar Agricole
+    year: "2001",
+    compact: true,
+  }
 ];
 
 /** Marques partenaires — chacune avec une icône et une teinte d'accent */
@@ -141,14 +134,14 @@ function LuxuryTitle({
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: inView ? 1 : 0, y: inView ? 0 : 30 }}
       transition={{ duration: 0.8, ease: EASE_SMOOTH }}
-      className={`flex flex-col items-center gap-3 text-center ${tight ? "pb-4" : "pb-12 sm:pb-14"}`}
+      className={`flex flex-col items-center gap-3 text-center ${tight ? "pb-3" : "pb-5 sm:pb-6"}`}
     >
       <h2
-        className="overflow-hidden text-[clamp(2.2rem,5.5vw,4rem)] font-light leading-[1] tracking-[-0.015em]"
-        style={{ fontFamily: "var(--font-display)", color: dark ? "#ffffff" : INK }}
+        className="overflow-y-hidden max-w-full text-[clamp(1.5rem,5vw,2.75rem)] font-bold leading-[1.15] tracking-tight"
+        style={{ fontFamily: "var(--font-script)", color: dark ? "#ffffff" : INK }}
       >
         <motion.span
-          className="inline-flex items-center gap-4"
+          className="inline-flex items-center gap-2 sm:gap-4"
           initial={{ y: "120%" }}
           animate={{ y: inView ? "0%" : "120%" }}
           transition={{ duration: 1, ease: EASE_SMOOTH, delay: 0.1 }}
@@ -178,17 +171,17 @@ function PartnerSlide({ item }: { item: (typeof PARTENAIRES)[number] }) {
 
   return (
     <div
-      className="mx-5 flex h-24 w-[200px] shrink-0 snap-start items-center justify-center"
+      className="mx-6 flex h-32 w-[220px] shrink-0 snap-start items-center justify-center"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       <motion.div
-        className="relative h-14 w-full"
+        className="relative h-20 w-full"
         style={{ willChange: "transform" }}
         animate={{ scale: hovered ? 1.1 : 1, y: hovered ? -3 : 0 }}
         transition={{ duration: 0.4, ease: EASE_SMOOTH }}
       >
-        <Image src={item.image} alt={item.name} fill sizes="200px" className="object-contain" />
+        <Image src={item.image} alt={item.name} fill sizes="220px" className="object-contain" />
       </motion.div>
     </div>
   );
@@ -260,221 +253,188 @@ function DriftingLeaves() {
   );
 }
 
-const HOLD_DURATION = 3.2;
+const SPOTLIGHT_HOLD = 2.6;
 
-// ─── Nid d'abeilles — hub central + 5 alvéoles fixes reliées par des racines ──
-function SocietesHive() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [resetKey, setResetKey] = useState(0);
+// ─── Timeline chronologique horizontale des sociétés du groupe ──────────
+function SocietesTimeline() {
   const ref = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
+  const [spotlight, setSpotlight] = useState(0);
+  const [entryDone, setEntryDone] = useState(false);
 
   useEffect(() => {
     if (!inView) return;
-    const id = setInterval(() => {
-      setActiveIndex((i) => (i + 1) % SOCIETES.length);
-    }, HOLD_DURATION * 1000);
-    return () => clearInterval(id);
-  }, [inView, resetKey]);
+    // Laisse d'abord voir toutes les sociétés ensemble, puis lance le spotlight
+    const startDelay = 1.6;
+    const startTimer = setTimeout(() => setEntryDone(true), startDelay * 1000);
+    return () => clearTimeout(startTimer);
+  }, [inView]);
 
-  const handleSelect = (i: number) => {
-    setActiveIndex(i);
-    setResetKey((k) => k + 1);
+  useEffect(() => {
+    if (!entryDone) return;
+    const id = setInterval(() => {
+      setSpotlight((i) => (i + 1) % SOCIETES.length);
+    }, SPOTLIGHT_HOLD * 1000);
+    return () => clearInterval(id);
+  }, [entryDone]);
+
+  // Sur les écrans qui n'affichent pas les 5 sociétés d'un coup, le
+  // spotlight fait aussi défiler la piste — ça révèle naturellement le
+  // contenu caché, sans dépendre d'un geste de l'utilisateur.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !entryDone) return;
+    const card = el.scrollWidth / SOCIETES.length;
+    const target = card * spotlight - (el.clientWidth - card) / 2;
+    el.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
+  }, [spotlight, entryDone]);
+
+  const scrollByCard = (dir: 1 | -1) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * (el.scrollWidth / SOCIETES.length), behavior: "smooth" });
   };
 
-  const active = SOCIETES[activeIndex];
-
   return (
-    <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,300px)_1fr] lg:gap-16">
-      {/* ── Panneau description — à gauche, se met à jour toute seule ── */}
-      <div className="order-2 lg:order-1">
-        <AnimatePresence mode="wait">
+    <div ref={ref} className="relative mt-0">
+      {/* Flèches de défilement manuel — visibles uniquement quand le contenu ne tient pas d'un coup */}
+      <button
+        type="button"
+        aria-label="Société précédente"
+        onClick={() => scrollByCard(-1)}
+        className="absolute -left-1 top-[100px] z-20 hidden h-9 w-9 items-center justify-center rounded-full border bg-white/90 shadow-sm backdrop-blur-sm transition-opacity max-[919px]:flex sm:top-[128px]"
+        style={{ borderColor: LINE, color: FOREST }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
+      </button>
+      <button
+        type="button"
+        aria-label="Société suivante"
+        onClick={() => scrollByCard(1)}
+        className="absolute -right-1 top-[100px] z-20 hidden h-9 w-9 items-center justify-center rounded-full border bg-white/90 shadow-sm backdrop-blur-sm transition-opacity max-[919px]:flex sm:top-[128px]"
+        style={{ borderColor: LINE, color: FOREST }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
+
+      {/* Fondus de bord — signalent qu'il y a du contenu à faire défiler */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 max-[919px]:block hidden" style={{ background: `linear-gradient(90deg, ${LINEN}, transparent)` }} />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 max-[919px]:block hidden" style={{ background: `linear-gradient(270deg, ${LINEN}, transparent)` }} />
+
+      <div ref={scrollRef} className="-mx-4 overflow-x-auto px-4 pb-4 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="relative grid grid-cols-5 gap-4 sm:gap-6" style={{ minWidth: 760 }}>
+          {/* Ligne horizontale reliant les sociétés */}
           <motion.div
-            key={active.name}
-            initial={{ opacity: 0, y: 10, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.98 }}
-            transition={{ duration: 0.45, ease: EASE_SMOOTH }}
-            className="relative flex min-h-[280px] flex-col overflow-hidden rounded-[1.75rem] border px-8 py-9 pl-9 sm:min-h-[300px]"
-            style={{
-              background: "rgba(246,244,238,0.92)",
-              borderColor: "rgba(255,255,255,0.7)",
-              backdropFilter: "blur(8px)",
-              boxShadow: "0 24px 48px rgba(27,33,24,0.16)",
-            }}
-          >
-            {/* Trait d'accent vertical */}
-            <span
-              className="absolute left-0 top-8 bottom-8 w-[3px] rounded-full"
-              style={{ background: WHEAT }}
-            />
-
-            <div className="flex items-center gap-4">
-              <div className="relative h-14 w-14 shrink-0">
-                <TransparentLogo src={active.image} alt={active.name} className="h-full w-full object-contain" />
-              </div>
-              <div>
-                <span className="text-[10px] font-light uppercase tracking-[0.28em]" style={{ color: SAGE }}>
-                  Société du groupe
-                </span>
-                <h3
-                  className="text-[1.55rem] font-light leading-tight"
-                  style={{ color: FOREST, fontFamily: "var(--font-display)" }}
-                >
-                  {active.name}
-                </h3>
-              </div>
-            </div>
-
-            <p className="mt-5 text-[14px] font-light leading-relaxed" style={{ color: BODY }}>
-              {active.description}
-            </p>
-
-            {/* Navigation — sélection manuelle, toujours ancrée en bas de la carte */}
-            <div className="mt-auto flex items-center gap-2 pt-6">
-              {SOCIETES.map((s, i) => (
-                <button
-                  key={s.name}
-                  type="button"
-                  aria-label={`Afficher ${s.name}`}
-                  onClick={() => handleSelect(i)}
-                  className="group relative h-2 rounded-full transition-all duration-500"
-                  style={{
-                    width: i === activeIndex ? 26 : 8,
-                    background: i === activeIndex ? WHEAT : LINE,
-                  }}
-                />
-              ))}
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {/* ── Ruche — à droite ── */}
-      <div className="order-1 flex justify-center lg:order-2" ref={ref}>
-        <div className="relative aspect-square w-full max-w-[480px] sm:max-w-[580px] lg:max-w-[680px]">
-          {/* Racines — lien visuel reliant Espace Vert (société mère) à chacune des 4 autres sociétés */}
-          <svg
-            aria-hidden
-            className="absolute inset-0 h-full w-full"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-          >
-            {HIVE_LAYOUT.map((pos, i) => {
-              if (i === 0) return null; // le centre ne se relie pas à lui-même
-              const center = HIVE_LAYOUT[0];
-              // Courbe légère façon racine plutôt qu'un trait rigide
-              const mx = (center.x + pos.x) / 2;
-              const my = (center.y + pos.y) / 2;
-              const isLinked = activeIndex === i || activeIndex === 0;
-              return (
-                <path
-                  key={`root-${i}`}
-                  d={`M ${center.x} ${center.y} Q ${mx} ${my} ${pos.x} ${pos.y}`}
-                  fill="none"
-                  stroke={isLinked ? WHEAT : LINE}
-                  strokeWidth={isLinked ? 0.9 : 0.5}
-                  strokeLinecap="round"
-                  style={{ transition: "stroke 1s ease, stroke-width 1s ease" }}
-                />
-              );
-            })}
-          </svg>
-
-          {/* Halo qui glisse doucement d'une alvéole à l'autre — donne la sensation d'une rotation fine et continue */}
-          <motion.div
-            aria-hidden
-            className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
-            style={{
-              width: "34%",
-              height: "34%",
-              background: `radial-gradient(circle, ${WHEAT}33 0%, ${WHEAT}00 72%)`,
-              filter: "blur(2px)",
-            }}
-            animate={{ left: `${HIVE_LAYOUT[activeIndex].x}%`, top: `${HIVE_LAYOUT[activeIndex].y}%` }}
-            transition={{ duration: 1.6, ease: EASE_SMOOTH }}
+            initial={{ scaleX: 0, opacity: 0.35 }}
+            animate={{ scaleX: inView ? 1 : 0, opacity: inView ? 1 : 0.35 }}
+            transition={{ duration: 2.2, ease: EASE_SMOOTH }}
+            className="absolute left-0 right-0 top-[124px] h-px origin-left sm:top-[152px]"
+            style={{ background: `linear-gradient(90deg, ${WHEAT} 0%, ${FOREST} 100%)` }}
           />
 
-          {/* Alvéoles — les 5 sociétés, Espace Vert au centre, en avant en tant que société mère */}
-          {HIVE_LAYOUT.map((pos, i) => {
-            const s = SOCIETES[i];
-            const isActive = activeIndex === i;
-            const isCenter = i === 0;
-            const hexPath = "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)";
+          {/* Faisceau de spotlight qui glisse d'une société à l'autre — effet "lumière de scène" */}
+          {entryDone && (
+            <motion.div
+              aria-hidden
+              className="pointer-events-none absolute -top-10 z-0"
+              style={{
+                width: "calc(100% / 5)",
+                height: 260,
+                clipPath: "polygon(42% 0%, 58% 0%, 88% 100%, 12% 100%)",
+                background: `linear-gradient(180deg, ${WHEAT}3d 0%, ${WHEAT}12 55%, ${WHEAT}00 100%)`,
+              }}
+              animate={{ left: `calc(${spotlight} * (100% / 5))` }}
+              transition={{ duration: 0.9, ease: EASE_SMOOTH }}
+            />
+          )}
+
+          {SOCIETES.map((s, i) => {
+            const isSpot = entryDone ? i === spotlight : true;
             return (
               <motion.div
                 key={s.name}
-                className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer"
-                style={{ left: `${pos.x}%`, top: `${pos.y}%`, zIndex: isActive ? 20 : isCenter ? 15 : 10 }}
-                animate={{ scale: isActive ? 1.1 : 1 }}
-                transition={{ duration: 1.1, ease: EASE_SMOOTH }}
-                onClick={() => handleSelect(i)}
+                initial={{ opacity: 0, y: 30, scale: 0.94 }}
+                animate={{
+                  opacity: inView ? 1 : 0,
+                  y: inView ? 0 : 30,
+                  scale: inView ? (entryDone && isSpot ? 1.07 : 1) : 0.94,
+                }}
+                transition={{
+                  opacity: { duration: 0.7, ease: EASE_SMOOTH },
+                  scale: { duration: 0.7, ease: EASE_SMOOTH },
+                  y: { duration: 0.8, ease: EASE_SMOOTH },
+                }}
+                className="relative z-10 flex flex-col items-center text-center"
               >
-                {/*
-                  IMPORTANT : hauteur et largeur STRICTEMENT identiques à chaque
-                  breakpoint. Le clip-path hexagonal est calculé en % par
-                  rapport à la boîte — une boîte non carrée déforme l'hexagone
-                  (c'était la cause du rendu "penché"/irrégulier).
-                */}
+                {/* Logo en grand format, sans cadre ni fond */}
+                <div className={`relative h-28 w-full sm:h-40 ${s.compact ? "p-3 sm:p-5" : ""}`}>
+                  <TransparentLogo src={s.image} alt={s.name} className="h-full w-full object-contain" />
+                </div>
+
+                {/* Point sur la ligne */}
+                <span
+                  className="relative z-10 my-3 block shrink-0 rounded-full border-2 bg-white transition-all duration-500 sm:my-4"
+                  style={{
+                    height: entryDone && isSpot ? 16 : 12,
+                    width: entryDone && isSpot ? 16 : 12,
+                    borderColor: isSpot ? WHEAT : FOREST,
+                    boxShadow: entryDone && isSpot ? `0 0 0 6px ${WHEAT}30` : "none",
+                  }}
+                />
+
+                {/* Contenu — carte pleine, opaque, lisible en toutes circonstances */}
                 <div
-                  className={
-                    isCenter
-                      ? "relative h-32 w-32 sm:h-40 sm:w-40 lg:h-44 lg:w-44"
-                      : "relative h-24 w-24 sm:h-28 sm:w-28 lg:h-32 lg:w-32"
-                  }
+                  className="relative w-full overflow-hidden rounded-[1.25rem] px-4 pb-5 pt-4 transition-all duration-700 sm:px-5"
+                  style={{
+                    background: "#fdfbf6",
+                    boxShadow:
+                      entryDone && isSpot
+                        ? `0 20px 46px rgba(27,33,24,0.24), 0 0 0 1.5px ${WHEAT}88`
+                        : "0 8px 22px rgba(27,33,24,0.10)",
+                  }}
                 >
-                  {/* Fond plein de l'hexagone — sépare le logo de la photo derrière,
-                      cohérent avec le style "verre dépoli" de la carte de description */}
-                  <div
-                    className="absolute inset-0"
+                  {/* Barre d'accent en haut de carte */}
+                  <span
+                    className="absolute inset-x-0 top-0 h-[3px] transition-opacity duration-700"
                     style={{
-                      clipPath: hexPath,
-                      background: "rgba(246,244,238,0.92)",
-                      backdropFilter: "blur(4px)",
-                      transition: "background 0.6s ease",
+                      background: `linear-gradient(90deg, ${WHEAT}, ${FOREST})`,
+                      opacity: entryDone && isSpot ? 1 : 0.35,
                     }}
                   />
 
-                  {/* Contour hexagonal */}
-                  <svg
-                    aria-hidden
-                    className="absolute inset-0 h-full w-full"
-                    viewBox="0 0 100 100"
-                    preserveAspectRatio="none"
-                    style={{
-                      filter: isActive
-                        ? "drop-shadow(0 10px 18px rgba(27,33,24,0.24))"
-                        : "drop-shadow(0 6px 12px rgba(27,33,24,0.14))",
-                      transition: "filter 1s ease",
-                    }}
-                  >
-                    <polygon
-                      points="25,0 75,0 100,50 75,100 25,100 0,50"
-                      fill="none"
-                      stroke={isActive ? WHEAT : FOREST}
-                      strokeWidth={isCenter ? 3 : 2.4}
-                      style={{ transition: "stroke 1s ease" }}
-                    />
-                  </svg>
-
-                  {/* Logo — posé sur le fond clair, découpé à la forme hexagonale */}
-                  <div
-                    className="absolute inset-0 flex items-center justify-center p-5 sm:p-6"
-                    style={{ clipPath: hexPath }}
-                  >
-                    <div className="relative h-full w-full">
-                      <TransparentLogo src={s.image} alt={s.name} className="h-full w-full object-contain" />
-                    </div>
-                  </div>
-
-                  {isCenter && (
+                  <div className="flex flex-col items-center gap-1.5">
                     <span
-                      className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-[10px] font-light uppercase tracking-[0.2em]"
-                      style={{ background: FOREST, color: "#fff" }}
+                      className="inline-flex rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em]"
+                      style={{ color: i === 0 ? "#8a6d1f" : FOREST, borderColor: i === 0 ? `${WHEAT}55` : `${FOREST}33` }}
                     >
-                      Société mère
+                      {s.year}
                     </span>
-                  )}
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.24em]" style={{ color: SAGE }}>
+                      {s.label}
+                    </span>
+                    {i === 0 && (
+                      <span
+                        className="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em]"
+                        style={{ background: FOREST, color: "#fff" }}
+                      >
+                        Société mère
+                      </span>
+                    )}
+
+                    <h3
+                      className="mt-1.5 text-[1.1rem] font-semibold leading-tight sm:text-[1.25rem]"
+                      style={{ color: INK, fontFamily: "var(--font-display)" }}
+                    >
+                      {s.name}
+                    </h3>
+
+                    <span className="h-px w-8" style={{ background: `${FOREST}30` }} />
+
+                    <p className="max-w-[170px] text-[12.5px] font-normal leading-relaxed sm:max-w-[190px]" style={{ color: "#4a5245" }}>
+                      {s.description}
+                    </p>
+                  </div>
                 </div>
               </motion.div>
             );
@@ -493,20 +453,7 @@ function LogosWave() {
       viewBox="0 0 1200 120"
       preserveAspectRatio="none"
     >
-      <path
-        d="M0,75 C180,25 360,105 600,60 C840,15 1020,95 1200,50"
-        fill="none"
-        stroke={SAGE}
-        strokeWidth="4"
-        opacity="0.35"
-      />
-      <path
-        d="M0,92 C180,45 360,120 600,75 C840,30 1020,110 1200,68"
-        fill="none"
-        stroke={FOREST}
-        strokeWidth="4"
-        opacity="0.6"
-      />
+      <line x1="0" y1="60" x2="1200" y2="60" stroke={FOREST} strokeWidth="4" opacity="0.5" />
     </svg>
   );
 }
@@ -630,17 +577,6 @@ export default function GroupeEtPartenaires() {
         .partner-wrap:hover .partner-track { animation-play-state: paused; }
       `}</style>
 
-      {/* ── Nos sociétés — même fond que "Nos activités", logos bien lisibles ── */}
-      <section className="relative overflow-hidden py-20 sm:py-24" style={{ background: LINEN }}>
-        <ActivitesWatermark />
-        <DriftingLeaves />
-
-        <div className="container-ev relative z-10">
-          <LuxuryTitle icon={Building2} label="Nos sociétés" />
-          <SocietesHive />
-        </div>
-      </section>
-
       {/* ── Marques partenaires — carrousel clair, logos sans cadre ── */}
       <section className="relative overflow-hidden py-20 sm:py-24" style={{ background: LINEN }}>
         <CornerLeaves corner="top-left" />
@@ -662,7 +598,7 @@ export default function GroupeEtPartenaires() {
             </div>
           </motion.div>
 
-          <LuxuryTitle label="Nos marques partenaires" tight />
+          <LuxuryTitle label="Nos partenaires" tight />
 
           <motion.div
             className="mx-auto mb-4 flex items-center justify-center gap-3"
@@ -688,6 +624,17 @@ export default function GroupeEtPartenaires() {
           <PartenairesCarousel />
           <LogosWave />
           <TrustBadges />
+        </div>
+      </section>
+
+      {/* ── Nos sociétés — même fond que "Nos activités", logos bien lisibles ── */}
+      <section className="relative overflow-hidden py-20 sm:py-24" style={{ background: LINEN }}>
+        <ActivitesWatermark />
+        <DriftingLeaves />
+
+        <div className="container-ev relative z-10">
+          <LuxuryTitle icon={Building2} label="Nos sociétés" />
+          <SocietesTimeline />
         </div>
       </section>
     </>

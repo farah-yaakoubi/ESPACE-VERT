@@ -206,7 +206,7 @@ function CatTreeNode({
       >
         {/* Select button */}
         <button
-          onClick={() => onSelect(isActive ? null : node.id_categorie)}
+          onClick={() => onSelect(node.id_categorie)}
           className={cn(
             "flex-1 flex items-center gap-2 text-left rounded-xl transition-all px-2.5 py-2",
             depth > 0 ? "text-xs ml-3" : "text-sm",

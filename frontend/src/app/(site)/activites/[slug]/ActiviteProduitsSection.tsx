@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   Package, ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight,
-  X, SlidersHorizontal, ArrowLeft, LayoutGrid, Check, Sprout,
+  X, SlidersHorizontal, ArrowLeft, LayoutGrid, Sprout,
 } from "lucide-react";
 import { ProduitCard }   from "@/components/cards/ProduitCard";
 import { Reveal }        from "@/components/ui/Reveal";
@@ -14,6 +14,7 @@ import { GridSkeleton }  from "@/components/ui/Skeleton";
 import { useProducts }   from "@/hooks/useProducts";
 import type { Categorie } from "@/types/api";
 import { cn } from "@/lib/utils";
+import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
 import {
   FilterPanel, applyFilters, DEFAULT_FILTERS,
   type FilterState, type CatNode,
@@ -153,7 +154,7 @@ function CatalogueCoverGrid({
         </span>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
+      <div className="flex flex-wrap justify-center gap-x-6 gap-y-10">
         {children.filter(child => !!child.image).map(child => {
           const count  = childCount(child);
           const imgSrc = child.image;
@@ -162,7 +163,7 @@ function CatalogueCoverGrid({
             <button
               key={child.id_categorie}
               onClick={() => onSelectChild(child.id_categorie)}
-              className="group flex flex-col items-center text-center focus:outline-none"
+              className="group flex w-[calc(50%-12px)] lg:w-[calc(25%-18px)] flex-col items-center text-center focus:outline-none"
               aria-label={`${t("catalog.viewProducts", "Voir produits")} ${catLabel(child, locale)}`}
             >
               <div className="relative h-44 w-full flex items-center justify-center">
@@ -226,10 +227,6 @@ function BrandLinkGrid({
   const { t } = useI18n();
   if (cards.length === 0) return null;
 
-  function cardCount(card: BrandCard) {
-    return allProduits.filter(p => (p as any).id_categorie === card.id_categorie).length;
-  }
-
   function cardFirstImage(card: BrandCard) {
     const first = allProduits.find(p => (p as any).id_categorie === card.id_categorie && p.images?.[0]);
     return first?.images?.[0] ?? null;
@@ -237,9 +234,8 @@ function BrandLinkGrid({
 
   return (
     <div className="mb-8">
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="flex flex-wrap justify-center gap-x-6 gap-y-10">
         {cards.map(card => {
-          const count = cardCount(card);
           const fallback = cardFirstImage(card);
           const imgSrc = card.image || fallback?.url || "/images/hero/matar-desktop.webp";
 
@@ -247,35 +243,30 @@ function BrandLinkGrid({
             <Link
               key={card.id_categorie}
               href={card.href}
-              className="group relative h-56 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-ev-500"
+              className="group flex w-[calc(50%-12px)] flex-col items-center text-center lg:w-[calc(25%-18px)] focus:outline-none"
               aria-label={`Voir les produits ${card.nom}`}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-white via-sky-50 to-ev-50" />
-              <div className="absolute inset-0 flex items-center justify-center p-8">
+              <div className="relative flex h-44 w-full items-center justify-center">
                 <Image
                   src={imgSrc}
                   alt={card.nom}
                   fill
-                  className="object-contain p-8 transition-transform duration-500 group-hover:scale-105"
+                  className="object-contain transition-transform duration-500 ease-out group-hover:-translate-y-1.5 group-hover:scale-[1.06]"
                   sizes="(max-width:640px) 100vw, (max-width:1280px) 50vw, 25vw"
                 />
               </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-5">
-                <p className="text-white text-lg font-bold leading-tight drop-shadow">
-                  {card.nom}
-                </p>
-                <p className="mt-1 text-xs font-medium text-white/70">
-                  {count} {productWord(count, t)}
-                </p>
-                <span
-                  className="mt-4 inline-flex items-center gap-1.5 rounded bg-white px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-ev-800 shadow-sm transition-colors group-hover:bg-ev-700 group-hover:text-white"
-                  aria-hidden="true"
-                >
-                  {t("catalog.viewProducts", "Voir produits")}
-                  <ChevronRight size={12} />
-                </span>
-              </div>
+
+              <p
+                className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+                style={{ fontFamily: "var(--font-serif)" }}
+              >
+                {card.nom}
+              </p>
+
+              <span className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
+                {t("catalog.viewProducts", "Voir produits")}
+                <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
+              </span>
             </Link>
           );
         })}
@@ -301,57 +292,46 @@ function RootCatalogueGrid({
     return allProduits.filter(p => ids.has((p as any).id_categorie)).length;
   }
 
-  function nodeFirstImage(n: CatNode) {
-    const ids = collectIds(n);
-    const first = allProduits.find(p => ids.has((p as any).id_categorie) && p.images?.[0]);
-    return first?.images?.[0] ?? null;
-  }
-
   return (
     <div className="mb-8">
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="flex flex-wrap justify-center gap-x-6 gap-y-10">
         {nodes.filter(node => !!node.image).map(node => {
-          const count = nodeCount(node);
           const imgSrc = node.image;
 
           return (
             <button
               key={node.id_categorie}
               onClick={() => onSelect(node.id_categorie)}
-              className="group overflow-hidden rounded-2xl border border-sand-200 bg-white text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-ev-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-ev-400 focus:ring-offset-2"
+              className="group flex w-[calc(50%-12px)] flex-col items-center text-center lg:w-[calc(25%-18px)] focus:outline-none"
               aria-label={`${t("catalog.viewProducts", "Voir produits")} ${catLabel(node, locale)}`}
             >
-              <div className="relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br from-white via-ev-50 to-sand-100">
+              <div className="relative flex h-44 w-full items-center justify-center">
                 {imgSrc ? (
                   <Image
                     src={imgSrc}
                     alt={catLabel(node, locale)}
                     fill
-                    className="object-contain p-6 drop-shadow-md transition-transform duration-500 group-hover:scale-105"
+                    className="object-contain transition-transform duration-500 ease-out group-hover:-translate-y-1.5 group-hover:scale-[1.06]"
                     sizes="(max-width:640px) 100vw, (max-width:1280px) 50vw, 25vw"
                   />
                 ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-3xl text-ev-200 shadow-sm">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-ev-50 text-3xl text-ev-300">
                     🌿
                   </div>
                 )}
-                <span className="absolute right-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold text-ev-800 shadow-sm">
-                  {count} {productWord(count, t)}
-                </span>
               </div>
 
-              <div className="flex min-h-[116px] flex-col p-4">
-                <div className="mb-3 flex items-start gap-2">
-                  <span className="mt-1 h-8 w-1 rounded-full bg-ev-600 shrink-0" />
-                  <p className="text-[15px] font-bold leading-snug text-gray-900 line-clamp-2 group-hover:text-ev-700 transition-colors">
-                    {catLabel(node, locale)}
-                  </p>
-                </div>
-                <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-xl bg-ev-700 px-3.5 py-2 text-[12px] font-semibold text-white transition-colors group-hover:bg-ev-800">
-                  {t("catalog.viewProducts", "Voir produits")}
-                  <ChevronRight size={13} />
-                </span>
-              </div>
+              <p
+                className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+                style={{ fontFamily: "var(--font-serif)" }}
+              >
+                {catLabel(node, locale)}
+              </p>
+
+              <span className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
+                {t("catalog.viewProducts", "Voir produits")}
+                <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
+              </span>
             </button>
           );
         })}
@@ -364,9 +344,10 @@ function RootCatalogueGrid({
  * Rangée de tuiles catégories, fixe en haut de la page Semences & Plants
  * (façon "Shop by Category"). On reste sur cette même vue en permanence :
  * cliquer une tuile filtre juste les produits affichés juste en dessous,
- * sans jamais remplacer les tuiles par une sous-grille. Les images de fond
- * sont fournies par catégorie (cat.image) ; tant qu'aucune n'est définie,
- * un dégradé de secours est utilisé. */
+ * sans jamais remplacer les tuiles par une sous-grille. Même habillage que
+ * les cartes produit du catalogue : image sans cadre, nom en dessous, puis
+ * bouton "Voir les produits" — pour que produits et sous-catégories ajoutés
+ * s'affichent toujours de façon cohérente sur cette page. */
 function SemencesCategoryTiles({
   nodes, activeId, allProduits, onSelect,
 }: {
@@ -390,63 +371,53 @@ function SemencesCategoryTiles({
             {t("catalog.shopByCategory", "Parcourir par catégorie")} :
           </p>
         </Reveal>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-x-6 md:gap-y-9">
           {illustrated.map((node, i) => {
             const isActive = activeId === node.id_categorie;
             const imgSrc = node.image;
-            const hasChildren = (node.children ?? []).length > 0;
-            const desc =
-              translatedField(node as any, "description", locale) || (node as any).description;
             return (
               <Reveal key={node.id_categorie} delay={i * 0.06} y={24}>
                 <button
                   type="button"
                   onClick={() => onSelect(isActive ? null : node.id_categorie)}
                   aria-pressed={isActive}
-                  className={cn(
-                    "group relative aspect-[3/4] w-full overflow-hidden rounded-xl text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-ev-600 focus:ring-offset-2",
-                    isActive ? "ring-2 ring-ev-600" : "ring-0"
-                  )}
+                  className="group flex w-full flex-col items-center text-center focus:outline-none"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-ev-100 via-white to-sand-100" />
-                  {imgSrc ? (
-                    <Image
-                      src={imgSrc}
-                      alt={catLabel(node, locale)}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 20vw"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Sprout size={40} className="text-ev-300" strokeWidth={1.5} />
-                    </div>
-                  )}
-                  {/* Voile dégradé — assure la lisibilité du texte posé sur l'image */}
-                  <div
-                    className="absolute inset-x-0 bottom-0"
-                    style={{
-                      height: "62%",
-                      background: "linear-gradient(to top, rgba(15,20,12,0.86) 0%, rgba(15,20,12,0.38) 55%, rgba(15,20,12,0) 100%)",
-                    }}
-                  />
-                  {isActive && hasChildren && (
-                    <span className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-white text-ev-700 shadow">
-                      <Check size={13} strokeWidth={3} />
-                    </span>
-                  )}
-                  {/* Texte — posé directement sur l'image, pas de carte blanche */}
-                  <div className="absolute inset-x-0 bottom-0 p-4">
-                    <p
-                      className="text-white text-[16px] sm:text-[17px] font-bold leading-tight"
-                      style={{ fontFamily: "var(--font-display)" }}
-                    >
-                      {catLabel(node, locale)}
-                    </p>
-                    <p className="mt-1.5 text-[11.5px] leading-snug text-white/75 line-clamp-2">
-                      {desc || t("catalog.discoverRange", "Découvrez notre sélection.")}
-                    </p>
+                  {/* Zone image — sans cadre ni fond, comme les cartes produit */}
+                  <div className="relative h-36 sm:h-40 w-full flex items-center justify-center">
+                    {imgSrc ? (
+                      <Image
+                        src={imgSrc}
+                        alt={catLabel(node, locale)}
+                        fill
+                        className="object-contain transition-transform duration-500 ease-out group-hover:-translate-y-1.5 group-hover:scale-[1.06]"
+                        sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 20vw"
+                      />
+                    ) : (
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-ev-50 text-ev-300">
+                        <Sprout size={32} strokeWidth={1.6} />
+                      </div>
+                    )}
                   </div>
+
+                  {/* Nom — même style que le nom des produits */}
+                  <p
+                    className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+                    style={{ fontFamily: "var(--font-serif)" }}
+                  >
+                    {catLabel(node, locale)}
+                  </p>
+
+                  {/* Bouton "Voir les produits" — même style que "Voir le produit" */}
+                  <span
+                    className={cn(
+                      "mt-4 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-0.5",
+                      isActive ? "bg-ev-800" : "bg-ev-700 group-hover:bg-ev-800"
+                    )}
+                  >
+                    {t("catalog.viewProducts", "Voir les produits")}
+                    <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
+                  </span>
                 </button>
               </Reveal>
             );
@@ -792,7 +763,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
                 Trouvez votre équipement par marque
               </p>
               <h2 className="text-3xl md:text-[2.35rem] font-black text-[#0c0c0e]" style={{ fontFamily: "var(--font-display)" }}>
-                Parcourir par marques
+                <SectionTitleLine icon="Leaf" color="#e30613" align="center">Parcourir par marques</SectionTitleLine>
               </h2>
             </div>
             <JardinageCategoryGrid
@@ -813,7 +784,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
               Service de vente de confiance
             </p>
             <h2 className="text-2xl sm:text-[1.85rem] font-black text-[#0c0c0e]" style={{ fontFamily: "var(--font-display)" }}>
-              Explorer tous nos produits
+              <SectionTitleLine icon="Tractor" color="#e30613" align="left">Explorer tous nos produits</SectionTitleLine>
             </h2>
           </div>
         )}

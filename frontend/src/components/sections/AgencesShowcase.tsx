@@ -2,19 +2,21 @@
 import { motion } from "framer-motion";
 import { Clock, Mail, MapPin, Navigation, Phone } from "lucide-react";
 import type { Agence } from "@/config/agences";
+import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
+import { Reveal } from "@/components/ui/Reveal";
 export function AgencesShowcase({ agences }: { agences: Agence[] }) {
   if (!agences || agences.length === 0) return null;
   return (
     <section className="section bg-white border-t border-sand-200">
       <div className="container-ev">
-        <div className="max-w-2xl">
+        <Reveal className="max-w-2xl">
           <p className="eyebrow mb-3">Nos agences</p>
-          <h2 className="site-heading">Une présence de proximité</h2>
+          <h2 className="site-heading"><SectionTitleLine icon="Barn" align="left">Une présence de proximité</SectionTitleLine></h2>
           <p className="site-copy mt-4">
             Retrouvez les coordonnées de chacune de nos agences pour vous
             orienter vers l&apos;interlocuteur le plus proche de chez vous.
           </p>
-        </div>
+        </Reveal>
 
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {agences.map((agence, index) => (
@@ -29,7 +31,7 @@ export function AgencesShowcase({ agences }: { agences: Agence[] }) {
               <div className="mb-3 flex items-start justify-between gap-2">
                 <h3 className="h-card text-ev-950">{agence.ville}</h3>
                 {agence.principal && (
-                  <span className="shrink-0 rounded-full bg-ev-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-ev-800">
+                  <span className="shrink-0 rounded-full bg-ev-100 px-3.5 py-1.5 text-sm font-bold uppercase tracking-[0.06em] text-ev-800">
                     Siège
                   </span>
                 )}
