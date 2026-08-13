@@ -104,9 +104,13 @@ const CTA_FALLBACK_HREF = "/activites";
 export function Hero() {
   const slides = useHeroSlides();
   const [current, setCurrent] = useState(0);
+  const [hasAdvanced, setHasAdvanced] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(() => setCurrent((c) => (c + 1) % slides.length), 5000);
+    const timer = setInterval(() => {
+      setHasAdvanced(true);
+      setCurrent((c) => (c + 1) % slides.length);
+    }, 5000);
     return () => clearInterval(timer);
   }, [slides.length]);
 
@@ -158,17 +162,41 @@ export function Hero() {
           inset: 0;
           overflow: hidden;
           opacity: 0;
-          transition: opacity 1.8s ease-in-out;
+          clip-path: inset(0 0 0 100%);
+          transform: translate3d(0, 0, 0);
+          will-change: clip-path, opacity;
         }
 
         .hero-slide--active {
           opacity: 1;
-          z-index: 1;
+          z-index: 2;
+          animation: heroImageReveal 1.45s cubic-bezier(.72,0,.18,1) both;
         }
 
         .hero-slide--previous {
+          opacity: 1;
+          z-index: 1;
+          clip-path: inset(0);
+          animation: heroImageLeave 1.45s cubic-bezier(.72,0,.18,1) both;
+        }
+
+        .hero-slide::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          left: -16%;
+          width: 32%;
+          z-index: 2;
+          pointer-events: none;
           opacity: 0;
-          z-index: 0;
+          background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.34), rgba(255,255,255,0));
+          filter: blur(10px);
+          transform: translateX(-130%) skewX(-12deg);
+        }
+
+        .hero-slide--active::after {
+          animation: heroRevealSweep 1.25s 0.06s cubic-bezier(.72,0,.18,1) both;
         }
 
         .hero-slide__image {
@@ -198,7 +226,7 @@ export function Hero() {
           position: absolute;
           left: 0;
           right: 0;
-          bottom: 28px;
+          bottom: clamp(34px, 6vh, 64px);
           z-index: 7;
           padding: 0 clamp(20px, 5vw, 80px);
           display: flex;
@@ -223,7 +251,7 @@ export function Hero() {
           }
 
           .hero-cta-fixed {
-            bottom: 24px;
+            bottom: 28px;
             padding: 0 16px;
             justify-content: center;
           }
@@ -255,10 +283,46 @@ export function Hero() {
           .hero-section { max-height: 1080px; }
         }
 
-        /* Zoom lent sur l'image active — 14s, démarre de scale(1) vers scale(1.10) */
+        @keyframes heroImageReveal {
+          0% {
+            clip-path: inset(0 0 0 100%);
+            opacity: 1;
+          }
+          100% {
+            clip-path: inset(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes heroImageLeave {
+          0% {
+            clip-path: inset(0);
+            opacity: 1;
+          }
+          100% {
+            clip-path: inset(0 100% 0 0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes heroRevealSweep {
+          0% {
+            opacity: 0;
+            transform: translateX(-130%) skewX(-12deg);
+          }
+          18% {
+            opacity: 0.9;
+          }
+          100% {
+            opacity: 0;
+            transform: translateX(430%) skewX(-12deg);
+          }
+        }
+
+        /* Zoom lent sur l'image active — accompagne le changement sans masquer le contenu */
         @keyframes heroSlowZoom {
-          from { transform: scale(1);    }
-          to   { transform: scale(1.10); }
+          from { transform: scale(1.055) translateX(1.6%); }
+          to   { transform: scale(1.12) translateX(0);     }
         }
 
         /* Apparition douce du texte — fade + légère montée */
@@ -268,7 +332,11 @@ export function Hero() {
         }
 
         .hero-slide--active .hero-slide__image {
-          animation: heroSlowZoom 14s ease-out forwards;
+          animation: heroSlowZoom 6.6s ease-out forwards;
+        }
+
+        .hero-slide--previous .hero-slide__image {
+          transform: scale(1.08);
         }
 
         .hero-text-enter {
@@ -278,25 +346,41 @@ export function Hero() {
         /* Zoom-in + fade doux, même easing/rythme que la transition des bannières hero (opacity 1.8s ease-in-out) */
         @keyframes heroCtaZoomFade {
           0%, 100% { transform: scale(1);     opacity: 1;    }
-          50%      { transform: scale(1.045); opacity: 0.88; }
+          50%      { transform: scale(1.025); opacity: 0.94; }
         }
 
         .hero-cta {
           position: relative;
           overflow: hidden;
-          background: linear-gradient(145deg, #14512f 0%, #0f693a 55%, #0a3c21 100%);
-          border: 1.5px solid #8bc541;
-          box-shadow: 0 0 0 3px rgba(139,197,65,0.18), 0 10px 24px -10px rgba(10,60,33,0.55);
-          animation: heroCtaZoomFade 3.6s ease-in-out infinite;
+          isolation: isolate;
+          background: linear-gradient(110deg, #075f35 0%, #08733e 56%, #8bc541 100%);
+          border: 1px solid rgba(255,255,255,0.38);
+          box-shadow: 0 18px 36px -16px rgba(4,65,34,0.72), inset 0 1px 0 rgba(255,255,255,0.24);
+          clip-path: polygon(8% 0, 100% 0, 92% 100%, 0 100%);
+          animation: heroCtaZoomFade 3.8s ease-in-out infinite;
           transition: transform 0.5s cubic-bezier(.16,1,.3,1),
                       box-shadow 0.5s cubic-bezier(.16,1,.3,1),
                       background 0.4s ease;
         }
 
+        .hero-cta::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          z-index: -1;
+          background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.24), rgba(255,255,255,0));
+          transform: translateX(-120%) skewX(-16deg);
+          transition: transform 0.65s cubic-bezier(.16,1,.3,1);
+        }
+
         .hero-cta:hover {
           animation-play-state: paused;
           transform: translateY(-3px);
-          box-shadow: 0 0 0 3px rgba(139,197,65,0.28), 0 16px 34px -10px rgba(10,60,33,0.6);
+          box-shadow: 0 24px 42px -18px rgba(4,65,34,0.82), inset 0 1px 0 rgba(255,255,255,0.32);
+        }
+
+        .hero-cta:hover::before {
+          transform: translateX(120%) skewX(-16deg);
         }
 
         .hero-cta-arrow {
@@ -310,6 +394,7 @@ export function Hero() {
 
         @media (prefers-reduced-motion: reduce) {
           .hero-slide,
+          .hero-slide::after,
           .hero-slide__image,
           .hero-text-enter,
           .hero-cta,
@@ -323,7 +408,7 @@ export function Hero() {
       <section className="hero-section">
         {slides.map((item, index) => {
           const isActive = index === current;
-          const isPrevious = index === (current - 1 + slides.length) % slides.length;
+          const isPrevious = hasAdvanced && index === (current - 1 + slides.length) % slides.length;
 
           return (
             <div
@@ -359,11 +444,11 @@ export function Hero() {
             zIndex: 4,
             pointerEvents: "none",
             background: `linear-gradient(to bottom,
-              rgba(0,0,0,0.42) 0%,
-              rgba(0,0,0,0.10) 25%,
+              rgba(0,0,0,0.24) 0%,
+              rgba(0,0,0,0.08) 25%,
               rgba(0,0,0,0.04) 55%,
-              rgba(0,0,0,0.55) 80%,
-              rgba(0,0,0,0.72) 100%)`,
+              rgba(0,0,0,0.46) 80%,
+              rgba(0,0,0,0.66) 100%)`,
           }}
         />
 
@@ -401,11 +486,11 @@ export function Hero() {
               gap: 10,
               padding: "17px 38px",
               color: "#fff",
-              fontWeight: 600,
+              fontWeight: 800,
               fontSize: "1rem",
               textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              borderRadius: 9999,
+              letterSpacing: "0.08em",
+              borderRadius: 18,
               textDecoration: "none",
             }}
           >

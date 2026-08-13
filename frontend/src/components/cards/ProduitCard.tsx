@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronRight } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getProductHref } from "@/lib/product-url";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -29,7 +29,6 @@ export function SeedImagePreview({
   active?: boolean;
 }) {
   const [current, setCurrent] = useState(0);
-  const [direction, setDirection] = useState(1);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const clearTimer = useCallback(() => {
@@ -42,13 +41,12 @@ export function SeedImagePreview({
   const start = useCallback(() => {
     if (timerRef.current || images.length < 2) return;
     timerRef.current = setInterval(() => {
-      setDirection(1);
       setCurrent((c) => mod(c + 1, images.length));
-    }, 1400);
+    }, 2200);
   }, [images.length]);
 
   // Piloté par le survol de toute la carte (prop `active`), pas seulement
-  // de la zone image — sinon l'effet ne se déclenche jamais en pratique.
+  // de la zone image. Les photos multiples se révèlent en fondu doux au hover.
   useEffect(() => {
     if (active) {
       start();
@@ -64,7 +62,6 @@ export function SeedImagePreview({
       e.preventDefault();
       e.stopPropagation();
       clearTimer();
-      setDirection(dir);
       setCurrent((c) => mod(c + dir, images.length));
       start();
     },
@@ -80,33 +77,46 @@ export function SeedImagePreview({
   }
 
   const variants = {
-    enter:  (dir: number) => ({ x: dir > 0 ? "12%" : "-12%", opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit:   (dir: number) => ({ x: dir > 0 ? "-12%" : "12%", opacity: 0 }),
+    enter:  { opacity: 0, scale: 0.985 },
+    center: { opacity: 1, scale: 1 },
+    exit:   { opacity: 0, scale: 1.015 },
   };
 
   return (
-    <div className="relative w-full">
-      <AnimatePresence mode="wait" initial={false} custom={direction}>
-        <motion.img
-          key={current}
-          src={images[current].url}
-          alt={images[current].alt ?? nom}
-          custom={direction}
-          variants={variants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={{
-            x: { type: "tween", duration: 0.45, ease: [0.65, 0, 0.35, 1] },
-            opacity: { duration: 0.35, ease: "easeInOut" },
-          }}
-          className={cn(
-            "block w-full h-auto object-contain transition-transform ease-[cubic-bezier(0.22,1,0.36,1)]",
-            active ? "scale-[1.08] duration-[1400ms]" : "scale-100 duration-700",
-          )}
-        />
-      </AnimatePresence>
+    <div className="relative w-full overflow-hidden">
+      <div
+        className={cn(
+          "transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+          active ? "scale-[1.1] duration-[1800ms]" : "scale-100 duration-[1200ms]",
+        )}
+      >
+        <div className="relative w-full">
+          <img
+            src={images[0].url}
+            alt=""
+            aria-hidden="true"
+            className="block h-auto w-full object-contain opacity-0"
+          />
+          {images.map((image, i) => (
+            <motion.img
+              key={`${image.url}-${i}`}
+              src={image.url}
+              alt={i === current ? image.alt ?? nom : ""}
+              aria-hidden={i !== current}
+              initial={false}
+              animate={{
+                opacity: i === current ? 1 : 0,
+                scale: i === current ? 1 : 1.01,
+              }}
+              transition={{
+                scale: { type: "tween", duration: 1.1, ease: [0.22, 1, 0.36, 1] },
+                opacity: { duration: 0.65, ease: "easeInOut" },
+              }}
+              className="absolute inset-0 h-full w-full object-contain"
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Flèches — uniquement si plusieurs photos, visibles quand la carte est survolée */}
       {images.length > 1 && (
@@ -215,7 +225,7 @@ export function ProduitCard({
                 src={img.url}
                 alt={img.alt ?? nom}
                 fill
-                className="object-contain p-6 transition-transform duration-300 group-hover:scale-105"
+                className="object-contain p-6 transition-transform duration-[1600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.08]"
                 sizes="(max-width:640px)50vw,(max-width:1024px)33vw,25vw"
               />
             ) : (

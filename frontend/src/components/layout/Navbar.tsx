@@ -1095,14 +1095,14 @@ export function Navbar() {
     const [hovered, setHovState] = React.useState(false);
     const showBadge = active || hovered;
     // Badge arrondi plein (comme la forme du logo) au lieu du soulignement.
-    const badgeBg = onHero ? "rgba(255,255,255,0.2)" : C.sageDk;
+    const badgeBg = onHero ? "rgba(255,255,255,0.16)" : C.sageDk;
     const wrapStyle: React.CSSProperties = {
       ...(active ? nlOn : nlBase),
       padding: "8px 10px",
       borderRadius: 12,
       background: showBadge ? badgeBg : "transparent",
       color: showBadge ? "#ffffff" : active ? navActiveColor : navTextColor,
-      transform: hovered ? "scale(1.05)" : "scale(1)",
+      transform: hovered ? "translateY(-1px)" : "translateY(0)",
       transition:
         "background 0.22s cubic-bezier(.34,1.56,.64,1), color 0.15s, transform 0.2s cubic-bezier(.34,1.56,.64,1)",
     };
@@ -1147,22 +1147,30 @@ export function Navbar() {
         }}
       >
         <div
+          className={onHero ? "hidden" : "block"}
           style={{
             height: 2.5,
             background: `linear-gradient(90deg,${C.gradA},${C.gradB},${C.gradC})`,
           }}
         />
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 xl:px-16">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-5 lg:px-6 xl:px-6">
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: NAV_H }}>
             <Link
               href="/"
               style={{
                 display: "flex",
                 alignItems: "center",
-                marginRight: "clamp(6px,1vw,16px)",
+                justifyContent: "center",
+                marginRight: onHero ? "clamp(14px,2vw,34px)" : "clamp(6px,1vw,16px)",
                 flexShrink: 0,
                 textDecoration: "none",
                 lineHeight: 0,
+                ...(onHero
+                  ? {
+                      width: "clamp(230px, 22vw, 320px)",
+                      height: 78,
+                    }
+                  : {}),
               }}
             >
               {!logoErr ? (
@@ -1173,8 +1181,9 @@ export function Navbar() {
                   height={150}
                   style={{
                     objectFit: "contain",
-                    height: "clamp(54px,7vw,90px)",
+                    height: onHero ? "clamp(70px, 6vw, 86px)" : "clamp(54px,7vw,90px)",
                     width: "auto",
+                    maxWidth: "100%",
                     display: "block",
                   }}
                   onError={() => setLogoErr(true)}
@@ -1212,9 +1221,9 @@ export function Navbar() {
                 // de garde-fou quand l'écran est étroit, sinon c'est
                 // justify-content: space-between (sur la ligne parente) qui
                 // répartit l'espace disponible.
-                marginLeft: "clamp(12px, 1.5vw, 28px)",
+                marginLeft: onHero ? 0 : "clamp(12px, 1.5vw, 28px)",
                 alignItems: "center",
-                height: "clamp(33px,4.4vw,57px)",
+                height: onHero ? 64 : "clamp(33px,4.4vw,57px)",
                 position: "relative",
                 minWidth: 0,
                 // nav.png ne s'affiche QUE sur le hero (onHero) : c'est un
@@ -1224,15 +1233,16 @@ export function Navbar() {
                 // derrière les liens — donc pas d'image du tout ici.
                 ...(onHero
                   ? {
-                      backgroundImage: "url(/images/nav.png)",
-                      backgroundSize: "auto 100%",
-                      backgroundPosition: "right center",
+                      backgroundImage: "url('/images/nav (1).png')",
+                      backgroundSize: "100% 100%",
+                      backgroundPosition: "center",
                       backgroundRepeat: "no-repeat",
+                      boxShadow: "0 16px 38px rgba(4, 65, 34, 0.24)",
                     }
                   : {
                       backgroundImage: "none",
                     }),
-                borderRadius: "999px 0 0 999px",
+                borderRadius: onHero ? 0 : "999px 0 0 999px",
                 // (overflow retiré : "hidden" ici coupait aussi les menus
                 // déroulants "Nos activités"/"Nos marques" qui s'ouvrent sous
                 // la pilule au survol — le fond décoratif reste cadré par le
@@ -1241,12 +1251,13 @@ export function Navbar() {
                 // largeur naturelle (ancrée à droite) — moins l'ensemble
                 // liens+CTA est large, plus "Qui sommes-nous" reste à
                 // l'intérieur de la zone verte couverte par l'image.
-                padding: "0 130px 0 6px",
+                padding: onHero ? "0 clamp(132px, 10vw, 170px) 0 clamp(18px, 2vw, 34px)" : "0 130px 0 6px",
                 // Le contenu (liens + CTA) démarre juste après le logo, collé au
                 // bord GAUCHE de la pilule : ça supprime le vide vert mort entre
                 // le logo et "Qui sommes-nous".
                 justifyContent: "flex-start",
-                gap: "clamp(4px, 0.6vw, 10px)",
+                gap: onHero ? "clamp(8px, 1vw, 16px)" : "clamp(4px, 0.6vw, 10px)",
+                overflow: "visible",
               }}
             >
               <div
@@ -1369,7 +1380,7 @@ export function Navbar() {
                 style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, position: "relative", zIndex: 2 }}
               >
               <ProduitSearch onHero={onHero} navTextColor={navTextColor} />
-              <LangDropdown onHero={onHero} />
+              {!onHero && <LangDropdown onHero={onHero} />}
 
               <Link
                 href="/rendez-vous"
