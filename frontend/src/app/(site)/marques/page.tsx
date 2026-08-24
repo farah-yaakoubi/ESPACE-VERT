@@ -15,9 +15,30 @@ export const metadata: Metadata = {
 
 // Les 4 slugs fixes du groupe — tout le reste est partenaire
 const SLUGS_GROUPE = new Set(["baddar-semences", "matar", "fertivert", "pulvert"]);
+const HIDDEN_BRAND_KEYS = new Set([
+  "mondialeirrigation",
+  "mendialirrigation",
+  "mondialirrigation",
+  "panam",
+  "panamsemences",
+  "rivulis",
+  "rivilus",
+  "revulis",
+  "revilis",
+]);
+
+function normKey(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
 
 export default async function MarquesPage() {
-  const marques = await marquesService.list();
+  const marques = (await marquesService.list()).filter(
+    (m) => !HIDDEN_BRAND_KEYS.has(normKey(m.slug)) && !HIDDEN_BRAND_KEYS.has(normKey(m.nom)),
+  );
 
   const marquesGroupe     = marques.filter((m) => SLUGS_GROUPE.has(m.slug));
   const marquesPartenaire = marques.filter((m) => !SLUGS_GROUPE.has(m.slug));

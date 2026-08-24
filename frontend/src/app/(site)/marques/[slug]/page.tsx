@@ -202,6 +202,7 @@ export default async function MarqueDetailPage({ params }: PageProps) {
           title="Optimisez vos récoltes avec nos engrais naturels"
           subtitle="Des solutions de fertilisation durables pour une croissance exceptionnelle."
           heroSlideKey="marque:fertivert"
+          fallbackImage="/images/hero/BANNEQR.webp"
           categories={tree?.categories ?? []}
           categoryAnchor="produits-marque"
           ctaHref="#produits-marque"

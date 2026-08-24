@@ -24,6 +24,7 @@ export function FertilisationHeroShowcase({
     <FertilisantHeroShowcase
       title="Optimisez vos récoltes avec nos engrais naturels"
       heroSlideKey={`activite:${activiteSlug}`}
+      staticImage="/images/hero/BANER%20TEST.webp"
       categories={categories}
       categoryAnchor="produits-activite"
       ctaHref="#produits-activite"

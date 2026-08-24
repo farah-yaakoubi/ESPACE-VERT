@@ -61,6 +61,26 @@ function normalizeText(value: string | null | undefined) {
     .trim();
 }
 
+const HIDDEN_BRAND_KEYS = new Set([
+  "mondialeirrigation",
+  "mendialirrigation",
+  "mondialirrigation",
+  "panam",
+  "panamsemences",
+  "rivulis",
+  "rivilus",
+  "revulis",
+  "revilis",
+]);
+
+function hiddenBrandKey(value: string | null | undefined) {
+  return normalizeText(value).replace(/[^a-z0-9]/g, "");
+}
+
+function isHiddenBrandLike(value: string | null | undefined) {
+  return HIDDEN_BRAND_KEYS.has(hiddenBrandKey(value));
+}
+
 async function currentLocale(): Promise<Locale> {
   const cookieLocale = (await cookies()).get("NEXT_LOCALE")?.value;
   return isLocale(cookieLocale) ? cookieLocale : defaultLocale;
@@ -146,7 +166,11 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
   /* Fetch categories for this activite (includes hierarchy / parent_id) */
   const categories = await categoriesService.list({ id_activite: activite.id_activite });
   const isMachinismeSlug = slug === "jardinage-et-machinisme";
-  const marques = (slug === "irrigation" || isMachinismeSlug) ? await marquesService.list() : [];
+  const marques = (slug === "irrigation" || isMachinismeSlug)
+    ? (await marquesService.list()).filter(
+        (marque) => !isHiddenBrandLike(marque.slug) && !isHiddenBrandLike(marque.nom),
+      )
+    : [];
   const marqueById = new Map(marques.map((marque) => [marque.id_marque, marque]));
   const marqueByKey = new Map(
     marques.flatMap((marque) => [
@@ -162,9 +186,6 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
 
     const key = normalizeText(`${cat.nom} ${cat.slug}`);
     if (key.includes("matar")) return marqueByKey.get("matar") ?? null;
-    if (key.includes("rivulis") || key.includes("rivilus")) {
-      return marqueByKey.get("rivulis") ?? marqueByKey.get("rivilus") ?? null;
-    }
     if (key.includes("idroland")) return marqueByKey.get("idroland") ?? null;
 
     return null;

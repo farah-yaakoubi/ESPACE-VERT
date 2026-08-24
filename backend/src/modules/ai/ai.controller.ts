@@ -127,6 +127,36 @@ async function callGroq(
   return data.choices?.[0]?.message?.content?.trim() ?? "Pas de reponse generee.";
 }
 
+interface MatchedEntity { label: string; href: string; }
+
+// Construit le lien réel d'un produit à partir de sa catégorie/marque/activité,
+// pour que les suggestions du chatbot pointent vers la fiche exacte trouvée
+// par la recherche sémantique plutôt qu'une page générique.
+function produitHref(p: {
+  slug: string;
+  categorie?: { slug?: string | null; marque?: { slug?: string | null } | null; activite?: { slug?: string | null } | null } | null;
+}): string {
+  const marqueSlug = p.categorie?.marque?.slug;
+  const activiteSlug = p.categorie?.activite?.slug;
+  if (activiteSlug && marqueSlug) return `/activites/${activiteSlug}/${marqueSlug}/${p.slug}`;
+  if (marqueSlug) return `/marques/${marqueSlug}/produits/${p.slug}`;
+  if (activiteSlug) return `/activites/${activiteSlug}/produits/${p.slug}`;
+  return "/activites";
+}
+
+// Détecte si une marque/activité connue est nommée dans la question, pour
+// proposer un lien direct vers sa page plutôt qu'un lien générique /marques ou /activites.
+function findMentionedEntity<T extends { nom: string; slug: string }>(
+  question: string,
+  items: T[],
+): T | null {
+  const q = normalizeText(question);
+  const found = items
+    .filter((item) => item.nom && normalizeText(item.nom).length >= 3 && q.includes(normalizeText(item.nom)))
+    .sort((a, b) => b.nom.length - a.nom.length);
+  return found[0] ?? null;
+}
+
 function parseEmbedding(value: unknown): number[] {
   if (Array.isArray(value)) return value.map(Number);
   if (typeof value === "string") {
@@ -182,7 +212,7 @@ Contact projet : prendre rendez-vous sur /rendez-vous ou contacter via /contact.
 }
 
 
-async function fetchPublicSiteContext(question: string): Promise<string> {
+async function fetchPublicSiteContext(question: string): Promise<{ context: string; matched: MatchedEntity[] }> {
   const db = prisma as any;
 
   try {
@@ -198,7 +228,14 @@ async function fetchPublicSiteContext(question: string): Promise<string> {
             nature: true,
             biologique: true,
             conditionnement: true,
-            categorie: { select: { nom: true, activite: { select: { nom: true } }, marque: { select: { nom: true } } } },
+            categorie: {
+              select: {
+                nom: true,
+                slug: true,
+                activite: { select: { nom: true, slug: true } },
+                marque: { select: { nom: true, slug: true } },
+              },
+            },
           },
         },
       },
@@ -350,14 +387,28 @@ async function fetchPublicSiteContext(question: string): Promise<string> {
       );
     }
 
-    return parts.join("\n\n");
+    // ─── Entités précises pour les boutons de suggestion ───
+    // Priorité aux produits réellement trouvés par la recherche sémantique ;
+    // sinon on propose la marque / activité explicitement nommée dans la question.
+    const matched: MatchedEntity[] = [];
+    if (!isGeneralQuestion) {
+      scored.slice(0, 2).forEach((r: any) => {
+        matched.push({ label: r.produit.nom, href: produitHref(r.produit) });
+      });
+    }
+    const mentionedMarque = findMentionedEntity(question, marques);
+    if (mentionedMarque) matched.push({ label: mentionedMarque.nom, href: `/marques/${mentionedMarque.slug}` });
+    const mentionedActivite = findMentionedEntity(question, activites);
+    if (mentionedActivite) matched.push({ label: mentionedActivite.nom, href: `/activites/${mentionedActivite.slug}` });
+
+    return { context: parts.join("\n\n"), matched };
   } catch (e) {
     console.error("[ai.public] semantic context unavailable, using fallback:", e);
     return fetchPublicSiteContextFallback(question);
   }
 }
 
-async function fetchPublicSiteContextFallback(question: string): Promise<string> {
+async function fetchPublicSiteContextFallback(question: string): Promise<{ context: string; matched: MatchedEntity[] }> {
   try {
     const terms = extractTerms(question);
     const productOr = terms.flatMap((term) => [
@@ -401,7 +452,14 @@ async function fetchPublicSiteContextFallback(question: string): Promise<string>
           nature: true,
           biologique: true,
           conditionnement: true,
-          categorie: { select: { nom: true, activite: { select: { nom: true } }, marque: { select: { nom: true } } } },
+          categorie: {
+            select: {
+              nom: true,
+              slug: true,
+              activite: { select: { nom: true, slug: true } },
+              marque: { select: { nom: true, slug: true } },
+            },
+          },
         },
       }),
       prisma.marque.findMany({
@@ -538,10 +596,21 @@ async function fetchPublicSiteContextFallback(question: string): Promise<string>
       );
     }
 
-    return parts.join("\n\n");
+    const matched: MatchedEntity[] = [];
+    if (!isFallbackGeneral) {
+      produits.slice(0, 2).forEach((p: any) => {
+        matched.push({ label: p.nom, href: produitHref(p) });
+      });
+    }
+    const mentionedMarque = findMentionedEntity(question, marques);
+    if (mentionedMarque) matched.push({ label: mentionedMarque.nom, href: `/marques/${mentionedMarque.slug}` });
+    const mentionedActivite = findMentionedEntity(question, activites);
+    if (mentionedActivite) matched.push({ label: mentionedActivite.nom, href: `/activites/${mentionedActivite.slug}` });
+
+    return { context: parts.join("\n\n"), matched };
   } catch (e) {
     console.error("[ai.public] fetchPublicSiteContext error:", e);
-    return "";
+    return { context: "", matched: [] };
   }
 }
 
@@ -851,7 +920,7 @@ export async function publicAiChat(req: Request, res: Response): Promise<void> {
   }
 
   try {
-    const [siteContext, staticContext] = await Promise.all([
+    const [{ context: siteContext, matched }, staticContext] = await Promise.all([
       fetchPublicSiteContext(message),
       Promise.resolve(buildStaticPagesContext()),
     ]);
@@ -934,9 +1003,17 @@ ${siteContext || "Aucun contexte site specifique disponible."}`;
       if (matched) id_faq = matched.id_faq;
     } catch {}
 
+    // Priorité aux liens precis (produit/marque/activite reellement trouves par
+    // la recherche), completes par les suggestions generiques basees sur des mots-cles.
+    const preciseActions: ChatAction[] = matched.map((m) => ({ label: m.label, href: m.href, type: "link" }));
+    const genericActions = buildPublicActions(message);
+    const actions = [...preciseActions, ...genericActions]
+      .filter((a, index, all) => all.findIndex((other) => other.href === a.href) === index)
+      .slice(0, 3);
+
     res.json({
       reply,
-      actions: buildPublicActions(message),
+      actions,
       ...(id_faq ? { id_faq } : {}),
     });
   } catch (err) {

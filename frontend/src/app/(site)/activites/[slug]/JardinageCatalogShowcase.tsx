@@ -291,54 +291,119 @@ export function JardinageSidebar({
 
 /* ══════════════════════ Grille de catégories ═════════════════════════════ */
 
-/** Tuiles à ne jamais afficher dans la grille de catégories (Jardinage &
- *  Machinisme) — restent navigables via la sidebar, simplement masquées
- *  de la grille visuelle sur demande. */
-const HIDDEN_GRID_TILES = ["tondeuse", "motocul"];
-
-function isHiddenTile(name: string) {
-  const n = normalizeText(name);
-  return HIDDEN_GRID_TILES.some((needle) => n.includes(needle));
-}
-
 export function JardinageCategoryCard({
-  node, onSelect, marqueLogoById, marqueLogoByKey,
+  node, onSelect, marqueLogoById, marqueLogoByKey, forceBrandCard = false, selectedId = null,
 }: {
   node: CatNode;
   onSelect: (id: number) => void;
   marqueLogoById?: Map<number, string | null | undefined>;
   marqueLogoByKey?: Map<string, string | null | undefined>;
+  /** Force le rendu "carte marque" (logo seul) même si le slug de la
+   *  catégorie n'a pas le préfixe `jm-` en base — utilisé dans les grilles
+   *  qui n'affichent que des marques (ex. "Parcourir par marques"), pour
+   *  ne pas dépendre d'un tag cohérent côté données. */
+  forceBrandCard?: boolean;
+  /** Id de la marque actuellement sélectionnée (catalogue ouvert). Quand
+   *  renseigné : la tuile correspondante est mise en avant (zoom), les
+   *  autres sont grisées et reprennent leur aspect normal au survol. */
+  selectedId?: number | null;
 }) {
   const { locale, t } = useI18n();
   const { Icon, color } = pictoFor(node.nom);
-  const isBrandCard = (node.slug ?? "").startsWith("jm-");
+  const isBrandCard = forceBrandCard || ((node.slug ?? "").startsWith("jm-") && !node.parent_id);
   const normKey = (s: string) => normalizeText(s).replace(/[^a-z0-9]/g, "");
+  // Dernier recours : si aucune clé exacte ne matche (le nom en base peut
+  // être formulé différemment, ex. "Wolf Outils" au lieu de "Outils Wolf"),
+  // on cherche un override statique dont la clé est contenue dans le nom
+  // normalisé de la catégorie.
+  const overrideBySubstring = (key: string): string | null => {
+    if (!marqueLogoByKey) return null;
+    for (const [k, v] of marqueLogoByKey.entries()) {
+      if (v && key.includes(k) && k.length >= 3) return v;
+    }
+    return null;
+  };
+  // Priorité : override statique connu (nom ou slug) > logo BDD (par id_marque)
+  // > logo BDD (par nom/slug normalisé) > image de la catégorie. Les
+  // overrides passent en premier volontairement : certaines marques ont en
+  // base une image mal cadrée/trop grande (bannière au lieu du logo), donc
+  // on ne veut pas que la BDD masque le fichier statique correct connu.
   const brandLogo =
-    marqueLogoById?.get((node as any).id_marque) ??
     marqueLogoByKey?.get(normKey(node.nom)) ??
     marqueLogoByKey?.get(normKey((node.slug ?? "").replace(/^jm-/, ""))) ??
+    marqueLogoById?.get((node as any).id_marque) ??
+    overrideBySubstring(normKey(node.nom)) ??
     node.image;
   const { ref: textRef, inView: textInView } = useRevealOnView<HTMLParagraphElement>();
+  // Certains logos référencés en base pointent vers un fichier manquant ou
+  // une URL cassée — plutôt que d'afficher l'icône "image cassée" du
+  // navigateur, on bascule sur le picto de secours dès que le chargement
+  // échoue.
+  const [logoFailed, setLogoFailed] = useState(false);
+  const showLogo = !!brandLogo && !logoFailed;
+  // Etat de sélection (grille "Parcourir par marques") : la marque active
+  // ressort en zoom, les autres passent en gris et repassent en couleur
+  // normale au survol — sans que la grille ne disparaisse pour autant.
+  const isSelected = selectedId != null && node.id_categorie === selectedId;
+  const isDimmed   = selectedId != null && !isSelected;
 
   if (isBrandCard) {
-    return (
-      <button
-        onClick={() => onSelect(node.id_categorie)}
-        className="group flex w-full items-center justify-center px-2 py-4 transition-transform duration-300 hover:-translate-y-1"
-      >
-        <span className="relative mx-auto flex h-16 w-full max-w-[172px] items-center justify-center overflow-hidden">
-          {brandLogo ? (
+    // Avec un vrai logo : la tuile reste minimaliste (juste le logo, comme
+    // sur la maquette de référence — le wordmark de la marque suffit).
+    if (showLogo) {
+      return (
+        <button
+          onClick={() => onSelect(node.id_categorie)}
+          className={cn(
+            "group flex w-full items-center justify-center px-2 py-4 transition-all duration-300",
+            isSelected ? "scale-110" : isDimmed ? "scale-95 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-100" : "hover:-translate-y-1"
+          )}
+        >
+          <span className="relative mx-auto flex h-16 w-full max-w-[172px] items-center justify-center overflow-hidden">
             <Image
-              src={brandLogo}
+              src={brandLogo as string}
               alt={labelOf(node, locale)}
               fill
               className="object-contain transition-transform duration-500 group-hover:scale-[1.06]"
               sizes="172px"
+              onError={() => setLogoFailed(true)}
             />
-          ) : (
-            <Icon size={34} strokeWidth={1.8} style={{ color }} />
-          )}
-        </span>
+          </span>
+        </button>
+      );
+    }
+
+    // Sans logo disponible (champ vide en base ou image cassée) : on
+    // retombe sur le picto générique, mais on affiche quand même le nom de
+    // la marque et un CTA — sinon la tuile n'est qu'une icône muette sans
+    // aucune indication de la marque qu'elle représente.
+    return (
+      <button
+        onClick={() => onSelect(node.id_categorie)}
+        className="group flex w-full flex-col items-center text-center focus:outline-none"
+      >
+        <div className="relative flex h-16 w-full items-center justify-center">
+          <div
+            className="flex h-14 w-14 items-center justify-center rounded-2xl transition-transform duration-500 group-hover:scale-105"
+            style={{ backgroundColor: `${color}17` }}
+          >
+            <Icon size={28} strokeWidth={1.8} style={{ color }} />
+          </div>
+        </div>
+
+        <div ref={textRef as any} className={cn("flex flex-1 flex-col items-center", textRevealClass(textInView))}>
+          <p
+            className="mt-3 text-[1rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+            style={{ fontFamily: "var(--font-serif)" }}
+          >
+            {labelOf(node, locale)}
+          </p>
+
+          <span className="mt-3 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-4 py-2 text-[11.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
+            {t("catalog.viewProducts", "Voir produits")}
+            <ArrowRight size={13} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
+          </span>
+        </div>
       </button>
     );
   }
@@ -349,13 +414,14 @@ export function JardinageCategoryCard({
       className="group flex w-full flex-col items-center text-center focus:outline-none"
     >
       <div className="relative flex h-44 w-full items-center justify-center">
-        {node.image ? (
+        {node.image && !logoFailed ? (
           <Image
             src={node.image}
             alt={labelOf(node, locale)}
             fill
             className="object-contain transition-transform duration-500 ease-out group-hover:-translate-y-1.5 group-hover:scale-[1.06]"
             sizes="(max-width:640px) 50vw, (max-width:1280px) 25vw, 20vw"
+            onError={() => setLogoFailed(true)}
           />
         ) : (
           <div
@@ -387,7 +453,8 @@ export function JardinageCategoryCard({
 }
 
 export function JardinageCategoryGrid({
-  nodes, onSelect, marqueLogoById, marqueLogoByKey, wide = false, centered = false,
+  nodes, onSelect, marqueLogoById, marqueLogoByKey, wide = false, centered = false, selectedId = null,
+  requireImage = false,
 }: {
   nodes: CatNode[];
   onSelect: (id: number) => void;
@@ -398,12 +465,21 @@ export function JardinageCategoryGrid({
   /** Tuiles centrées (flex-wrap) au lieu d'une grille stricte — évite qu'une
    *  dernière ligne incomplète (ex. 7 marques = 6 + 1) reste collée à gauche. */
   centered?: boolean;
+  /** Id de la marque sélectionnée à mettre en avant (zoom), les autres
+   *  tuiles étant grisées jusqu'au survol. */
+  selectedId?: number | null;
+  /** N'affiche que les catégories illustrées (image en base) — masque celles
+   *  sans image au lieu de retomber sur le pictogramme générique. Utilisé
+   *  pour la grille de sous-catégories (ex. "hybride" sous "semences
+   *  maraîchères") ; laissé à `false` pour les grilles de marques, dont le
+   *  logo peut provenir de `marqueLogoById`/`marqueLogoByKey` même sans
+   *  `node.image`. */
+  requireImage?: boolean;
 }) {
-  const visibleNodes = (nodes ?? []).filter((node) => !isHiddenTile(node.nom));
+  const visibleNodes = requireImage ? (nodes ?? []).filter((n) => !!n.image) : (nodes ?? []);
   if (visibleNodes.length === 0) return null;
 
   if (centered) {
-    const n = visibleNodes.length;
     return (
       <>
         {/* Mobile / tablette : grille classique qui s'enroule normalement */}
@@ -415,16 +491,20 @@ export function JardinageCategoryGrid({
               onSelect={onSelect}
               marqueLogoById={marqueLogoById}
               marqueLogoByKey={marqueLogoByKey}
+              forceBrandCard
+              selectedId={selectedId}
             />
           ))}
         </div>
         {/* Bureau (lg+) : toutes les marques sur une seule ligne, colonnes
-         * égales — le nombre de colonnes s'adapte au nombre de marques, donc
-         * ça ne saute jamais à la ligne, quel que soit le nombre de marques. */}
-        <div
-          className="hidden lg:grid gap-6"
-          style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}
-        >
+         * égales. `auto-fit` + `minmax(140px, 1fr)` en pur CSS (pas de style
+         * inline dépendant d'un `n` calculé en JS) : chaque colonne a une
+         * largeur minimale garantie non nulle, ce qui évite que Next/Image
+         * tente de charger le logo dans un conteneur à 0px de large (cause
+         * du bug précédent : `min-w-0` en flexbox pouvait temporairement
+         * ramener la largeur à 0 et faire échouer le chargement de l'image,
+         * déclenchant à tort le repli sur le picto générique). */}
+        <div className="hidden lg:grid gap-6 justify-center" style={{ gridTemplateColumns: `repeat(${visibleNodes.length}, minmax(140px, 200px))` }}>
           {visibleNodes.map((node) => (
             <JardinageCategoryCard
               key={node.id_categorie}
@@ -432,6 +512,8 @@ export function JardinageCategoryGrid({
               onSelect={onSelect}
               marqueLogoById={marqueLogoById}
               marqueLogoByKey={marqueLogoByKey}
+              forceBrandCard
+              selectedId={selectedId}
             />
           ))}
         </div>

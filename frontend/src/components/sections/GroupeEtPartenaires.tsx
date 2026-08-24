@@ -24,8 +24,8 @@ const EASE_SMOOTH = [0.25, 0.46, 0.45, 0.94] as const;
 
 /**
  * Affiche le logo tel qu'il est réellement dans son fichier source, sans
- * altération de couleur. Les logos "Groupe" (Espace Vert, Mondiale Irrigation,
- * Stajap, Baddar Agricole) sont déjà détourés (fond transparent dans le PNG).
+ * altération de couleur. Les logos "Groupe" (Espace Vert, Stajap,
+ * Baddar Agricole) sont déjà détourés (fond transparent dans le PNG).
  * Fertivert, lui, a un fond vert plein qui fait partie intégrante de son
  * identité visuelle — il ne doit donc jamais être traité comme un "fond à
  * retirer", sous peine de casser le logo (c'est ce qui causait le rendu
@@ -66,16 +66,18 @@ const SOCIETES = [
     description: "Spécialiste des équipements et solutions pour l'agriculture professionnelle.",
     year: "2000",
   },
-   {
-    name: "Mondiale Irrigation",
-    image: "/logosPartenaires/logo mendial irrigation.png",
-    description: "Expert en systèmes d'irrigation pour une gestion optimale de l'eau au champ.",
-  },
   {
     name: "Fertivert",
     image: "/logos/LOGO FERTVERT copy.png",
     description: "Dédiée à la fertilisation et à la nutrition des sols pour des cultures plus saines et productives.",
     year: "2001",
+    compact: true,
+  },
+  {
+    name: "Mondiale Irrigation",
+    image: "/logosPartenaires/logo mendial irrigation.png",
+    description: "Spécialiste des solutions d'irrigation pour l'agriculture et les espaces verts.",
+    year: "2003",
     compact: true,
   }
 ];
@@ -86,7 +88,6 @@ const PARTENAIRES = [
   { name: "elors plants", image: "/logosPartenaires1/elorn plants.png" },
   { name: "griffaton", image: "/logosPartenaires1/griffaton vert.png" },
   { name: "lidea", image: "/logosPartenaires1/LIDEA.png" },
-  { name: "PANAM", image: "/logosPartenaires1/panam.png" },
   { name: "SEMINART", image: "/logosPartenaires1/SEMINART.png" },
   { name: "sem", image: "/logosPartenaires1/SEM.png" },
   { name: "services plus", image: "/logosPartenaires1/service plus.png" },
@@ -103,7 +104,6 @@ const PARTENAIRES = [
   { name: "WOLF", image: "/logosPartenaires1/WOLF.png" },
   { name: "FISTA", image: "/logosPartenaires1/FISTA.png" },
   { name: "IDROLAND", image: "/logosPartenaires1/IDROLAND.png" },
-  { name: "REVULIS", image: "/logosPartenaires1/REVILIS.png" },
   { name: "ZETA", image: "/logosPartenaires1/zeta-logo.png" },
 ];
 

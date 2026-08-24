@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const NAV_H = 80;
@@ -22,9 +23,7 @@ export interface HeroSlide {
 const SLIDES_FALLBACK: HeroSlide[] = [
   {
     id: 1,
-    image: "/images/hero/semences-desktop.webp",
-    imageTablet: "/images/hero/semences-tablette.webp",
-    imageMobile: "/images/hero/semences-mobile.webp",
+    image: "/images/hero/banner ev.webp",
     href: "/activites/semences-et-plants",
     ctaLabel: "Découvrir",
     ordre: 1,
@@ -131,7 +130,7 @@ export function Hero() {
   }, [current, slides]);
 
   const slide = slides[current];
-  const ctaLabel = slide.ctaLabel ?? CTA_FALLBACK_LABEL;
+  const ctaLabel = "Découvrir";
   const ctaHref = slide.href ?? CTA_FALLBACK_HREF;
 
   return (
@@ -255,6 +254,7 @@ export function Hero() {
             padding: 0 16px;
             justify-content: center;
           }
+
         }
 
         @media (min-width: 641px) and (max-width: 1024px) {
@@ -353,14 +353,34 @@ export function Hero() {
           position: relative;
           overflow: hidden;
           isolation: isolate;
-          background: linear-gradient(110deg, #075f35 0%, #08733e 56%, #8bc541 100%);
-          border: 1px solid rgba(255,255,255,0.38);
-          box-shadow: 0 18px 36px -16px rgba(4,65,34,0.72), inset 0 1px 0 rgba(255,255,255,0.24);
-          clip-path: polygon(8% 0, 100% 0, 92% 100%, 0 100%);
+          background: linear-gradient(135deg, #0b6b3a 0%, #2e7d4f 45%, #7dc040 100%);
+          border: 1px solid rgba(255,255,255,0.5);
+          color: #ffffff;
+          box-shadow: 0 16px 36px -18px rgba(3,36,18,0.55),
+                      inset 0 1px 0 rgba(255,255,255,0.4),
+                      inset 0 -8px 14px -10px rgba(3,36,18,0.25);
+          backdrop-filter: blur(18px);
           animation: heroCtaZoomFade 3.8s ease-in-out infinite;
-          transition: transform 0.5s cubic-bezier(.16,1,.3,1),
-                      box-shadow 0.5s cubic-bezier(.16,1,.3,1),
-                      background 0.4s ease;
+          transition: transform 0.45s cubic-bezier(.16,1,.3,1),
+                      box-shadow 0.45s cubic-bezier(.16,1,.3,1),
+                      background 0.45s cubic-bezier(.16,1,.3,1),
+                      border-color 0.45s ease,
+                      color 0.35s ease;
+        }
+
+        /* Reflet glossy — bande claire en haut du bouton, façon verre/bonbon */
+        .hero-cta::after {
+          content: "";
+          position: absolute;
+          left: 5%;
+          right: 5%;
+          top: 6%;
+          height: 40%;
+          border-radius: 999px;
+          background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0));
+          opacity: 0.9;
+          pointer-events: none;
+          transition: opacity 0.4s ease;
         }
 
         .hero-cta::before {
@@ -368,7 +388,7 @@ export function Hero() {
           position: absolute;
           inset: 0;
           z-index: -1;
-          background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.24), rgba(255,255,255,0));
+          background: linear-gradient(90deg, rgba(125,192,64,0), rgba(125,192,64,0.18), rgba(125,192,64,0));
           transform: translateX(-120%) skewX(-16deg);
           transition: transform 0.65s cubic-bezier(.16,1,.3,1);
         }
@@ -376,7 +396,16 @@ export function Hero() {
         .hero-cta:hover {
           animation-play-state: paused;
           transform: translateY(-3px);
-          box-shadow: 0 24px 42px -18px rgba(4,65,34,0.82), inset 0 1px 0 rgba(255,255,255,0.32);
+          background: linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.78) 48%, rgba(255,255,255,0.94) 100%);
+          border-color: rgba(255,255,255,0.75);
+          color: #075f35;
+          box-shadow: 0 22px 48px -18px rgba(3,36,18,0.55),
+                      inset 0 1px 0 rgba(255,255,255,0.95),
+                      inset 0 -8px 14px -10px rgba(3,36,18,0.1);
+        }
+
+        .hero-cta:hover::after {
+          opacity: 0.9;
         }
 
         .hero-cta:hover::before {
@@ -385,11 +414,25 @@ export function Hero() {
 
         .hero-cta-arrow {
           display: inline-flex;
-          transition: transform 0.5s cubic-bezier(.16,1,.3,1);
+          width: 30px;
+          height: 30px;
+          align-items: center;
+          justify-content: center;
+          border-radius: 999px;
+          color: #0b6b3a;
+          background: #ffffff;
+          box-shadow: 0 10px 20px -12px rgba(7,95,53,0.5);
+          transition: transform 0.5s cubic-bezier(.16,1,.3,1),
+                      box-shadow 0.5s cubic-bezier(.16,1,.3,1),
+                      background 0.4s ease,
+                      color 0.4s ease;
         }
 
         .hero-cta:hover .hero-cta-arrow {
-          transform: translateX(5px);
+          transform: translate(4px, -4px);
+          background: linear-gradient(135deg, #075f35, #8bc541);
+          color: #ffffff;
+          box-shadow: 0 16px 24px -14px rgba(7,95,53,0.85);
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -483,22 +526,19 @@ export function Hero() {
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: 10,
-              padding: "17px 38px",
-              color: "#fff",
+              gap: 12,
+              padding: "6px 6px 6px 22px",
               fontWeight: 800,
-              fontSize: "1rem",
+              fontSize: "0.88rem",
               textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              borderRadius: 18,
+              letterSpacing: "0.06em",
+              borderRadius: 999,
               textDecoration: "none",
             }}
           >
             {ctaLabel}
             <span className="hero-cta-arrow">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
+              <ArrowUpRight size={16} strokeWidth={2.4} />
             </span>
           </Link>
         </div>

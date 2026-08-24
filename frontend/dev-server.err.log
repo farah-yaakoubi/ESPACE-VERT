@@ -1,0 +1,15 @@
+ ⨯ [Error: Cannot find module 'C:\Users\farah\Desktop\ev\frontend\.next\server\app\(site)\page.js'
+Require stack:
+- C:\Users\farah\Desktop\ev\frontend\node_modules\next\dist\server\require.js
+- C:\Users\farah\Desktop\ev\frontend\node_modules\next\dist\server\load-components.js
+- C:\Users\farah\Desktop\ev\frontend\node_modules\next\dist\build\utils.js
+- C:\Users\farah\Desktop\ev\frontend\node_modules\next\dist\build\swc\options.js
+- C:\Users\farah\Desktop\ev\frontend\node_modules\next\dist\build\swc\index.js
+- C:\Users\farah\Desktop\ev\frontend\node_modules\next\dist\build\next-config-ts\transpile-config.js
+- C:\Users\farah\Desktop\ev\frontend\node_modules\next\dist\server\config.js
+- C:\Users\farah\Desktop\ev\frontend\node_modules\next\dist\server\next.js
+- C:\Users\farah\Desktop\ev\frontend\node_modules\next\dist\server\lib\start-server.js] {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/'
+}

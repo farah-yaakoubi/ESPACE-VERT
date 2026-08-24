@@ -74,6 +74,49 @@ async function collectCategorieIds(filters: { id_categorie?: number; id_activite
   return [...collected];
 }
 
+/**
+ * Recherche globale : retourne l'ensemble des id_categorie dont le nom,
+ * la marque ou l'activité correspond au terme recherché — plus toutes
+ * leurs sous-catégories descendantes (pour qu'une recherche sur une
+ * catégorie parente ("Jardinage") remonte aussi les produits rangés
+ * dans ses sous-catégories ("Tondeuses", "Débroussailleuses", …)).
+ */
+async function collectCategorieIdsMatchingSearch(search: string, actifOnly = true) {
+  const where: any = {};
+  if (actifOnly) where.actif = true;
+
+  const allCats = await prisma.categorie.findMany({
+    where,
+    select: {
+      id_categorie: true, parent_id: true, nom: true,
+      marque:   { select: { nom: true } },
+      activite: { select: { nom: true } },
+    },
+  });
+
+  const term = search.trim().toLowerCase();
+  if (!term) return [];
+
+  const directIds = allCats
+    .filter(c =>
+      c.nom.toLowerCase().includes(term) ||
+      c.marque?.nom?.toLowerCase().includes(term) ||
+      c.activite?.nom?.toLowerCase().includes(term)
+    )
+    .map(c => c.id_categorie);
+
+  const collected = new Set<number>();
+  const collectDescendants = (rootId: number) => {
+    if (collected.has(rootId)) return;
+    collected.add(rootId);
+    allCats
+      .filter(c => c.parent_id === rootId)
+      .forEach(c => collectDescendants(c.id_categorie));
+  };
+  directIds.forEach(collectDescendants);
+  return [...collected];
+}
+
 export const produitRepository = {
 
   // ── Public ─────────────────────────────────────────────────────
@@ -97,16 +140,20 @@ export const produitRepository = {
     if (division) where.division = division;
 
     if (search) {
+      // Recherche globale : nom / description du produit, OU catégorie
+      // (+ marque / activité de cette catégorie, + toutes ses sous-catégories).
+      const matchingCatIds = await collectCategorieIdsMatchingSearch(search, true);
       where.OR = [
         { nom:         { contains: search } },
         { description: { contains: search } },
+        ...(matchingCatIds.length > 0 ? [{ id_categorie: { in: matchingCatIds } }] : []),
       ];
     }
     const [total, produits] = await Promise.all([
       prisma.produit.count({ where }),
       prisma.produit.findMany({
         where, skip: (page - 1) * limit, take: limit,
-        orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+        orderBy: [{ created_at: "asc" }, { id_produit: "asc" }],
         include: PUBLIC_INCLUDE,
       }),
     ]);
@@ -165,16 +212,18 @@ export const produitRepository = {
     if (division)            where.division     = division;
     if (actif !== undefined) where.actif        = actif;
     if (search) {
+      const matchingCatIds = await collectCategorieIdsMatchingSearch(search, false);
       where.OR = [
         { nom:         { contains: search } },
         { description: { contains: search } },
+        ...(matchingCatIds.length > 0 ? [{ id_categorie: { in: matchingCatIds } }] : []),
       ];
     }
     const [total, produits] = await Promise.all([
       prisma.produit.count({ where }),
       prisma.produit.findMany({
         where, skip: (page - 1) * limit, take: limit,
-        orderBy: { ordre: "asc" },
+        orderBy: [{ created_at: "asc" }, { id_produit: "asc" }],
         include: ADMIN_LIST_INCLUDE,  // liste légère — seulement image principale
       }),
     ]);

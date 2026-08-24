@@ -76,7 +76,10 @@ function buildTree(flat: CatFlat[]): CatNode[] {
   // dans l'admin (ex. parent secondaire = un de ses propres descendants).
   function sortNodesByOrder(nodesList: CatNode[], ancestors: Set<number> = new Set()): CatNode[] {
     return nodesList
-      .sort((first, second) => first.ordre - second.ordre)
+      .sort((first, second) =>
+        first.created_at.getTime() - second.created_at.getTime() ||
+        first.id_categorie - second.id_categorie
+      )
       .map(node => {
         if (ancestors.has(node.id_categorie)) return { ...node, sous_cats: [] };
         return {
@@ -134,10 +137,20 @@ export const categorieRepository = {
     const where: Record<string, unknown> = { actif: true };
     if (params.id_marque)   where.id_marque   = params.id_marque;
     if (params.id_activite) where.id_activite = params.id_activite;
+    // Recherche globale (barre de recherche navbar) : nom de la catégorie
+    // OU nom de sa marque/activité (ex. "espace vert" doit retrouver ses
+    // catégories même si le mot ne figure pas dans le nom de la catégorie).
+    if (params.search) {
+      (where as any).OR = [
+        { nom:      { contains: params.search } },
+        { marque:   { nom: { contains: params.search } } },
+        { activite: { nom: { contains: params.search } } },
+      ];
+    }
 
     const rows = await prisma.categorie.findMany({
       where,
-      orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+      orderBy: [{ created_at: "asc" }, { id_categorie: "asc" }],
       select: {
         ...catSelect,
         marque:   { select: { nom: true, slug: true, translations: true } },
@@ -152,7 +165,7 @@ export const categorieRepository = {
       const directIds = new Set<number>(rows.map(r => Number(r.id_categorie)));
       const allFlat = await prisma.categorie.findMany({
         where:   { actif: true },
-        orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+        orderBy: [{ created_at: "asc" }, { id_categorie: "asc" }],
         select:  {
           ...catSelect,
           marque:   { select: { nom: true, slug: true, translations: true } },
@@ -168,7 +181,11 @@ export const categorieRepository = {
       }
       const descendants = [...directIds].flatMap(id => collectDescendants(id));
       descendants.forEach(d => { if (!directIds.has((d as any).id_categorie)) { (rows as any[]).push(d); directIds.add((d as any).id_categorie); } });
-      (rows as any[]).sort((a: any, b: any) => (a.ordre - b.ordre) || a.nom.localeCompare(b.nom, "fr"));
+      (rows as any[]).sort(
+        (a: any, b: any) =>
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime() ||
+          a.id_categorie - b.id_categorie
+      );
     }
 
     const normalized = (rows as any[]).map(withParentIdsExtra);
@@ -197,7 +214,7 @@ export const categorieRepository = {
     const marqueCatIds = await collectCategorieIdsByMarque(marque.id_marque);
     const produits = await prisma.produit.findMany({
       where:   { id_categorie: marqueCatIds.length > 0 ? { in: marqueCatIds } : -1, actif: true },
-      orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+      orderBy: [{ created_at: "asc" }, { id_produit: "asc" }],
       select: {
         id_produit:   true,
         nom:          true,
@@ -235,7 +252,7 @@ export const categorieRepository = {
           produitCatIds.length > 0 ? { id_categorie: { in: produitCatIds } } : undefined,
         ].filter(Boolean) as any,
       },
-      orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+      orderBy: [{ created_at: "asc" }, { id_categorie: "asc" }],
       select: catSelect,
     });
 
@@ -282,7 +299,7 @@ export const categorieRepository = {
 
     const rows = await prisma.categorie.findMany({
       where,
-      orderBy: [{ parent_id: "asc" }, { ordre: "asc" }, { nom: "asc" }],
+      orderBy: [{ parent_id: "asc" }, { created_at: "asc" }, { id_categorie: "asc" }],
       include: {
         marque:   { select: { nom: true, slug: true, translations: true } },
         activite: { select: { nom: true, slug: true, translations: true } },
@@ -301,7 +318,7 @@ export const categorieRepository = {
         marque:    true,
         activite:  true,
         parent:    true,
-        sous_cats: { orderBy: { ordre: "asc" } },
+        sous_cats: { orderBy: [{ created_at: "asc" }, { id_categorie: "asc" }] },
         produits:  { take: 5, include: { images: { where: { is_principale: true }, take: 1 } } },
         parents_extra: { select: { id_parent: true, parent: { select: { id_categorie: true, nom: true } } } },
         _count:    { select: { produits: true, sous_cats: true } },
@@ -325,7 +342,7 @@ export const categorieRepository = {
         parent:    { select: { nom: true, slug: true, translations: true } },
         sous_cats: {
           where:   { actif: true },
-          orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+          orderBy: [{ created_at: "asc" }, { id_categorie: "asc" }],
           select: {
             id_categorie: true, nom: true, slug: true,
             description: true, translations: true, image: true, ordre: true,
@@ -338,7 +355,7 @@ export const categorieRepository = {
     // 2. Produits directs de cette catégorie
     const produits = await prisma.produit.findMany({
       where:   { id_categorie: cat.id_categorie, actif: true },
-      orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+      orderBy: [{ created_at: "asc" }, { id_produit: "asc" }],
       select: {
         id_produit: true, nom: true, slug: true,
         description: true, translations: true, division: true, tags: true, ordre: true,
@@ -357,7 +374,7 @@ export const categorieRepository = {
     const sousProduits = sousCatIds.length > 0
       ? await prisma.produit.findMany({
           where:   { id_categorie: { in: sousCatIds }, actif: true },
-          orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+          orderBy: [{ created_at: "asc" }, { id_produit: "asc" }],
           select: {
             id_produit: true, nom: true, slug: true,
             description: true, translations: true, division: true, tags: true, ordre: true,

@@ -9,7 +9,6 @@ import Image from "next/image";
 
 // ⚠️  Ajoutez vos logos dans /public/logosPartenaires/ et listez-les ici
 const PARTENAIRES = [
-  { nom: "Mendial Irrigation",  logo: "/logosPartenaires/logo mendial irrigation.png"  },
   { nom: "Stajap",              logo: "/logosPartenaires/logo stajap.png"               },
   { nom: "Baddar Agricole",     logo: "/logosPartenaires/logo baddar agricole.png"      },
   // ← Ajoutez d'autres partenaires ici :

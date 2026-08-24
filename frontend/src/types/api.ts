@@ -59,6 +59,7 @@ export interface MarqueCategorie {
   image:        string | null;
   id_activite:  number | null;
   parent_id:    number | null;
+  created_at?:   string;
 }
 
 // ── Activite  (GET /api/activites) ────────────────────────────────────────────
@@ -89,6 +90,7 @@ export interface ActiviteCategorie {
   image:        string | null;
   parent_id:    number | null;
   id_marque:    number | null;
+  created_at?:   string;
 }
 
 // ── Categorie  (GET /api/categories?id_marque=&id_activite=) ─────────────────
@@ -107,6 +109,7 @@ export interface Categorie {
    *  ces catégories, en plus de son parent principal (parent_id). */
   parent_ids_extra?: number[];
   ordre:        number;
+  created_at?:   string;
 }
 
 // ── ProduitImage ──────────────────────────────────────────────────────────────

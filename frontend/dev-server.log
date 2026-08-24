@@ -1,0 +1,19 @@
+
+> espace-vert-frontend@1.0.0 dev
+> next dev -p 3000
+
+   ▲ Next.js 15.5.18
+   - Local:        http://localhost:3000
+   - Network:      http://172.16.0.2:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 4.9s
+ ○ Compiling / ...
+ ✓ Compiled / in 8.8s (1501 modules)
+ ✓ Compiled in 194ms (818 modules)
+ ✓ Compiled in 977ms (674 modules)
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 13.2s (1824 modules)
+ GET / 500 in 25017ms
+[?25h

@@ -387,6 +387,14 @@ html[data-theme="dark"] {
 .theme-machinisme .hover\:bg-ev-800:hover,
 .theme-machinisme .hover\:bg-ev-700:hover { background-color: #0a0a0a !important; }
 
+/* Bouton "Voir le produit" des cartes produit — couleur dédiée, plus
+ * spécifique que la règle générale .bg-ev-700 ci-dessus pour la surcharger. */
+.theme-machinisme .bg-ev-700.cta-voir-produit,
+.theme-machinisme .bg-ev-600.cta-voir-produit,
+.theme-machinisme .bg-ev-900.cta-voir-produit { background-color: #95201e !important; }
+
+.theme-machinisme .group:hover .group-hover\:bg-ev-800.cta-voir-produit { background-color: #6e1817 !important; }
+
 .theme-machinisme .bg-ev-50,
 .theme-machinisme .bg-ev-100 { background-color: #f2f2f2 !important; }
 

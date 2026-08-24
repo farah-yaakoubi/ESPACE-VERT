@@ -32,42 +32,6 @@ const C = {
   highlight:    "rgba(125,192,64,0.24)",
 };
 
-const SEARCH_SUGGESTIONS = [
-  "fulvical…",
-  "Rechercher un système d'irrigation…",
-  "Rechercher des semences…",
-  "Rechercher un pulvérisateur…",
-  "Rechercher du matériel agricole…",
-  "tondeuse à gazon…",
-];
-
-// Effet machine à écrire : tape puis efface chaque suggestion tour à tour
-function useTypewriter(words: string[], typingSpeed = 55, deletingSpeed = 28, pause = 1500) {
-  const [text, setText] = useState("");
-  const [wordIndex, setWordIndex] = useState(0);
-  const [deleting, setDeleting] = useState(false);
-
-  useEffect(() => {
-    const current = words[wordIndex % words.length];
-    let timeout: ReturnType<typeof setTimeout>;
-
-    if (!deleting && text.length < current.length) {
-      timeout = setTimeout(() => setText(current.slice(0, text.length + 1)), typingSpeed);
-    } else if (!deleting && text.length === current.length) {
-      timeout = setTimeout(() => setDeleting(true), pause);
-    } else if (deleting && text.length > 0) {
-      timeout = setTimeout(() => setText(current.slice(0, text.length - 1)), deletingSpeed);
-    } else {
-      setDeleting(false);
-      setWordIndex((i) => (i + 1) % words.length);
-    }
-
-    return () => clearTimeout(timeout);
-  }, [text, deleting, wordIndex, words, typingSpeed, deletingSpeed, pause]);
-
-  return text;
-}
-
 interface Resultat {
   id_produit: number;
   nom:        string;
@@ -78,6 +42,20 @@ interface Resultat {
   activite?:  { nom: string; slug?: string | null };
   images:     { url: string; is_principale?: boolean }[];
 }
+
+interface CategorieResultat {
+  id_categorie: number;
+  nom:          string;
+  slug:         string;
+  image:        string | null;
+  parent_id:    number | null;
+  marque?:      { nom: string; slug?: string | null } | null;
+  activite?:    { nom: string; slug?: string | null } | null;
+}
+
+type SearchResult =
+  | { type: "produit"; item: Resultat }
+  | { type: "categorie"; item: CategorieResultat };
 
 interface SearchProps {
   onHero?:        boolean;
@@ -95,13 +73,15 @@ export function ProduitSearch({
   const isDark = false;
   const [open,    setOpen]    = useState(false);
   const [query,   setQuery]   = useState("");
-  const [results, setResults] = useState<Resultat[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [active,  setActive]  = useState(-1);
   const [mounted, setMounted] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Annule les réponses arrivées en désordre si l'utilisateur retape vite.
+  const requestIdRef = useRef(0);
   const router   = useRouter();
 
   useEffect(() => { setMounted(true); }, []);
@@ -128,20 +108,46 @@ export function ProduitSearch({
     setActive(-1);
   };
 
+  // Recherche globale : produits (nom, description, catégorie/marque/activité
+  // parente) ET catégories (nom, marque, activité), toutes deux filtrées par
+  // le terme tapé côté API — plus de liste de catégories figée.
   const search = useCallback(async (q: string) => {
-    if (!q.trim()) { setResults([]); return; }
+    const term = q.trim();
+    const requestId = ++requestIdRef.current;
+    if (!term) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      const res  = await fetch(`${BASE}/produits?search=${encodeURIComponent(q)}&limit=8&actif=true`);
-      const data = await res.json();
-      const items = (data.data ?? data) as Resultat[];
+      const [produitsRes, categoriesRes] = await Promise.all([
+        fetch(`${BASE}/produits?search=${encodeURIComponent(term)}&limit=8&actif=true`),
+        fetch(`${BASE}/categories?search=${encodeURIComponent(term)}`),
+      ]);
+      const produitsData   = await produitsRes.json();
+      const categoriesData = await categoriesRes.json();
+      const produits    = (produitsData.data ?? produitsData) as Resultat[];
+      const categories  = ((categoriesData.data ?? categoriesData) as CategorieResultat[]).slice(0, 6);
+
+      // Ignore la réponse si une recherche plus récente a été lancée entre-temps.
+      if (requestId !== requestIdRef.current) return;
+
+      const items: SearchResult[] = [
+        ...categories.map((item) => ({ type: "categorie" as const, item })),
+        ...produits.map((item) => ({ type: "produit" as const, item })),
+      ];
       setResults(items);
       // Tracker la recherche pour l'analytics visiteurs
       if (typeof window !== "undefined" && typeof (window as any).trackSearch === "function") {
-        (window as any).trackSearch(q.trim(), items.length);
+        (window as any).trackSearch(term, items.length);
       }
-    } catch { setResults([]); }
-    finally   { setLoading(false); }
+    } catch {
+      if (requestId === requestIdRef.current) setResults([]);
+    } finally {
+      if (requestId === requestIdRef.current) setLoading(false);
+    }
   }, []);
 
   const onInput = (v: string) => {
@@ -151,7 +157,10 @@ export function ProduitSearch({
     timerRef.current = setTimeout(() => search(v), 280);
   };
 
-  const goTo = (product: Resultat) => { close(); router.push(getProductHref(product)); };
+  const goTo = (result: SearchResult) => {
+    close();
+    router.push(result.type === "categorie" ? `/categories/${result.item.slug}` : getProductHref(result.item));
+  };
 
   const onKey = (e: React.KeyboardEvent) => {
     if (!results.length) return;
@@ -194,39 +203,38 @@ export function ProduitSearch({
         chipBorder: "rgba(160,210,185,0.5)",
       };
 
-  const iconBorder = onHero ? "1.5px solid rgba(255,255,255,0.3)" : `1.5px solid ${palette.border}`;
-  const iconBg     = onHero ? "rgba(255,255,255,0.12)"            : palette.sageLt;
-  const typed = useTypewriter(SEARCH_SUGGESTIONS);
-  const barTextColor = onHero ? "rgba(255,255,255,0.85)" : palette.textMuted;
-
-
   return (
     <>
-      <style>{`
-        @keyframes searchCaretBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-        .search-bar-caret {
-          display: inline-block;
-          width: 1px;
-          margin-left: 1px;
-          animation: searchCaretBlink 0.9s step-end infinite;
-        }
-      `}</style>
-
-      {/* ── Icône de recherche compacte (navbar) ── */}
+      {/* ── Icône de recherche (navbar) ── */}
       <motion.button
         onClick={() => setOpen(true)}
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.94 }}
+        whileHover={{ y: -1 }}
+        whileTap={{ scale: 0.98 }}
         title="Rechercher (⌘K)"
+        aria-label="Rechercher"
         style={{
-          display: "flex", alignItems: "center", justifyContent: "center",
-          width: 38, height: 38, flexShrink: 0,
-          borderRadius: 9999, cursor: "pointer",
-          border: iconBorder, background: iconBg,
-          color: onHero ? "#fff" : palette.sage,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 38,
+          height: 38,
+          padding: 0,
+          flexShrink: 0,
+          borderRadius: 9999,
+          cursor: "pointer",
+          borderStyle: "solid",
+          borderWidth: 1,
+          borderColor: onHero ? "rgba(255,255,255,0.3)" : palette.border,
+          background: onHero ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.96)",
+          color: navTextColor,
+          boxShadow: onHero
+            ? "0 10px 24px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.16)"
+            : "0 10px 22px rgba(46,125,79,0.1), inset 0 1px 0 rgba(255,255,255,0.9)",
+          backdropFilter: "blur(12px)",
+          fontFamily: "inherit",
         }}
       >
-        <SearchIcon color={onHero ? "#fff" : palette.sage} size={17} />
+        <SearchIcon color={onHero ? "currentColor" : palette.leaf} size={18} />
       </motion.button>
 
       {/* ── Panel demi-écran (portal) ── */}
@@ -350,7 +358,7 @@ export function ProduitSearch({
                         value={query}
                         onChange={e => onInput(e.target.value)}
                         onKeyDown={onKey}
-                        placeholder="Recherche produits"
+                        placeholder="Recherche produits, catégories"
                         autoComplete="off"
                         spellCheck={false}
                         style={{
@@ -423,13 +431,22 @@ export function ProduitSearch({
                             {results.length} résultat{results.length > 1 ? "s" : ""}
                           </p>
                           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                            {results.map((p, i) => {
-                              const img = p.images.find(x => x.is_principale) ?? p.images[0];
+                            {results.map((result, i) => {
+                              const isProduct = result.type === "produit";
+                              const itemId = isProduct ? result.item.id_produit : result.item.id_categorie;
+                              const title = result.item.nom;
+                              const img = isProduct
+                                ? ((result.item.images.find(x => x.is_principale) ?? result.item.images[0])?.url ?? null)
+                                : result.item.image;
+                              const subtitle = isProduct
+                                ? [result.item.categorie?.nom, result.item.marque?.nom].filter(Boolean).join(" · ")
+                                : [result.item.parent_id ? "Sous-catégorie" : "Catégorie", result.item.marque?.nom ?? result.item.activite?.nom].filter(Boolean).join(" · ");
+                              const badge = isProduct ? result.item.division : "Catégorie";
                               const isActive = i === active;
                               return (
                                 <motion.button
-                                  key={p.id_produit}
-                                  onClick={() => goTo(p)}
+                                  key={`${result.type}-${itemId}`}
+                                  onClick={() => goTo(result)}
                                   initial={{ opacity: 0, x: -8 }}
                                   animate={{ opacity: 1, x: 0 }}
                                   transition={{ delay: i * 0.04 }}
@@ -452,7 +469,7 @@ export function ProduitSearch({
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                   }}>
                                     {img
-                                      ? <Image src={img.url} alt={p.nom} fill style={{ objectFit: "contain", padding: 4 }} sizes="40px" />
+                                      ? <Image src={img} alt={title} fill style={{ objectFit: "contain", padding: 4 }} sizes="40px" />
                                       : <span style={{ fontSize: 18, opacity: 0.3 }}>🌿</span>
                                     }
                                   </div>
@@ -462,10 +479,10 @@ export function ProduitSearch({
                                       letterSpacing: "-0.01em", whiteSpace: "nowrap",
                                       overflow: "hidden", textOverflow: "ellipsis",
                                     }}>
-                                      {highlight(p.nom, query, isDark)}
+                                      {highlight(title, query, isDark)}
                                     </p>
                                     <p style={{ fontSize: 11, color: palette.textMuted, marginTop: 2 }}>
-                                      {[p.categorie?.nom, p.marque?.nom].filter(Boolean).join(" · ")}
+                                      {subtitle}
                                     </p>
                                   </div>
                                   <span style={{
@@ -475,7 +492,7 @@ export function ProduitSearch({
                                     background: palette.sageLt, color: palette.sage,
                                     border: `1px solid ${palette.border}`,
                                   }}>
-                                    {p.division}
+                                    {badge}
                                   </span>
                                   <svg width={14} height={14} viewBox="0 0 24 24" fill="none"
                                     stroke={palette.textMuted} strokeWidth={2} strokeLinecap="round">

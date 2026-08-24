@@ -355,38 +355,75 @@ function buildAboutCompanyAnswer(message: string): ChatPayload {
   };
 }
 
+// Mots trop courants pour servir seuls de preuve de correspondance produit
+// (evite qu'un simple mot comme "bio", "sol" ou "vert" fasse matcher un produit
+// sans rapport avec la question posee).
+const STOPWORDS_MATCH = new Set([
+  "les", "des", "une", "pour", "avec", "dans", "sur", "que", "qui", "vous",
+  "nous", "votre", "notre", "sont", "cette", "comme", "plus", "tout", "tous",
+  "toute", "toutes", "avez", "peut", "bien", "fait", "faire", "quel", "quelle",
+  "avoir", "etre", "sans", "chez", "leur", "leurs", "aussi", "meme",
+]);
+
+function significantWords(text: string): string[] {
+  return text.split(" ").filter((word) => word.length >= 4 && !STOPWORDS_MATCH.has(word));
+}
+
+function containsWholeWord(haystack: string, needle: string): boolean {
+  if (!needle) return false;
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|\\s)${escaped}(\\s|$)`).test(haystack);
+}
+
+// Recherche un produit reellement designe par le message, avec une exigence de
+// correspondance forte : soit le nom/slug complet du produit apparait comme
+// mot entier dans le message, soit TOUS les mots significatifs (>= 4 lettres,
+// hors mots vides) du nom du produit sont presents dans le message. Un seul
+// mot generique partage (ex: "bio") ne suffit plus a declencher un match.
 function findExactProductByName(products: Produit[], message: string): Produit | null {
   const normalizedMessage = normalize(message);
   if (!normalizedMessage) return null;
+  const messageWords = normalizedMessage.split(" ").filter(Boolean);
 
-  return products
-    .filter((product) => {
+  const candidates = products
+    .map((product) => {
       const name = normalize(product.nom);
       const slug = normalize(product.slug.replace(/-/g, " "));
-      const messageWords = normalizedMessage.split(" ").filter((word) => word.length >= 3);
-      return (
-        name.length >= 3
-        && (
-          normalizedMessage === name
-          || normalizedMessage.includes(name)
-          || normalizedMessage.includes(slug)
-          || name.includes(normalizedMessage)
-          || slug.includes(normalizedMessage)
-          || messageWords.some((word) => name.includes(word) || slug.includes(word))
-        )
-      );
+      if (name.length < 3) return null;
+
+      const strongMatch =
+        normalizedMessage === name
+        || normalizedMessage === slug
+        || containsWholeWord(normalizedMessage, name)
+        || containsWholeWord(normalizedMessage, slug);
+
+      if (strongMatch) return { product, score: 100 };
+
+      const nameWords = significantWords(name);
+      if (nameWords.length > 0 && nameWords.every((word) => messageWords.includes(word))) {
+        return { product, score: nameWords.length };
+      }
+
+      return null;
     })
-    .sort((a, b) => normalize(b.nom).length - normalize(a.nom).length)[0] ?? null;
+    .filter((candidate): candidate is { product: Produit; score: number } => candidate !== null)
+    .sort((a, b) => b.score - a.score || normalize(b.product.nom).length - normalize(a.product.nom).length);
+
+  return candidates[0]?.product ?? null;
 }
 
 async function findProductBySearch(message: string): Promise<Produit | null> {
-  const normalizedMessage = normalize(message);
-  const term = normalizedMessage.split(" ").find((word) => word.length >= 3);
-  if (!term) return null;
+  const terms = significantWords(normalize(message));
+  if (!terms.length) return null;
 
-  const json = await getJson<ApiEnvelope<Produit[]>>(`/produits?search=${encodeURIComponent(term)}&limit=10`);
+  const query = terms.slice(0, 4).join(" ");
+  const json = await getJson<ApiEnvelope<Produit[]>>(`/produits?search=${encodeURIComponent(query)}&limit=10`);
   const products = unwrapArray(json ?? []);
-  return findExactProductByName(products, message) ?? products[0] ?? null;
+  if (!products.length) return null;
+
+  // On ne retient un resultat que s'il correspond reellement a la question ;
+  // sinon on laisse la main au RAG backend plutot que de deviner un produit au hasard.
+  return findExactProductByName(products, message);
 }
 
 function buildProductAnswer(product: Produit, message: string): ChatPayload {

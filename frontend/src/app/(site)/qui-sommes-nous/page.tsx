@@ -50,7 +50,6 @@ const SOCIETES = [
   { name: "",         image: "/logos/logo espace vert.png" },
   { name: "",           image: "/logos/FERTIVERT LOGO.png" },
   { name: "",              image: "/logosPartenaires/logo stajap.png" },
-  { name: "", image: "/logosPartenaires/logo mendial irrigation.png" },
   { name: "",     image: "/logosPartenaires/agricole baddar.png" },
 ];
 

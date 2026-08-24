@@ -20,6 +20,7 @@ export interface CatNode {
   parent_ids_extra?: number[];
   translations?: ProduitCard["translations"];
   ordre?:       number;
+  created_at?:   string;
   image?:       string | null;
   sous_cats?:   CatNode[];
   children:     CatNode[];
@@ -270,7 +271,7 @@ function CatTreeNode({
 /* ── Sort options ────────────────────────────────────────────────────────── */
 
 const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: "newest",   label: "Nouveautés d'abord" },
+  { key: "newest",   label: "Ajoutés en premier" },
   { key: "nom_asc",  label: "Nom A → Z" },
   { key: "nom_desc", label: "Nom Z → A" },
 ];
@@ -680,7 +681,7 @@ export function applyFilters(
   list = [...list];
   if (filters.sort === "nom_asc")  list.sort((a, b) => labelOf(a, locale).localeCompare(labelOf(b, locale), locale));
   if (filters.sort === "nom_desc") list.sort((a, b) => labelOf(b, locale).localeCompare(labelOf(a, locale), locale));
-  if (filters.sort === "newest")   list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  if (filters.sort === "newest")   list.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
   return list;
 }

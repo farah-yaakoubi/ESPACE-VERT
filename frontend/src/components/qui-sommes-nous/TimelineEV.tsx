@@ -48,9 +48,9 @@ const STEPS: TimelineStep[] = [
     year: "Structuration",
     label: "Filiales",
     title: "Deploiement d'entites specialisees",
-    text: "Le groupe se structure autour de societes dediees comme STAJAP, Baddar Agricole, Mondiale Irrigation et Fertivert pour repondre a des besoins de marche plus precis.",
+    text: "Le groupe se structure autour de societes dediees comme STAJAP, Baddar Agricole et Fertivert pour repondre a des besoins de marche plus precis.",
     accent: "#006064",
-    facts: ["STAJAP", "Baddar Agricole", "Mondiale Irrigation", "Fertivert"],
+    facts: ["STAJAP", "Baddar Agricole", "Fertivert"],
   },
   {
     year: "Developpement",

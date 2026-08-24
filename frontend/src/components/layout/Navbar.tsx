@@ -92,6 +92,7 @@ interface CatItem {
   slug: string;
   parent_id: number | null;
   ordre: number;
+  id_activite?: number | null;
   sous_cats?: CatItem[];
 }
 interface Activite {
@@ -124,15 +125,21 @@ const BRAND_GROUPS: { label: string; match: string[] }[] = [
   { label: "Semences & Plants", match: [
     "baddarsemences", "caussadesemences", "coraseeds", "elornplants", "griffaton",
     "lidea", "nexeeds", "sem", "seminart", "serviceplus", "southernseed",
-    "teraseeds", "turflinebydlf", "topgreen",
+    "teraseeds", "turflinebydlf", "topgreen", "panam", "panamsemences",
   ]},
   { label: "Jardinage & Machinisme", match: [
     "weibang", "wiedenmann", "staub", "etesia", "active", "agricut", "outilswolf",
   ]},
-  { label: "Irrigation", match: ["matar", "rivulis", "idroland", "zeta"] },
+  { label: "Irrigation", match: [
+    "matar", "idroland", "zeta",
+    "mondialeirrigation", "mendialirrigation", "mondialirrigation",
+    "rivulis", "rivilus", "revulis", "revilis",
+  ]},
   { label: "Pulvérisation", match: ["pulvert"] },
   { label: "Fertilisation", match: ["fertivert"] },
 ];
+
+const HIDDEN_BRAND_KEYS = new Set<string>([]);
 
 function normKey(s: string) {
   return (s || "")
@@ -140,6 +147,25 @@ function normKey(s: string) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]/g, "");
+}
+
+function isHiddenBrand(m: Marque): boolean {
+  return HIDDEN_BRAND_KEYS.has(normKey(m.slug)) || HIDDEN_BRAND_KEYS.has(normKey(m.nom));
+}
+
+/* ── Lien d'une marque : les marques "groupe" ont leur propre page dédiée
+   (/marques/[slug]), les marques partenaires sont déjà une catégorie du
+   catalogue → on pointe directement vers la section de cette catégorie
+   sur la page de son activité (ex: /activites/jardinage-et-machinisme?cat=278)
+   au lieu de générer une nouvelle page marque. ── */
+function getMarqueHref(m: Marque, activites: Activite[]): string {
+  if (SLUGS_GROUPE.has(m.slug)) return `/marques/${m.slug}`;
+  const cat = m.categories?.[0];
+  const activiteSlug = cat?.id_activite
+    ? activites.find((a) => a.id_activite === cat.id_activite)?.slug
+    : undefined;
+  if (cat && activiteSlug) return `/activites/${activiteSlug}?cat=${cat.id_categorie}`;
+  return `/marques/${m.slug}`;
 }
 
 function getBrandGroupLabel(m: Marque): string {
@@ -204,25 +230,33 @@ function TreePines({
   );
 }
 
-function useHover(delay = 180) {
+function useHover(closeDelay = 250, openDelay = 80) {
   const [open, setOpen] = useState(false);
-  const t = useRef<any>(null);
+  const closeTimer = useRef<any>(null);
+  const openTimer = useRef<any>(null);
+
+  const clearTimers = () => {
+    closeTimer.current && clearTimeout(closeTimer.current);
+    openTimer.current && clearTimeout(openTimer.current);
+  };
+
   const show = useCallback(() => {
-    t.current && clearTimeout(t.current);
-    setOpen(true);
-  }, []);
+    closeTimer.current && clearTimeout(closeTimer.current);
+    // Petit délai d'intention : évite qu'un simple passage rapide de la souris
+    // au-dessus de l'élément n'ouvre le menu par accident.
+    openTimer.current && clearTimeout(openTimer.current);
+    openTimer.current = setTimeout(() => setOpen(true), openDelay);
+  }, [openDelay]);
   const hide = useCallback(() => {
-    t.current = setTimeout(() => setOpen(false), delay);
-  }, [delay]);
+    openTimer.current && clearTimeout(openTimer.current);
+    closeTimer.current && clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setOpen(false), closeDelay);
+  }, [closeDelay]);
   const keep = useCallback(() => {
-    t.current && clearTimeout(t.current);
+    openTimer.current && clearTimeout(openTimer.current);
+    closeTimer.current && clearTimeout(closeTimer.current);
   }, []);
-  useEffect(
-    () => () => {
-      t.current && clearTimeout(t.current);
-    },
-    [],
-  );
+  useEffect(() => clearTimers, []);
   return { open, show, hide, keep };
 }
 
@@ -247,6 +281,39 @@ function getActVisual(a: Activite, idx: number) {
   if (s.includes("pulveris") || s.includes("pulvér") || s.includes("pulver")) return ACT_PALETTE[3];
   if (s.includes("jardinage") || s.includes("machin")) return ACT_PALETTE[4];
   return ACT_PALETTE[idx % ACT_PALETTE.length];
+}
+
+/* ── useEdgeAwareShift — empêche un dropdown centré de déborder l'écran ──── */
+function useEdgeAwareShift(open: boolean, margin = 16) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [shift, setShift] = useState(0);
+  useEffect(() => {
+    if (!open) {
+      setShift(0);
+      return;
+    }
+    setShift(0);
+    const recompute = () => {
+      const el = ref.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      let delta = 0;
+      if (rect.right > window.innerWidth - margin) {
+        delta = window.innerWidth - margin - rect.right;
+      }
+      if (rect.left + delta < margin) {
+        delta = margin - rect.left;
+      }
+      setShift(delta);
+    };
+    const raf = requestAnimationFrame(recompute);
+    window.addEventListener("resize", recompute);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", recompute);
+    };
+  }, [open, margin]);
+  return { ref, shift };
 }
 
 /* ── ActivitesDropdown — design pro vert/blanc ─────────────────────────────── */
@@ -319,8 +386,8 @@ function ActivitesDropdown({
 
   const CAT_ICONS = [Ico.Sprout, Ico.GrassTuft, Ico.Cattail, Ico.Clover, Ico.Sunflower, Ico.Carrot];
 
-  const COL1 = 300;
-  const COL2 = 380;
+  const COL1 = 280;
+  const COL2 = 330;
 
   const actVisual = act ? getActVisual(act, activites.findIndex(x => x.id_activite === act.id_activite)) : ACT_PALETTE[0];
 
@@ -328,9 +395,11 @@ function ActivitesDropdown({
     <div style={{
       display: "flex",
       alignItems: "flex-start",
-      width: COL1 + (hasCategories ? COL2 : 0),
+      width: hasCategories
+        ? `min(${COL1 + COL2}px, calc(100vw - 32px))`
+        : `min(${COL1}px, calc(100vw - 32px))`,
       transition: "width 0.22s cubic-bezier(.4,0,.2,1)",
-      borderRadius: 20,
+      borderRadius: 16,
       overflow: "hidden",
       background: "#eef8e4",
       boxShadow: "0 28px 64px rgba(31,26,14,0.14), 0 0 0 1px rgba(207,229,181,0.7)",
@@ -340,9 +409,9 @@ function ActivitesDropdown({
       <div
         ref={col1ContainerRef}
         style={{
-          width: COL1, flexShrink: 0,
+          width: `clamp(200px, 44vw, ${COL1}px)`, flexShrink: 0,
           display: "flex", flexDirection: "column",
-          padding: "8px 8px",
+          padding: "6px",
         }}
         onMouseLeave={() => setListHovering(false)}
       >
@@ -351,114 +420,99 @@ function ActivitesDropdown({
             {t("nav.loading")}
           </p>
         ) : (
-          activites.map((a, i) => {
-            const on = selectedAct === a.id_activite;
-            const dim = listHovering && !on;
-            const href = getActivityHrefBySlug(a.slug);
-            const v = getActVisual(a, i);
-            const Icon = v.Icon;
-            const isImgUrl = !!a.image && (a.image.startsWith("/") || a.image.startsWith("http"));
-            const isEmoji = !!a.image && !isImgUrl;
-            return (
-              <motion.div
-                key={a.id_activite}
-                ref={(el) => { itemRefs.current[a.id_activite] = el as HTMLDivElement | null; }}
-                initial={{ opacity: 0, x: -6 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.04, duration: 0.2 }}
-              >
-                <button
-                  type="button"
-                  onMouseEnter={() => handleSelectAct(a.id_activite)}
-                  onClick={() => { onClose(); window.location.href = href; }}
-                  style={{
-                    display: "flex", width: "100%", alignItems: "stretch", gap: 12,
-                    padding: "10px 12px",
-                    margin: "3px 0",
-                    borderRadius: 16,
-                    cursor: "pointer",
-                    border: `1px solid ${on ? `${v.accent}3a` : "#eee7d3"}`,
-                    borderLeft: `4px solid ${on ? v.accent : "#eee7d3"}`,
-                    fontFamily: "inherit", textAlign: "left",
-                    background: on ? "#fff" : "#fffdf9",
-                    boxShadow: on ? `0 10px 22px ${v.accent}26` : "0 1px 2px rgba(31,26,14,0.03)",
-                    opacity: dim ? 0.35 : 1,
-                    filter: dim ? "grayscale(45%)" : "none",
-                    transform: dim ? "scale(0.97)" : on ? "translateX(2px) scale(1)" : "scale(1)",
-                    transition: "opacity 0.22s ease, filter 0.22s ease, transform 0.18s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.18s ease",
-                    position: "relative",
-                  }}
+          <>
+            {activites.map((a, i) => {
+              const on = selectedAct === a.id_activite;
+              const dim = listHovering && !on;
+              const href = getActivityHrefBySlug(a.slug);
+              const v = getActVisual(a, i);
+              const Icon = v.Icon;
+              const isImgUrl = !!a.image && (a.image.startsWith("/") || a.image.startsWith("http"));
+              const isEmoji = !!a.image && !isImgUrl;
+              return (
+                <motion.div
+                  key={a.id_activite}
+                  ref={(el) => { itemRefs.current[a.id_activite] = el as HTMLDivElement | null; }}
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.04, duration: 0.2 }}
                 >
-                  {/* Icône — hauteur "auto" pour épouser exactement la hauteur du bloc texte (titre + description) */}
-                  <div style={{
-                    width: 44, height: "auto", alignSelf: "stretch", borderRadius: 13, flexShrink: 0,
-                    background: on
-                      ? `radial-gradient(circle at 30% 25%, ${v.accent}, ${v.accent}dd)`
-                      : `linear-gradient(155deg, ${v.bg}, #fff)`,
-                    border: on ? "none" : `1px solid ${v.accent}22`,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    overflow: "hidden",
-                    transition: "all 0.18s",
-                    transform: on ? "scale(1.05) rotate(-2deg)" : "scale(1)",
-                  }}>
-                    {isImgUrl ? (
-                      <img src={a.image!} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    ) : isEmoji ? (
-                      <span style={{ fontSize: 21, lineHeight: 1 }}>{a.image}</span>
-                    ) : (
-                      <Icon style={{ width: 22, height: 22, color: on ? "#fff" : v.accent }} />
-                    )}
-                  </div>
-
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{
-                      display: "block", fontSize: 15.5, fontWeight: 600, lineHeight: 1.25,
-                      color: "#000", whiteSpace: "normal", wordBreak: "break-word",
-                      letterSpacing: "-0.01em",
-                    }}>
-                      {a.nom}
-                    </span>
-                    {a.description ? (
-                      <span style={{
-                        display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-                        fontSize: 11.5, fontWeight: 400, lineHeight: 1.35,
-                        color: "#948d78", marginTop: 2, overflow: "hidden",
-                      } as React.CSSProperties}>
-                        {a.description}
-                      </span>
-                    ) : (
-                      <span style={{ display: "block", fontSize: 11, fontWeight: 500,
-                        color: "#b7ae90", marginTop: 2, letterSpacing: "0.02em" }}>
-                        Découvrir la gamme
-                      </span>
-                    )}
-                  </div>
-
-                  {(a.categories?.length ?? 0) > 0 && (
-                    <span style={{
-                      width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
-                      alignSelf: "center",
+                  <button
+                    type="button"
+                    onMouseEnter={() => handleSelectAct(a.id_activite)}
+                    onClick={() => { onClose(); window.location.href = href; }}
+                    style={{
+                      display: "flex", width: "100%", alignItems: "center", gap: 12,
+                      padding: "10px 12px",
+                      margin: "0",
+                      borderRadius: 0,
+                      cursor: "pointer",
+                      border: "none",
+                      borderTop: i === 0 ? "1px solid rgba(15,105,58,0.12)" : "none",
+                      borderBottom: "1px solid rgba(15,105,58,0.12)",
+                      borderLeft: `3px solid ${on ? v.accent : "transparent"}`,
+                      fontFamily: "inherit", textAlign: "left",
+                      background: on ? "rgba(255,255,255,0.72)" : "rgba(255,255,255,0.34)",
+                      boxShadow: on ? `inset 0 0 0 1px ${v.accent}18` : "none",
+                      opacity: dim ? 0.35 : 1,
+                      filter: dim ? "grayscale(45%)" : "none",
+                      transform: dim ? "scale(0.985)" : "scale(1)",
+                      transition: "opacity 0.22s ease, filter 0.22s ease, transform 0.18s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.18s ease",
+                      position: "relative",
+                    }}
+                  >
+                    <div style={{
+                      width: 28, height: 28, borderRadius: 9, flexShrink: 0,
+                      background: "transparent",
+                      border: "none",
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      background: on ? v.accent : "transparent",
-                      transition: "all 0.15s",
+                      overflow: "hidden",
+                      transition: "all 0.18s",
+                      transform: on ? "scale(1.04)" : "scale(1)",
                     }}>
-                      <Ico.ChevR style={{
-                        width: 11, height: 11,
-                        color: on ? "#fff" : v.accent,
-                      }} />
-                    </span>
-                  )}
-                </button>
-              </motion.div>
-            );
-          })
+                      {isImgUrl ? (
+                        <img src={a.image!} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      ) : isEmoji ? (
+                        <span style={{ fontSize: 21, lineHeight: 1 }}>{a.image}</span>
+                      ) : (
+                        <Icon style={{ width: 20, height: 20, color: v.accent }} />
+                      )}
+                    </div>
+
+                    <div style={{ minWidth: 0, display: "flex", alignItems: "center", gap: 7, flex: 1 }}>
+                      <span style={{
+                        display: "block", fontSize: 13, fontWeight: 900, lineHeight: 1.25,
+                        color: BRAND_DARK, whiteSpace: "normal", wordBreak: "break-word",
+                        letterSpacing: "0.04em", textTransform: "uppercase",
+                        flex: 1, minWidth: 0,
+                      }}>
+                        {a.nom}
+                      </span>
+                      <motion.span
+                        animate={{ rotate: on ? 180 : 0, y: on ? -1 : 0 }}
+                        transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                        style={{
+                          width: 22, height: 22, flexShrink: 0,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          color: v.accent,
+                        }}
+                        aria-hidden="true"
+                      >
+                        <ChevronDownIcon style={{ width: 18, height: 18, strokeWidth: 2.8 }} />
+                      </motion.span>
+                    </div>
+                  </button>
+                </motion.div>
+              );
+            })}
+          </>
         )}
       </div>
 
       {/* ── COL 2 — catégories en LISTE, sous-catégories dépliées sous chacune ── */}
       {hasCategories && (
         <div style={{
-          width: COL2, flexShrink: 0,
+          flex: "1 1 auto", minWidth: 0, maxWidth: COL2,
           height: "auto", alignSelf: "flex-start",
           display: "flex", flexDirection: "column",
           marginTop: col2Top,
@@ -481,7 +535,7 @@ function ActivitesDropdown({
                   style={{
                     overflowY: "auto",
                     overflowX: "hidden",
-                    padding: "8px 8px 8px",
+                    padding: "6px",
                     scrollbarWidth: "thin",
                   }}
                 >
@@ -495,10 +549,10 @@ function ActivitesDropdown({
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: ci * 0.03 }}
-                        style={{ marginBottom: 6 }}
+                        style={{ marginBottom: 5 }}
                       >
                         <div style={{
-                          borderRadius: 14,
+                          borderRadius: 12,
                           border: `1px solid ${expanded ? BRAND_DARK : "#efe8d6"}`,
                           background: "#fff",
                           overflow: "hidden",
@@ -522,14 +576,14 @@ function ActivitesDropdown({
                               onClick={() => { onClose(); window.location.href = `/activites/${act.slug}?cat=${c.id_categorie}`; }}
                               style={{
                                 position: "relative", zIndex: 1,
-                                display: "flex", width: "100%", alignItems: "center", gap: 10,
-                                padding: "10px 12px",
+                                display: "flex", width: "100%", alignItems: "center", gap: 9,
+                                padding: "8px 10px",
                                 cursor: "pointer", border: "none", fontFamily: "inherit",
                                 textAlign: "left", background: "transparent",
                               }}
                             >
                               <div style={{
-                                width: 30, height: 30, borderRadius: 9, flexShrink: 0,
+                                width: 28, height: 28, borderRadius: 8, flexShrink: 0,
                                 background: expanded ? "#fff" : `${BRAND_LIME}30`,
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 transition: "background 0.15s ease",
@@ -623,195 +677,431 @@ function ActivitesDropdown({
   );
 }
 
-/* ── MarquesDropdown — LOGOS HORIZONTAUX avec zoom au survol ─────── */
+/* ── MarquesDropdown — même principe / mêmes couleurs que ActivitesDropdown ── */
 function MarquesDropdown({
   marques,
+  activites,
   onClose,
   isDark,
 }: {
   marques: Marque[];
+  activites: Activite[];
   onClose: () => void;
   isDark: boolean;
 }) {
-  const isGroup = (m: Marque) => SLUGS_GROUPE.has(m.slug);
+  const { t } = useI18n();
+  const visibleMarques = marques.filter((m) => !isHiddenBrand(m));
   const groupedEntries = BRAND_GROUPS
-    .map((g) => ({ label: g.label, items: marques.filter((m) => getBrandGroupLabel(m) === g.label) }))
+    .map((g) => ({ label: g.label, items: visibleMarques.filter((m) => getBrandGroupLabel(m) === g.label) }))
     .filter((g) => g.items.length > 0);
-  const others = marques.filter((m) => getBrandGroupLabel(m) === "Autres marques");
+  const others = visibleMarques.filter((m) => getBrandGroupLabel(m) === "Autres marques");
   if (others.length > 0) groupedEntries.push({ label: "Autres marques", items: others });
 
-  const titleColor = "#948d78";
-  const textColor = "#20291f";
-  const col1W = 660;
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [swipeDir, setSwipeDir] = useState<1 | -1>(1);
+  const [listHovering, setListHovering] = useState(false);
+  const [col2Top, setCol2Top] = useState(0);
+  const [col2MaxHeight, setCol2MaxHeight] = useState<number | undefined>(undefined);
+
+  const col1ContainerRef = useRef<HTMLDivElement | null>(null);
+  const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const group = groupedEntries.find((g) => g.label === selectedGroup);
+  const hasItems = (group?.items?.length ?? 0) > 0;
+  const itemCount = group?.items?.length ?? 0;
+  const gridCols = Math.min(2, Math.max(1, itemCount));
+
+  const MIN_COL2_VISIBLE = 160;
+  const SAFE_BOTTOM_MARGIN = 24;
+
+  useEffect(() => {
+    if (selectedGroup == null) return;
+
+    const recompute = () => {
+      const containerEl = col1ContainerRef.current;
+      const itemEl = itemRefs.current[selectedGroup];
+      if (!containerEl || !itemEl) return;
+      const containerTop = containerEl.getBoundingClientRect().top;
+      const itemTop = itemEl.getBoundingClientRect().top;
+      const rawTop = Math.max(0, itemTop - containerTop);
+
+      const availableBelow = window.innerHeight - containerTop - SAFE_BOTTOM_MARGIN;
+      const maxTop = Math.max(0, availableBelow - MIN_COL2_VISIBLE);
+      const top = Math.min(rawTop, maxTop);
+
+      setCol2Top(top);
+      setCol2MaxHeight(Math.max(MIN_COL2_VISIBLE, availableBelow - top));
+    };
+
+    recompute();
+    window.addEventListener("resize", recompute);
+    return () => window.removeEventListener("resize", recompute);
+  }, [selectedGroup]);
+
+  const handleSelectGroup = (label: string) => {
+    setListHovering(true);
+    if (selectedGroup !== null) {
+      const prevIdx = groupedEntries.findIndex((g) => g.label === selectedGroup);
+      const nextIdx = groupedEntries.findIndex((g) => g.label === label);
+      setSwipeDir(nextIdx > prevIdx ? 1 : -1);
+    }
+    setSelectedGroup(label);
+  };
+
+  const iconForGroup = (label: string) => {
+    const key = normKey(label);
+    if (key.includes("semences")) return Ico.SeedBag;
+    if (key.includes("jardinage") || key.includes("machinisme")) return Ico.Tractor;
+    if (key.includes("irrigation")) return Ico.HoseCoil;
+    if (key.includes("pulverisation")) return Ico.Spray;
+    if (key.includes("fertilisation")) return Ico.WateringCan;
+    return Ico.Leaf;
+  };
+
+  const COL1 = 300;
+  const COL2 = 330;
+  const col2EffectiveWidth = itemCount === 1 ? 200 : COL2;
 
   return (
-    <div
-      style={{
-        display: "flex",
-        background: "#eef8e4",
-        borderRadius: 20,
-        overflow: "hidden",
-        boxShadow: "0 28px 64px rgba(31,26,14,0.14), 0 0 0 1px rgba(207,229,181,0.7)",
-        width: col1W,
-      }}
-    >
+    <div style={{
+      display: "flex",
+      alignItems: "flex-start",
+      gap: 10,
+      width: hasItems
+        ? `min(${COL1 + col2EffectiveWidth}px, calc(100vw - 32px))`
+        : `min(${COL1}px, calc(100vw - 32px))`,
+      transition: "width 0.22s cubic-bezier(.4,0,.2,1)",
+    }}>
+
+      {/* ── COL 1 — liste des groupes de marques ── */}
       <div
+        ref={col1ContainerRef}
         style={{
-          width: col1W,
-          flexShrink: 0,
-          padding: "16px",
-          maxHeight: "calc(100vh - 150px)",
-          overflowY: "auto",
+          width: `clamp(220px, 48vw, ${COL1}px)`, flexShrink: 0,
+          display: "flex", flexDirection: "column",
+          padding: "6px",
+          borderRadius: 16,
+          overflow: "hidden",
+          background: "#eef8e4",
+          boxShadow: "0 28px 64px rgba(31,26,14,0.14), 0 0 0 1px rgba(207,229,181,0.7)",
         }}
+        onMouseLeave={() => setListHovering(false)}
       >
-        {marques.length === 0 ? (
-          <p style={{ padding: "10px 14px", ...TY.ddItemDesc, color: titleColor }}>
-            Chargement...
+        {visibleMarques.length === 0 ? (
+          <p style={{ padding: "10px 12px", color: "#9ca3af", fontSize: 13 }}>
+            {t("nav.loading")}
           </p>
         ) : (
-          groupedEntries.map((group, gi) => (
-            <div key={group.label} style={{ marginBottom: gi < groupedEntries.length - 1 ? 16 : 4 }}>
-              {/* Étiquette de classification — pas d'entête, juste un repère discret */}
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0 4px 8px" }}>
-                <span style={{
-                  width: 5, height: 5, borderRadius: "50%", flexShrink: 0,
-                  background: BRAND_LIME, display: "inline-block",
-                }} />
-                <span style={{
-                  fontSize: 10.5, fontWeight: 800, letterSpacing: "0.1em",
-                  textTransform: "uppercase", color: BRAND_DARK,
-                }}>
-                  {group.label}
-                </span>
-              </div>
-
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {group.items.map((m, i) => (
-                  <motion.div
-                    key={m.id_marque}
-                    initial={{ opacity: 0, x: -3 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.02 }}
-                    whileHover={{ y: -2 }}
-                    style={{ width: 138 }}
+          <>
+            {groupedEntries.map((g, i) => {
+              const on = selectedGroup === g.label;
+              const dim = listHovering && !on;
+              const Icon = iconForGroup(g.label);
+              return (
+                <motion.div
+                  key={g.label}
+                  ref={(el) => { itemRefs.current[g.label] = el as HTMLDivElement | null; }}
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.04, duration: 0.2 }}
+                >
+                  <button
+                    type="button"
+                    onMouseEnter={() => handleSelectGroup(g.label)}
+                    style={{
+                      display: "flex", width: "100%", alignItems: "center", gap: 12,
+                      padding: "10px 12px",
+                      margin: "0",
+                      borderRadius: 0,
+                      cursor: "pointer",
+                      border: "none",
+                      borderTop: i === 0 ? "1px solid rgba(15,105,58,0.12)" : "none",
+                      borderBottom: "1px solid rgba(15,105,58,0.12)",
+                      borderLeft: `3px solid ${on ? BRAND_DARK : "transparent"}`,
+                      fontFamily: "inherit", textAlign: "left",
+                      background: on ? "rgba(255,255,255,0.72)" : "rgba(255,255,255,0.34)",
+                      boxShadow: on ? `inset 0 0 0 1px ${BRAND_DARK}18` : "none",
+                      opacity: dim ? 0.35 : 1,
+                      filter: dim ? "grayscale(45%)" : "none",
+                      transform: dim ? "scale(0.985)" : "scale(1)",
+                      transition: "opacity 0.22s ease, filter 0.22s ease, transform 0.18s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.18s ease",
+                      position: "relative",
+                    }}
                   >
-                    <Link
-                      href={`/marques/${m.slug}`}
-                      onClick={onClose}
-                      style={{
-                        display: "flex",
-                        position: "relative",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "flex-start",
-                        gap: 6,
-                        width: "100%",
-                        padding: "8px 6px",
-                        borderRadius: 12,
-                        cursor: "pointer",
-                        textAlign: "center",
-                        textDecoration: "none",
-                        transition: "background 0.14s",
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLElement).style.background = "#ffffffb0";
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLElement).style.background = "transparent";
-                      }}
-                    >
-                      {isGroup(m) && (
-                        <span style={{
-                          position: "absolute", top: 4, right: 4,
-                          fontSize: 8.5, fontWeight: 800, letterSpacing: "0.04em",
-                          textTransform: "uppercase", color: "#fff",
-                          background: BRAND_DARK, borderRadius: 99,
-                          padding: "2px 6px", lineHeight: 1.4,
-                        }}>
-                          Groupe
-                        </span>
-                      )}
+                    <div style={{
+                      width: 28, height: 28, borderRadius: 9, flexShrink: 0,
+                      background: "transparent",
+                      border: "none",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      overflow: "hidden",
+                      transition: "all 0.18s",
+                      transform: on ? "scale(1.04)" : "scale(1)",
+                    }}>
+                      <Icon style={{ width: 20, height: 20, color: BRAND_DARK }} />
+                    </div>
 
-                      {/* Logo affiché tel quel : sans cadre, sans fond coloré */}
-                      <div
+                    <div style={{ minWidth: 0, display: "flex", alignItems: "center", gap: 6, flex: 1 }}>
+                      <span style={{
+                        display: "block", fontSize: 12.5, fontWeight: 900, lineHeight: 1.22,
+                        color: BRAND_DARK, whiteSpace: "normal", wordBreak: "break-word",
+                        letterSpacing: "0.02em", textTransform: "uppercase",
+                        flex: 1, minWidth: 0,
+                      }}>
+                        {g.label}
+                      </span>
+                      <span style={{
+                        minWidth: 22, height: 20, borderRadius: 999, flexShrink: 0,
+                        display: "inline-flex", alignItems: "center", justifyContent: "center",
+                        background: "rgba(139,197,65,0.16)", color: BRAND_DARK,
+                        fontSize: 10.5, fontWeight: 900, padding: "0 6px",
+                      }}>
+                        {g.items.length}
+                      </span>
+                      <motion.span
+                        animate={{ rotate: on ? 180 : 0, y: on ? -1 : 0 }}
+                        transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
                         style={{
-                          width: "100%",
-                          height: 56,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
+                          width: 22, height: 22, flexShrink: 0,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          color: BRAND_DARK,
                         }}
+                        aria-hidden="true"
                       >
-                        {m.logo ? (
-                          <Image
-                            src={m.logo}
-                            alt={m.nom}
-                            width={112}
-                            height={56}
-                            style={{
-                              objectFit: "contain",
-                              width: "100%",
-                              height: "100%",
-                            }}
-                          />
-                        ) : (
+                        <ChevronDownIcon style={{ width: 18, height: 18, strokeWidth: 2.8 }} />
+                      </motion.span>
+                    </div>
+                  </button>
+                </motion.div>
+              );
+            })}
+            <div style={{ padding: "8px 12px 4px" }}>
+              <Link
+                href="/marques"
+                onClick={onClose}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  borderRadius: 10,
+                  background: BRAND_DARK,
+                  color: "#fff",
+                  padding: "9px 14px",
+                  fontSize: 12,
+                  fontWeight: 900,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
+                  textDecoration: "none",
+                }}
+              >
+                Toutes les marques
+                <Ico.ChevR style={{ width: 10, height: 10 }} />
+              </Link>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ── COL 2 — marques du groupe survolé ── */}
+      {hasItems && (
+        <div style={{
+          flex: "1 1 auto", minWidth: 0, maxWidth: col2EffectiveWidth,
+          height: "auto", alignSelf: "flex-start",
+          display: "flex", flexDirection: "column",
+          marginTop: col2Top,
+          maxHeight: col2MaxHeight,
+          borderRadius: 16,
+          background: "#eef8e4",
+          boxShadow: "0 28px 64px rgba(31,26,14,0.14), 0 0 0 1px rgba(207,229,181,0.7)",
+          transition: "margin-top 0.22s cubic-bezier(.4,0,.2,1), max-height 0.22s cubic-bezier(.4,0,.2,1)",
+          overflow: "hidden",
+        }}>
+          <AnimatePresence mode="wait" custom={swipeDir}>
+            {group && (
+              <motion.div
+                key={group.label}
+                custom={swipeDir}
+                initial={{ opacity: 0, y: swipeDir * 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: swipeDir * -12 }}
+                transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                style={{ display: "flex", flexDirection: "column", minHeight: 0, maxHeight: col2MaxHeight }}
+              >
+                {itemCount === 1 ? (
+                  /* ── Une seule marque : logo unique, centré, sans cadre ── */
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "24px 16px",
+                      minHeight: 160,
+                    }}
+                  >
+                    {group.items.map((m) => (
+                      <motion.div
+                        key={m.id_marque}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        whileHover={{ y: -2 }}
+                      >
+                        <Link
+                          href={getMarqueHref(m, activites)}
+                          onClick={onClose}
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 10,
+                            textAlign: "center",
+                            textDecoration: "none",
+                            color: "#202933",
+                          }}
+                        >
                           <span
                             style={{
-                              fontSize: 12,
-                              fontWeight: 700,
-                              color: BRAND_DARK,
-                              textAlign: "center",
+                              width: 168,
+                              height: 84,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
                             }}
                           >
-                            {m.nom.slice(0, 2)}
+                            {m.logo ? (
+                              <Image
+                                src={m.logo}
+                                alt={m.nom}
+                                width={168}
+                                height={84}
+                                style={{
+                                  objectFit: "contain",
+                                  width: "100%",
+                                  maxWidth: 168,
+                                  height: "100%",
+                                }}
+                              />
+                            ) : (
+                              <span style={{ color: BRAND_DARK, fontSize: 20, fontWeight: 900 }}>
+                                {m.nom.slice(0, 2)}
+                              </span>
+                            )}
                           </span>
-                        )}
-                      </div>
-                      <p
+                          <span
+                            style={{
+                              fontSize: 13.5,
+                              lineHeight: 1.25,
+                              fontWeight: 700,
+                              color: "#29323d",
+                            }}
+                          >
+                            {m.nom}
+                          </span>
+                        </Link>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                <div
+                  style={{
+                    overflowY: "auto",
+                    overflowX: "hidden",
+                    padding: "10px",
+                    display: "grid",
+                    gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+                    justifyContent: "stretch",
+                    columnGap: 10,
+                    rowGap: 10,
+                    scrollbarWidth: "thin",
+                  }}
+                >
+                  {group.items.map((m, i) => (
+                    <motion.div
+                      key={m.id_marque}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.025 }}
+                      whileHover={{ y: -2 }}
+                    >
+                      <Link
+                        href={getMarqueHref(m, activites)}
+                        onClick={onClose}
                         style={{
-                          ...TY.ddItemName,
-                          fontSize: 12,
-                          color: textColor,
-                          margin: 0,
-                          width: "100%",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
+                          display: "flex",
+                          minHeight: 110,
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "flex-start",
+                          gap: 8,
+                          padding: "10px 8px",
+                          borderRadius: 12,
+                          border: "1px solid transparent",
+                          background: "transparent",
+                          textAlign: "center",
+                          textDecoration: "none",
+                          color: "#202933",
+                          transition: "background 0.16s ease, border-color 0.16s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          const el = e.currentTarget as HTMLElement;
+                          el.style.background = "rgba(238,248,228,0.72)";
+                          el.style.borderColor = BRAND_DARK;
+                        }}
+                        onMouseLeave={(e) => {
+                          const el = e.currentTarget as HTMLElement;
+                          el.style.background = "transparent";
+                          el.style.borderColor = "transparent";
                         }}
                       >
-                        {m.nom}
-                      </p>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          ))
-        )}
-        <Link
-          href="/marques"
-          onClick={onClose}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 4,
-            marginTop: 8,
-            padding: "10px 14px",
-            borderRadius: 12,
-            background: BRAND_BG,
-            color: BRAND_DARK,
-            fontSize: 12,
-            fontWeight: 700,
-            textDecoration: "none",
-            border: `1px solid ${BRAND_DARK}22`,
-          }}
-        >
-          Voir toutes les marques
-          <Ico.ChevR style={{ width: 9, height: 9 }} />
-        </Link>
-      </div>
+                        <span
+                          style={{
+                            width: "100%",
+                            height: 56,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: "4px 6px",
+                          }}
+                        >
+                          {m.logo ? (
+                            <Image
+                              src={m.logo}
+                              alt={m.nom}
+                              width={110}
+                              height={56}
+                              style={{
+                                objectFit: "contain",
+                                width: "100%",
+                                maxWidth: 110,
+                                height: "100%",
+                              }}
+                            />
+                          ) : (
+                            <span style={{ color: BRAND_DARK, fontSize: 16, fontWeight: 900 }}>
+                              {m.nom.slice(0, 2)}
+                            </span>
+                          )}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: 12.5,
+                            lineHeight: 1.25,
+                            fontWeight: 600,
+                            color: "#29323d",
+                            overflowWrap: "anywhere",
+                          }}
+                        >
+                          {m.nom}
+                        </span>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 }
@@ -909,8 +1199,10 @@ export function Navbar() {
   const [logoErr, setLogoErr] = useState(false);
   const [activites, setActivites] = useState<Activite[]>([]);
   const [marques, setMarques] = useState<Marque[]>([]);
-  const acts = useHover(150);
-  const marquesH = useHover(220);
+  const acts = useHover(280, 80);
+  const marquesH = useHover(320, 80);
+  const actsPos = useEdgeAwareShift(acts.open);
+  const marquesPos = useEdgeAwareShift(marquesH.open);
 
   const scrollToSection = (id: string) => {
     if (pathname === "/") {
@@ -979,7 +1271,7 @@ export function Navbar() {
         const uniqueMarques = data.filter((m) => {
           if (seenM.has(m.slug)) return false;
           seenM.add(m.slug);
-          return true;
+          return !isHiddenBrand(m);
         });
         Promise.all(
           uniqueMarques.map((m) =>
@@ -1237,7 +1529,6 @@ export function Navbar() {
                       backgroundSize: "100% 100%",
                       backgroundPosition: "center",
                       backgroundRepeat: "no-repeat",
-                      boxShadow: "0 16px 38px rgba(4, 65, 34, 0.24)",
                     }
                   : {
                       backgroundImage: "none",
@@ -1245,8 +1536,7 @@ export function Navbar() {
                 borderRadius: onHero ? 0 : "999px 0 0 999px",
                 // (overflow retiré : "hidden" ici coupait aussi les menus
                 // déroulants "Nos activités"/"Nos marques" qui s'ouvrent sous
-                // la pilule au survol — le fond décoratif reste cadré par le
-                // border-radius sans avoir besoin de overflow:hidden.)
+                // la pilule au survol.)
                 // Padding gauche réduit au minimum : nav.png ne couvre que sa
                 // largeur naturelle (ancrée à droite) — moins l'ensemble
                 // liens+CTA est large, plus "Qui sommes-nous" reste à
@@ -1297,6 +1587,7 @@ export function Navbar() {
                 <AnimatePresence>
                   {acts.open && (
                     <motion.div
+                      ref={actsPos.ref}
                       initial={{ opacity: 0, y: 10, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.96 }}
@@ -1306,11 +1597,12 @@ export function Navbar() {
                       style={{
                         position: "absolute",
                         top: "100%",
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        marginTop: 10,
+                        left: `calc(50% + ${actsPos.shift}px)`,
+                        x: "-50%",
+                        paddingTop: 10,
                         zIndex: 60,
                         maxWidth: "calc(100vw - 32px)",
+                        transition: "left 0.12s ease",
                       }}
                     >
                       <ActivitesDropdown
@@ -1344,6 +1636,7 @@ export function Navbar() {
                 <AnimatePresence>
                   {marquesH.open && (
                     <motion.div
+                      ref={marquesPos.ref}
                       initial={{ opacity: 0, y: 10, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.96 }}
@@ -1353,15 +1646,17 @@ export function Navbar() {
                       style={{
                         position: "absolute",
                         top: "100%",
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        marginTop: 10,
+                        left: `calc(50% + ${marquesPos.shift}px)`,
+                        x: "-50%",
+                        paddingTop: 10,
                         zIndex: 60,
                         maxWidth: "calc(100vw - 32px)",
+                        transition: "left 0.12s ease",
                       }}
                     >
                       <MarquesDropdown
                         marques={marques}
+                        activites={activites}
                         onClose={marquesH.hide}
                         isDark={isDark}
                       />
@@ -1745,7 +2040,7 @@ export function Navbar() {
                         .map((m) => (
                           <Link
                             key={m.id_marque}
-                            href={`/marques/${m.slug}`}
+                            href={getMarqueHref(m, activites)}
                             onClick={() => setMobileOpen(false)}
                             style={{
                               display: "flex",

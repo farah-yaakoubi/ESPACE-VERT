@@ -174,7 +174,7 @@ export function ProduitCard({
 }: {
   produit: ProduitCardType;
   className?: string;
-  variant?: "default" | "seed" | "light";
+  variant?: "default" | "seed" | "light" | "list";
 }) {
   const { locale } = useI18n();
   const [hovered, setHovered] = useState(false);
@@ -184,6 +184,59 @@ export function ProduitCard({
   const nom = translatedField(produit as any, "nom", locale) || produit.nom;
   const description = translatedField(produit as any, "description", locale) || produit.description;
 
+  if (variant === "list") {
+    return (
+      <Link
+        href={href}
+        className={cn(
+          "group flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-3 transition-all duration-300 hover:border-ev-200 hover:shadow-md sm:gap-6 sm:p-4",
+          className
+        )}
+      >
+        {/* Image — carrée, taille fixe, à gauche */}
+        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-[#f4f4f4] sm:h-28 sm:w-28">
+          {img ? (
+            <Image
+              src={img.url}
+              alt={img.alt ?? nom}
+              fill
+              className="object-contain p-2 transition-transform duration-500 group-hover:scale-105"
+              sizes="112px"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-3xl opacity-20">🌱</div>
+          )}
+          {divBadge && (
+            <span className={cn("absolute top-1 left-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold tracking-wide uppercase", divBadge.cls)}>
+              {divBadge.label}
+            </span>
+          )}
+        </div>
+
+        {/* Contenu — nom + description, prend l'espace restant */}
+        <div className="min-w-0 flex-1">
+          <p
+            className="text-[1rem] font-semibold leading-snug text-[#1b2118] line-clamp-1 transition-colors group-hover:text-ev-700 sm:text-[1.1rem]"
+            style={{ fontFamily: "var(--font-serif)" }}
+          >
+            {nom}
+          </p>
+          {description && (
+            <p className="mt-1 text-[13px] leading-5 text-gray-500 line-clamp-2 sm:line-clamp-1">
+              {description}
+            </p>
+          )}
+        </div>
+
+        {/* CTA — à droite, masqué sur mobile pour laisser de la place */}
+        <span className="hidden shrink-0 items-center gap-1.5 rounded-xl bg-ev-700 px-4 py-2.5 text-[12px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md sm:inline-flex">
+          Voir le produit
+          <ChevronRight size={13} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
+        </span>
+        <ChevronRight size={18} className="shrink-0 text-gray-300 transition-colors group-hover:text-ev-600 sm:hidden" />
+      </Link>
+    );
+  }
   if (variant === "seed") {
     return (
       <Link
@@ -200,7 +253,7 @@ export function ProduitCard({
         />
 
         <p
-          className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+          className="mt-4 flex min-h-[2.7em] items-center justify-center text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
           style={{ fontFamily: "var(--font-serif)" }}
         >
           {nom}
@@ -214,7 +267,6 @@ export function ProduitCard({
       </Link>
     );
   }
-
   if (variant === "light") {
     return (
       <Link href={href} className={cn("block group", className)}>
@@ -244,7 +296,6 @@ export function ProduitCard({
       </Link>
     );
   }
-
   return (
     <Link
       href={href}
@@ -259,24 +310,21 @@ export function ProduitCard({
             {divBadge.label}
           </span>
         )}
-
         <SeedImagePreview
           images={produit.images?.length ? (img ? [img, ...produit.images.filter((i) => i !== img)] : produit.images) : []}
           nom={nom}
           active={hovered}
         />
       </div>
-
       {/* ── Nom ── */}
       <p
-        className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] line-clamp-2 transition-colors group-hover:text-ev-700"
+        className="mt-4 flex min-h-[2.7em] items-center justify-center text-[1.05rem] font-semibold leading-snug text-[#1b2118] line-clamp-2 transition-colors group-hover:text-ev-700"
         style={{ fontFamily: "var(--font-serif)" }}
       >
         {nom}
       </p>
-
       {/* ── Bouton "Voir le produit" — plein, avec flèche qui glisse au survol ── */}
-      <span className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
+      <span className="cta-voir-produit mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
         Voir le produit
         <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
       </span>

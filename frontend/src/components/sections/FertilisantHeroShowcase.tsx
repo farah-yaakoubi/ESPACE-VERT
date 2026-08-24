@@ -1,20 +1,4 @@
 "use client";
-
-/**
- * FertilisantHeroShowcase — hero partagé par :
- *  - la page activité Fertilisation (/activites/fertilisation)
- *  - la page marque Fertivert (/marques/fertivert)
- * Reproduit fidèlement le mockup de référence : photo plein cadre + carte
- * flottante + bandeau croisé "Pollinisation & Protection" + grille de
- * catégories. Même structure, mêmes CTA — seuls le titre/sous-titre et la
- * source de données (hero-slide, catégories, ancre) diffèrent selon la
- * page appelante.
- *
- * ⚠️ Les points de la carte flottante ("100% Naturel", "Rendement +30%",
- * "Certifié Bio") sont repris tels quels du mockup — ce sont des
- * allégations factuelles (rendement chiffré, certification bio) à
- * confirmer/adapter si elles ne sont pas vraies pour vos produits.
- */
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ArrowRight, ChevronRight, Droplet, Leaf, ShieldCheck } from "lucide-react";
@@ -54,6 +38,9 @@ interface FertilisantHeroShowcaseProps {
   /** Clé du hero-slide côté admin, ex. "activite:fertilisation" ou "marque:fertivert". */
   heroSlideKey: string;
   fallbackImage?: string;
+  /** Si fourni, le hero utilise cette image fixe et ne va plus chercher
+   *  le hero-slide côté admin (image figée, non modifiable depuis le back-office). */
+  staticImage?: string;
   ctaHref?: string;
   fichesTechniquesHref?: string;
   categories?: FertilisantCategory[];
@@ -77,6 +64,7 @@ export function FertilisantHeroShowcase({
   subtitle = "Des solutions de fertilisation durables pour une croissance exceptionnelle.",
   heroSlideKey,
   fallbackImage = FALLBACK_IMAGE,
+  staticImage,
   ctaHref = "#produits-activite",
   fichesTechniquesHref = "/rendez-vous",
   categories = [],
@@ -85,11 +73,13 @@ export function FertilisantHeroShowcase({
   showTypeCards = true,
   minimalHero = false,
 }: FertilisantHeroShowcaseProps) {
-  const [image, setImage] = useState<string>(fallbackImage);
+  const [image, setImage] = useState<string>(staticImage ?? fallbackImage);
   const [focal, setFocal] = useState(DEFAULT_FOCAL);
   const breakpoint = useBreakpoint();
 
   useEffect(() => {
+    // Image figée : on n'interroge plus l'admin, le hero reste fixe.
+    if (staticImage) return;
     if (minimalHero) return;
 
     let cancelled = false;

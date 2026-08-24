@@ -44,6 +44,8 @@ export const CategorieQuerySchema = z.object({
   scope:       z.enum(["root", "all"]).optional().default("all"),
   // renvoie l'arbre imbriqué pour la route publique
   tree:        z.coerce.boolean().optional().default(false),
+  // recherche globale par nom (utilisée par la recherche de la navbar)
+  search:      z.string().optional(),
 });
 
 export type CreateCategorieDto  = z.infer<typeof CreateCategorieSchema>;

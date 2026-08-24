@@ -435,9 +435,10 @@ export function MarqueProduitsSection({ id_marque, categories, cardVariant = "de
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = useMemo(
-    () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    () => filtered.slice(0, page * PAGE_SIZE),
     [filtered, page],
   );
+  const visibleCount = Math.min(page * PAGE_SIZE, filtered.length);
 
   useEffect(() => {
     setPage(1);
@@ -648,9 +649,21 @@ export function MarqueProduitsSection({ id_marque, categories, cardVariant = "de
                     <div className="mt-2">
                       {totalPages > 1 && (
                         <p className="text-xs text-gray-400 text-center mb-1">
-                          Page {page} sur {totalPages} · {filtered.length}{" "}
+                          {visibleCount} sur {filtered.length}{" "}
                           {productWord(filtered.length, t)}
                         </p>
+                      )}
+                      {page < totalPages && (
+                        <div className="mt-6 flex justify-center">
+                          <button
+                            type="button"
+                            onClick={() => setPage((current) => Math.min(current + 1, totalPages))}
+                            className="inline-flex items-center gap-2 rounded-xl border border-ev-700/35 bg-white/75 px-6 py-3 text-[12.5px] font-extrabold uppercase tracking-wide text-ev-900 shadow-[0_14px_34px_rgba(31,79,46,0.14),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-ev-800 hover:bg-ev-700 hover:text-white hover:shadow-[0_18px_42px_rgba(31,79,46,0.26),inset_0_1px_0_rgba(255,255,255,0.28)]"
+                          >
+                            Afficher plus
+                            <ChevronRight size={15} strokeWidth={2.5} />
+                          </button>
+                        </div>
                       )}
                       <Pagination
                         page={page}

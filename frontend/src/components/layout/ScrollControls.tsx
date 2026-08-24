@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 function ScrollButton({
@@ -14,8 +15,6 @@ function ScrollButton({
   onClick: () => void;
   direction: "up" | "down";
 }) {
-  const gradientId = `scroll-chevron-${direction}`;
-
   return (
     <button
       type="button"
@@ -23,41 +22,19 @@ function ScrollButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className={`group relative flex h-12 w-12 items-center justify-center rounded-2xl transition ${
+      className={`group relative flex h-14 w-14 items-center justify-center rounded-2xl transition ${
         disabled
           ? "cursor-default opacity-35"
           : "hover:bg-emerald-50 hover:shadow-sm"
       }`}
     >
-      <svg
-        viewBox="0 0 32 32"
-        aria-hidden="true"
-        className={`h-8 w-8 ${direction === "down" ? "rotate-180" : ""}`}
-      >
-        <defs>
-          <linearGradient id={gradientId} x1="6" y1="26" x2="26" y2="6" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#0a6030" />
-            <stop offset="0.48" stopColor="#2e7d4f" />
-            <stop offset="1" stopColor="#7dc040" />
-          </linearGradient>
-        </defs>
-        <path
-          d="M6 20.5 16 10.5 26 20.5"
-          fill="none"
-          stroke={`url(#${gradientId})`}
-          strokeWidth="5.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M6 27 16 17 26 27"
-          fill="none"
-          stroke={`url(#${gradientId})`}
-          strokeWidth="5.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
+      <Image
+        src="/icons/scroll icon.webp"
+        alt={label}
+        width={44}
+        height={44}
+        className={`h-11 w-11 ${direction === "up" ? "rotate-180" : ""}`}
+      />
       <span className="pointer-events-none absolute right-full mr-3 rounded-lg bg-slate-950 px-2.5 py-1.5 text-[11px] font-semibold text-white opacity-0 shadow-lg transition group-hover:opacity-100">
         {label}
       </span>

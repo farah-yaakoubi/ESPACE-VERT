@@ -1,6 +1,7 @@
 "use client";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { toast } from "@/components/admin/Toast";
+import Image from "next/image";
 import {
   adminActivites,
   adminCategories,
@@ -924,7 +925,23 @@ export default function AdminCategoriesPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Image</label>
-                  <ImageUploader onUpload={(v) => setForm({ ...form, image: v })} />
+                  {form.image && (
+                    <div className="mb-3 flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3">
+                      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-white">
+                        <Image src={form.image} alt={form.nom || "Image catégorie"} fill sizes="56px" className="object-contain p-1" />
+                      </div>
+                      <p className="min-w-0 flex-1 truncate font-mono text-xs text-gray-500">{form.image}</p>
+                      <button
+                        type="button"
+                        onClick={() => setForm((prev) => ({ ...prev, image: "" }))}
+                        className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500"
+                        title="Retirer l'image"
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
+                  )}
+                  <ImageUploader onUpload={(v) => setForm((prev) => ({ ...prev, image: v }))} />
                 </div>
               </div>
 

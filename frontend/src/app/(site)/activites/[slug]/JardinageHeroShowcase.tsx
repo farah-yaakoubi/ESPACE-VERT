@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Truck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
-const FALLBACK_IMAGE = "/images/hero/machinisme.jpeg";
+const FALLBACK_IMAGE = "/images/hero/bannerjardinage-machinisme.webp";
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 /** Rouge / anthracite figés — volontairement hors palette `ev-*` afin de ne
@@ -13,6 +13,36 @@ const RED      = "#e30613";
 const RED_DARK = "#b3050f";
 const INK      = "#0c0c0e";
 const INK_2    = "#17181c";
+/** Vert de la marque (logo Espace Vert). */
+const GREEN    = "#3a9b4a";
+
+/** Texte du slogan, animé en machine à écrire (même rythme
+ *  que sur la page Semences & Plants). Le saut de ligne est préservé
+ *  grâce à `white-space: pre-line` sur le conteneur. */
+const TITLE_TEXT = "Notre collection\nPremium d'équipements..";
+const TYPE_SPEED_MS = 90;
+
+/** Effet machine à écrire : révèle le texte caractère par caractère. */
+function useTypewriter(text: string, speedMs: number) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    setCount(0);
+    if (!text) return;
+    const id = setInterval(() => {
+      setCount((c) => {
+        if (c >= text.length) {
+          clearInterval(id);
+          return c;
+        }
+        return c + 1;
+      });
+    }, speedMs);
+    return () => clearInterval(id);
+  }, [text, speedMs]);
+
+  return { visible: text.slice(0, count), done: count >= text.length };
+}
 
 interface JardinageHeroCategory {
   id_categorie: number;
@@ -33,6 +63,7 @@ export function JardinageHeroShowcase({
   categories = [],
 }: JardinageHeroShowcaseProps) {
   const [image, setImage] = useState<string>(fallbackImage);
+  const { visible: titleVisible, done: titleDone } = useTypewriter(TITLE_TEXT, TYPE_SPEED_MS);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +78,8 @@ export function JardinageHeroShowcase({
     return () => { cancelled = true; };
   }, [activiteSlug]);
 
+  const whiteGlow = "0 0 18px rgba(255,255,255,0.55), 0 1px 6px rgba(0,0,0,0.35)";
+
   return (
     <section className="relative overflow-hidden" style={{ backgroundColor: INK }}>
       <div className="relative min-h-[560px] lg:min-h-[620px] flex items-stretch pb-10 lg:pb-12">
@@ -58,78 +91,63 @@ export function JardinageHeroShowcase({
 
         {/* ── Contenu texte ───────────────────────────────────────────── */}
         <div
-          className="relative z-10 container-ev flex items-center w-full"
+          className="relative z-10 container-ev flex items-center justify-center w-full"
           style={{ paddingTop: "calc(var(--nav-h, 80px) + 28px)" }}
         >
           <motion.div
-            className="max-w-xl"
+            className="max-w-2xl text-center"
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
           >
             <motion.p
               className="text-[12px] sm:text-[13px] font-extrabold tracking-[0.22em] uppercase mb-3"
-              style={{ color: RED }}
+              style={{ color: GREEN }}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.05 }}
             >
-              Matériel professionnel, location
+              Jardinage &amp; Machinisme
             </motion.p>
 
             <motion.h1
-              className="font-black uppercase leading-[1.06] tracking-tight text-[clamp(2rem,4.2vw,3.1rem)]"
-              style={{ fontFamily: "var(--font-display)" }}
+              className="font-black uppercase leading-[1.06] tracking-tight text-[clamp(2rem,4.2vw,3.1rem)] text-white min-h-[2.2em]"
+              style={{ fontFamily: "var(--font-display)", textShadow: whiteGlow, whiteSpace: "pre-line" }}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.15 }}
             >
-              <span className="block text-white">Notre collection</span>
-              <span className="block" style={{ color: RED }}>Premium d&apos;équipements..</span>
+              {titleVisible}
+              <span
+                aria-hidden="true"
+                className="inline-block w-[3px] h-[0.85em] bg-white align-[-0.08em] ml-1"
+                style={{ opacity: titleDone ? 0 : undefined, animation: titleDone ? "none" : "ev-caret-blink 0.9s steps(1) infinite" }}
+              />
+              <style>{`
+                @keyframes ev-caret-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+              `}</style>
             </motion.h1>
-
-            <motion.p
-              className="mt-4 text-[13.5px] sm:text-sm font-medium text-white/70 max-w-md"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.28 }}
-            >
-              Tondeuses, motoculture, outillage thermique et électrique — le matériel où les
-              professionnels et les particuliers exigeants trouvent robustesse et performance.
-            </motion.p>
-
-            <motion.div
-              className="mt-7 flex flex-wrap items-center gap-3"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <a
-                href={ctaHref}
-                className="inline-flex items-center gap-2 rounded-lg px-6 py-3.5 text-[13.5px] font-bold text-white uppercase tracking-wide transition-colors duration-200"
-                style={{ backgroundColor: RED }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = RED_DARK)}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = RED)}
-              >
-                Voir le catalogue
-                <ArrowRight size={16} />
-              </a>
-            </motion.div>
           </motion.div>
         </div>
 
-        {/* ── Carte produit vedette flottante ─────────────────────────── */}
-        <div className="absolute right-5 bottom-32 sm:bottom-36 lg:bottom-40 z-10 hidden sm:flex items-center gap-3 rounded-xl bg-white/95 backdrop-blur-sm px-4 py-3 shadow-2xl max-w-[260px]">
-          <span
-            className="flex h-11 w-11 items-center justify-center rounded-full shrink-0"
+        {/* ── Bouton centré dans le hero ─────────────────────────────── */}
+        <motion.div
+          className="absolute left-0 right-0 bottom-8 lg:bottom-10 z-10 flex justify-center"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <a
+            href={ctaHref}
+            className="inline-flex items-center gap-2 rounded-lg px-6 py-3.5 text-[13.5px] font-bold text-white uppercase tracking-wide transition-colors duration-200"
             style={{ backgroundColor: RED }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = RED_DARK)}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = RED)}
           >
-            <Truck size={18} strokeWidth={2.2} className="text-white" />
-          </span>
-          <div>
-            <p className="text-[12.5px] font-bold text-gray-900 leading-tight">Livraison rapide</p>
-          </div>
-        </div>
+            Voir le catalogue
+            <ArrowRight size={16} />
+          </a>
+        </motion.div>
       </div>
 
     </section>

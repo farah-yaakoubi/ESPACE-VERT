@@ -3,7 +3,7 @@
 import { motion, useInView } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { Award, Leaf, Flower2, ShieldCheck, Users, Weight } from "lucide-react";
+import { ArrowRight, Award, Leaf, Flower2, ShieldCheck, Users, Weight } from "lucide-react";
 import { useRef, useState } from "react";
 import { Ico } from "@/components/icons/AgriIcons";
 
@@ -242,6 +242,14 @@ function ActivityTile({
         >
           {item.tagline}
         </p>
+        <motion.span
+          className="mt-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1f4d34] shadow-[0_8px_24px_rgba(0,0,0,0.22)]"
+          animate={{ x: hovered ? 6 : 0, opacity: hovered ? 1 : 0.86 }}
+          transition={{ duration: 0.35, ease: EASE_SMOOTH }}
+          aria-hidden="true"
+        >
+          <ArrowRight className="h-4 w-4" strokeWidth={2.4} />
+        </motion.span>
       </motion.div>
     </motion.div>
   );
@@ -371,37 +379,54 @@ export default function HomeNavButtonsNewStyle() {
             transition={{ duration: 0.8, ease: EASE_SMOOTH }}
             className="flex flex-col gap-6 pt-10 sm:pt-12 pb-5 sm:pb-6"
           >
-            <h2
-              className="section-title overflow-y-hidden"
-              style={{ color: INK }}
-            >
-              <motion.span
-                className="inline-flex items-center gap-2 sm:gap-4"
-                initial={{ y: "120%" }}
-                animate={{ y: activitiesInView ? "0%" : "120%" }}
-                transition={{ duration: 0.9, ease: EASE_SMOOTH, delay: 0.1 }}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <h2
+                className="section-title overflow-y-hidden"
+                style={{ color: INK }}
               >
                 <motion.span
-                  animate={{ rotate: activitiesInView ? [0, 20, 0] : 0 }}
-                  transition={{ duration: 1.2, ease: EASE_SMOOTH, delay: 0.3 }}
+                  className="inline-flex items-center gap-2 sm:gap-4"
+                  initial={{ y: "120%" }}
+                  animate={{ y: activitiesInView ? "0%" : "120%" }}
+                  transition={{ duration: 0.9, ease: EASE_SMOOTH, delay: 0.1 }}
                 >
-                  <Leaf className="h-8 w-8 sm:h-9 sm:w-9" strokeWidth={1.2} style={{ color: FOREST }} />
+                  <motion.span
+                    animate={{ rotate: activitiesInView ? [0, 20, 0] : 0 }}
+                    transition={{ duration: 1.2, ease: EASE_SMOOTH, delay: 0.3 }}
+                  >
+                    <Leaf className="h-8 w-8 sm:h-9 sm:w-9" strokeWidth={1.2} style={{ color: FOREST }} />
+                  </motion.span>
+                  Une solution pour
+                </motion.span>{" "}
+                <motion.span
+                  className="inline-block font-bold"
+                  style={{ color: FOREST }}
+                  initial={{ y: "120%", opacity: 0 }}
+                  animate={{
+                    y: activitiesInView ? "0%" : "120%",
+                    opacity: activitiesInView ? 1 : 0,
+                  }}
+                  transition={{ duration: 0.9, ease: EASE_SMOOTH, delay: 0.35 }}
+                >
+                  chaque besoin
                 </motion.span>
-                Une solution pour
-              </motion.span>{" "}
-              <motion.span
-                className="inline-block font-bold"
-                style={{ color: FOREST }}
-                initial={{ y: "120%", opacity: 0 }}
-                animate={{
-                  y: activitiesInView ? "0%" : "120%",
-                  opacity: activitiesInView ? 1 : 0,
-                }}
-                transition={{ duration: 0.9, ease: EASE_SMOOTH, delay: 0.35 }}
+              </h2>
+
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: activitiesInView ? 1 : 0, y: activitiesInView ? 0 : 12 }}
+                transition={{ duration: 0.6, ease: EASE_SMOOTH, delay: 0.45 }}
               >
-                chaque besoin
-              </motion.span>
-            </h2>
+                <Link
+                  href="/activites"
+                  className="group inline-flex items-center gap-3 rounded-full border border-[#1f4d34]/20 bg-white/80 px-5 py-3 text-[12px] font-bold uppercase tracking-[0.14em] text-[#1f4d34] shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:shadow-md"
+                >
+                  <Ico.Barn className="h-4 w-4" />
+                  Parcourir par activité
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" strokeWidth={2.4} />
+                </Link>
+              </motion.div>
+            </div>
           </motion.div>
         </div>
 
