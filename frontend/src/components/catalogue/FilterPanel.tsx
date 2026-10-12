@@ -270,10 +270,10 @@ function CatTreeNode({
 
 /* ── Sort options ────────────────────────────────────────────────────────── */
 
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: "newest",   label: "Ajoutés en premier" },
-  { key: "nom_asc",  label: "Nom A → Z" },
-  { key: "nom_desc", label: "Nom Z → A" },
+const SORT_OPTIONS: { key: SortKey; labelKey: string; fallback: string }[] = [
+  { key: "newest",   labelKey: "catalog.sort.newest", fallback: "Ajoutés en premier" },
+  { key: "nom_asc",  labelKey: "catalog.sort.nameAsc", fallback: "Nom A → Z" },
+  { key: "nom_desc", labelKey: "catalog.sort.nameDesc", fallback: "Nom Z → A" },
 ];
 
 /* ── Main FilterPanel ────────────────────────────────────────────────────── */
@@ -506,7 +506,7 @@ export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCat
                 "w-3.5 h-3.5 rounded-full border flex-shrink-0 transition-all",
                 filters.sort === opt.key ? "bg-ev-700 border-ev-700" : "border-gray-300",
               )} />
-              {opt.label}
+              {t(opt.labelKey, opt.fallback)}
             </button>
           ))}
         </div>

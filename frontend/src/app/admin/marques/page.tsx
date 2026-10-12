@@ -4,9 +4,13 @@ import { pushToast } from "@/components/admin/Toast";
 import {
   adminMarques,
   adminProduits,
+  adminCategories,
   type MarqueAdmin,
   type ProduitAdmin,
+  type CategorieAdmin,
 } from "@/lib/admin-api";
+import { categoriesUnderMarque } from "@/lib/admin-catalog-utils";
+import { QuickAddProduitModal } from "@/components/admin/QuickAddProduitModal";
 import {
   AlertCircle,
   ArrowLeft,
@@ -261,8 +265,10 @@ function MarqueDetail({
   const [produits, setProduits] = useState<ProduitAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [allCategories, setAllCategories] = useState<CategorieAdmin[]>([]);
+  const [addOpen, setAddOpen] = useState(false);
 
-  useEffect(() => {
+  const loadProduits = useCallback(() => {
     setLoading(true);
     adminProduits
       .list({ id_marque: String(marque.id_marque), limit: "100" } as any)
@@ -270,6 +276,16 @@ function MarqueDetail({
       .catch(() => setProduits([]))
       .finally(() => setLoading(false));
   }, [marque.id_marque]);
+
+  useEffect(() => { loadProduits(); }, [loadProduits]);
+
+  useEffect(() => {
+    adminCategories.list().then((c) =>
+      setAllCategories(Array.isArray(c) ? c : ((c as any).data ?? [])),
+    ).catch(() => setAllCategories([]));
+  }, []);
+
+  const scopedCategories = categoriesUnderMarque(allCategories, marque.id_marque);
 
   const filtered = produits.filter((p) =>
     p.nom.toLowerCase().includes(search.toLowerCase()),
@@ -440,13 +456,13 @@ function MarqueDetail({
                 className="h-8 pl-7 pr-3 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-44"
               />
             </div>
-            <Link
-              href="/admin/produits"
+            <button
+              onClick={() => setAddOpen(true)}
               className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl text-white"
               style={{ background: "linear-gradient(135deg,#3C50E0,#4F60E8)" }}
             >
               <Plus size={13} /> Nouveau produit
-            </Link>
+            </button>
           </div>
         </div>
         {loading ? (
@@ -494,7 +510,7 @@ function MarqueDetail({
                     </p>
                   </div>
                   <span
-                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${p.actif ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
+                    className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${p.actif ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
                   >
                     {p.actif ? "Actif" : "Inactif"}
                   </span>
@@ -511,6 +527,16 @@ function MarqueDetail({
           </div>
         )}
       </div>
+
+      {addOpen && (
+        <QuickAddProduitModal
+          scopeLabel={marque.nom}
+          categories={scopedCategories}
+          allCategories={allCategories}
+          onClose={() => setAddOpen(false)}
+          onCreated={loadProduits}
+        />
+      )}
     </div>
   );
 }
@@ -733,7 +759,7 @@ export default function AdminMarquesPage() {
                 )}
                 <div className="absolute top-3 right-3">
                   <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${m.actif ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
+                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${m.actif ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
                   >
                     {m.actif ? "Active" : "Inactive"}
                   </span>

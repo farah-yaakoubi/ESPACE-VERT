@@ -124,7 +124,7 @@ export function LogoObtenteurUploader({
                 {dropLabel}{" "}
                 <span className="text-green-700 underline">cliquez pour choisir</span>
               </p>
-              <p className="text-[11px] text-gray-400">PNG · SVG · JPG · WEBP — taille originale conservée</p>
+              <p className="text-[12px] text-gray-400">PNG · SVG · JPG · WEBP — taille originale conservée</p>
             </div>
           )}
         </div>
@@ -156,7 +156,7 @@ export function LogoObtenteurUploader({
             style={{ borderColor: "#86efac", background: "#dcfce7" }}>
             <div className="flex items-center gap-1.5">
               {done && <CheckCircle size={12} className="text-green-700" />}
-              <span className="text-[11px] font-bold text-green-800">
+              <span className="text-[12px] font-bold text-green-800">
                 {done ? readyLabel : "Aperçu"}
               </span>
             </div>
@@ -175,7 +175,7 @@ export function LogoObtenteurUploader({
             />
           </div>
           <div className="px-3 py-1.5 border-t" style={{ borderColor: "#bbf7d0" }}>
-            <p className="text-[10px] font-mono text-gray-400 truncate">{preview}</p>
+            <p className="text-[11px] font-mono text-gray-400 truncate">{preview}</p>
           </div>
         </div>
       )}

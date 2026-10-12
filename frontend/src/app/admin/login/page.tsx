@@ -243,7 +243,7 @@ export default function AdminLoginPage() {
             style={{ width: "auto", height: "auto", maxWidth: "100%" }}
           />
           <p
-            className="text-[10px] mt-2.5 font-medium tracking-widest uppercase"
+            className="text-[11px] mt-2.5 font-medium tracking-widest uppercase"
             style={{ color: "rgba(255,255,255,0.3)" }}
           >
             Administration
@@ -320,7 +320,7 @@ export default function AdminLoginPage() {
                     )}
                   </div>
                   <span
-                    className="text-[11px] transition-all duration-300"
+                    className="text-[12px] transition-all duration-300"
                     style={{
                       color: isActive
                         ? "rgba(255,255,255,0.9)"

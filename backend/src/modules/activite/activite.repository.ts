@@ -53,7 +53,29 @@ export const activiteRepository = {
         .filter((id: number) => !directCatIds.has(id));
     }
 
-    const allCatIds = [...directCatIds, ...extraCatIds];
+    // Les deux ensembles ci-dessus ne contiennent que les catégories taguées
+    // *directement* (id_activite / id_marque) — il faut redescendre via
+    // parent_id pour récupérer toute leur descendance (sous-catégories qui
+    // n'ont pas ce tag mais en héritent via leur parent), sans quoi
+    // l'arborescence de l'activité/marque s'arrête au premier niveau.
+    const roots = [...directCatIds, ...extraCatIds];
+    let allCatIds = roots;
+    if (roots.length > 0) {
+      const allActiveCats = await (prisma as any).categorie.findMany({
+        where:  { actif: true },
+        select: { id_categorie: true, parent_id: true },
+      });
+      const collected = new Set<number>();
+      const collectDescendants = (rootId: number) => {
+        if (collected.has(rootId)) return;
+        collected.add(rootId);
+        allActiveCats
+          .filter((c: any) => c.parent_id === rootId)
+          .forEach((c: any) => collectDescendants(c.id_categorie));
+      };
+      roots.forEach(collectDescendants);
+      allCatIds = [...collected];
+    }
 
     const PRODUIT_SELECT = {
       id_produit: true, nom: true, slug: true, description: true, translations: true,

@@ -300,7 +300,7 @@ function HeatmapChart({ data }: { data: HeatmapCell[] }) {
         {/* Heures */}
         <div className="mb-1 ml-8 flex gap-0.5 sm:ml-10">
           {Array.from({ length: 24 }, (_, h) => (
-            <div key={h} className="flex-1 text-center text-[8px] text-gray-400 sm:text-[9px]">
+            <div key={h} className="flex-1 text-center text-[10px] text-gray-400 sm:text-[10px]">
               {h % 4 === 0 ? `${h}h` : ""}
             </div>
           ))}
@@ -308,7 +308,7 @@ function HeatmapChart({ data }: { data: HeatmapCell[] }) {
         {/* Grille */}
         {JOURS.map((jour, ji) => (
           <div key={ji} className="flex items-center gap-0.5 mb-0.5">
-            <span className="w-8 shrink-0 pr-2 text-right text-[9px] text-gray-500 sm:w-10 sm:text-[10px]">{jour}</span>
+            <span className="w-8 shrink-0 pr-2 text-right text-[10px] text-gray-500 sm:w-10 sm:text-[11px]">{jour}</span>
             {Array.from({ length: 24 }, (_, h) => {
               const nb = grid[ji][h];
               return (
@@ -318,7 +318,7 @@ function HeatmapChart({ data }: { data: HeatmapCell[] }) {
                   onMouseEnter={() => setTooltip({ h, j: ji, nb })}
                   onMouseLeave={() => setTooltip(null)}>
                   {tooltip?.h === h && tooltip?.j === ji && nb > 0 && (
-                    <div className="absolute z-20 -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] rounded px-2 py-1 whitespace-nowrap pointer-events-none">
+                    <div className="absolute z-20 -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[11px] rounded px-2 py-1 whitespace-nowrap pointer-events-none">
                       {jour} {h}h : {nb} vues
                     </div>
                   )}
@@ -329,11 +329,11 @@ function HeatmapChart({ data }: { data: HeatmapCell[] }) {
         ))}
         {/* Légende */}
         <div className="ml-8 mt-3 flex items-center gap-2 sm:ml-10">
-          <span className="text-[10px] text-gray-400">Moins</span>
+          <span className="text-[11px] text-gray-400">Moins</span>
           {["#F8FAFC", "#DCFCE7", "#86EFAC", "#22C55E", "#15803D"].map((c, i) => (
             <div key={i} className="w-4 h-4 rounded-sm" style={{ background: c }} />
           ))}
-          <span className="text-[10px] text-gray-400">Plus</span>
+          <span className="text-[11px] text-gray-400">Plus</span>
         </div>
       </div>
     </div>
@@ -348,7 +348,7 @@ function FunnelChart({ data }: { data: Entonnoir[] }) {
         <div key={i}>
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full bg-ev-500 text-white text-[10px] flex items-center justify-center font-bold" style={{ background: "#3C50E0" }}>
+              <span className="w-5 h-5 rounded-full bg-ev-500 text-white text-[11px] flex items-center justify-center font-bold" style={{ background: "#3C50E0" }}>
                 {i + 1}
               </span>
               <span className="text-sm text-gray-700">{step.label}</span>
@@ -367,7 +367,7 @@ function FunnelChart({ data }: { data: Entonnoir[] }) {
           </div>
           {i < data.length - 1 && (
             <div className="ml-2.5 flex items-center gap-1.5 mt-1">
-              <span className="text-[10px] text-gray-400">
+              <span className="text-[11px] text-gray-400">
                 ↓ {data[i + 1].nb > 0 && data[i].nb > 0 ? Math.round((data[i + 1].nb / data[i].nb) * 100) : 0}% continuent
               </span>
             </div>

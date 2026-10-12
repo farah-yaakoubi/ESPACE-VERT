@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   Users2,
 } from "lucide-react";
+import { HomeSectionHeading } from "@/components/sections/HomeSectionHeading";
 
 // ─── Palette (identique au reste du site : lin / forêt / sauge / blé) ────
 const INK = "#1b2118";
@@ -561,6 +562,8 @@ function BottomWaves() {
 export default function GroupeEtPartenaires() {
   const partnersRef = useRef<HTMLDivElement>(null);
   const partnersInView = useInView(partnersRef, { once: true, margin: "-80px" });
+  const societiesRef = useRef<HTMLDivElement>(null);
+  const societiesInView = useInView(societiesRef, { once: true, margin: "-80px" });
 
   return (
     <>
@@ -584,42 +587,17 @@ export default function GroupeEtPartenaires() {
         <BottomWaves />
 
         <div className="container-ev relative z-10" ref={partnersRef}>
-          <motion.div
-            className="mb-4 flex justify-center"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: partnersInView ? 1 : 0, scale: partnersInView ? 1 : 0.8 }}
-            transition={{ duration: 0.6, ease: EASE_SMOOTH }}
-          >
-            <div
-              className="flex h-14 w-14 items-center justify-center rounded-full border"
-              style={{ borderColor: WHEAT }}
-            >
-              <Handshake className="h-6 w-6" strokeWidth={1.3} style={{ color: WHEAT }} />
-            </div>
-          </motion.div>
-
-          <LuxuryTitle label="Nos partenaires" tight />
-
-          <motion.div
-            className="mx-auto mb-4 flex items-center justify-center gap-3"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: partnersInView ? 1 : 0 }}
-            transition={{ duration: 0.6, ease: EASE_SMOOTH, delay: 0.3 }}
-          >
-            <span className="h-px w-24" style={{ background: LINE }} />
-            <Leaf className="h-4 w-4" strokeWidth={1.5} style={{ color: WHEAT }} />
-            <span className="h-px w-24" style={{ background: LINE }} />
-          </motion.div>
-
-          <motion.p
-            className="mx-auto mb-10 max-w-md text-center text-sm font-light leading-7"
-            style={{ color: BODY }}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: partnersInView ? 0.9 : 0, y: partnersInView ? 0 : 12 }}
-            transition={{ duration: 0.6, ease: EASE_SMOOTH, delay: 0.35 }}
-          >
-            Ils nous font confiance au quotidien, sur le terrain comme dans nos ateliers.
-          </motion.p>
+          <div className="mb-10">
+            <HomeSectionHeading
+              eyebrow="Nos partenaires"
+              title="Des partenaires"
+              highlight="de confiance"
+              subtitle="Ils nous accompagnent au quotidien, sur le terrain comme dans nos ateliers."
+              icon={Handshake}
+              inView={partnersInView}
+              align="center"
+            />
+          </div>
 
           <PartenairesCarousel />
           <LogosWave />
@@ -632,8 +610,17 @@ export default function GroupeEtPartenaires() {
         <ActivitesWatermark />
         <DriftingLeaves />
 
-        <div className="container-ev relative z-10">
-          <LuxuryTitle icon={Building2} label="Nos sociétés" />
+        <div className="container-ev relative z-10" ref={societiesRef}>
+          <div className="mb-8">
+            <HomeSectionHeading
+              eyebrow="Nos sociétés"
+              title="Un groupe,"
+              highlight="plusieurs expertises"
+              icon={Building2}
+              inView={societiesInView}
+              align="center"
+            />
+          </div>
           <SocietesTimeline />
         </div>
       </section>

@@ -159,9 +159,12 @@ export const categorieRepository = {
       },
     });
 
-    // Si filtrage par activité : inclure aussi les sous-catégories profondes
-    // dont id_activite est null mais dont l'ancêtre a id_activite = params.id_activite
-    if (params.id_activite && rows.length > 0) {
+    // Si filtrage par activité OU par marque : inclure aussi les sous-catégories
+    // profondes dont id_activite/id_marque est null mais dont un ancêtre porte
+    // id_activite = params.id_activite (ou id_marque = params.id_marque) — sans
+    // quoi seules les catégories taguées directement remontaient, en coupant
+    // l'arborescence au premier niveau qui n'a pas le tag explicite.
+    if ((params.id_activite || params.id_marque) && rows.length > 0) {
       const directIds = new Set<number>(rows.map(r => Number(r.id_categorie)));
       const allFlat = await prisma.categorie.findMany({
         where:   { actif: true },
@@ -232,25 +235,32 @@ export const categorieRepository = {
             marque: { select: { nom: true, slug: true, logo: true, translations: true } },
           },
         },
+        // Toutes les photos du produit (pas seulement la principale) — nécessaire
+        // pour l'effet de défilement au survol sur les cartes produit (variant "seed"),
+        // identique à celui de la page Semences & Plants.
         images: {
           orderBy: [{ is_principale: "desc" }, { ordre: "asc" }],
-          take:    1,
           select:  { url: true, alt: true },
         },
       },
     });
 
     // 3. Toutes les catégories pertinentes pour la marque
-    //    → inclure les catégories dont id_marque = marque.id_marque
-    //      ET/OU les catégories référencées par les produits de la marque
+    //    → toute l'arborescence sous la marque (racines taguées id_marque +
+    //      TOUS leurs descendants via parent_id, calculés par
+    //      collectCategorieIdsByMarque ci-dessus), pas seulement les
+    //      catégories directement taguées ou celles qui contiennent déjà un
+    //      produit : une sous-catégorie intermédiaire sans produit propre
+    //      (et sans id_marque explicite) doit quand même apparaître pour
+    //      garder ses propres enfants rattachés au bon endroit de l'arbre.
+    //      On ajoute produitCatIds en filet de sécurité au cas où un produit
+    //      référencerait une catégorie hors de cette arborescence calculée.
     const produitCatIds = Array.from(new Set(produits.map(p => p.id_categorie).filter(Boolean)));
+    const relevantCatIds = Array.from(new Set([...marqueCatIds, ...produitCatIds]));
     const categories = await prisma.categorie.findMany({
       where: {
         actif: true,
-        OR: [
-          { id_marque: marque.id_marque },
-          produitCatIds.length > 0 ? { id_categorie: { in: produitCatIds } } : undefined,
-        ].filter(Boolean) as any,
+        id_categorie: { in: relevantCatIds.length > 0 ? relevantCatIds : [-1] },
       },
       orderBy: [{ created_at: "asc" }, { id_categorie: "asc" }],
       select: catSelect,

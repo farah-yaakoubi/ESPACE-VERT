@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, useRef, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -20,6 +20,11 @@ import {
   type FilterState, type CatNode,
 } from "@/components/catalogue/FilterPanel";
 import { getEtudeInstallationHref, isEtudeInstallationCategory } from "@/lib/etude-installation";
+import {
+  findCategoryBySlugPath,
+  findCategoryPathInTree,
+  getActivityCategoryHref,
+} from "@/lib/category-url";
 // Widget "Quelle semence pour moi ?" masqué pour le moment — décommenter
 // pour le réactiver dans le layout ci-dessous.
 // import { SemencesRecommandationCard } from "./SemencesRecommandation";
@@ -103,13 +108,20 @@ function normalizeText(value: string | null | undefined) {
     .trim();
 }
 
-function shouldUseCatalogueView(node: CatNode | null, isMachinisme = false) {
+function shouldUseCatalogueView(node: CatNode | null, isMachinisme = false, isFertilisationPage = false) {
   if (!node || (node.children ?? []).length === 0) return false;
+  // Fertilisation : contrairement aux autres activités, on bascule en vue
+  // "grille de sous-catégories" dès qu'il y a au moins un enfant — même si
+  // aucun n'a d'image (repli sur le pictogramme générique 🌿 dans
+  // CatalogueCoverGrid). Sans ça, une sous-catégorie Fertilisation dont les
+  // enfants n'ont pas encore d'image passée par l'admin tombait directement
+  // sur la liste de produits générique au lieu d'afficher ses tuiles.
+  if (isFertilisationPage) return (node.children ?? []).length > 0;
   // La grille "cover" n'affiche que les sous-catégories illustrées : on ne
   // bascule en vue grille que s'il y en a au moins une — comportement
-  // uniforme sur toutes les activités, Jardinage & Machinisme inclus. Une
-  // catégorie sans image n'est plus affichée du tout (plus de repli sur le
-  // pictogramme générique), donc si aucun enfant n'a d'image la grille de
+  // uniforme sur toutes les autres activités, Jardinage & Machinisme inclus.
+  // Une catégorie sans image n'est plus affichée du tout (plus de repli sur
+  // le pictogramme générique), donc si aucun enfant n'a d'image la grille de
   // couverture n'a rien à montrer et on passe directement aux produits.
   return (node.children ?? []).some(child => !!child.image);
 }
@@ -120,26 +132,32 @@ function shouldUseCatalogueView(node: CatNode | null, isMachinisme = false) {
  *  qui ne contiendrait qu'une seule tuile — on saute directement au niveau
  *  où il y a un vrai choix à faire. Si la chaîne se termine sur une
  *  catégorie sans sous-catégorie illustrée, on renvoie `null` : il n'y a
- *  alors rien à montrer en grille et on affichera directement les produits. */
-function resolveCoverNode(node: CatNode | null): CatNode | null {
+ *  alors rien à montrer en grille et on affichera directement les produits.
+ *  Sur Fertilisation, une sous-catégorie sans image n'annule plus la grille
+ *  (voir shouldUseCatalogueView) — elle s'affiche avec le pictogramme 🌿. */
+function resolveCoverNode(node: CatNode | null, isFertilisationPage = false): CatNode | null {
   if (!node) return null;
   let current = node;
   while ((current.children ?? []).length === 1) {
     current = current.children![0];
   }
   const kids = current.children ?? [];
-  if (kids.length === 0 || !kids.some(child => !!child.image)) return null;
+  if (kids.length === 0) return null;
+  if (!isFertilisationPage && !kids.some(child => !!child.image)) return null;
   return current;
 }
 
 /* ── CatalogueCoverGrid ─────────────────────────────────────────────────── */
 function CatalogueCoverGrid({
-  node, allProduits, onSelectChild, onClose,
+  node, allProduits, onSelectChild, onClose, requireImage = true,
 }: {
   node: CatNode;
   allProduits: import("@/types/api").ProduitCard[];
   onSelectChild: (id: number) => void;
   onClose: () => void;
+  /** false (Fertilisation) : affiche aussi les sous-catégories sans image,
+   *  avec le pictogramme 🌿 en repli, au lieu de les masquer. */
+  requireImage?: boolean;
 }) {
   const { locale, t } = useI18n();
   const children = node.children ?? [];
@@ -173,7 +191,7 @@ function CatalogueCoverGrid({
       </div>
 
       <div className="flex flex-wrap justify-center gap-x-6 gap-y-10">
-        {children.filter(child => !!child.image).map(child => {
+        {children.filter(child => requireImage ? !!child.image : true).map(child => {
           const count  = childCount(child);
           const imgSrc = child.image;
 
@@ -181,10 +199,10 @@ function CatalogueCoverGrid({
             <button
               key={child.id_categorie}
               onClick={() => onSelectChild(child.id_categorie)}
-              className="group flex w-[calc(50%-12px)] lg:w-[calc(25%-18px)] flex-col items-center text-center focus:outline-none"
+              className="group flex w-full max-w-xs flex-col items-center text-center focus:outline-none sm:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]"
               aria-label={`${t("catalog.viewProducts", "Voir produits")} ${catLabel(child, locale)}`}
             >
-              <div className="relative h-44 w-full flex items-center justify-center">
+              <div className="relative flex h-36 w-full items-center justify-center sm:h-44">
                 {imgSrc ? (
                   <Image
                     src={imgSrc}
@@ -201,7 +219,7 @@ function CatalogueCoverGrid({
               </div>
 
               <p
-                className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+                className="mt-3 text-[0.95rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700 sm:mt-4 sm:text-[1.05rem]"
                 style={{ fontFamily: "var(--font-serif)" }}
               >
                 {catLabel(child, locale)}
@@ -261,10 +279,10 @@ function BrandLinkGrid({
             <Link
               key={card.id_categorie}
               href={card.href}
-              className="group flex w-[calc(50%-12px)] flex-col items-center text-center lg:w-[calc(25%-18px)] focus:outline-none"
+              className="group flex w-full max-w-xs flex-col items-center text-center focus:outline-none sm:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]"
               aria-label={`Voir les produits ${card.nom}`}
             >
-              <div className="relative flex h-44 w-full items-center justify-center">
+              <div className="relative flex h-36 w-full items-center justify-center sm:h-44">
                 <Image
                   src={imgSrc}
                   alt={card.nom}
@@ -275,13 +293,13 @@ function BrandLinkGrid({
               </div>
 
               <p
-                className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+                className="mt-3 text-[0.95rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700 sm:mt-4 sm:text-[1.05rem]"
                 style={{ fontFamily: "var(--font-serif)" }}
               >
                 {card.nom}
               </p>
 
-              <span className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
+              <span className="mt-3 inline-flex max-w-full items-center justify-center gap-1.5 rounded-xl bg-ev-700 px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5 sm:mt-4 sm:gap-2 sm:px-5 sm:py-2.5 sm:text-[12.5px]">
                 {t("catalog.viewProducts", "Voir produits")}
                 <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
               </span>
@@ -320,10 +338,10 @@ function RootCatalogueGrid({
             <button
               key={node.id_categorie}
               onClick={() => onSelect(node.id_categorie)}
-              className="group flex w-[calc(50%-12px)] flex-col items-center text-center lg:w-[calc(25%-18px)] focus:outline-none"
+              className="group flex w-full max-w-xs flex-col items-center text-center focus:outline-none sm:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]"
               aria-label={`${t("catalog.viewProducts", "Voir produits")} ${catLabel(node, locale)}`}
             >
-              <div className="relative flex h-44 w-full items-center justify-center">
+              <div className="relative flex h-36 w-full items-center justify-center sm:h-44">
                 {imgSrc ? (
                   <Image
                     src={imgSrc}
@@ -340,13 +358,13 @@ function RootCatalogueGrid({
               </div>
 
               <p
-                className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+                className="mt-3 text-[0.95rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700 sm:mt-4 sm:text-[1.05rem]"
                 style={{ fontFamily: "var(--font-serif)" }}
               >
                 {catLabel(node, locale)}
               </p>
 
-              <span className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
+              <span className="mt-3 inline-flex max-w-full items-center justify-center gap-1.5 rounded-xl bg-ev-700 px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5 sm:mt-4 sm:gap-2 sm:px-5 sm:py-2.5 sm:text-[12.5px]">
                 {t("catalog.viewProducts", "Voir produits")}
                 <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
               </span>
@@ -389,7 +407,7 @@ function SemencesCategoryTiles({
             {t("catalog.shopByCategory", "Parcourir par catégorie")} :
           </p>
         </Reveal>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-x-6 md:gap-y-9">
+        <div className="grid grid-cols-1 gap-7 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 md:gap-x-6 md:gap-y-9">
           {illustrated.map((node, i) => {
             const isActive = activeId === node.id_categorie;
             // Dès qu'une tuile est active, les autres passent en gris/réduites
@@ -437,7 +455,7 @@ function SemencesCategoryTiles({
 
                   {/* Nom — même style que le nom des produits */}
                   <p
-                    className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+                    className="mt-3 text-[0.95rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700 sm:mt-4 sm:text-[1.05rem]"
                     style={{ fontFamily: "var(--font-serif)" }}
                   >
                     {catLabel(node, locale)}
@@ -446,7 +464,7 @@ function SemencesCategoryTiles({
                   {/* Bouton "Voir les produits" — même style que "Voir le produit" */}
                   <span
                     className={cn(
-                      "mt-4 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-0.5",
+                      "mt-3 inline-flex max-w-full items-center justify-center gap-1.5 rounded-xl px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-0.5 sm:mt-4 sm:gap-2 sm:px-5 sm:py-2.5 sm:text-[12.5px]",
                       isActive ? "bg-ev-800" : "bg-ev-700 group-hover:bg-ev-800"
                     )}
                   >
@@ -505,6 +523,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
   const { locale, t } = useI18n();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   const catParam = searchParams.get("cat");
   const isSemencesPage = activiteSlug === "semences-et-plants";
   const isMachinisme = activiteSlug === "jardinage-et-machinisme";
@@ -555,10 +574,27 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
     [categoryScopeId, fullTree]
   );
   const tree = useMemo(() => scopedNode ? [scopedNode] : fullTree, [fullTree, scopedNode]);
+  const selectedCategoryIdFromUrl = useMemo(() => {
+    if (catParam) {
+      const id = parseInt(catParam, 10);
+      if (Number.isFinite(id)) return id;
+    }
+
+    const marker = `/activites/${activiteSlug}/categorie/`;
+    const markerIndex = pathname.indexOf(marker);
+    if (markerIndex === -1) return categoryScopeId ?? null;
+
+    const rawPath = pathname.slice(markerIndex + marker.length);
+    const slugs = rawPath
+      .split("/")
+      .filter(Boolean)
+      .map((segment) => decodeURIComponent(segment));
+    return findCategoryBySlugPath(tree, slugs)?.id_categorie ?? (categoryScopeId ?? null);
+  }, [activiteSlug, catParam, categoryScopeId, pathname, tree]);
 
   const [filters, setFilters] = useState<FilterState>({
     ...DEFAULT_FILTERS,
-    categoryId: catParam ? parseInt(catParam, 10) : null,
+    categoryId: selectedCategoryIdFromUrl,
   });
   const [page, setPage] = useState(1);
   const pageSize = isSemencesPage ? 12 : DEFAULT_PAGE_SIZE;
@@ -571,22 +607,21 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
   const [gridView, setGridView] = useState<"comfortable" | "list">("comfortable");
 
   const [catalogueCatId, setCatalogueCatId] = useState<number | null>(() => {
-    if (!catParam) return null;
-    const id   = parseInt(catParam, 10);
-    const node = findNode(tree, id);
-    if (shouldUseCatalogueView(node, isMachinisme)) return id;
+    if (!selectedCategoryIdFromUrl) return null;
+    const node = findNode(tree, selectedCategoryIdFromUrl);
+    if (shouldUseCatalogueView(node, isMachinisme, isFertilisationPage)) return selectedCategoryIdFromUrl;
     return null;
   });
 
   useEffect(() => {
-    const id = catParam ? parseInt(catParam, 10) : null;
+    const id = selectedCategoryIdFromUrl;
     setFilters(f => ({ ...f, categoryId: id }));
     setPage(1);
     if (!id) { setCatalogueCatId(null); return; }
     const node = findNode(tree, id);
-    if (shouldUseCatalogueView(node, isMachinisme)) setCatalogueCatId(id);
+    if (shouldUseCatalogueView(node, isMachinisme, isFertilisationPage)) setCatalogueCatId(id);
     else setCatalogueCatId(null);
-  }, [catParam, tree, isMachinisme]);
+  }, [selectedCategoryIdFromUrl, tree, isMachinisme, isFertilisationPage]);
 
   const { produits: allProduits, loading, error } = useProducts({
     id_activite: categoryScopeId ? undefined : id_activite,
@@ -638,23 +673,57 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
   }, []);
   const handlePageChange    = useCallback((p: number) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }, []);
 
+  // Reflète la catégorie sélectionnée dans l'URL lisible.
+  // IMPORTANT : router.push (pas .replace) — .replace() écrase l'entrée
+  // d'historique en cours au lieu d'en créer une nouvelle. Résultat observé :
+  // en cliquant Semences maraîchères → Pro → Semences Hybride → Tomate,
+  // chaque clic ÉCRASAIT la précédente entrée d'historique ; un seul clic
+  // sur "retour" du navigateur sautait alors par-dessus TOUTE la chaîne au
+  // lieu de revenir catégorie par catégorie. Avec push, chaque sélection
+  // devient une vraie étape d'historique et le retour redevient logique.
+  const syncCategoryRoute = useCallback((id: number | null) => {
+    if (!id) {
+      router.push(`/activites/${activiteSlug}`, { scroll: false });
+      return;
+    }
+
+    const path = findCategoryPathInTree(tree, id);
+    const href = path
+      ? getActivityCategoryHref(activiteSlug, path.map((cat) => cat.slug))
+      : `/activites/${activiteSlug}`;
+    router.push(href, { scroll: false });
+  }, [activiteSlug, router, tree]);
+
+  useEffect(() => {
+    if (!catParam || !selectedCategoryIdFromUrl) return;
+    const path = findCategoryPathInTree(tree, selectedCategoryIdFromUrl);
+    if (!path) return;
+    router.replace(getActivityCategoryHref(activiteSlug, path.map((cat) => cat.slug)), { scroll: false });
+  }, [activiteSlug, catParam, router, selectedCategoryIdFromUrl, tree]);
+
   const handleCategorySelect = useCallback((id: number | null) => {
-    if (!id) { setCatalogueCatId(null); handleFiltersChange({ ...filters, categoryId: null }); return; }
+    if (!id) {
+      setCatalogueCatId(null);
+      handleFiltersChange({ ...filters, categoryId: null });
+      syncCategoryRoute(null);
+      return;
+    }
     const node = findNode(tree, id);
     if (node && isEtudeInstallationCategory(node)) {
       router.push(getEtudeInstallationHref(activiteSlug));
       return;
     }
-    if (shouldUseCatalogueView(node, isMachinisme)) {
+    if (shouldUseCatalogueView(node, isMachinisme, isFertilisationPage)) {
       setCatalogueCatId(id); handleFiltersChange({ ...filters, categoryId: id });
     } else {
       setCatalogueCatId(null); handleFiltersChange({ ...filters, categoryId: id });
     }
-  }, [activiteSlug, isMachinisme, filters, tree, handleFiltersChange, router]);
+    syncCategoryRoute(id);
+  }, [activiteSlug, isMachinisme, isFertilisationPage, filters, tree, handleFiltersChange, router, syncCategoryRoute]);
 
   const catalogueNode = useMemo(
-    () => resolveCoverNode(catalogueCatId ? findNode(tree, catalogueCatId) : null),
-    [catalogueCatId, tree]
+    () => resolveCoverNode(catalogueCatId ? findNode(tree, catalogueCatId) : null, isFertilisationPage),
+    [catalogueCatId, tree, isFertilisationPage]
   );
   const activeNode    = useMemo(() => filters.categoryId ? findNode(tree, filters.categoryId) : null, [filters.categoryId, tree]);
   // Semences : la catégorie "racine" affichée dans le panneau de filtres —
@@ -703,9 +772,6 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
   // l'arbre) — comme sur la maquette de référence, où la grille "Explore All
   // Vehicles" occupe toute la largeur sans sidebar tant qu'on navigue par
   // catégories/marques.
-  // Exception : si la page est déjà scoppée sur une marque (categoryScopeId,
-  // ex. page /marques/[slug]) on est d'emblée "dans" la marque — la sidebar
-  // doit donc apparaître dès le chargement, sans clic supplémentaire.
   const activeCatId = catalogueCatId ?? filters.categoryId;
   const activePath = useMemo(
     () => (activeCatId ? findPath(tree, activeCatId) : null),
@@ -716,20 +782,41 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
     [activePath, categoryScopeId, tree]
   );
   // La sidebar ne s'affiche que si on est descendu dans une sous-catégorie
-  // de la marque (ou si la page est d'emblée scoppée sur une marque via
-  // categoryScopeId) — pas quand la marque racine elle-même vient d'être
-  // sélectionnée depuis le bandeau "Parcourir par marques", pour que ce
-  // dernier reste visible et statique (zoom sur la marque active).
+  // de la marque — pas quand la marque racine elle-même (ou la page dédiée
+  // qui en scope le catalogue via categoryScopeId) vient d'être
+  // sélectionnée, pour que la grille de couverture de ses sous-catégories
+  // (bandeau "Parcourir par marques" inclus) reste affichée en premier.
   const showMachinismeSidebar =
     isMachinisme &&
     !!activeMarqueNode &&
-    (!!categoryScopeId || activeCatId !== activeMarqueNode.id_categorie);
+    activeCatId !== activeMarqueNode.id_categorie;
   const useFullWidthLayout = isMachinisme && !showMachinismeSidebar;
   const sidebarTree = activeMarqueNode
     ? (activeMarqueNode.children?.length ? activeMarqueNode.children : [activeMarqueNode])
     : tree;
 
-  const reset = useCallback(() => { setCatalogueCatId(null); handleFiltersChange(DEFAULT_FILTERS); }, [handleFiltersChange]);
+  // Page dédiée à une marque (categoryScopeId, ex. /marques/active) : la
+  // rangée de ses sous-catégories illustrées (Débroussailleuse, Motoculteur,
+  // ...) reste affichée en permanence en haut de page — comme le bandeau
+  // "Parcourir par marques" — avec la tuile de la sous-catégorie active mise
+  // en zoom et les autres grisées, plutôt que de disparaître une fois qu'on
+  // a sélectionné l'une d'elles (sidebar + produits affichés en dessous).
+  const isScopedCategoryGrid =
+    isMachinisme &&
+    !!categoryScopeId &&
+    !!scopedNode &&
+    (scopedNode.children ?? []).some(c => !!c.image) &&
+    filters.tags.length === 0 &&
+    filters.divisions.length === 0 &&
+    filters.search.trim() === "";
+  const selectedScopedChildId =
+    categoryScopeId && activePath && activePath.length > 1 ? activePath[1].id_categorie : null;
+  const scopedRootCatalogueAlreadyShown =
+    isScopedCategoryGrid &&
+    !!catalogueNode &&
+    catalogueNode.id_categorie === scopedNode?.id_categorie;
+
+  const reset = useCallback(() => { setCatalogueCatId(null); handleFiltersChange(DEFAULT_FILTERS); syncCategoryRoute(null); }, [handleFiltersChange, syncCategoryRoute]);
 
   /* Grille produits (chargement / vide / erreur / pagination) — partagée
    * entre le mode "pleine largeur" (aucune marque sélectionnée) et le mode
@@ -761,20 +848,25 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
         </div>
       ) : (
         <div className={cn(
-          "grid gap-4",
-          semencesHasSideRail
-            ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
-            : isSemencesPage
-              ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-              : "grid-cols-2 sm:grid-cols-2 lg:grid-cols-4",
+          "flex flex-wrap justify-center gap-4",
           useFullSizeCards && "items-start"
         )}>
           {paginated.map((p) => (
-            <ProduitCard
+            <div
               key={p.id_produit}
-              produit={p}
-              variant={useFullSizeCards ? "seed" : "default"}
-            />
+              className={
+                semencesHasSideRail
+                  ? "w-full max-w-xs sm:w-[calc(50%-8px)] sm:max-w-none xl:w-[calc(33.333%-10.667px)] 2xl:w-[calc(25%-12px)]"
+                  : isSemencesPage
+                    ? "w-full max-w-xs sm:w-[calc(50%-8px)] sm:max-w-none md:w-[calc(33.333%-10.667px)] lg:w-[calc(25%-12px)] xl:w-[calc(20%-12.8px)]"
+                    : "w-full max-w-xs sm:w-[calc(50%-8px)] sm:max-w-none lg:w-[calc(25%-12px)]"
+              }
+            >
+              <ProduitCard
+                produit={p}
+                variant={useFullSizeCards ? "seed" : "default"}
+              />
+            </div>
           ))}
         </div>
       )}
@@ -801,27 +893,24 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
     </>
   );
 
-  // Marque actuellement "ouverte" (racine jm-xxx sélectionnée) : sert à
-  // garder le bandeau "Parcourir par marques" affiché même une fois une
-  // marque choisie, avec sa tuile mise en avant et les autres grisées.
-  const selectedMarqueNode = catalogueNode && isMarqueNode(catalogueNode)
-    ? catalogueNode
-    : (activeNode && isMarqueNode(activeNode) ? activeNode : null);
-  const selectedMarqueId = selectedMarqueNode?.id_categorie ?? null;
+  // Marque actuellement "ouverte" (racine jm-xxx sélectionnée, ou l'un de ses
+  // ancêtres si on a descendu plus profond dans ses sous-catégories) : sert à
+  // garder le bandeau "Parcourir par marques" affiché en permanence, avec sa
+  // tuile mise en avant et les autres grisées, quelle que soit la profondeur
+  // de navigation atteinte.
+  const selectedMarqueId = activeMarqueNode?.id_categorie ?? null;
 
-  // Le bandeau de marques reste visible tant qu'on est à la racine de
-  // Jardinage & Machinisme sans autre filtre actif (tags/divisions/recherche),
-  // que la marque sélectionnée soit "aucune" ou l'une des tuiles elles-mêmes —
-  // seule la sélection d'une sous-catégorie hors marque, ou l'usage d'autres
-  // filtres, le masque.
+  // Le bandeau de marques reste fixe et visible en permanence sur Jardinage &
+  // Machinisme (comme la rangée de tuiles de Semences & Plants) — il ne
+  // disparaît plus une fois qu'on descend dans les sous-catégories d'une
+  // marque (sidebar affichée) ; seuls d'autres filtres actifs (tags,
+  // divisions, recherche) ou le scope d'une page marque dédiée le masquent.
   const isRootBrandGrid =
-    useFullWidthLayout &&
     isMachinisme &&
     !categoryScopeId &&
     filters.tags.length === 0 &&
     filters.divisions.length === 0 &&
-    filters.search.trim() === "" &&
-    (!catalogueNode || isMarqueNode(catalogueNode));
+    filters.search.trim() === "";
 
   const activeFiltersBar = hasActiveFilters ? (
     <div className="mb-4 flex items-center gap-2 flex-wrap">
@@ -902,11 +991,31 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
             </h2>
           </div>
         )}
+        {isScopedCategoryGrid && (
+          <div className="mb-8">
+            <JardinageCategoryGrid
+              nodes={scopedNode!.children ?? []}
+              onSelect={(id) => handleCategorySelect(id)}
+              marqueLogoById={marqueLogoById}
+              marqueLogoByKey={marqueLogoByKey}
+              wide
+              requireImage
+              selectedId={selectedScopedChildId}
+            />
+          </div>
+        )}
         {isSemencesPage ? (
           <div className="mb-2">
             <SemencesCategoryTiles
               nodes={tree}
-              activeId={filters.categoryId}
+              // La tuile active doit rester celle de premier niveau cliquée
+              // au départ (ex. "Semences maraîchères"), même après avoir
+              // sélectionné une sous-catégorie plus profonde (ex.
+              // "Standard") dans le panneau de filtres — sinon
+              // `filters.categoryId` pointe vers la sous-catégorie, qui ne
+              // correspond à aucune tuile, et toutes les tuiles retombent en
+              // gris comme si plus rien n'était sélectionné.
+              activeId={semencesRootNode?.id_categorie ?? filters.categoryId}
               allProduits={scopedProduits}
               onSelect={(id) => handleCategorySelect(id)}
             />
@@ -997,7 +1106,12 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
                     sous-catégories de la catégorie racine cliquée au
                     départ (pas tout l'arbre du site), et seulement si
                     elle en a. Ancré sur la racine, pas sur la feuille
-                    active, pour ne pas disparaître en descendant l'arbre. */}
+                    active, pour ne pas disparaître en descendant l'arbre.
+                    Reste affiché même quand une grille de couverture
+                    (catalogueNode) est montrée à droite : le filtre doit
+                    toujours donner accès à toute l'arborescence sous la
+                    catégorie sélectionnée, pas seulement au niveau affiché
+                    dans la grille de tuiles. */}
                 <FilterPanel
                   tree={semencesRootNode?.children ?? []}
                   produits={facetProduits}
@@ -1005,7 +1119,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
                   onChange={handleFiltersChange}
                   totalAll={facetProduits.length}
                   onCategoryClick={handleCategorySelect}
-                  hideCategoryTree={!(semencesRootNode && (semencesRootNode.children ?? []).length > 0) || !!catalogueNode}
+                  hideCategoryTree={!(semencesRootNode && (semencesRootNode.children ?? []).length > 0)}
                 />
 
                 {/* Zone principale */}
@@ -1034,7 +1148,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
           </div>
         ) : useFullWidthLayout ? (
           <div className="mb-2">
-            {catalogueNode && (
+            {catalogueNode && !scopedRootCatalogueAlreadyShown && (
               <button
                 onClick={reset}
                 className="mb-6 flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors font-medium"
@@ -1042,7 +1156,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
                 <ArrowLeft size={14} /> {t("catalog.allProducts", "Tous les produits")}
               </button>
             )}
-            {catalogueNode ? (
+            {scopedRootCatalogueAlreadyShown ? null : catalogueNode ? (
               /* Marque avec sous-catégories : on affiche sa grille de
                * sous-catégories (comportement d'origine), le bandeau
                * "Parcourir par marques" restant visible et statique
@@ -1117,6 +1231,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
                   allProduits={scopedProduits}
                   onSelectChild={(id) => handleCategorySelect(id)}
                   onClose={reset}
+                  requireImage={!isFertilisationPage}
                 />
               )
             )}

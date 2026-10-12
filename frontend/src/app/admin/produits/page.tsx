@@ -7,12 +7,19 @@ import {
 import type { ProduitImage } from "@/types/api";
 import { toast } from "@/components/admin/Toast";
 import {
-  AlertCircle, Edit2, ExternalLink, FileText, ImageIcon, Info,
-  Link as LinkIcon, Loader2, Package, Plus, RefreshCw, Search, Star,
+  AlertCircle, ArrowLeft, Edit2, ExternalLink, Eye, FileText, ImageIcon, Info,
+  Link as LinkIcon, Loader2, Package, Plus, RefreshCw, Save, Search, Star,
   ToggleLeft, ToggleRight, Trash2, Upload, X, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import Image from "next/image";
 import { LogoObtenteurUploader } from "@/components/admin/LogoObtenteurUploader";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
+import {
+  flattenCategoriesForSelect,
+  leavesOnly,
+  resolveCategoryContext,
+  type CatNodeFlat,
+} from "@/lib/admin-catalog-utils";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
@@ -42,11 +49,11 @@ function CalendrierEditor({ label, color, value, onChange }: {
   };
   return (
     <div>
-      <p className="text-[10px] font-black uppercase tracking-wider mb-1.5" style={{color}}>{label}</p>
+      <p className="text-[11px] font-black uppercase tracking-wider mb-1.5" style={{color}}>{label}</p>
       <div className="flex gap-1 flex-wrap">
         {arr.map((v,i) => (
           <button key={i} type="button" onClick={() => toggle(i)}
-            className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg text-[9px] font-bold transition-all border"
+            className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg text-[10px] font-bold transition-all border"
             style={{
               background: v==="1" ? color : "#f3f4f6",
               color: v==="1" ? "#fff" : "#9ca3af",
@@ -215,22 +222,22 @@ function ImagesModal({ produit, onClose }: { produit: ProduitAdmin; onClose: () 
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-mono text-gray-400 truncate mb-1.5">{img.url.split("/").pop()}</p>
+                <p className="text-[12px] font-mono text-gray-400 truncate mb-1.5">{img.url.split("/").pop()}</p>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {/* Badge principale — assignable / transférable */}
                   {img.is_principale
                     ? <div className="flex items-center gap-1">
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-amber-100 text-amber-700 border border-amber-200 flex items-center gap-1">
+                        <span className="text-[11px] px-2 py-0.5 rounded-full font-semibold bg-amber-100 text-amber-700 border border-amber-200 flex items-center gap-1">
                           ⭐ Principale
                         </span>
                         <button onClick={() => unsetPrincipale(img.id_imgP)}
-                          className="text-[10px] px-1.5 py-0.5 rounded-full border border-dashed border-gray-200 text-gray-300 hover:border-red-300 hover:text-red-400 transition-colors"
+                          className="text-[11px] px-1.5 py-0.5 rounded-full border border-dashed border-gray-200 text-gray-300 hover:border-red-300 hover:text-red-400 transition-colors"
                           title="Retirer le statut principale">
                           ✕
                         </button>
                       </div>
                     : <button onClick={() => setPrincipale(img.id_imgP)}
-                        className="text-[10px] px-2 py-0.5 rounded-full border border-dashed border-gray-300 text-gray-400 hover:border-amber-400 hover:text-amber-600 transition-colors"
+                        className="text-[11px] px-2 py-0.5 rounded-full border border-dashed border-gray-300 text-gray-400 hover:border-amber-400 hover:text-amber-600 transition-colors"
                         title="Définir comme image principale de la card produit">
                         ☆ Définir principale
                       </button>
@@ -241,19 +248,19 @@ function ImagesModal({ produit, onClose }: { produit: ProduitAdmin; onClose: () 
                         <input value={editCond} onChange={e => setEditCond(e.target.value)} autoFocus
                           list="cond-list" placeholder="ex: Flacon 1L"
                           onKeyDown={e => { if (e.key === "Enter") saveConditionnement(img.id_imgP); if (e.key === "Escape") setEditing(null); }}
-                          className="h-6 px-2 text-[11px] border border-blue-400 rounded-lg focus:outline-none w-32"/>
+                          className="h-6 px-2 text-[12px] border border-blue-400 rounded-lg focus:outline-none w-32"/>
                         <datalist id="cond-list">{condList.map(c => <option key={c} value={c}/>)}</datalist>
-                        <button onClick={() => saveConditionnement(img.id_imgP)} className="h-6 px-2 text-[11px] bg-blue-600 text-white rounded-lg">✓</button>
-                        <button onClick={() => setEditing(null)} className="h-6 px-1.5 text-gray-400 hover:text-gray-700 border border-gray-200 rounded-lg text-[11px]">✕</button>
+                        <button onClick={() => saveConditionnement(img.id_imgP)} className="h-6 px-2 text-[12px] bg-blue-600 text-white rounded-lg">✓</button>
+                        <button onClick={() => setEditing(null)} className="h-6 px-1.5 text-gray-400 hover:text-gray-700 border border-gray-200 rounded-lg text-[12px]">✕</button>
                       </div>
                     : img.conditionnement
                       ? <button onClick={() => { setEditing(img.id_imgP); setEditCond(img.conditionnement); }}
-                          className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold border cursor-pointer hover:opacity-75 transition-opacity"
+                          className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-semibold border cursor-pointer hover:opacity-75 transition-opacity"
                           style={{ background: condColor(img.conditionnement) + "22", borderColor: condColor(img.conditionnement), color: condColor(img.conditionnement) }}>
                           <Package size={8}/> {img.conditionnement} <Edit2 size={7}/>
                         </button>
                       : <button onClick={() => { setEditing(img.id_imgP); setEditCond(""); }}
-                          className="text-[10px] px-2 py-0.5 rounded-full border border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-600 transition-colors">
+                          className="text-[11px] px-2 py-0.5 rounded-full border border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-600 transition-colors">
                           + conditionnement
                         </button>
                   }
@@ -308,7 +315,7 @@ function ImagesModal({ produit, onClose }: { produit: ProduitAdmin; onClose: () 
               </button>
             </div>
           )}
-          <p className="text-[10px] text-gray-400 text-center">
+          <p className="text-[11px] text-gray-400 text-center">
             Après upload, cliquez sur chaque image pour définir son conditionnement et la photo principale.
           </p>
         </div>
@@ -433,6 +440,513 @@ function FicheModal({ produit, onClose, onUpdated }: { produit: ProduitAdmin; on
   );
 }
 
+/* ─── Galerie photos inline (page produit, style "cover + vignettes") ─── */
+function ProductImagesPanel({
+  produit, uploading, onQuickUpload, onManage,
+}: {
+  produit: ProduitAdmin | null;
+  uploading: boolean;
+  onQuickUpload: (file: File) => void;
+  onManage: () => void;
+}) {
+  const [dragOver, setDragOver] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const images = produit?.images ?? [];
+  const cover = images.find((i: any) => i.is_principale) ?? images[0];
+  const rest = images.filter((i: any) => i !== cover);
+  const shown = rest.slice(0, 3);
+  const extra = rest.length - 3;
+
+  const tileBase = "relative w-full h-full rounded-xl overflow-hidden border flex items-center justify-center transition-colors";
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 p-4">
+      <input ref={fileRef} type="file" accept="image/*" className="hidden"
+        onChange={e => { const f = e.target.files?.[0]; if (f) onQuickUpload(f); e.target.value = ""; }}/>
+
+      {!produit ? (
+        <div className="aspect-[4/3] rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-2 text-center px-4 bg-gray-50">
+          <ImageIcon size={26} className="text-gray-300"/>
+          <p className="text-xs text-gray-400">Enregistrez d&apos;abord le produit<br/>pour ajouter des photos</p>
+        </div>
+      ) : (
+        <div
+          onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files?.[0]; if (f) onQuickUpload(f); }}
+          className={`grid grid-cols-3 grid-rows-2 gap-2 aspect-[4/3] rounded-xl ${dragOver ? "ring-2 ring-blue-400" : ""}`}>
+
+          {/* Cover — grande tuile */}
+          <button type="button" onClick={onManage}
+            className={`${tileBase} col-span-1 row-span-2 bg-gray-50 border-gray-100 hover:border-blue-300`}>
+            {cover ? (
+              <Image src={cover.url} alt={produit.nom} fill className="object-contain p-2"/>
+            ) : (
+              <ImageIcon size={22} className="text-gray-300"/>
+            )}
+            {cover && (
+              <span className="absolute bottom-1.5 left-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-white/90 text-gray-600 border border-gray-200">
+                Cover
+              </span>
+            )}
+          </button>
+
+          {/* Vignettes */}
+          {[0, 1, 2].map(i => {
+            const img = shown[i];
+            const showOverflow = i === 2 && extra > 0;
+            return (
+              <button key={i} type="button" onClick={onManage}
+                className={`${tileBase} bg-gray-50 border-gray-100 hover:border-blue-300`}>
+                {img ? (
+                  <>
+                    <Image src={img.url} alt="" fill className="object-contain p-1.5"/>
+                    {showOverflow && (
+                      <span className="absolute inset-0 bg-black/55 flex items-center justify-center text-white text-xs font-bold">
+                        +{extra}
+                      </span>
+                    )}
+                  </>
+                ) : i < 2 ? (
+                  <ImageIcon size={14} className="text-gray-200"/>
+                ) : null}
+              </button>
+            );
+          })}
+
+          {/* Ajout rapide */}
+          <button type="button" onClick={() => fileRef.current?.click()}
+            className={`${tileBase} border-2 border-dashed ${uploading ? "border-blue-300 bg-blue-50" : "border-gray-200 hover:border-blue-400 hover:bg-blue-50/40"}`}>
+            {uploading ? <Loader2 size={16} className="animate-spin text-blue-500"/> : <Plus size={18} className="text-gray-400"/>}
+          </button>
+        </div>
+      )}
+
+      {produit && (
+        <button onClick={onManage}
+          className="mt-3 w-full text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1.5 py-1.5 rounded-lg hover:bg-blue-50 transition-colors">
+          <ImageIcon size={12}/> Gérer les {images.length} photo{images.length !== 1 ? "s" : ""}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ─── Page plein écran d'ajout / modification produit ─────────────
+   Layout inspiré de la maquette : header d'actions, colonne gauche
+   (galerie photos + visibilité + aperçu), colonne droite (détails du
+   produit avec onglets Général / Avancé). Tout le dashboard (sidebar,
+   topbar) reste visible autour pour une navigation fluide.          */
+function ProductFormPanel({
+  mode, form, setForm, err, saving, editingProduit,
+  catsFlat, inheritedMarque, inheritedActivite,
+  onCancel, onSaveAs, onDeleteClick, onOpenImages, onOpenFiche, onQuickImageUpload, uploadingImage,
+}: {
+  mode: "create" | "edit";
+  form: typeof EMPTY;
+  setForm: (f: any) => void;
+  err: string;
+  saving: boolean;
+  editingProduit: ProduitAdmin | null;
+  catsFlat: CatNodeFlat[];
+  inheritedMarque: MarqueAdmin | null | undefined;
+  inheritedActivite: ActiviteAdmin | null | undefined;
+  onCancel: () => void;
+  onSaveAs: (actif: boolean) => void;
+  onDeleteClick: () => void;
+  onOpenImages: () => void;
+  onOpenFiche: () => void;
+  onQuickImageUpload: (file: File) => void;
+  uploadingImage: boolean;
+}) {
+  const [tab, setTab] = useState<"general" | "avance">("general");
+  const lastUpdate = (editingProduit as any)?.updated_at ?? editingProduit?.created_at;
+  const lastUpdateLabel = lastUpdate
+    ? new Date(lastUpdate).toLocaleString("fr-FR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "Non enregistré";
+
+  return (
+    <div className="space-y-4">
+      {/* ── Header actions ── */}
+      <div className="bg-white rounded-2xl border border-gray-200 px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <button onClick={onCancel} className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 shrink-0">
+            <ArrowLeft size={18}/>
+          </button>
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold text-gray-900 truncate" style={{letterSpacing:"-0.02em"}}>
+              {mode === "create" ? "Nouveau produit" : `Modifier — ${editingProduit?.nom}`}
+            </h1>
+            <p className="text-xs text-gray-400 mt-0.5">Dernière mise à jour : {lastUpdateLabel}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {mode === "edit" && (
+            <button onClick={onDeleteClick}
+              className="p-2.5 rounded-xl border border-red-100 text-red-500 hover:bg-red-50 transition-colors" title="Supprimer">
+              <Trash2 size={15}/>
+            </button>
+          )}
+          <button onClick={() => onSaveAs(false)} disabled={saving}
+            className="h-10 px-4 text-sm font-semibold text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50">
+            Enregistrer brouillon
+          </button>
+          <button onClick={() => onSaveAs(true)} disabled={saving}
+            className="h-10 px-4 text-sm font-semibold text-white rounded-xl shadow-sm disabled:opacity-60 flex items-center gap-2"
+            style={{background:"linear-gradient(135deg,#3C50E0,#4F60E8)"}}>
+            {saving ? <Loader2 size={14} className="animate-spin"/> : <Save size={14}/>}
+            {mode === "create" ? "Publier" : "Enregistrer"}
+          </button>
+        </div>
+      </div>
+
+      {err && (
+        <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl flex items-start gap-2">
+          <AlertCircle size={14} className="shrink-0 mt-0.5"/>{err}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 items-start">
+        {/* ══════════ Colonne gauche ══════════ */}
+        <div className="space-y-4">
+          <ProductImagesPanel produit={editingProduit} uploading={uploadingImage} onQuickUpload={onQuickImageUpload} onManage={onOpenImages}/>
+
+          {/* Visibilité */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-4">
+            <p className="text-sm font-bold text-gray-800">Visibilité</p>
+            <p className="text-xs text-gray-400 mt-0.5 mb-3">Contrôle l&apos;affichage du produit pour les visiteurs</p>
+            <button type="button" onClick={() => setForm({ ...form, actif: !form.actif })}
+              className="flex items-center gap-2 text-sm font-semibold"
+              style={{ color: form.actif ? "#16803c" : "#6b7280" }}>
+              {form.actif ? <ToggleRight size={26} className="text-ev-600" style={{color:"#16803c"}}/> : <ToggleLeft size={26} className="text-gray-300"/>}
+              {form.actif ? "Visible" : "Masqué"}
+            </button>
+          </div>
+
+          {/* Fiche technique PDF */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-4">
+            <p className="text-sm font-bold text-gray-800 mb-1">Fiche technique</p>
+            <p className="text-xs text-gray-400 mb-3">Document PDF téléchargeable sur la fiche produit</p>
+            <button onClick={onOpenFiche} disabled={!editingProduit}
+              className={`w-full h-9 text-xs font-semibold rounded-xl border flex items-center justify-center gap-2 transition-colors
+                ${!editingProduit ? "border-gray-100 text-gray-300 cursor-not-allowed"
+                  : form.fiche_technique ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100" : "border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600"}`}>
+              <FileText size={13}/>{form.fiche_technique ? "PDF ajoutée · Modifier" : "Ajouter un PDF"}
+            </button>
+            {!editingProduit && <p className="text-[11px] text-gray-300 mt-1.5">Disponible après l&apos;enregistrement</p>}
+          </div>
+
+          {/* Aperçu */}
+          <div className="bg-white rounded-2xl border border-gray-200 p-4">
+            <p className="text-sm font-bold text-gray-800 mb-1">Aperçu</p>
+            <p className="text-xs text-gray-400 mb-3">Voir le rendu de la fiche produit publique</p>
+            {editingProduit ? (
+              <a href={`/produits/${editingProduit.slug}`} target="_blank" rel="noreferrer"
+                className="w-full h-9 text-xs font-semibold rounded-xl border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600 flex items-center justify-center gap-2 transition-colors">
+                <Eye size={13}/>Aperçu
+              </a>
+            ) : (
+              <button disabled className="w-full h-9 text-xs font-semibold rounded-xl border border-gray-100 text-gray-300 flex items-center justify-center gap-2 cursor-not-allowed">
+                <Eye size={13}/>Aperçu
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* ══════════ Colonne droite — Détails produit ══════════ */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="px-5 pt-5 pb-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <p className="text-sm font-bold text-gray-900">Détails du produit</p>
+              <p className="text-xs text-gray-400 mt-0.5">Informations clés pour décrire et afficher votre produit.</p>
+            </div>
+            <span className={`text-[12px] font-bold px-2.5 py-1 rounded-full ${form.actif ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+              Statut : {form.actif ? "Publié" : "Brouillon"}
+            </span>
+          </div>
+
+          {/* Onglets */}
+          <div className="px-5 pt-4">
+            <div className="grid grid-cols-2 p-1 bg-gray-100 rounded-xl">
+              {(["general","avance"] as const).map(t => (
+                <button key={t} onClick={() => setTab(t)}
+                  className={`h-9 text-sm font-semibold rounded-lg transition-colors ${tab===t ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+                  {t === "general" ? "Général" : "Avancé"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="p-5 space-y-4">
+            {tab === "general" ? (
+              <>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Nom du produit *</label>
+                  <input value={form.nom} placeholder="ex. Engrais Foliaire Naturel"
+                    onChange={e=>setForm({...form,nom:e.target.value,slug:mode==="create"?toSlug(e.target.value):form.slug})}
+                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Slug *</label>
+                    <input value={form.slug} onChange={e=>setForm({...form,slug:e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,"")})}
+                      className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs"/>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Division</label>
+                    <select value={form.division} onChange={e=>setForm({...form,division:e.target.value})}
+                      className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white">
+                      <option value="standard">Standard</option>
+                      <option value="pro">Pro</option>
+                      <option value="garden">Garden</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Catégorie *</label>
+                  <select value={form.id_categorie} onChange={e=>setForm({...form,id_categorie:e.target.value})}
+                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white">
+                    <option value="">— Choisir —</option>
+                    {catsFlat.map((c)=><option key={c.optionKey ?? c.id_categorie} value={c.id_categorie}>
+                      {"　".repeat(c.depth)}{c.depth>0?(c.isExtraLink?"⇢ ":"└ "):""}{c.nom}{c.marque?.nom?` 🏷 ${(c.marque as any).nom}`:""}{c.activite?.nom?` ⚡ ${(c.activite as any).nom}`:""}
+                    </option>)}
+                  </select>
+                </div>
+
+                {form.id_categorie && (inheritedMarque || inheritedActivite) && (
+                  <div className="flex gap-3 flex-wrap">
+                    {inheritedMarque && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-blue-100 bg-blue-50 text-xs text-blue-700">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-blue-400">Marque héritée</span>
+                        <span className="font-semibold">🏷 {inheritedMarque.nom}</span>
+                      </div>
+                    )}
+                    {inheritedActivite && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-purple-100 bg-purple-50 text-xs text-purple-700">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-purple-400">Activité héritée</span>
+                        <span className="font-semibold">⚡ {inheritedActivite.nom}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Ordre d&apos;affichage</label>
+                  <input type="number" value={form.ordre} onChange={e=>setForm({...form,ordre:Number(e.target.value)})}
+                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 sm:max-w-[160px]"/>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Description</label>
+                  <RichTextEditor
+                    value={form.description}
+                    onChange={(html) => setForm({ ...form, description: html })}
+                    rows={4}
+                    placeholder="Rédigez une courte description mettant en avant les points forts et bénéfices"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Image de description</label>
+                  <p className="text-[12px] text-gray-400 mb-2">Affichée à côté du texte de description sur la fiche produit publique.</p>
+                  <LogoObtenteurUploader
+                    value={(form as any).image_description || ""}
+                    onChange={v => setForm({ ...form, image_description: v } as any)}
+                    dropLabel="Glissez l'image ici ou"
+                    altText="Illustration de la description"
+                    readyLabel="Image prête"
+                    previewMaxWidth={320}
+                    previewMaxHeight={220}
+                  />
+                </div>
+
+                {mode === "create" && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-700">
+                    💡 Après création, ajoutez les <strong>photos</strong> depuis la galerie à gauche, et la fiche PDF via la carte dédiée.
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {/* ══ Données techniques ══ */}
+                <div className="pt-1">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="h-px flex-1" style={{background:"linear-gradient(to right,transparent,#2e7d4f,transparent)"}}/>
+                    <span className="text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full border"
+                      style={{color:"#1a6b3a",background:"#e8f5ee",borderColor:"#2e7d4f"}}>
+                      📋 Données techniques
+                    </span>
+                    <div className="h-px flex-1" style={{background:"linear-gradient(to right,transparent,#2e7d4f,transparent)"}}/>
+                  </div>
+
+                  <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-3" style={{gridTemplateColumns:"1fr 2fr 1fr"}}>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider mb-1" style={{color:"#1a6b3a"}}>SKU / Référence</label>
+                      <input value={(form as any).sku||""} onChange={e=>setForm({...form,sku:e.target.value} as any)}
+                        placeholder="FV-001-1L"
+                        className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2 font-mono"
+                        style={{borderColor:"#a8d5b5"}}/>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider mb-1" style={{color:"#1a6b3a"}}>Poids / Volume</label>
+                      <input value={(form as any).poids||""} onChange={e=>setForm({...form,poids:e.target.value} as any)}
+                        placeholder="1L, 5 kg…"
+                        className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
+                        style={{borderColor:"#a8d5b5"}}/>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider mb-1" style={{color:"#1a6b3a"}}>Nature</label>
+                      <input value={(form as any).nature||""} onChange={e=>setForm({...form,nature:e.target.value} as any)}
+                        placeholder="Engrais foliaire…"
+                        className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
+                        style={{borderColor:"#a8d5b5"}}/>
+                    </div>
+                  </div>
+
+                  <div className="mb-2">
+                    <label className="block text-[11px] font-black uppercase tracking-wider mb-1" style={{color:"#1a6b3a"}}>Conditionnements</label>
+                    <input value={(form as any).conditionnement||""} onChange={e=>setForm({...form,conditionnement:e.target.value} as any)}
+                      placeholder="Flacon 1L, Bidon 5L…"
+                      className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
+                      style={{borderColor:"#a8d5b5"}}/>
+                  </div>
+
+                  <div className="mb-2">
+                    <label className="block text-[11px] font-black uppercase tracking-wider mb-1" style={{color:"#1a6b3a"}}>Composition chimique</label>
+                    <textarea value={(form as any).composition_chimique||""} onChange={e=>setForm({...form,composition_chimique:e.target.value} as any)}
+                      rows={5} placeholder={"Azote (N) Total — 4%\nAzote (N) Organique — 3,7%\nCarbone (C) Organique — 14%\nFer (Fe) Organique — 700 ppm"}
+                      className="w-full px-3 py-2 text-xs border rounded-xl focus:outline-none focus:ring-2 font-mono resize-y"
+                      style={{borderColor:"#a8d5b5",lineHeight:1.8}}/>
+                  </div>
+
+                  <div className="mb-2">
+                    <label className="block text-[11px] font-black uppercase tracking-wider mb-1" style={{color:"#c0580a"}}>Mode d&apos;emploi &amp; Application</label>
+                    <textarea value={(form as any).usage||""} onChange={e=>setForm({...form,usage:e.target.value} as any)}
+                      rows={5} placeholder={"Traitement Racinaire : 7 - 9 Litres / ha\nTraitement Foliaire : 300 - 500 ml / hl\nArboriculture | 0,25 L/100L | 3-5 L/Ha"}
+                      className="w-full px-3 py-2 text-xs border rounded-xl focus:outline-none focus:ring-2 font-mono resize-y"
+                      style={{borderColor:"#e0a87a",lineHeight:1.8}}/>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-3 rounded-xl border" style={{background:"#e8f5ee",borderColor:"#2e7d4f"}}>
+                    <input type="checkbox" id="biologique" checked={!!(form as any).biologique}
+                      onChange={e=>setForm({...form,biologique:e.target.checked} as any)}
+                      className="w-4 h-4 cursor-pointer" style={{accentColor:"#1a6b3a"}}/>
+                    <label htmlFor="biologique" className="text-sm font-bold cursor-pointer" style={{color:"#1a6b3a"}}>
+                      Certifié biologique / 100% végétal
+                    </label>
+                  </div>
+                </div>
+
+                {/* ══ Données semences ══ */}
+                <div className="pt-2">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="h-px flex-1" style={{background:"linear-gradient(to right,transparent,#16803c,transparent)"}}/>
+                    <span className="text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full border"
+                      style={{color:"#14532d",background:"#dcfce7",borderColor:"#16803c"}}>
+                      🌱 Données Semences
+                    </span>
+                    <div className="h-px flex-1" style={{background:"linear-gradient(to right,transparent,#16803c,transparent)"}}/>
+                  </div>
+                  <p className="text-[11px] text-gray-400 mb-3 -mt-2">
+                    Remplir uniquement pour les produits semences (haricot, fenouil, piment, tomate…)
+                  </p>
+
+                  <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>Saison</label>
+                      <input value={(form as any).saison||""} onChange={e=>setForm({...form,saison:e.target.value} as any)}
+                        placeholder="Printemps / Automne-Hiver"
+                        className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
+                        style={{borderColor:"#86efac"}}/>
+                    </div>
+                    <div className="col-span-1 sm:col-span-2">
+                      <label className="block text-[11px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>Obtenteur</label>
+                      <input value={(form as any).obtenteur||""} onChange={e=>setForm({...form,obtenteur:e.target.value} as any)}
+                        placeholder="NEXEEDS / CORASEEDS (Italie)…"
+                        className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2 mb-2"
+                        style={{borderColor:"#86efac"}}/>
+                      <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{color:"#15803d"}}>Logo obtenteur</p>
+                      <LogoObtenteurUploader
+                        value={(form as any).obtenteur_logo||""}
+                        onChange={v=>setForm({...form,obtenteur_logo:v} as any)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>Type / Variété</label>
+                      <input value={(form as any).type_semence||""} onChange={e=>setForm({...form,type_semence:e.target.value} as any)}
+                        placeholder="Hybride / Borlotto / Anaheim…"
+                        className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
+                        style={{borderColor:"#86efac"}}/>
+                    </div>
+                  </div>
+
+                  <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>Productivité / Rendement</label>
+                      <input value={(form as any).productivite||""} onChange={e=>setForm({...form,productivite:e.target.value} as any)}
+                        placeholder="Productivité élevée / Rendement élevé…"
+                        className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
+                        style={{borderColor:"#86efac"}}/>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>Longueur / Taille du fruit</label>
+                      <input value={(form as any).longueur_fruit||""} onChange={e=>setForm({...form,longueur_fruit:e.target.value} as any)}
+                        placeholder="13 à 16 cm / 18-22cm…"
+                        className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
+                        style={{borderColor:"#86efac"}}/>
+                    </div>
+                  </div>
+
+                  <div className="mb-2">
+                    <label className="block text-[11px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>Descriptif variétal</label>
+                    <textarea value={(form as any).descriptif_var||""} onChange={e=>setForm({...form,descriptif_var:e.target.value} as any)}
+                      rows={2} placeholder="Couleur rose dominante / Forme ronde, Couleur Blanche Attractive…"
+                      className="w-full px-3 py-2 text-xs border rounded-xl focus:outline-none focus:ring-2 resize-none"
+                      style={{borderColor:"#86efac"}}/>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="block text-[11px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>Résistances / Tolérances (HR)</label>
+                    <input value={(form as any).resistance||""} onChange={e=>setForm({...form,resistance:e.target.value} as any)}
+                      placeholder="Mosaïque commune et anthracnose / TMV…"
+                      className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
+                      style={{borderColor:"#86efac"}}/>
+                  </div>
+
+                  <div className="p-3 rounded-xl border space-y-3" style={{background:"#f0fdf4",borderColor:"#86efac"}}>
+                    <p className="text-[11px] font-black uppercase tracking-widest text-green-800">📅 Calendrier cultural — cliquer sur les mois actifs</p>
+                    <CalendrierEditor label="🟢 Semis / Repiquage" color="#16a34a"
+                      value={(form as any).calendrier_semis||"000000000000"}
+                      onChange={v=>setForm({...form,calendrier_semis:v} as any)}/>
+                    <CalendrierEditor label="🔴 Récolte" color="#dc2626"
+                      value={(form as any).calendrier_recolte||"000000000000"}
+                      onChange={v=>setForm({...form,calendrier_recolte:v} as any)}/>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Actions bas de page */}
+          <div className="px-5 pb-5 pt-2 flex gap-3 border-t border-gray-100">
+            <button onClick={onCancel} className="flex-1 h-10 border border-gray-200 text-sm text-gray-600 rounded-xl hover:bg-gray-50 mt-3">
+              Annuler
+            </button>
+            <button onClick={() => onSaveAs(form.actif)} disabled={saving}
+              className="flex-1 h-10 text-white text-sm rounded-xl disabled:opacity-60 flex items-center justify-center mt-3"
+              style={{background:"linear-gradient(135deg,#3C50E0,#4F60E8)"}}>
+              {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/> : mode==="create"?"Créer le produit":"Enregistrer les modifications"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Page principale ──────────────────────────────────────────── */
 export default function AdminProduitsPage() {
   const [items,    setItems]    = useState<ProduitAdmin[]>([]);
@@ -450,57 +964,19 @@ export default function AdminProduitsPage() {
   const [editing,  setEditing]  = useState<ProduitAdmin|null>(null);
   const [form,     setForm]     = useState(EMPTY);
   const [saving,   setSaving]   = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [err,      setErr]      = useState("");
   const [confirmDel, setConfirmDel] = useState<number|null>(null);
 
-  interface CatNode extends CategorieAdmin { children:CatNode[]; depth:number; optKey:string; isExtraLink?:boolean }
-  const catsFlat = (() => {
-    const map=new Map<number,CatNode>();
-    categories.forEach(c=>map.set(c.id_categorie,{...c,children:[],depth:0,optKey:String(c.id_categorie)}));
-    const roots:CatNode[]=[];
-    map.forEach(node=>{
-      if(node.parent_id&&map.has(node.parent_id)){map.get(node.parent_id)!.children.push(node);}
-      else roots.push(node);
-    });
-    const sort=(arr:CatNode[])=>arr.sort((a,b)=>a.ordre-b.ordre||a.nom.localeCompare(b.nom,"fr"));
-    const assignDepth=(nodes:CatNode[],d:number)=>{sort(nodes);nodes.forEach(n=>{n.depth=d;assignDepth(n.children,d+1);});};
-    assignDepth(roots,0);
-
-    // Rattachements secondaires (parent_ids_extra) : une sous-catégorie (ex. une
-    // "espèce") rattachée à plusieurs catégories parentes doit apparaître dans
-    // CHACUNE d'elles ici aussi, pas seulement sous son parent principal —
-    // sinon on ne peut pas lui associer un produit depuis ces autres parents.
-    const extraChildrenByParent = new Map<number, CatNode[]>();
-    categories.forEach(c=>{
-      (c.parent_ids_extra ?? []).forEach(pid=>{
-        if(pid===c.id_categorie || !map.has(pid)) return;
-        const arr = extraChildrenByParent.get(pid) ?? [];
-        arr.push(map.get(c.id_categorie)!);
-        extraChildrenByParent.set(pid, arr);
-      });
-    });
-
-    const flat:CatNode[]=[];
-    const walk=(arr:CatNode[])=>arr.forEach(n=>{
-      flat.push(n);
-      walk(n.children);
-      const extras = extraChildrenByParent.get(n.id_categorie);
-      if(extras && extras.length){
-        sort(extras);
-        extras.forEach(ex=>{
-          flat.push({...ex, depth:n.depth+1, isExtraLink:true, optKey:`${ex.id_categorie}-extra-${n.id_categorie}`});
-        });
-      }
-    });
-    walk(roots); return flat;
-  })();
+  const catsFlat = leavesOnly(flattenCategoriesForSelect(categories), categories);
 
   // Catégorie sélectionnée → marque/activité héritées en lecture seule
   const selectedCat = form.id_categorie
     ? categories.find(c=>String(c.id_categorie)===form.id_categorie)
     : null;
-  const inheritedMarque   = selectedCat?.id_marque   ? marques.find(m=>m.id_marque===selectedCat.id_marque)     : null;
-  const inheritedActivite = selectedCat?.id_activite ? activites.find(a=>a.id_activite===selectedCat.id_activite) : null;
+  const selectedContext = selectedCat ? resolveCategoryContext(categories, selectedCat.id_categorie) : null;
+  const inheritedMarque   = selectedContext?.effective_id_marque   ? marques.find(m=>m.id_marque===selectedContext.effective_id_marque)     : null;
+  const inheritedActivite = selectedContext?.effective_id_activite ? activites.find(a=>a.id_activite===selectedContext.effective_id_activite) : null;
 
   const loadRefs = useCallback(async () => {
     const [mrqs,cats,acts]=await Promise.all([adminMarques.list(),adminCategories.list(),adminActivites.list()]);
@@ -553,12 +1029,13 @@ export default function AdminProduitsPage() {
     setEditing(p); setErr(""); setModal("edit");
   };
 
-  const handleSave = async () => {
+  const handleSave = async (actifOverride?: boolean) => {
     if(!form.nom.trim()||!form.slug.trim()||!form.id_categorie){setErr("Nom, slug et catégorie requis.");return;}
     setSaving(true); setErr("");
+    const actifValue = actifOverride ?? form.actif;
     try {
       const base={ nom:form.nom, slug:form.slug, id_categorie:Number(form.id_categorie),
-        division:form.division, ordre:form.ordre,
+        division:form.division, ordre:form.ordre, actif:actifValue,
         description:form.description||null, fiche_technique:form.fiche_technique||null,
         image_description:(form as any).image_description||null,
         sku:(form as any).sku||null,
@@ -579,13 +1056,30 @@ export default function AdminProduitsPage() {
         calendrier_semis:(form as any).calendrier_semis||null,
         calendrier_recolte:(form as any).calendrier_recolte||null,
       };
-      if(modal==="create") await adminProduitsCreate.create(base as any);
-      else if(editing) await adminProduitsCreate.update(editing.id_produit,{...base,actif:form.actif});
-      setModal(null);
-      toast.success(modal==="create"?"Produit créé !":"Produit mis à jour !");
+      if(modal==="create") {
+        const created = await adminProduitsCreate.create(base as any);
+        setEditing(created as any); setModal("edit"); setForm(f=>({...f,actif:actifValue}));
+        toast.success("Produit créé ! Vous pouvez maintenant ajouter des photos.");
+      } else if(editing) {
+        const updated = await adminProduitsCreate.update(editing.id_produit,base);
+        setEditing(prev => prev ? ({...prev, ...updated} as any) : prev);
+        setForm(f=>({...f,actif:actifValue}));
+        toast.success("Produit mis à jour !");
+      }
       load(meta.page);
     } catch(e) { setErr((e as Error).message); }
     finally { setSaving(false); }
+  };
+
+  const quickUploadImage = async (file: File) => {
+    if (!editing) return;
+    setUploadingImage(true);
+    try {
+      const data = await adminUpload.produitImage(editing.id_produit, file, undefined, (editing.images?.length ?? 0) === 0);
+      setEditing(prev => prev ? ({ ...prev, images: [...(prev.images ?? []), data] }) : prev);
+      toast.success("Image ajoutée");
+    } catch(e) { toast.error("Erreur", (e as Error).message); }
+    finally { setUploadingImage(false); }
   };
 
   const toggleActif = async (p: ProduitAdmin) => {
@@ -606,6 +1100,27 @@ export default function AdminProduitsPage() {
         <ConfirmDialog message="Supprimer ce produit définitivement ?" onConfirm={()=>remove(confirmDel)} onCancel={()=>setConfirmDel(null)}/>
       )}
 
+      {modal ? (
+        <ProductFormPanel
+          mode={modal}
+          form={form}
+          setForm={setForm}
+          err={err}
+          saving={saving}
+          editingProduit={editing}
+          catsFlat={catsFlat}
+          inheritedMarque={inheritedMarque}
+          inheritedActivite={inheritedActivite}
+          onCancel={()=>{ setModal(null); load(meta.page); }}
+          onSaveAs={(actifValue)=>handleSave(actifValue)}
+          onDeleteClick={()=>{ if(editing) setConfirmDel(editing.id_produit); }}
+          onOpenImages={()=>{ if(editing) setImgModal(editing); }}
+          onOpenFiche={()=>{ if(editing) setFicheModal(editing); }}
+          onQuickImageUpload={quickUploadImage}
+          uploadingImage={uploadingImage}
+        />
+      ) : (
+      <>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -727,351 +1242,38 @@ export default function AdminProduitsPage() {
           </div>
         )}
       </div>
+      </>
+      )}
 
       {/* Modals */}
-      {imgModal && <ImagesModal produit={imgModal} onClose={() => { setImgModal(null); load(meta.page); }}/>}
+      {imgModal && (
+        <ImagesModal produit={imgModal} onClose={() => {
+          const id = imgModal.id_produit;
+          setImgModal(null);
+          load(meta.page);
+          const token = typeof window !== "undefined" ? (localStorage.getItem("ev_admin_token") ?? "") : "";
+          fetch(`${BASE}/admin/produits/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+            .then(r => r.ok ? r.json() : null)
+            .then(d => {
+              if (!d) return;
+              const fresh = d.data ?? d;
+              setEditing(prev => prev && prev.id_produit === id ? ({ ...prev, images: fresh.images ?? prev.images }) : prev);
+            })
+            .catch(() => {});
+        }}/>
+      )}
       {ficheModal && (
         <FicheModal produit={ficheModal} onClose={()=>setFicheModal(null)}
           onUpdated={url => {
             setItems(prev => prev.map(p => p.id_produit===ficheModal.id_produit ? ({...p,fiche_technique:url||null} as any) : p));
+            if (editing && editing.id_produit === ficheModal.id_produit) {
+              setForm(f => ({ ...f, fiche_technique: url || "" }));
+              setEditing(prev => prev ? ({ ...prev, fiche_technique: url || null } as any) : prev);
+            }
             setFicheModal(null);
           }}/>
       )}
 
-      {/* Modal create/edit */}
-      {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto">
-            <div className="p-5 border-b flex items-center justify-between sticky top-0 bg-white z-10">
-              <h2 className="font-bold text-gray-900">{modal==="create"?"Nouveau produit":`Modifier — ${editing?.nom}`}</h2>
-              <button onClick={()=>setModal(null)} className="text-gray-400 hover:text-gray-700"><X size={18}/></button>
-            </div>
-            <div className="p-5 space-y-4">
-              {err && <div className="p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl flex items-start gap-2"><AlertCircle size={14} className="shrink-0 mt-0.5"/>{err}</div>}
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Nom *</label>
-                  <input value={form.nom} onChange={e=>setForm({...form,nom:e.target.value,slug:modal==="create"?toSlug(e.target.value):form.slug})}
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Slug *</label>
-                  <input value={form.slug} onChange={e=>setForm({...form,slug:e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,"")})}
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs"/>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Catégorie *</label>
-                <select value={form.id_categorie} onChange={e=>setForm({...form,id_categorie:e.target.value})}
-                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white">
-                  <option value="">— Choisir —</option>
-                  {catsFlat.map(c=><option key={c.optKey} value={c.id_categorie}>
-                    {"　".repeat(c.depth)}{c.depth>0?(c.isExtraLink?"⇢ ":"└ "):""}{c.nom}{c.marque?.nom?` 🏷 ${(c.marque as any).nom}`:""}{c.activite?.nom?` ⚡ ${(c.activite as any).nom}`:""}
-                  </option>)}
-                </select>
-              </div>
-
-              {/* Marque & Activité héritées de la catégorie — lecture seule */}
-              {form.id_categorie && (inheritedMarque || inheritedActivite) && (
-                <div className="flex gap-3 flex-wrap">
-                  {inheritedMarque && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-blue-100 bg-blue-50 text-xs text-blue-700">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-blue-400">Marque héritée</span>
-                      <span className="font-semibold">🏷 {inheritedMarque.nom}</span>
-                    </div>
-                  )}
-                  {inheritedActivite && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-purple-100 bg-purple-50 text-xs text-purple-700">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-purple-400">Activité héritée</span>
-                      <span className="font-semibold">⚡ {inheritedActivite.nom}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Division</label>
-                  <select value={form.division} onChange={e=>setForm({...form,division:e.target.value})}
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white">
-                    <option value="standard">Standard</option>
-                    <option value="pro">Pro</option>
-                    <option value="garden">Garden</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Ordre</label>
-                  <input type="number" value={form.ordre} onChange={e=>setForm({...form,ordre:Number(e.target.value)})}
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"/>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Description</label>
-                <textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})} rows={3}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"/>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-                  Image de description
-                </label>
-                <p className="text-[11px] text-gray-400 mb-2">
-                  Affichée à côté du texte de description sur la fiche produit publique.
-                </p>
-                <LogoObtenteurUploader
-                  value={(form as any).image_description || ""}
-                  onChange={v => setForm({ ...form, image_description: v } as any)}
-                  dropLabel="Glissez l'image ici ou"
-                  altText="Illustration de la description"
-                  readyLabel="Image prête"
-                  previewMaxWidth={320}
-                  previewMaxHeight={220}
-                />
-              </div>
-
-
-              {/* ══════════════════════════════════════════════
-                  DONNÉES TECHNIQUES — style catalogue fertivert
-                  ══════════════════════════════════════════════ */}
-              <div className="pt-2">
-
-                {/* Séparateur */}
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="h-px flex-1" style={{background:"linear-gradient(to right,transparent,#2e7d4f,transparent)"}}/>
-                  <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border"
-                    style={{color:"#1a6b3a",background:"#e8f5ee",borderColor:"#2e7d4f"}}>
-                    📋 Données techniques
-                  </span>
-                  <div className="h-px flex-1" style={{background:"linear-gradient(to right,transparent,#2e7d4f,transparent)"}}/>
-                </div>
-
-                {/* Ligne 1 : SKU + Poids + Nature */}
-                <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-3" style={{gridTemplateColumns:"1fr 2fr 1fr"}}>
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#1a6b3a"}}>
-                      SKU / Référence
-                    </label>
-                    <input value={(form as any).sku||""} onChange={e=>setForm({...form,sku:e.target.value} as any)}
-                      placeholder="FV-001-1L"
-                      className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2 font-mono"
-                      style={{borderColor:"#a8d5b5","--tw-ring-color":"#2e7d4f"} as React.CSSProperties}/>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#1a6b3a"}}>
-                      Poids / Volume
-                    </label>
-                    <input value={(form as any).poids||""} onChange={e=>setForm({...form,poids:e.target.value} as any)}
-                      placeholder="1L, 5 kg…"
-                      className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
-                      style={{borderColor:"#a8d5b5"}}/>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#1a6b3a"}}>
-                      Nature
-                    </label>
-                    <input value={(form as any).nature||""} onChange={e=>setForm({...form,nature:e.target.value} as any)}
-                      placeholder="Engrais foliaire…"
-                      className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
-                      style={{borderColor:"#a8d5b5"}}/>
-                  </div>
-                </div>
-
-                {/* Conditionnement */}
-                <div className="mb-2">
-                  <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#1a6b3a"}}>
-                    Conditionnements
-                  </label>
-                  <input value={(form as any).conditionnement||""} onChange={e=>setForm({...form,conditionnement:e.target.value} as any)}
-                    placeholder="Flacon 1L, Bidon 5L…"
-                    className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
-                    style={{borderColor:"#a8d5b5"}}/>
-                </div>
-
-                {/* Composition chimique — prévisualisation style catalogue */}
-                <div className="mb-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[10px] font-black uppercase tracking-wider" style={{color:"#1a6b3a"}}>
-                      Composition chimique
-                    </label>
-                    
-                  </div>
-                  <textarea value={(form as any).composition_chimique||""} onChange={e=>setForm({...form,composition_chimique:e.target.value} as any)}
-                    rows={5} placeholder={"Azote (N) Total — 4%\nAzote (N) Organique — 3,7%\nCarbone (C) Organique — 14%\nFer (Fe) Organique — 700 ppm"}
-                    className="w-full px-3 py-2 text-xs border rounded-xl focus:outline-none focus:ring-2 font-mono resize-y"
-                    style={{borderColor:"#a8d5b5",lineHeight:1.8}}/>
-                </div>
-
-                {/* Usage / Application — prévisualisation style catalogue */}
-                <div className="mb-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[10px] font-black uppercase tracking-wider" style={{color:"#c0580a"}}>
-                      Mode d'emploi &amp; Application
-                    </label>
-                    
-                  </div>
-                  <textarea value={(form as any).usage||""} onChange={e=>setForm({...form,usage:e.target.value} as any)}
-                    rows={5} placeholder={"Traitement Racinaire : 7 - 9 Litres / ha\nTraitement Foliaire : 300 - 500 ml / hl\nArboriculture | 0,25 L/100L | 3-5 L/Ha\nMaraîchage | 0,25 L/100L | 3-5 L/Ha\nGrandes Cultures | 1-3 L/100L | -"}
-                    className="w-full px-3 py-2 text-xs border rounded-xl focus:outline-none focus:ring-2 font-mono resize-y"
-                    style={{borderColor:"#e0a87a",lineHeight:1.8}}/>
-                </div>
-
-                {/* Biologique */}
-                <div className="flex items-center gap-3 p-3 rounded-xl border"
-                  style={{background:"#e8f5ee",borderColor:"#2e7d4f"}}>
-                  <input type="checkbox" id="biologique" checked={!!(form as any).biologique}
-                    onChange={e=>setForm({...form,biologique:e.target.checked} as any)}
-                    className="w-4 h-4 cursor-pointer" style={{accentColor:"#1a6b3a"}}/>
-                  <label htmlFor="biologique" className="text-sm font-bold cursor-pointer" style={{color:"#1a6b3a"}}>
-                    Certifié biologique / 100% végétal
-                  </label>
-                </div>
-              </div>
-
-              {/* ══════════════════════════════════════════════
-                  DONNÉES SEMENCES — style catalogue Espace Vert
-                  ══════════════════════════════════════════════ */}
-              <div className="pt-2">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="h-px flex-1" style={{background:"linear-gradient(to right,transparent,#16803c,transparent)"}}/>
-                  <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border"
-                    style={{color:"#14532d",background:"#dcfce7",borderColor:"#16803c"}}>
-                    🌱 Données Semences
-                  </span>
-                  <div className="h-px flex-1" style={{background:"linear-gradient(to right,transparent,#16803c,transparent)"}}/>
-                </div>
-                <p className="text-[10px] text-gray-400 mb-3 -mt-2">
-                  Remplir uniquement pour les produits semences (haricot, fenouil, piment, tomate…)
-                </p>
-
-                {/* Saison + Obtenteur + Type */}
-                <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>
-                      Saison
-                    </label>
-                    <input value={(form as any).saison||""} onChange={e=>setForm({...form,saison:e.target.value} as any)}
-                      placeholder="Printemps / Automne-Hiver"
-                      className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
-                      style={{borderColor:"#86efac"}}/>
-                  </div>
-                  <div className="col-span-1 sm:col-span-2">
-                    <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>
-                      Obtenteur
-                    </label>
-                    <input value={(form as any).obtenteur||""} onChange={e=>setForm({...form,obtenteur:e.target.value} as any)}
-                      placeholder="NEXEEDS / CORASEEDS (Italie)…"
-                      className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2 mb-2"
-                      style={{borderColor:"#86efac"}}/>
-                    <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{color:"#15803d"}}>
-                      Logo obtenteur
-                    </p>
-                    <LogoObtenteurUploader
-                      value={(form as any).obtenteur_logo||""}
-                      onChange={v=>setForm({...form,obtenteur_logo:v} as any)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>
-                      Type / Variété
-                    </label>
-                    <input value={(form as any).type_semence||""} onChange={e=>setForm({...form,type_semence:e.target.value} as any)}
-                      placeholder="Hybride / Borlotto / Anaheim…"
-                      className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
-                      style={{borderColor:"#86efac"}}/>
-                  </div>
-                </div>
-
-                {/* Productivité + Longueur fruit */}
-                <div className="mb-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>
-                      Productivité / Rendement
-                    </label>
-                    <input value={(form as any).productivite||""} onChange={e=>setForm({...form,productivite:e.target.value} as any)}
-                      placeholder="Productivité élevée / Rendement élevé…"
-                      className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
-                      style={{borderColor:"#86efac"}}/>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>
-                      Longueur / Taille du fruit
-                    </label>
-                    <input value={(form as any).longueur_fruit||""} onChange={e=>setForm({...form,longueur_fruit:e.target.value} as any)}
-                      placeholder="13 à 16 cm / 18-22cm…"
-                      className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
-                      style={{borderColor:"#86efac"}}/>
-                  </div>
-                </div>
-
-                {/* Descriptif variétal */}
-                <div className="mb-2">
-                  <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>
-                    Descriptif variétal
-                  </label>
-                  <textarea value={(form as any).descriptif_var||""} onChange={e=>setForm({...form,descriptif_var:e.target.value} as any)}
-                    rows={2} placeholder="Couleur rose dominante / Forme ronde, Couleur Blanche Attractive / Fruit Blanche Très Attractive…"
-                    className="w-full px-3 py-2 text-xs border rounded-xl focus:outline-none focus:ring-2 resize-none"
-                    style={{borderColor:"#86efac"}}/>
-                </div>
-
-                {/* Résistances / Tolérances */}
-                <div className="mb-3">
-                  <label className="block text-[10px] font-black uppercase tracking-wider mb-1" style={{color:"#15803d"}}>
-                    Résistances / Tolérances (HR)
-                  </label>
-                  <input value={(form as any).resistance||""} onChange={e=>setForm({...form,resistance:e.target.value} as any)}
-                    placeholder="Mosaïque commune et anthracnose / TMV…"
-                    className="w-full h-9 px-2.5 text-xs border rounded-lg focus:outline-none focus:ring-2"
-                    style={{borderColor:"#86efac"}}/>
-                </div>
-
-                {/* Calendrier */}
-                <div className="p-3 rounded-xl border space-y-3" style={{background:"#f0fdf4",borderColor:"#86efac"}}>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-green-800">
-                    📅 Calendrier cultural — cliquer sur les mois actifs
-                  </p>
-                  <CalendrierEditor
-                    label="🟢 Semis / Repiquage"
-                    color="#16a34a"
-                    value={(form as any).calendrier_semis||"000000000000"}
-                    onChange={v=>setForm({...form,calendrier_semis:v} as any)}
-                  />
-                  <CalendrierEditor
-                    label="🔴 Récolte"
-                    color="#dc2626"
-                    value={(form as any).calendrier_recolte||"000000000000"}
-                    onChange={v=>setForm({...form,calendrier_recolte:v} as any)}
-                  />
-                </div>
-              </div>
-
-              {modal==="edit" && (
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" checked={form.actif} onChange={e=>setForm({...form,actif:e.target.checked})}
-                    className="w-4 h-4 accent-blue-600"/>
-                  Produit actif
-                </label>
-              )}
-              {modal==="create" && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-700">
-                  💡 Après création, ajoutez les <strong>photos</strong> via le bouton dans la liste. La fiche PDF peut être gérée via le bouton dédié.
-                </div>
-              )}
-            </div>
-            <div className="p-5 pt-0 flex gap-3">
-              <button onClick={()=>setModal(null)} className="flex-1 h-10 border text-sm text-gray-600 rounded-xl hover:bg-gray-50">Annuler</button>
-              <button onClick={handleSave} disabled={saving}
-                className="flex-1 h-10 text-white text-sm rounded-xl disabled:opacity-60 flex items-center justify-center"
-                style={{background:"linear-gradient(135deg,#3C50E0,#4F60E8)"}}>
-                {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/> : modal==="create"?"Créer":"Enregistrer"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

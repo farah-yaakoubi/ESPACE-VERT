@@ -5,10 +5,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, FileText, Calendar, MessageSquare,
-  Package, Newspaper, LogOut, Menu, X, Users,
+  Newspaper, LogOut, Menu, X, Users,
   Shield, ExternalLink, Tag, Layers, Activity, HelpCircle,
   ChevronRight, BarChart3, Globe, ImageIcon, Bot, Crown,
-  Sparkles, PlaySquare,
+  Sparkles, PlaySquare, Package,
 } from "lucide-react";
 import { tokenStore, adminAuth, isSuperAdmin, type Admin } from "@/lib/admin-api";
 import { hasPermission, hasAnyPermission, PERMISSIONS } from "@/lib/permissions";
@@ -19,6 +19,7 @@ import { EspaceCompte } from "@/components/admin/EspaceCompte";
 import { useTheme } from "@/hooks/useTheme";
 import { AdminAIWidget } from "@/components/admin/AdminAIWidget";
 import { GlobalCommandPalette } from "@/components/admin/GlobalCommandPalette";
+import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 
 const A = {
   bg: "#0f1a14", bg2: "#162117", accent: "#2e7d4f",
@@ -43,11 +44,10 @@ const NAV_GROUPS: NavGroup[] = [
     { href: "/admin/analytics",  icon: BarChart3,       label: "Analytiques",   permission: PERMISSIONS.ANALYTICS_READ },
   ]},
   { label: "CATALOGUE", items: [
+    { href: "/admin/produits",   icon: Package,   label: "Produits",     permission: PERMISSIONS.PRODUITS_READ },
     { href: "/admin/marques",    icon: Tag,       label: "Marques",      permission: PERMISSIONS.PRODUITS_READ },
     { href: "/admin/activites",  icon: Activity,  label: "Activités",    permission: PERMISSIONS.PRODUITS_READ },
     { href: "/admin/categories", icon: Layers,    label: "Catégories",   permission: PERMISSIONS.PRODUITS_READ },
-    { href: "/admin/produits",   icon: Package,   label: "Produits",     permission: PERMISSIONS.PRODUITS_READ },
-    { href: "/admin/catalogue",  icon: ImageIcon, label: "Médias",       permission: PERMISSIONS.PRODUITS_WRITE },
   ]},
   { label: "CONTENU", items: [
     { href: "/admin/hero",       icon: ImageIcon,  label: "Hero Slides",   permission: PERMISSIONS.ACTUALITES_WRITE },
@@ -72,7 +72,7 @@ function pageLabel(p: string) {
   const seg = p.split("/").filter(Boolean).pop() ?? "dashboard";
   const map: Record<string, string> = {
     dashboard: "Dashboard", marques: "Marques", activites: "Activités",
-    categories: "Catégories", produits: "Produits", catalogue: "Médias",
+    categories: "Catégories", produits: "Produits",
     hero: "Hero Slides",
     actualites: "Actualités", faq: "FAQ", devis: "Devis", rdv: "Rendez-vous",
     "tutorial-videos": "Vidéos tutoriels",
@@ -119,7 +119,7 @@ function NavItemComp({ href, icon: Icon, label, active, onClick, superOnly, isAI
       {superOnly && <Crown size={8} style={{ opacity: 0.5, color: A.gold }} />}
       {isAI && !superOnly && (
         <span style={{
-          fontSize: 8, fontWeight: 800, padding: "1px 5px",
+          fontSize: 10, fontWeight: 800, padding: "1px 5px",
           borderRadius: 20, letterSpacing: "0.05em",
           background: active ? "rgba(255,255,255,0.2)" : "rgba(59,130,246,0.2)",
           color: active ? "#fff" : "#93c5fd",
@@ -219,10 +219,10 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ color: "#fff", fontWeight: 800, fontSize: 15, letterSpacing: "-0.025em", lineHeight: 1 }}>EspaceVert</p>
               <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 3 }}>
-                <p style={{ color: A.accent, fontWeight: 600, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase" }}>Administration</p>
+                <p style={{ color: A.accent, fontWeight: 600, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase" }}>Administration</p>
                 {/* Badge SaaS */}
                 <span style={{
-                  fontSize: 8, fontWeight: 800, padding: "1px 4px",
+                  fontSize: 10, fontWeight: 800, padding: "1px 4px",
                   borderRadius: 4, letterSpacing: "0.04em",
                   background: "rgba(59,130,246,0.2)", color: "#93c5fd",
                   border: "1px solid rgba(59,130,246,0.25)", textTransform: "uppercase",
@@ -244,7 +244,7 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         {superAdmin && !collapsed && (
           <div style={{ margin: "8px 8px 0", padding: "6px 10px", background: "rgba(245,158,11,0.12)", borderRadius: 10, border: "1px solid rgba(245,158,11,0.25)", display: "flex", alignItems: "center", gap: 6 }}>
             <Crown size={11} style={{ color: A.gold, flexShrink: 0 }} />
-            <span style={{ fontSize: 10, fontWeight: 700, color: A.gold, letterSpacing: "0.06em", textTransform: "uppercase" }}>Super Administrateur</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: A.gold, letterSpacing: "0.06em", textTransform: "uppercase" }}>Super Administrateur</span>
           </div>
         )}
 
@@ -267,8 +267,8 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
               <Sparkles size={12} style={{ color: "#fff" }} />
             </div>
             <div>
-              <p style={{ fontSize: 10.5, fontWeight: 700, color: "#93c5fd", lineHeight: 1 }}>Agent IA actif</p>
-              <p style={{ fontSize: 9, color: "rgba(147,197,253,0.6)", marginTop: 2 }}>Cliquez sur ✨ pour interagir</p>
+              <p style={{ fontSize: 11.5, fontWeight: 700, color: "#93c5fd", lineHeight: 1 }}>Agent IA actif</p>
+              <p style={{ fontSize: 10, color: "rgba(147,197,253,0.6)", marginTop: 2 }}>Cliquez sur ✨ pour interagir</p>
             </div>
           </div>
         )}
@@ -277,7 +277,7 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         <nav style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "12px 8px", display: "flex", flexDirection: "column", gap: 16 }}>
           {visibleGroups.map(group => (
             <div key={group.label}>
-              {!collapsed && <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", color: A.textDim, padding: "0 12px", marginBottom: 4, textTransform: "uppercase" }}>{group.label}</p>}
+              {!collapsed && <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", color: A.textDim, padding: "0 12px", marginBottom: 4, textTransform: "uppercase" }}>{group.label}</p>}
               <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
                 {group.items.map(item => {
                   const active = isActive(item.href);
@@ -314,7 +314,7 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ color: "#fff", fontSize: 12.5, fontWeight: 600, lineHeight: 1, marginBottom: 3 }} className="truncate">{admin.nom}</p>
-                <p style={{ fontSize: 10, fontWeight: 600, color: superAdmin ? A.gold : A.accentXl }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: superAdmin ? A.gold : A.accentXl }}>
                   {superAdmin ? "Super Admin" : admin.role?.nom ?? "Admin"}
                 </p>
               </div>
@@ -364,6 +364,8 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
               <div className="hidden sm:block">
                 <GlobalCommandPalette />
               </div>
+
+              <LanguageSwitcher compact />
 
               {/* Voir le site */}
               <Link href="/" target="_blank"
@@ -416,17 +418,17 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
           {/* Footer */}
           <footer className="px-7 py-3 flex items-center justify-between admin-themed"
             style={{ borderTop: "1px solid var(--admin-border)", background: "var(--admin-header)" }}>
-            <p style={{ fontSize: 11, color: "var(--admin-text3)" }}>EspaceVert Admin — v3.0 SaaS</p>
+            <p style={{ fontSize: 12, color: "var(--admin-text3)" }}>EspaceVert Admin — v3.0 SaaS</p>
             <div className="flex items-center gap-4">
               {/* Indicateur Agent IA */}
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />
-                <span style={{ fontSize: 10, color: "var(--admin-text3)", fontWeight: 500 }}>Agent IA actif</span>
+                <span style={{ fontSize: 11, color: "var(--admin-text3)", fontWeight: 500 }}>Agent IA actif</span>
               </div>
-              <Link href="/" target="_blank" style={{ fontSize: 11, color: "var(--admin-text3)", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+              <Link href="/" target="_blank" style={{ fontSize: 12, color: "var(--admin-text3)", textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
                 <Globe size={10} /> espace-vert.com.tn
               </Link>
-              <span style={{ fontSize: 11, color: A.accent }}>© {new Date().getFullYear()}</span>
+              <span style={{ fontSize: 12, color: A.accent }}>© {new Date().getFullYear()}</span>
             </div>
           </footer>
         </div>

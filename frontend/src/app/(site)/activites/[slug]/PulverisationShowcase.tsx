@@ -16,9 +16,11 @@ import {
 import type { Categorie } from "@/types/api";
 import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
 import type { IcoName } from "@/components/icons/AgriIcons";
+import { getActivityCategoryHrefById } from "@/lib/category-url";
 
 interface PulverisationShowcaseProps {
   categories: Categorie[];
+  activiteSlug: string;
 }
 
 const HERO_IMAGE = "/images/activites/pulverisation.webp";
@@ -97,7 +99,7 @@ const guides = [
   },
 ];
 
-function getCategoryCards(categories: Categorie[]) {
+function getCategoryCards(categories: Categorie[], activiteSlug: string) {
   const roots = categories.filter((category) => !category.parent_id).slice(0, 3);
 
   return fallbackCategories.map((fallback, index) => {
@@ -106,14 +108,16 @@ function getCategoryCards(categories: Categorie[]) {
       id: category?.id_categorie ?? index,
       title: category?.nom || fallback.title,
       description: category?.description || fallback.description,
-      href: category ? `?cat=${category.id_categorie}#pulverisation-products` : "#pulverisation-products",
+      href: category
+        ? `${getActivityCategoryHrefById(activiteSlug, categories, category.id_categorie)}#pulverisation-products`
+        : "#pulverisation-products",
       Icon: fallback.Icon,
     };
   });
 }
 
-export function PulverisationShowcase({ categories }: PulverisationShowcaseProps) {
-  const categoryCards = getCategoryCards(categories);
+export function PulverisationShowcase({ categories, activiteSlug }: PulverisationShowcaseProps) {
+  const categoryCards = getCategoryCards(categories, activiteSlug);
 
   return (
     <main className="bg-[#f5f6f3] text-[#10214a]">

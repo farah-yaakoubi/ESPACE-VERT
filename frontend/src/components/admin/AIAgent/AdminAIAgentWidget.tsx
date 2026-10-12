@@ -587,13 +587,13 @@ function ActionCard({
           }}>
             {action.label}
           </p>
-          <p style={{ fontSize: 11, color: EV.textMid, lineHeight: 1.4 }}>
+          <p style={{ fontSize: 12, color: EV.textMid, lineHeight: 1.4 }}>
             {executed ? "Action exécutée avec succès" : action.description}
           </p>
         </div>
         {!executed && (
           <span style={{
-            fontSize: 9, fontWeight: 700, letterSpacing: "0.06em",
+            fontSize: 10, fontWeight: 700, letterSpacing: "0.06em",
             padding: "2px 7px", borderRadius: 20,
             background: riskColors.bg, color: riskColors.text,
             border: `1px solid ${riskColors.border}`,
@@ -615,7 +615,7 @@ function ActionCard({
           overflowY: "auto",
         }}>
           {Object.entries(action.payload).slice(0, 5).map(([k, v]) => (
-            <div key={k} style={{ display: "flex", gap: 8, fontSize: 10.5, lineHeight: 1.6 }}>
+            <div key={k} style={{ display: "flex", gap: 8, fontSize: 11.5, lineHeight: 1.6 }}>
               <span style={{ color: EV.textDim, flexShrink: 0, minWidth: 90 }}>{k} :</span>
               <span style={{ color: EV.textMid, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {String(v).slice(0, 80)}
@@ -623,7 +623,7 @@ function ActionCard({
             </div>
           ))}
           {Object.keys(action.payload).length > 5 && (
-            <p style={{ fontSize: 10, color: EV.textDim, marginTop: 2 }}>
+            <p style={{ fontSize: 11, color: EV.textDim, marginTop: 2 }}>
               +{Object.keys(action.payload).length - 5} autres champs…
             </p>
           )}
@@ -757,7 +757,7 @@ function MessageBubble({
 
         {/* Meta */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-          <span style={{ fontSize: 10, color: EV.textDim }}>
+          <span style={{ fontSize: 11, color: EV.textDim }}>
             {msg.timestamp.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
           </span>
           {!isUser && !msg.thinking && (
@@ -766,7 +766,7 @@ function MessageBubble({
               style={{
                 background: "none", border: "none", cursor: "pointer",
                 color: EV.textDim, display: "flex", alignItems: "center", gap: 3,
-                fontSize: 10, padding: "2px 5px", borderRadius: 5,
+                fontSize: 11, padding: "2px 5px", borderRadius: 5,
                 transition: "color 0.15s",
               }}
               title="Copier"
@@ -976,7 +976,7 @@ export function AdminAIAgentWidget({ pathname }: { pathname: string }) {
               position: "absolute", top: -2, right: -2,
               width: 18, height: 18, borderRadius: "50%",
               background: EV.danger, color: "#fff",
-              fontSize: 10, fontWeight: 700,
+              fontSize: 11, fontWeight: 700,
               display: "flex", alignItems: "center", justifyContent: "center",
               border: "2px solid white",
             }}>
@@ -1026,7 +1026,7 @@ export function AdminAIAgentWidget({ pathname }: { pathname: string }) {
               </p>
               <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 3 }}>
                 <Shield size={9} style={{ color: EV.accentXl }} />
-                <span style={{ fontSize: 10, color: EV.accentXl, fontWeight: 600 }}>
+                <span style={{ fontSize: 11, color: EV.accentXl, fontWeight: 600 }}>
                   {isSuperAdmin(admin) ? "Accès complet" : "Accès limité aux permissions"}
                 </span>
               </div>
@@ -1069,7 +1069,7 @@ export function AdminAIAgentWidget({ pathname }: { pathname: string }) {
               flexShrink: 0,
             }}>
               <p style={{
-                fontSize: 9.5, fontWeight: 700, letterSpacing: "0.1em",
+                fontSize: 10.5, fontWeight: 700, letterSpacing: "0.1em",
                 color: EV.textDim, textTransform: "uppercase", marginBottom: 8,
               }}>
                 Suggestions
@@ -1077,7 +1077,7 @@ export function AdminAIAgentWidget({ pathname }: { pathname: string }) {
               <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                 {suggestions.map((s, i) => (
                   <button key={i} onClick={() => send(s)} style={{
-                    fontSize: 11, padding: "5px 10px", borderRadius: 20,
+                    fontSize: 12, padding: "5px 10px", borderRadius: 20,
                     background: "rgba(46,125,79,0.1)",
                     border: "1px solid rgba(46,125,79,0.2)",
                     color: EV.accentXl, cursor: "pointer",
@@ -1181,7 +1181,7 @@ export function AdminAIAgentWidget({ pathname }: { pathname: string }) {
               gap: 6, marginTop: 8,
             }}>
               <Zap size={9} style={{ color: EV.accentXl }} />
-              <span style={{ fontSize: 10, color: EV.textDim }}>
+              <span style={{ fontSize: 11, color: EV.textDim }}>
                 IA admin sécurisée · Actions réelles confirmées · Permissions respectées
               </span>
             </div>

@@ -39,6 +39,63 @@ function withInheritedRefs<T extends { categorie?: any }>(produit: T) {
   };
 }
 
+type CategoryPathEntry = { id_categorie: number; nom: string; slug: string; translations: any };
+
+// Charge TOUTES les catégories en une seule requête (table légère, une
+// centaine de lignes) et construit une map id → {nom, slug, parent_id, ...}.
+// Sert de base à `buildCategoryPath` / `buildCategoryPathsForMany` pour
+// remonter la chaîne de parents en mémoire, sans requête supplémentaire par
+// catégorie ni par produit (pas de N+1).
+async function loadCategoryMap() {
+  const cats = await prisma.categorie.findMany({
+    select: { id_categorie: true, nom: true, slug: true, translations: true, parent_id: true },
+  });
+  return new Map(cats.map((c) => [c.id_categorie, c]));
+}
+
+// Remonte toute la chaîne de catégories parentes (via parent_id) jusqu'à la
+// racine, quelle que soit la profondeur — contrairement à un simple
+// `include: { parent: true } }` qui ne remonte qu'un seul niveau. Utilisé
+// pour reconstituer le fil d'Ariane complet d'un produit (ex. Semences
+// maraîchères > Pro > Hybride > Tomate > <produit>), tel qu'il existe
+// réellement en base, quel que soit le nombre de niveaux intermédiaires.
+function pathFromMap(
+  categorieId: number | null | undefined,
+  map: Map<number, { id_categorie: number; nom: string; slug: string; translations: any; parent_id: number | null }>
+): CategoryPathEntry[] {
+  const path: CategoryPathEntry[] = [];
+  let currentId = categorieId ?? null;
+  const seen = new Set<number>(); // garde-fou anti-boucle si des données incohérentes existaient
+  while (currentId && !seen.has(currentId) && path.length < 12) {
+    seen.add(currentId);
+    const cat = map.get(currentId);
+    if (!cat) break;
+    path.unshift({ id_categorie: cat.id_categorie, nom: cat.nom, slug: cat.slug, translations: cat.translations });
+    currentId = cat.parent_id;
+  }
+  return path;
+}
+
+// Version "produit unique" (fiche détail) : charge la map une fois puis
+// calcule le chemin — même coût qu'avant (une requête), juste factorisé.
+async function buildCategoryPath(categorieId: number | null | undefined): Promise<CategoryPathEntry[]> {
+  const map = await loadCategoryMap();
+  return pathFromMap(categorieId, map);
+}
+
+// Version "liste de produits" : UNE seule requête pour charger l'arbre des
+// catégories, puis calcule le chemin de chacun des produits fournis en
+// mémoire — évite une requête par produit affiché (pas de N+1) tout en
+// donnant à chaque élément de liste son `categoriePath` complet, nécessaire
+// pour construire l'URL canonique côté frontend sans redirection.
+async function attachCategoryPaths<T extends { categorie?: { id_categorie?: number } | null }>(
+  produits: T[]
+): Promise<(T & { categoriePath: CategoryPathEntry[] })[]> {
+  if (produits.length === 0) return [];
+  const map = await loadCategoryMap();
+  return produits.map((p) => ({ ...p, categoriePath: pathFromMap(p.categorie?.id_categorie, map) }));
+}
+
 async function collectCategorieIds(filters: { id_categorie?: number; id_activite?: number; id_marque?: number; actifOnly?: boolean }) {
   const where: any = {};
   if (filters.actifOnly) where.actif = true;
@@ -157,7 +214,8 @@ export const produitRepository = {
         include: PUBLIC_INCLUDE,
       }),
     ]);
-    return { produits: produits.map(withInheritedRefs), total };
+    const withPaths = await attachCategoryPaths(produits.map(withInheritedRefs));
+    return { produits: withPaths, total };
   },
 
   async findBySlugPublic(slug: string) {
@@ -175,7 +233,9 @@ export const produitRepository = {
         images: { orderBy: { ordre: "asc" } },
       },
     });
-    return produit ? withInheritedRefs(produit) : null;
+    if (!produit) return null;
+    const categoriePath = await buildCategoryPath(produit.categorie?.id_categorie);
+    return { ...withInheritedRefs(produit), categoriePath };
   },
 
   async findBySkuPublic(sku: string) {
@@ -193,7 +253,9 @@ export const produitRepository = {
         images: { orderBy: { ordre: "asc" } },
       },
     });
-    return produit ? withInheritedRefs(produit) : null;
+    if (!produit) return null;
+    const categoriePath = await buildCategoryPath(produit.categorie?.id_categorie);
+    return { ...withInheritedRefs(produit), categoriePath };
   },
 
   async findBySku(sku: string) {

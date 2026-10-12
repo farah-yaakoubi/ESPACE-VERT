@@ -77,6 +77,9 @@ model Admin {
   notifs_emises     AdminNotification[] @relation("NotifEmetteur")
   messages_envoyes  ChatMessage[]       @relation("ChatEmetteur")
   messages_recus    ChatMessage[]       @relation("ChatRecepteur")
+  groupes_crees     ChatGroup[]         @relation("ChatGroupCreatedBy")
+  groupes_membres   ChatGroupMember[]   @relation("ChatGroupMemberAdmin")
+  messages_groupes  ChatGroupMessage[]  @relation("ChatGroupMessageEmetteur")
   @@index([id_role])
   @@map("admins")
 }
@@ -124,6 +127,58 @@ model ChatMessage {
   @@index([created_at])
   @@index([deleted_at])
   @@map("chat_messages")
+}
+
+model ChatGroup {
+  id_group    Int               @id @default(autoincrement())
+  nom         String            @db.VarChar(160)
+  description String?           @db.VarChar(255)
+  created_by  Int
+  actif       Boolean           @default(true)
+  created_at  DateTime          @default(now())
+  updated_at  DateTime          @updatedAt
+  createur    Admin             @relation("ChatGroupCreatedBy", fields: [created_by], references: [id_admin], onDelete: Cascade)
+  membres     ChatGroupMember[]
+  messages    ChatGroupMessage[]
+  @@index([created_by])
+  @@map("chat_groups")
+}
+
+model ChatGroupMember {
+  id_member   Int      @id @default(autoincrement())
+  id_group    Int
+  id_admin    Int
+  joined_at   DateTime @default(now())
+  last_read_at DateTime?
+  groupe      ChatGroup @relation(fields: [id_group], references: [id_group], onDelete: Cascade)
+  admin       Admin     @relation("ChatGroupMemberAdmin", fields: [id_admin], references: [id_admin], onDelete: Cascade)
+  @@unique([id_group, id_admin])
+  @@index([id_group])
+  @@index([id_admin])
+  @@map("chat_group_members")
+}
+
+model ChatGroupMessage {
+  id_group_msg Int      @id @default(autoincrement())
+  id_group     Int
+  id_from      Int
+  contenu      String   @db.Text
+  type_message String   @default("texte") @db.VarChar(20)
+  fichier_url  String?  @db.VarChar(500)
+  fichier_nom  String?  @db.VarChar(255)
+  fichier_size Int?
+  thumbs       Json     @default("[]")
+  edited_at    DateTime?
+  deleted_at   DateTime?
+  deleted_by   Int?
+  created_at   DateTime @default(now())
+  groupe       ChatGroup @relation(fields: [id_group], references: [id_group], onDelete: Cascade)
+  emetteur     Admin     @relation("ChatGroupMessageEmetteur", fields: [id_from], references: [id_admin], onDelete: Cascade)
+  @@index([id_group])
+  @@index([id_from])
+  @@index([deleted_at])
+  @@index([created_at])
+  @@map("chat_group_messages")
 }
 
 model SessionAdmin {

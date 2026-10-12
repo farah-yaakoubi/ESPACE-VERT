@@ -8,6 +8,7 @@ import { useState, useMemo } from "react";
 import { Search, ChevronDown, ChevronRight, SlidersHorizontal, X, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Categorie } from "@/types/api";
+import { useI18n } from "@/i18n/I18nProvider";
 
 export type DivisionFilter = "all" | "pro" | "garden" | "standard";
 
@@ -41,6 +42,7 @@ export function ProductFilter({
   search, onSearchChange, totalCount, filteredCount,
   showDivision = false, activeDivision = "all", onDivisionChange,
 }: ProductFilterProps) {
+  const { t } = useI18n();
   const [openCats,   setOpenCats]   = useState<Set<number>>(new Set());
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -81,7 +83,7 @@ export function ProductFilter({
       {/* Division */}
       {showDivision && onDivisionChange && (
         <div className="mb-4">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1 mb-2">Division</p>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1 mb-2">{t("catalog.division", "Division")}</p>
           <div className="grid grid-cols-2 gap-1.5">
             {(["all", "pro", "garden"] as DivisionFilter[]).map(d => (
               <button key={d} onClick={() => onDivisionChange(d)}
@@ -111,7 +113,7 @@ export function ProductFilter({
       >
         <span className="flex items-center gap-2.5">
           <Layers size={13} className={activeCatId === null ? "text-white/70" : "text-leaf"} />
-          Tous les produits
+          {t("catalog.allProducts", "Tous les produits")}
         </span>
         <span className={cn("text-[11px] px-2 py-0.5 rounded-full font-bold",
           activeCatId === null ? "bg-white/20 text-white" : "bg-ev-100 text-ev-700")}>
@@ -237,7 +239,7 @@ export function ProductFilter({
           <div className="relative">
             <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input type="search" value={search} onChange={e => onSearchChange(e.target.value)}
-              placeholder="Rechercher…"
+              placeholder={t("catalog.searchShort", "Rechercher…")}
               className="w-full h-10 pl-10 pr-9 text-sm border border-sand-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-ev-400/30 focus:border-ev-400 transition-all" />
             {search && (
               <button onClick={() => onSearchChange("")}
@@ -250,12 +252,12 @@ export function ProductFilter({
           <div className="bg-white rounded-2xl border border-sand-200 shadow-card overflow-hidden">
             <div className="px-4 py-3 bg-gradient-to-r from-ev-50 to-sand-50 border-b border-sand-200 flex items-center justify-between">
               <h3 className="text-[10px] font-black text-ev-800 uppercase tracking-widest flex items-center gap-1.5">
-                <SlidersHorizontal size={11} />Filtrer
+                <SlidersHorizontal size={11} />{t("catalog.filter", "Filtrer")}
               </h3>
               {hasFilter && (
                 <button onClick={reset}
                   className="text-[10px] text-ev-600 hover:text-ev-800 font-bold flex items-center gap-1">
-                  <X size={10} />Effacer tout
+                  <X size={10} />{t("catalog.clearAll", "Effacer tout")}
                 </button>
               )}
             </div>
@@ -267,7 +269,7 @@ export function ProductFilter({
           {/* Compteur résultats */}
           {hasFilter && filteredCount !== totalCount && (
             <p className="text-xs text-center text-ev-600 font-semibold">
-              {filteredCount} produit{filteredCount !== 1 ? "s" : ""} affiché{filteredCount !== 1 ? "s" : ""}
+              {filteredCount} {filteredCount !== 1 ? t("catalog.products", "produits") : t("catalog.product", "produit")} {t("catalog.shown", "affichés")}
             </p>
           )}
         </div>
@@ -278,14 +280,14 @@ export function ProductFilter({
         <div className="relative flex-1">
           <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input type="search" value={search} onChange={e => onSearchChange(e.target.value)}
-            placeholder="Rechercher un produit…"
+            placeholder={t("catalog.searchProduct", "Rechercher un produit…")}
             className="w-full h-10 pl-10 pr-4 text-sm border border-sand-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-ev-400/30" />
         </div>
         <button onClick={() => setMobileOpen(true)}
           className={cn("flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-bold border transition-all shrink-0",
             hasFilter ? "bg-ev-700 text-white border-ev-700" : "bg-white text-gray-700 border-sand-200 hover:border-ev-300")}>
           <SlidersHorizontal size={14} />
-          {hasFilter ? "Filtrés" : "Filtrer"}
+          {hasFilter ? t("catalog.filtered", "Filtrés") : t("catalog.filter", "Filtrer")}
         </button>
       </div>
 
@@ -296,7 +298,7 @@ export function ProductFilter({
           <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl max-h-[82vh] flex flex-col shadow-2xl">
             <div className="flex items-center justify-between p-5 border-b border-sand-200 shrink-0">
               <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                <SlidersHorizontal size={16} className="text-ev-600" />Filtrer les produits
+                <SlidersHorizontal size={16} className="text-ev-600" />{t("catalog.filterProducts", "Filtrer les produits")}
               </h3>
               <button onClick={() => setMobileOpen(false)} className="p-2 text-gray-400 hover:text-gray-700 rounded-xl">
                 <X size={18} />
@@ -306,7 +308,7 @@ export function ProductFilter({
             {hasFilter && (
               <div className="p-4 border-t border-sand-100 shrink-0">
                 <button onClick={reset} className="w-full h-10 border border-gray-200 text-sm text-gray-600 rounded-xl hover:bg-gray-50 font-medium">
-                  Effacer tous les filtres
+                  {t("catalog.clearAllFilters", "Effacer tous les filtres")}
                 </button>
               </div>
             )}

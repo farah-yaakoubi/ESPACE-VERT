@@ -1,6 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import Link from "next/link";
+import { useI18n } from "@/i18n/I18nProvider";
 
 export default function Error({
   error,
@@ -9,6 +10,7 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const { t } = useI18n();
   useEffect(() => {
     console.error("[App Error]", error);
   }, [error]);
@@ -20,17 +22,17 @@ export default function Error({
         className="text-3xl font-bold text-ev-900 mb-3"
         style={{ fontFamily: "var(--font-display)" }}
       >
-        Une erreur s&apos;est produite
+        {t("error.title", "Une erreur s'est produite")}
       </h2>
       <p className="text-gray-500 mb-8 max-w-sm">
-        Nous n&apos;avons pas pu charger cette page. Veuillez réessayer.
+        {t("error.text", "Nous n'avons pas pu charger cette page. Veuillez réessayer.")}
       </p>
       <div className="flex flex-wrap gap-3 justify-center">
         <button onClick={reset} className="btn-primary">
-          Réessayer
+          {t("error.retry", "Réessayer")}
         </button>
         <Link href="/" className="btn-outline">
-          Retour à l&apos;accueil
+          {t("common.backHome", "Retour à l'accueil")}
         </Link>
       </div>
     </div>

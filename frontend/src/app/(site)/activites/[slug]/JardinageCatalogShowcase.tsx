@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getProductHref } from "@/lib/product-url";
-import { ProduitCard } from "@/components/cards/ProduitCard";
+import { ProduitCard, SeedImagePreview } from "@/components/cards/ProduitCard";
 import type { CatNode } from "@/components/catalogue/FilterPanel";
 import type { ProduitCard as ProduitCardType } from "@/types/api";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -380,7 +380,10 @@ export function JardinageCategoryCard({
     return (
       <button
         onClick={() => onSelect(node.id_categorie)}
-        className="group flex w-full flex-col items-center text-center focus:outline-none"
+        className={cn(
+          "group flex w-full flex-col items-center text-center focus:outline-none transition-all duration-300",
+          isSelected ? "scale-110" : isDimmed ? "scale-95 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-100" : ""
+        )}
       >
         <div className="relative flex h-16 w-full items-center justify-center">
           <div
@@ -411,9 +414,12 @@ export function JardinageCategoryCard({
   return (
     <button
       onClick={() => onSelect(node.id_categorie)}
-      className="group flex w-full flex-col items-center text-center focus:outline-none"
+      className={cn(
+        "group flex w-full flex-col items-center text-center focus:outline-none transition-all duration-300",
+        isSelected ? "scale-110" : isDimmed ? "scale-95 opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-100" : ""
+      )}
     >
-      <div className="relative flex h-44 w-full items-center justify-center">
+      <div className="relative flex h-36 w-full items-center justify-center sm:h-44">
         {node.image && !logoFailed ? (
           <Image
             src={node.image}
@@ -435,14 +441,14 @@ export function JardinageCategoryCard({
 
       <div ref={textRef as any} className={cn("flex flex-1 flex-col items-center", textRevealClass(textInView))}>
         <p
-          className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+          className="mt-3 text-[0.95rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700 sm:mt-4 sm:text-[1.05rem]"
           style={{ fontFamily: "var(--font-serif)" }}
         >
           {labelOf(node, locale)}
         </p>
 
         <span
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5"
+          className="mt-3 inline-flex max-w-full items-center justify-center gap-1.5 rounded-xl bg-ev-700 px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5 sm:mt-4 sm:gap-2 sm:px-5 sm:py-2.5 sm:text-[12.5px]"
         >
           {t("catalog.viewProducts", "Voir les produits")}
           <ArrowRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
@@ -483,7 +489,7 @@ export function JardinageCategoryGrid({
     return (
       <>
         {/* Mobile / tablette : grille classique qui s'enroule normalement */}
-        <div className="lg:hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5 md:gap-6">
+        <div className="grid grid-cols-1 gap-5 min-[420px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:hidden md:gap-6">
           {visibleNodes.map((node) => (
             <JardinageCategoryCard
               key={node.id_categorie}
@@ -496,25 +502,24 @@ export function JardinageCategoryGrid({
             />
           ))}
         </div>
-        {/* Bureau (lg+) : toutes les marques sur une seule ligne, colonnes
-         * égales. `auto-fit` + `minmax(140px, 1fr)` en pur CSS (pas de style
-         * inline dépendant d'un `n` calculé en JS) : chaque colonne a une
-         * largeur minimale garantie non nulle, ce qui évite que Next/Image
-         * tente de charger le logo dans un conteneur à 0px de large (cause
-         * du bug précédent : `min-w-0` en flexbox pouvait temporairement
-         * ramener la largeur à 0 et faire échouer le chargement de l'image,
-         * déclenchant à tort le repli sur le picto générique). */}
-        <div className="hidden lg:grid gap-6 justify-center" style={{ gridTemplateColumns: `repeat(${visibleNodes.length}, minmax(140px, 200px))` }}>
+        {/* Bureau (lg+) : les tuiles restent centrées sur une seule ligne
+         * tant que la largeur le permet ; dès qu'il n'y a plus assez de
+         * place pour toutes les afficher à taille correcte, elles passent
+         * à la ligne (flex-wrap) en restant centrées ligne par ligne —
+         * plutôt qu'une grille à N colonnes fixes qui déborderait ou
+         * écraserait les tuiles quand il y a beaucoup de marques. */}
+        <div className="hidden lg:flex flex-wrap justify-center gap-6">
           {visibleNodes.map((node) => (
-            <JardinageCategoryCard
-              key={node.id_categorie}
-              node={node}
-              onSelect={onSelect}
-              marqueLogoById={marqueLogoById}
-              marqueLogoByKey={marqueLogoByKey}
-              forceBrandCard
-              selectedId={selectedId}
-            />
+            <div key={node.id_categorie} className="w-[160px] shrink-0">
+              <JardinageCategoryCard
+                node={node}
+                onSelect={onSelect}
+                marqueLogoById={marqueLogoById}
+                marqueLogoByKey={marqueLogoByKey}
+                forceBrandCard
+                selectedId={selectedId}
+              />
+            </div>
           ))}
         </div>
       </>
@@ -532,8 +537,8 @@ export function JardinageCategoryGrid({
           key={node.id_categorie}
           className={cn(
             wide
-              ? "w-[calc(50%-10px)] sm:w-[calc(33.333%-14px)] md:w-[calc(25%-15px)] lg:w-[calc(16.666%-16.666px)]"
-              : "w-[calc(50%-10px)] lg:w-[calc(25%-15px)]"
+              ? "w-full max-w-xs sm:w-[calc(50%-10px)] sm:max-w-none md:w-[calc(33.333%-14px)] lg:w-[calc(25%-15px)] xl:w-[calc(16.666%-16.666px)]"
+              : "w-full max-w-xs sm:w-[calc(50%-10px)] sm:max-w-none lg:w-[calc(25%-15px)]"
           )}
         >
           <JardinageCategoryCard
@@ -556,7 +561,11 @@ export function JardinageProductCard({
   produit: ProduitCardType;
 }) {
   const { locale, t } = useI18n();
+  const [hovered, setHovered] = useState(false);
   const img = produit.images?.[0];
+  const images = produit.images?.length
+    ? (img ? [img, ...produit.images.filter((i) => i !== img)] : produit.images)
+    : [];
   const { Icon, color } = pictoFor(produit.nom);
   const nom = translatedField(produit as any, "nom", locale) || produit.nom;
   const marqueNom = produit.marque
@@ -567,20 +576,14 @@ export function JardinageProductCard({
   return (
     <Link
       href={getProductHref(produit)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_2px_10px_rgba(15,15,20,0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_44px_rgba(0,0,0,0.12)]"
     >
-      {/* ── Image — taille naturelle, sans recadrage forcé ─────────────── */}
+      {/* ── Image — taille naturelle, sans recadrage forcé, défile au survol si plusieurs photos ── */}
       <div className="relative w-full overflow-hidden" style={{ backgroundColor: "#f4f4f4" }}>
-        {img ? (
-          <Image
-            src={img.url}
-            alt={img.alt ?? nom}
-            width={800}
-            height={800}
-            className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-105"
-            style={{ height: "auto" }}
-            sizes="(max-width:640px) 50vw, (max-width:1280px) 25vw, 20vw"
-          />
+        {images.length ? (
+          <SeedImagePreview images={images} nom={nom} active={hovered} />
         ) : (
           <div className="flex aspect-square w-full items-center justify-center">
             <div
@@ -630,10 +633,15 @@ export function JardinageProductGrid({
   produits: ProduitCardType[];
 }) {
   if (produits.length === 0) return null;
+  // Flexbox + justify-center plutôt que CSS Grid : la dernière ligne
+  // incomplète (ex. 19 produits en grille 4 colonnes → 3 restants) reste
+  // centrée au lieu de se coller à gauche.
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="flex flex-wrap justify-center gap-4">
       {produits.map((p) => (
-        <ProduitCard key={p.id_produit} produit={p} />
+        <div key={p.id_produit} className="w-full max-w-xs sm:w-[calc(50%-8px)] sm:max-w-none lg:w-[calc(25%-12px)]">
+          <ProduitCard produit={p} variant="seed" />
+        </div>
       ))}
     </div>
   );

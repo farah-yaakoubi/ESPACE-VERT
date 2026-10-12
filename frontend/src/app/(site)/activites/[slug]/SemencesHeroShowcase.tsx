@@ -10,7 +10,8 @@ const HERO_IMAGE = "/images/hero/banner semences.webp";
 const TITLE_LINES = ["Fraîches. Locales.", "Adaptées à votre terre."];
 const TITLE_TEXT = TITLE_LINES.join("\n");
 /** Délai entre chaque caractère (ms) — plus grand = plus lent. */
-const TYPE_SPEED_MS = 90;
+const TYPE_SPEED_MS = 115;
+const LETTER_FADE_MS = 850;
 
 interface SemencesHeroShowcaseProps {
   activiteSlug: string;
@@ -36,13 +37,13 @@ function useTypewriter(text: string, speedMs: number) {
     return () => clearInterval(id);
   }, [text, speedMs]);
 
-  return { visible: text.slice(0, count), done: count >= text.length };
+  return { count };
 }
 
 export function SemencesHeroShowcase({
   ctaHref = "#produits-activite",
 }: SemencesHeroShowcaseProps) {
-  const { visible, done } = useTypewriter(TITLE_TEXT, TYPE_SPEED_MS);
+  const { count } = useTypewriter(TITLE_TEXT, TYPE_SPEED_MS);
 
   return (
     <section className="relative overflow-hidden bg-sand-50">
@@ -67,20 +68,34 @@ export function SemencesHeroShowcase({
             className="font-black leading-[1.08] tracking-tight text-[clamp(2rem,4.4vw,3.2rem)] text-white min-h-[2.2em]"
             style={{ fontFamily: "var(--font-display)", textShadow: "0 2px 10px rgba(0,0,0,0.35)" }}
           >
-            {visible.split("\n").map((line, i) => (
-              <span key={i}>
-                {i > 0 && <br />}
-                {line}
-              </span>
-            ))}
-            <span
-              aria-hidden="true"
-              className="inline-block w-[2px] h-[0.9em] bg-white align-[-0.1em] ml-1"
-              style={{ opacity: done ? 0 : undefined, animation: done ? "none" : "ev-caret-blink 0.9s steps(1) infinite" }}
-            />
-            <style>{`
-              @keyframes ev-caret-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
-            `}</style>
+            {TITLE_LINES.map((line, lineIndex) => {
+              const lineOffset = TITLE_LINES.slice(0, lineIndex).reduce(
+                (sum, item) => sum + item.length + 1,
+                0,
+              );
+
+              return (
+                <span key={lineIndex}>
+                  {lineIndex > 0 && <br />}
+                  {line.split("").map((char, charIndex) => {
+                    const isVisible = count > lineOffset + charIndex;
+                    return (
+                      <span
+                        key={`${lineIndex}-${charIndex}`}
+                        className="inline-block transition-opacity ease-out"
+                        style={{
+                          opacity: isVisible ? 1 : 0,
+                          transitionDuration: `${LETTER_FADE_MS}ms`,
+                          width: char === " " ? "0.35em" : undefined,
+                        }}
+                      >
+                        {char === " " ? "\u00A0" : char}
+                      </span>
+                    );
+                  })}
+                </span>
+              );
+            })}
           </h1>
 
           <p

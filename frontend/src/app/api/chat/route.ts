@@ -227,7 +227,7 @@ function scoreText(query: string, haystack: string): number {
   if (!q || !h) return 0;
   if (h.includes(q)) return 12 + Math.min(q.length / 6, 8);
 
-  const words = q.split(" ").filter((w) => w.length > 2);
+  const words = q.split(" ").filter((w) => w.length >= 4 && !STOPWORDS_MATCH.has(w));
   return words.reduce((score, word) => score + (h.includes(word) ? 2 : 0), 0);
 }
 
@@ -296,7 +296,12 @@ function isGreeting(message: string): boolean {
     "aslema",
     "asslema",
     "sabah el khir",
+    "sabah lkhir",
+    "sbeh lkhir",
     "sbeh el khir",
+    "sbeh elkhir",
+    "sbeh l5ir",
+    "sbah lkhir",
     "مساء الخير",
     "صباح الخير",
     "مرحبا",
@@ -363,6 +368,7 @@ const STOPWORDS_MATCH = new Set([
   "nous", "votre", "notre", "sont", "cette", "comme", "plus", "tout", "tous",
   "toute", "toutes", "avez", "peut", "bien", "fait", "faire", "quel", "quelle",
   "avoir", "etre", "sans", "chez", "leur", "leurs", "aussi", "meme",
+  "sbeh", "sbah", "sabah", "lkhir", "elkhir", "khir", "bro", "frere", "ya",
 ]);
 
 function significantWords(text: string): string[] {

@@ -98,14 +98,14 @@ function DiffBadge({ field, before, after }: { field: string; before?: any; afte
 
   return (
     <div style={{ marginBottom: 4 }}>
-      <span style={{ fontSize: 10, fontWeight: 600, color: "#6b7280", marginRight: 6 }}>{label} :</span>
+      <span style={{ fontSize: 11, fontWeight: 600, color: "#6b7280", marginRight: 6 }}>{label} :</span>
       {before !== undefined && (
-        <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "#fee2e2", color: "#dc2626", marginRight: 4, textDecoration: "line-through", fontFamily: "monospace" }}>
+        <span style={{ fontSize: 11, padding: "1px 6px", borderRadius: 4, background: "#fee2e2", color: "#dc2626", marginRight: 4, textDecoration: "line-through", fontFamily: "monospace" }}>
           {b}
         </span>
       )}
       {after !== undefined && (
-        <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 4, background: "#dcfce7", color: "#16a34a", fontFamily: "monospace" }}>
+        <span style={{ fontSize: 11, padding: "1px 6px", borderRadius: 4, background: "#dcfce7", color: "#16a34a", fontFamily: "monospace" }}>
           {a}
         </span>
       )}
@@ -122,7 +122,7 @@ function DetailCell({ log }: { log: AuditLog }) {
   if (d.snapshot) {
     const snap = d.snapshot;
     return (
-      <div style={{ fontSize: 11 }}>
+      <div style={{ fontSize: 12 }}>
         <span style={{ color: "#dc2626", fontWeight: 600 }}>Supprimé : </span>
         <span style={{ color: "#374151" }}>{snap.nom ?? snap.titre ?? snap.question ?? `#${log.entity_id}`}</span>
       </div>
@@ -132,7 +132,7 @@ function DetailCell({ log }: { log: AuditLog }) {
   // Changement de statut
   if (d.ancien_statut || d.statut) {
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
         {d.ancien_statut && (
           <span style={{ padding: "1px 6px", borderRadius: 4, background: "#fee2e2", color: "#dc2626", textDecoration: "line-through" }}>
             {d.ancien_statut}
@@ -149,7 +149,7 @@ function DetailCell({ log }: { log: AuditLog }) {
   // Modifications de champs (before/after)
   if (d.changes && typeof d.changes === "object") {
     const entries = Object.entries(d.changes).filter(([k]) => !["_ai","origin"].includes(k));
-    if (entries.length === 0) return <span style={{ color: "#9ca3af", fontSize: 11 }}>Aucune modification</span>;
+    if (entries.length === 0) return <span style={{ color: "#9ca3af", fontSize: 12 }}>Aucune modification</span>;
     return (
       <div>
         {(expanded ? entries : entries.slice(0, 2)).map(([k, v]: [string, any]) => (
@@ -160,7 +160,7 @@ function DetailCell({ log }: { log: AuditLog }) {
         ))}
         {entries.length > 2 && (
           <button onClick={e => { e.stopPropagation(); setExpanded(x => !x); }}
-            style={{ fontSize: 10, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 2 }}>
+            style={{ fontSize: 11, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: 2 }}>
             {expanded ? "Réduire" : `+${entries.length - 2} champ(s) de plus`}
           </button>
         )}
@@ -174,7 +174,7 @@ function DetailCell({ log }: { log: AuditLog }) {
 
   if (relevant.length > 0) {
     return (
-      <span style={{ fontSize: 11, color: "#374151" }}>
+      <span style={{ fontSize: 12, color: "#374151" }}>
         {relevant.map(([, v]) => String(v)).join(" · ").slice(0, 80)}
       </span>
     );
@@ -183,13 +183,13 @@ function DetailCell({ log }: { log: AuditLog }) {
   if (d.payload) {
     const p = d.payload;
     return (
-      <span style={{ fontSize: 11, color: "#374151" }}>
+      <span style={{ fontSize: 12, color: "#374151" }}>
         {(p.nom ?? p.titre ?? p.question ?? "").slice(0, 60)}
       </span>
     );
   }
 
-  return <span style={{ fontSize: 11, color: "#9ca3af" }}>Voir détails</span>;
+  return <span style={{ fontSize: 12, color: "#9ca3af" }}>Voir détails</span>;
 }
 
 // ─── Row ──────────────────────────────────────────────────────────────────────
@@ -204,7 +204,7 @@ function AuditRow({ log }: { log: AuditLog }) {
       onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
     >
       {/* Date */}
-      <td style={{ padding: "11px 16px", fontSize: 11, color: "#6b7280", whiteSpace: "nowrap" as const }}>
+      <td style={{ padding: "11px 16px", fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" as const }}>
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
           <Clock size={11} style={{ color: "#d1d5db" }} />
           {fmt(log.date_action)}
@@ -212,33 +212,33 @@ function AuditRow({ log }: { log: AuditLog }) {
       </td>
 
       {/* Origine (Admin / IA) */}
-      <td style={{ padding: "11px 16px", fontSize: 11 }}>
+      <td style={{ padding: "11px 16px", fontSize: 12 }}>
         {isAI ? (
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <div style={{ width: 22, height: 22, borderRadius: 6, background: "linear-gradient(135deg,#1d4ed8,#3b82f6)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <Sparkles size={11} style={{ color: "#fff" }} />
             </div>
             <div>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#1d4ed8" }}>Agent IA</span>
-              {log.admin && <div style={{ fontSize: 10, color: "#9ca3af" }}>via {log.admin.nom}</div>}
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#1d4ed8" }}>Agent IA</span>
+              {log.admin && <div style={{ fontSize: 11, color: "#9ca3af" }}>via {log.admin.nom}</div>}
             </div>
           </div>
         ) : log.admin ? (
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 22, height: 22, borderRadius: "50%", background: "linear-gradient(135deg,#2e7d4f,#4fbb7a)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 10, fontWeight: 700, color: "#fff" }}>
+            <div style={{ width: 22, height: 22, borderRadius: "50%", background: "linear-gradient(135deg,#2e7d4f,#4fbb7a)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 11, fontWeight: 700, color: "#fff" }}>
               {log.admin.nom[0]?.toUpperCase()}
             </div>
             <span style={{ color: "#374151", fontWeight: 500 }}>{log.admin.nom}</span>
           </div>
         ) : (
-          <span style={{ color: "#d1d5db", fontSize: 11 }}>Système</span>
+          <span style={{ color: "#d1d5db", fontSize: 12 }}>Système</span>
         )}
       </td>
 
       {/* Action */}
       <td style={{ padding: "11px 16px" }}>
         <span style={{
-          fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 20,
+          fontSize: 12, fontWeight: 700, padding: "3px 9px", borderRadius: 20,
           background: ac.bg, color: ac.text,
           border: `1px solid ${ac.text}22`,
         }}>
@@ -248,10 +248,10 @@ function AuditRow({ log }: { log: AuditLog }) {
 
       {/* Entité */}
       <td style={{ padding: "11px 16px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12 }}>
           <Tag size={10} style={{ color: "#d1d5db", flexShrink: 0 }} />
           <span style={{ color: "#374151", fontWeight: 500 }}>{entity}</span>
-          {log.entity_id && <span style={{ color: "#9ca3af", fontFamily: "monospace", fontSize: 10 }}>#{log.entity_id}</span>}
+          {log.entity_id && <span style={{ color: "#9ca3af", fontFamily: "monospace", fontSize: 11 }}>#{log.entity_id}</span>}
         </div>
       </td>
 
@@ -261,7 +261,7 @@ function AuditRow({ log }: { log: AuditLog }) {
       </td>
 
       {/* IP */}
-      <td style={{ padding: "11px 16px", fontSize: 10, color: "#d1d5db", fontFamily: "monospace", whiteSpace: "nowrap" as const }}>
+      <td style={{ padding: "11px 16px", fontSize: 11, color: "#d1d5db", fontFamily: "monospace", whiteSpace: "nowrap" as const }}>
         {log.ip_address ?? "—"}
       </td>
     </tr>
@@ -278,7 +278,7 @@ function StatCard({ label, value, icon: Icon, color, sublabel }: { label: string
       <div>
         <p style={{ fontSize: 22, fontWeight: 800, color: "#111827", letterSpacing: "-0.04em", lineHeight: 1 }}>{value}</p>
         <p style={{ fontSize: 12, color: "#6b7280", marginTop: 3 }}>{label}</p>
-        {sublabel && <p style={{ fontSize: 10, color: color, fontWeight: 600, marginTop: 1 }}>{sublabel}</p>}
+        {sublabel && <p style={{ fontSize: 11, color: color, fontWeight: 600, marginTop: 1 }}>{sublabel}</p>}
       </div>
     </div>
   );
@@ -488,7 +488,7 @@ export default function AuditPage() {
               <thead>
                 <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
                   {["Date", "Origine", "Action", "Entité", "Détail", "IP"].map(h => (
-                    <th key={h} style={{ padding: "10px 16px", textAlign: "left" as const, fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.06em", whiteSpace: "nowrap" as const }}>
+                    <th key={h} style={{ padding: "10px 16px", textAlign: "left" as const, fontSize: 12, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.06em", whiteSpace: "nowrap" as const }}>
                       {h}
                     </th>
                   ))}

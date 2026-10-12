@@ -25,6 +25,26 @@ async function getCat(slug: string): Promise<CategorieDetail | null> {
   }
 }
 
+/**
+ * Remonte toute la chaîne de catégories parentes (jusqu'à la racine) pour
+ * construire un fil d'Ariane complet — utile pour les arborescences
+ * profondes (ex: Semences et Plants > Semences Maraîchère > Pro >
+ * Semences Hybride > Tomate > Alyenta) où seul le parent direct était
+ * affiché auparavant. Bornée à 8 niveaux par sécurité.
+ */
+async function getAncestors(cat: CategorieDetail): Promise<{ nom: string; slug: string }[]> {
+  const chain: { nom: string; slug: string }[] = [];
+  let current = cat.parent;
+  let guard = 0;
+  while (current && guard < 8) {
+    chain.unshift(current);
+    const parentCat = await getCat(current.slug);
+    current = parentCat?.parent ?? null;
+    guard++;
+  }
+  return chain;
+}
+
 interface PageProps { params: Promise<{ slug: string }> }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -42,24 +62,24 @@ export default async function CategorieDetailPage({ params }: PageProps) {
   const cat = await getCat(slug);
   if (!cat) return notFound();
 
+  const ancestors = await getAncestors(cat);
   const hasSousCats = (cat.sous_cats ?? []).length > 0;
   const hasProduits = (cat.produits  ?? []).length > 0;
 
   return (
     <main className="min-h-screen bg-white">
 
-      {/* Breadcrumb */}
+      {/* Breadcrumb — chemin complet depuis la racine */}
       <div className="bg-gray-50 border-b border-gray-100">
-        <div className="container-ev py-3 flex items-center gap-2 text-sm text-gray-500">
-          <Link href="/" className="hover:text-ev-700 transition-colors">Accueil</Link>
-          <ChevronRight size={13} className="text-gray-300" />
-          {cat.parent && (
-            <>
-              <Link href={`/categories/${cat.parent.slug}`}
-                className="hover:text-ev-700 transition-colors">{cat.parent.nom}</Link>
+        <div className="container-ev py-3 flex items-center gap-2 text-sm text-gray-500 flex-wrap">
+          <Link href="/" className="hover:text-ev-700 transition-colors shrink-0">Accueil</Link>
+          {ancestors.map(a => (
+            <span key={a.slug} className="flex items-center gap-2 shrink-0">
               <ChevronRight size={13} className="text-gray-300" />
-            </>
-          )}
+              <Link href={`/categories/${a.slug}`} className="hover:text-ev-700 transition-colors">{a.nom}</Link>
+            </span>
+          ))}
+          <ChevronRight size={13} className="text-gray-300 shrink-0" />
           <span className="text-gray-800 font-medium">{cat.nom}</span>
         </div>
       </div>
@@ -75,7 +95,7 @@ export default async function CategorieDetailPage({ params }: PageProps) {
         )}
       </div>
 
-      {/* ── Mode interactif : sous-catégories → clic → produits (sans navigation) ── */}
+      {/* ── Sous-catégories → chaque carte navigue vers /categories/{slug} ── */}
       {hasSousCats && (
         <CategorieCatalogSection cat={cat} />
       )}

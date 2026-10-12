@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { createPortal } from "react-dom";
 import { getProductHref } from "@/lib/product-url";
+import { useI18n } from "@/i18n/I18nProvider";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
@@ -70,6 +71,7 @@ export function ProduitSearch({
   logoSrc       = "/logos/logo-espace-vert.png",
   logoAlt       = "Logo",
 }: SearchProps) {
+  const { t } = useI18n();
   const isDark = false;
   const [open,    setOpen]    = useState(false);
   const [query,   setQuery]   = useState("");
@@ -210,8 +212,8 @@ export function ProduitSearch({
         onClick={() => setOpen(true)}
         whileHover={{ y: -1 }}
         whileTap={{ scale: 0.98 }}
-        title="Rechercher (⌘K)"
-        aria-label="Rechercher"
+        title={t("search.openShortcut", "Rechercher (Ctrl+K)")}
+        aria-label={t("search.open", "Rechercher")}
         style={{
           display: "flex",
           alignItems: "center",
@@ -320,7 +322,7 @@ export function ProduitSearch({
                       alignItems: "center", justifyContent: "center",
                       padding: 4,
                     }}
-                    aria-label="Fermer la recherche"
+                    aria-label={t("search.close", "Fermer la recherche")}
                   >
                     <XIcon size={22} />
                   </motion.button>
@@ -358,7 +360,7 @@ export function ProduitSearch({
                         value={query}
                         onChange={e => onInput(e.target.value)}
                         onKeyDown={onKey}
-                        placeholder="Recherche produits, catégories"
+                        placeholder={t("search.placeholder", "Recherche produits, catégories")}
                         autoComplete="off"
                         spellCheck={false}
                         style={{
@@ -411,7 +413,7 @@ export function ProduitSearch({
                         >
                           <div style={{ fontSize: 36, marginBottom: 10, opacity: 0.2 }}>🌿</div>
                           <p style={{ fontSize: 15, color: palette.textMuted }}>
-                            Aucun résultat pour <span style={{ color: palette.textPrimary, fontWeight: 600 }}>« {query} »</span>
+                            {t("search.noResultFor", "Aucun résultat pour")} <span style={{ color: palette.textPrimary, fontWeight: 600 }}>« {query} »</span>
                           </p>
                         </motion.div>
                       )}
@@ -428,7 +430,7 @@ export function ProduitSearch({
                             fontSize: 10, fontWeight: 800, letterSpacing: "0.14em",
                             textTransform: "uppercase", color: palette.textMuted, marginBottom: 10,
                           }}>
-                            {results.length} résultat{results.length > 1 ? "s" : ""}
+                            {results.length} {results.length > 1 ? t("search.results", "résultats") : t("search.result", "résultat")}
                           </p>
                           <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                             {results.map((result, i) => {
@@ -440,8 +442,8 @@ export function ProduitSearch({
                                 : result.item.image;
                               const subtitle = isProduct
                                 ? [result.item.categorie?.nom, result.item.marque?.nom].filter(Boolean).join(" · ")
-                                : [result.item.parent_id ? "Sous-catégorie" : "Catégorie", result.item.marque?.nom ?? result.item.activite?.nom].filter(Boolean).join(" · ");
-                              const badge = isProduct ? result.item.division : "Catégorie";
+                                : [result.item.parent_id ? t("catalog.subcategory", "Sous-catégorie") : t("catalog.category", "Catégorie"), result.item.marque?.nom ?? result.item.activite?.nom].filter(Boolean).join(" · ");
+                              const badge = isProduct ? result.item.division : t("catalog.category", "Catégorie");
                               const isActive = i === active;
                               return (
                                 <motion.button
@@ -512,7 +514,7 @@ export function ProduitSearch({
                               display: "flex", alignItems: "center", gap: 6, padding: "6px 14px",
                             }}
                           >
-                            Voir tous les résultats pour «&nbsp;{query}&nbsp;» →
+                            {t("search.viewAllFor", "Voir tous les résultats pour")} «&nbsp;{query}&nbsp;» →
                           </motion.button>
                         </motion.div>
                       )}
@@ -531,14 +533,14 @@ export function ProduitSearch({
                   }}
                 >
                   <Kbd isDark={isDark}>↑↓</Kbd>
-                  <span style={{ fontSize: 11, color: palette.textMuted }}>naviguer</span>
+                  <span style={{ fontSize: 11, color: palette.textMuted }}>{t("search.navigate", "naviguer")}</span>
                   <Kbd isDark={isDark}>↵</Kbd>
-                  <span style={{ fontSize: 11, color: palette.textMuted }}>sélectionner</span>
+                  <span style={{ fontSize: 11, color: palette.textMuted }}>{t("search.select", "sélectionner")}</span>
                   <Kbd isDark={isDark}>esc</Kbd>
-                  <span style={{ fontSize: 11, color: palette.textMuted }}>fermer</span>
+                  <span style={{ fontSize: 11, color: palette.textMuted }}>{t("search.closeShort", "fermer")}</span>
                   <div style={{ flex: 1 }} />
                   <span style={{ fontSize: 10, color: palette.textMuted, fontWeight: 600 }}>
-                    ⌘K pour ouvrir rapidement
+                    {t("search.quickOpen", "Ctrl+K pour ouvrir rapidement")}
                   </span>
                 </motion.div>
               </motion.div>

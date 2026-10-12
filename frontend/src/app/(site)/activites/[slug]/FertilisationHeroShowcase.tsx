@@ -10,6 +10,8 @@ import { FertilisantHeroShowcase } from "@/components/sections/FertilisantHeroSh
 interface FertilisationCategory {
   id_categorie: number;
   nom: string;
+  slug?: string;
+  parent_id?: number | null;
   image?: string | null;
 }
 
@@ -26,9 +28,11 @@ export function FertilisationHeroShowcase({
       heroSlideKey={`activite:${activiteSlug}`}
       staticImage="/images/hero/BANER%20TEST.webp"
       categories={categories}
+      activiteSlug={activiteSlug}
       categoryAnchor="produits-activite"
       ctaHref="#produits-activite"
       fichesTechniquesHref="/rendez-vous"
+      crossSellHref={null}
     />
   );
 }

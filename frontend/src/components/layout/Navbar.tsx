@@ -11,6 +11,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ProduitSearch } from "./ProduitSearch";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { Ico } from "@/components/icons/AgriIcons";
+import { getActivityCategoryHrefFromTree } from "@/lib/category-url";
 
 const NAV_H = 80;
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
@@ -155,16 +156,21 @@ function isHiddenBrand(m: Marque): boolean {
 
 /* ── Lien d'une marque : les marques "groupe" ont leur propre page dédiée
    (/marques/[slug]), les marques partenaires sont déjà une catégorie du
-   catalogue → on pointe directement vers la section de cette catégorie
-   sur la page de son activité (ex: /activites/jardinage-et-machinisme?cat=278)
-   au lieu de générer une nouvelle page marque. ── */
+   catalogue → on pointe directement vers son URL catégorie lisible au lieu
+   de générer une nouvelle page marque. ── */
 function getMarqueHref(m: Marque, activites: Activite[]): string {
   if (SLUGS_GROUPE.has(m.slug)) return `/marques/${m.slug}`;
   const cat = m.categories?.[0];
-  const activiteSlug = cat?.id_activite
-    ? activites.find((a) => a.id_activite === cat.id_activite)?.slug
+  const activite = cat?.id_activite
+    ? activites.find((a) => a.id_activite === cat.id_activite)
     : undefined;
-  if (cat && activiteSlug) return `/activites/${activiteSlug}?cat=${cat.id_categorie}`;
+  if (cat && activite) {
+    return getActivityCategoryHrefFromTree(
+      activite.slug,
+      activite.categories ?? [cat],
+      cat.id_categorie,
+    );
+  }
   return `/marques/${m.slug}`;
 }
 
@@ -573,7 +579,10 @@ function ActivitesDropdown({
                             <button
                               type="button"
                               onMouseEnter={() => { if (hasSub) setSelectedCat(c.slug); }}
-                              onClick={() => { onClose(); window.location.href = `/activites/${act.slug}?cat=${c.id_categorie}`; }}
+                              onClick={() => {
+                                onClose();
+                                window.location.href = getActivityCategoryHrefFromTree(act.slug, act.categories ?? [], c.id_categorie);
+                              }}
                               style={{
                                 position: "relative", zIndex: 1,
                                 display: "flex", width: "100%", alignItems: "center", gap: 9,
@@ -631,7 +640,7 @@ function ActivitesDropdown({
                                   {c.sous_cats!.map((sc, si) => (
                                     <Link
                                       key={sc.slug}
-                                      href={`/activites/${act.slug}?cat=${sc.id_categorie}`}
+                                      href={getActivityCategoryHrefFromTree(act.slug, act.categories ?? [], sc.id_categorie)}
                                       onClick={onClose}
                                       style={{
                                         display: "flex", alignItems: "center", gap: 7,

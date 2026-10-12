@@ -21,7 +21,7 @@ const CategorieBaseSchema = z.object({
 });
 
 export const CreateCategorieSchema = CategorieBaseSchema.refine(
-  (data) => data.id_marque != null || data.id_activite != null,
+  (data) => data.id_marque != null || data.id_activite != null || data.parent_id != null,
   { message: "Une catégorie doit appartenir à au moins une marque ou une activité", path: ["id_marque"] }
 );
 

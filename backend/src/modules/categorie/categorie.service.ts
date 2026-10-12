@@ -112,11 +112,27 @@ export const categorieService = {
 
     await assertValidExtraParents(null, data.parent_ids_extra);
 
+    // Héritage automatique marque/activité depuis le parent : une sous-catégorie
+    // créée sans id_marque ni id_activite précisés reprend ceux de sa catégorie
+    // parente, pour que les produits qu'on lui attache restent rattachés à la
+    // même marque (au lieu de se retrouver orphelins, visibles seulement via
+    // une page produit indépendante sans marque/activité).
+    if (data.parent_id && !data.id_marque && !data.id_activite) {
+      const parent = await categorieRepository.findById(data.parent_id);
+      if (parent?.id_marque || (parent as any)?.id_activite) {
+        data = { ...data, id_marque: parent!.id_marque ?? null, id_activite: (parent as any)!.id_activite ?? null };
+      }
+    }
+
     // Résolution automatique de l'activité depuis la marque
     // si id_activite n'est pas explicitement fourni mais qu'une marque est liée
     if (!data.id_activite && data.id_marque) {
       const resolved = await resolveActiviteFromMarque(data.id_marque);
       if (resolved) data = { ...data, id_activite: resolved };
+    }
+
+    if (!data.id_marque && !(data as any).id_activite) {
+      throw { status: 422, message: "Une catégorie doit appartenir à au moins une marque ou une activité" };
     }
 
     const cat = await categorieRepository.create(data);
@@ -139,6 +155,21 @@ export const categorieService = {
     }
 
     await assertValidExtraParents(id, data.parent_ids_extra);
+
+    // Héritage automatique marque/activité depuis le nouveau parent : si on
+    // déplace la catégorie (parent_id changé) sans préciser explicitement de
+    // marque ni d'activité, et qu'elle n'en avait pas déjà, on reprend celles
+    // du nouveau parent.
+    if (
+      data.parent_id !== undefined && data.parent_id !== (before as any).parent_id &&
+      data.id_marque === undefined && data.id_activite === undefined &&
+      !(before as any).id_marque && !(before as any).id_activite
+    ) {
+      const parent = data.parent_id ? await categorieRepository.findById(data.parent_id) : null;
+      if (parent?.id_marque || (parent as any)?.id_activite) {
+        data = { ...data, id_marque: parent!.id_marque ?? null, id_activite: (parent as any)!.id_activite ?? null };
+      }
+    }
 
     // Résolution automatique de l'activité si on change la marque sans préciser l'activité
     const targetMarque = data.id_marque ?? (before as any).id_marque;

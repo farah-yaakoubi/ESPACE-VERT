@@ -63,7 +63,7 @@ export function EspaceCompte({ admin, isDark, onToggle, onLogout }: {
         )}
         <div className="hidden sm:block" style={{ lineHeight: 1, textAlign: "left" }}>
           <p style={{ fontSize: 12, fontWeight: 700, color: isDark ? "#e8f0ea" : "#1a2e20" }}>{admin.nom}</p>
-          <p style={{ fontSize: 10, fontWeight: 600, marginTop: 2, color: isSuperAdmin ? A.gold : A.accent }}>
+          <p style={{ fontSize: 11, fontWeight: 600, marginTop: 2, color: isSuperAdmin ? A.gold : A.accent }}>
             {isSuperAdmin ? "Super Admin" : admin.role?.nom ?? "Admin"}
           </p>
         </div>
@@ -85,8 +85,8 @@ export function EspaceCompte({ admin, isDark, onToggle, onLogout }: {
             )}
             <div style={{ minWidth: 0 }}>
               <p style={{ fontSize: 13, fontWeight: 700, color: tPri, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{admin.nom}</p>
-              <p style={{ fontSize: 11, color: tSec, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>{admin.email}</p>
-              <span style={{ display: "inline-block", marginTop: 4, padding: "2px 8px", borderRadius: 99, fontSize: 10, fontWeight: 700, background: isSuperAdmin ? "rgba(245,158,11,0.15)" : "rgba(46,125,79,0.12)", color: isSuperAdmin ? A.gold : A.accentXl }}>
+              <p style={{ fontSize: 12, color: tSec, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginTop: 2 }}>{admin.email}</p>
+              <span style={{ display: "inline-block", marginTop: 4, padding: "2px 8px", borderRadius: 99, fontSize: 11, fontWeight: 700, background: isSuperAdmin ? "rgba(245,158,11,0.15)" : "rgba(46,125,79,0.12)", color: isSuperAdmin ? A.gold : A.accentXl }}>
                 {isSuperAdmin ? "Super Admin" : admin.role?.nom ?? "Admin"}
               </span>
             </div>

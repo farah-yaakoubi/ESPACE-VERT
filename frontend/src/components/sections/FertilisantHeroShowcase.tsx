@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ArrowRight, ChevronRight, Droplet, Leaf, ShieldCheck } from "lucide-react";
 import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
+import { getActivityCategoryHrefById } from "@/lib/category-url";
 
 const FALLBACK_IMAGE = "/images/hero/bg-fertivert.webp";
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
@@ -28,6 +29,8 @@ function useBreakpoint(): "mobile" | "tablette" | "desktop" {
 interface FertilisantCategory {
   id_categorie: number;
   nom: string;
+  slug?: string;
+  parent_id?: number | null;
   image?: string | null;
 }
 
@@ -44,7 +47,9 @@ interface FertilisantHeroShowcaseProps {
   ctaHref?: string;
   fichesTechniquesHref?: string;
   categories?: FertilisantCategory[];
-  /** Ancre utilisée pour les liens `?cat=<id>#<ancre>` de la grille de catégories. */
+  /** Si fourni, les catégories pointent vers /activites/[slug]/categorie/[path]. */
+  activiteSlug?: string;
+  /** Ancre utilisée pour les liens de la grille de catégories. */
   categoryAnchor?: string;
   /** Bandeau croisé vers Pollinisation & Protection — mettre à null pour le masquer. */
   crossSellHref?: string | null;
@@ -68,6 +73,7 @@ export function FertilisantHeroShowcase({
   ctaHref = "#produits-activite",
   fichesTechniquesHref = "/rendez-vous",
   categories = [],
+  activiteSlug,
   categoryAnchor = "produits-activite",
   crossSellHref = "/activites/pollinisation-et-protection-des-plantes",
   showTypeCards = true,
@@ -285,25 +291,37 @@ export function FertilisantHeroShowcase({
               {typeCards.map((cat) => (
                 <a
                   key={cat.id_categorie}
-                  href={`?cat=${cat.id_categorie}#${categoryAnchor}`}
-                  className="group flex flex-col overflow-hidden rounded-xl border border-sand-200 bg-sand-50/60 transition-colors hover:border-ev-300"
+                  href={
+                    activiteSlug && cat.slug
+                      ? `${getActivityCategoryHrefById(activiteSlug, categories as any, cat.id_categorie)}#${categoryAnchor}`
+                      : `#${categoryAnchor}`
+                  }
+                  className="group relative block aspect-[4/5] w-full overflow-hidden rounded-xl border border-sand-200"
                 >
-                  <div className="relative h-32 w-full bg-white">
-                    <Image
-                      src={cat.image as string}
-                      alt={cat.nom}
-                      fill
-                      className="object-contain p-4"
-                      sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 25vw"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 border-t border-sand-200 px-4 py-3">
-                    <p className="text-[13px] font-bold leading-snug text-[#1b2118]">
+                  <Image
+                    src={cat.image as string}
+                    alt={cat.nom}
+                    fill
+                    className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                    sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 25vw"
+                  />
+                  <div
+                    aria-hidden
+                    className="absolute inset-0"
+                    style={{
+                      background:
+                        "linear-gradient(180deg, rgba(6,18,9,0) 45%, rgba(6,18,9,0.65) 100%)",
+                    }}
+                  />
+                  <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 p-4">
+                    <p
+                      className="text-[15px] font-black leading-snug text-white"
+                      style={{ textShadow: "0 1px 8px rgba(0,0,0,0.45)" }}
+                    >
                       {cat.nom}
                     </p>
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ev-700 text-white transition-transform duration-300 ease-out group-hover:rotate-45">
-                      <ChevronRight size={12} />
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/90 text-ev-700 transition-transform duration-300 ease-out group-hover:rotate-45">
+                      <ChevronRight size={14} />
                     </span>
                   </div>
                 </a>

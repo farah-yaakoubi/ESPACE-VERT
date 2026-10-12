@@ -43,7 +43,7 @@ function PwdStrength({ pwd }: { pwd:string }) {
           <div key={i} style={{flex:1,height:3,borderRadius:99,background:i<=s?colors[s-1]:"rgba(128,128,128,0.15)",transition:"background 0.2s"}}/>
         ))}
       </div>
-      <p style={{fontSize:11,color:colors[s-1],fontWeight:600}}>{labels[s-1]}</p>
+      <p style={{fontSize:12,color:colors[s-1],fontWeight:600}}>{labels[s-1]}</p>
     </div>
   );
 }
@@ -190,7 +190,7 @@ export default function ComptePage() {
     type?:string; placeholder?:string; suffix?:React.ReactNode;
   }) => (
     <div style={{display:"flex",flexDirection:"column",gap:6}}>
-      <label style={{fontSize:11,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:t3}}>
+      <label style={{fontSize:12,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:t3}}>
         {label}
       </label>
       <div style={{position:"relative",display:"flex",alignItems:"center"}}>
@@ -273,15 +273,15 @@ export default function ComptePage() {
 
                 {/* Badges */}
                 <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:16}}>
-                  <span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:99,fontSize:10,fontWeight:700,background:isSuperAdmin?"rgba(245,158,11,0.15)":"rgba(46,125,79,0.12)",color:isSuperAdmin?G.gold:G.accentXl,border:`1px solid ${isSuperAdmin?"rgba(245,158,11,0.25)":"rgba(46,125,79,0.2)"}`}}>
+                  <span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:99,fontSize:11,fontWeight:700,background:isSuperAdmin?"rgba(245,158,11,0.15)":"rgba(46,125,79,0.12)",color:isSuperAdmin?G.gold:G.accentXl,border:`1px solid ${isSuperAdmin?"rgba(245,158,11,0.25)":"rgba(46,125,79,0.2)"}`}}>
                     {isSuperAdmin && <Crown size={8}/>}
                     {isSuperAdmin?"Super Administrateur":((admin as any)?.role?.nom??"Administrateur")}
                   </span>
-                  <span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:99,fontSize:10,fontWeight:600,background:isDark?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.05)",color:t3}}>
+                  <span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:99,fontSize:11,fontWeight:600,background:isDark?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.05)",color:t3}}>
                     <Hash size={8}/> ID {admin?.id_admin??"—"}
                   </span>
                   {(admin as any)?.created_at && (
-                    <span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:99,fontSize:10,fontWeight:600,background:isDark?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.05)",color:t3}}>
+                    <span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:99,fontSize:11,fontWeight:600,background:isDark?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.05)",color:t3}}>
                       <Clock size={8}/>
                       Depuis {new Date((admin as any).created_at).toLocaleDateString("fr-FR",{month:"long",year:"numeric"})}
                     </span>
@@ -309,7 +309,7 @@ export default function ComptePage() {
                   )}
                 </div>
 
-                <p style={{fontSize:11,color:t3,marginTop:8}}>JPG, PNG ou WebP · Max 5 Mo</p>
+                <p style={{fontSize:12,color:t3,marginTop:8}}>JPG, PNG ou WebP · Max 5 Mo</p>
                 <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{display:"none"}} onChange={handleAvatarChange}/>
               </div>
             </div>

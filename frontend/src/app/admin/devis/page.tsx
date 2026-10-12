@@ -65,7 +65,7 @@ function StatusBadge({ statut }: { statut: string }) {
   const s = STATUT_MAP[statut] ?? { label: statut, color: "#6b7280", bg: "#f9fafb", border: "#e5e7eb", textLight: "#374151", icon: AlertCircle };
   const Icon = s.icon;
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, background: s.bg, color: s.textLight, border: `1px solid ${s.border}`, fontSize: 11, fontWeight: 700 }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, background: s.bg, color: s.textLight, border: `1px solid ${s.border}`, fontSize: 12, fontWeight: 700 }}>
       <Icon size={10} />{s.label}
     </span>
   );
@@ -138,7 +138,7 @@ function DevisDetailPanel({ item, onClose, onSaved }: { item: DevisItem; onClose
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" as const }}>
               <h2 style={{ fontSize: 16, fontWeight: 800, color: "#111827" }}>Devis #{item.id_devis}</h2>
               <StatusBadge statut={statut} />
-              {isUrgent(item) && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca" }}>⚡ Urgent</span>}
+              {isUrgent(item) && <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca" }}>⚡ Urgent</span>}
             </div>
             <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 3 }}>{hoursAgo(item.created_at)} · {fmt(item.created_at)}</p>
           </div>
@@ -150,7 +150,7 @@ function DevisDetailPanel({ item, onClose, onSaved }: { item: DevisItem; onClose
 
           {/* Infos client */}
           <section>
-            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, marginBottom: 10 }}>Informations client</p>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, marginBottom: 10 }}>Informations client</p>
             <div style={{ background: "#f9fafb", borderRadius: 12, padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               {[
                 { icon: User,    label: "Nom",      val: item.nom },
@@ -159,13 +159,13 @@ function DevisDetailPanel({ item, onClose, onSaved }: { item: DevisItem; onClose
                 { icon: FileText,label: "Date",      val: fmtShort(item.created_at) },
               ].map(({ icon: Icon, label, val }) => (
                 <div key={label}>
-                  <p style={{ fontSize: 10, color: "#9ca3af", marginBottom: 2, display: "flex", alignItems: "center", gap: 4 }}><Icon size={10} /> {label}</p>
+                  <p style={{ fontSize: 11, color: "#9ca3af", marginBottom: 2, display: "flex", alignItems: "center", gap: 4 }}><Icon size={10} /> {label}</p>
                   <p style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{val}</p>
                 </div>
               ))}
               {item.produit && (
                 <div style={{ gridColumn: "1/-1" }}>
-                  <p style={{ fontSize: 10, color: "#9ca3af", marginBottom: 2, display: "flex", alignItems: "center", gap: 4 }}><Package size={10} /> Produit concerné</p>
+                  <p style={{ fontSize: 11, color: "#9ca3af", marginBottom: 2, display: "flex", alignItems: "center", gap: 4 }}><Package size={10} /> Produit concerné</p>
                   <p style={{ fontSize: 13, fontWeight: 600, color: "#059669" }}>{item.produit.nom}</p>
                 </div>
               )}
@@ -175,14 +175,14 @@ function DevisDetailPanel({ item, onClose, onSaved }: { item: DevisItem; onClose
           {/* Message */}
           {item.message && (
             <section>
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, marginBottom: 8 }}>Message du client</p>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, marginBottom: 8 }}>Message du client</p>
               <div style={{ background: "#f9fafb", borderRadius: 12, padding: "14px 16px", fontSize: 13, color: "#374151", lineHeight: 1.7, whiteSpace: "pre-wrap" as const }}>{item.message}</div>
             </section>
           )}
 
           {/* Étapes — uniquement les transitions autorisées */}
           <section>
-            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, marginBottom: 10 }}>Avancement du dossier</p>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, marginBottom: 10 }}>Avancement du dossier</p>
 
             {isTerminal ? (
               <div style={{ background: statut === "rejete" ? "#fef2f2" : "#ecfdf5", border: `1px solid ${statut === "rejete" ? "#fecaca" : "#a7f3d0"}`, borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}>
@@ -207,7 +207,7 @@ function DevisDetailPanel({ item, onClose, onSaved }: { item: DevisItem; onClose
                           <div style={{ width: 28, height: 28, borderRadius: "50%", background: isDone ? s.color : isCurrent ? s.color : "#e5e7eb", display: "flex", alignItems: "center", justifyContent: "center", border: isCurrent ? `2px solid ${s.color}` : "none", boxShadow: isCurrent ? `0 0 0 4px ${s.color}22` : "none" }}>
                             {isDone ? <CheckCircle2 size={14} style={{ color: "#fff" }} /> : <s.icon size={12} style={{ color: isDone || isCurrent ? "#fff" : "#9ca3af" }} />}
                           </div>
-                          <span style={{ fontSize: 9, color: isCurrent ? s.textLight : isDone ? s.textLight : "#9ca3af", fontWeight: isCurrent ? 700 : 500, whiteSpace: "nowrap" as const }}>{s.label}</span>
+                          <span style={{ fontSize: 10, color: isCurrent ? s.textLight : isDone ? s.textLight : "#9ca3af", fontWeight: isCurrent ? 700 : 500, whiteSpace: "nowrap" as const }}>{s.label}</span>
                         </div>
                         {i < arr.length - 1 && <div style={{ flex: 1, height: 2, background: isDone ? PIPELINE[i + 1]?.color ?? "#e5e7eb" : "#e5e7eb", margin: "0 4px", marginBottom: 16 }} />}
                       </div>
@@ -215,7 +215,7 @@ function DevisDetailPanel({ item, onClose, onSaved }: { item: DevisItem; onClose
                   })}
                 </div>
 
-                <p style={{ fontSize: 11, color: "#6b7280", marginBottom: 8 }}>Prochaine étape — choisissez une action :</p>
+                <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>Prochaine étape — choisissez une action :</p>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
                   {nextStatuts.map(key => {
                     const s = STATUT_MAP[key];
@@ -231,7 +231,7 @@ function DevisDetailPanel({ item, onClose, onSaved }: { item: DevisItem; onClose
                     );
                   })}
                 </div>
-                <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 8 }}>
+                <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 8 }}>
                   Statut actuel : <strong style={{ color: "#374151" }}>{STATUT_MAP[statut]?.label ?? statut}</strong>
                 </p>
               </div>
@@ -240,7 +240,7 @@ function DevisDetailPanel({ item, onClose, onSaved }: { item: DevisItem; onClose
 
           {/* Réponse admin */}
           <section>
-            <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, display: "block", marginBottom: 8 }}>Réponse au client</label>
+            <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, display: "block", marginBottom: 8 }}>Réponse au client</label>
             <textarea value={reponse} onChange={e => setReponse(e.target.value)} rows={4}
               placeholder="Rédigez votre réponse qui sera envoyée au client…"
               style={{ width: "100%", border: "1.5px solid #e5e7eb", borderRadius: 12, padding: "12px 14px", fontSize: 13, lineHeight: 1.6, resize: "vertical", outline: "none", fontFamily: "inherit", color: "#111827", boxSizing: "border-box" as const }}
@@ -251,7 +251,7 @@ function DevisDetailPanel({ item, onClose, onSaved }: { item: DevisItem; onClose
 
           {/* Note interne */}
           <section>
-            <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
               <StickyNote size={11} />Note interne (non visible par le client)
             </label>
             <textarea value={note} onChange={e => setNote(e.target.value)} rows={3}
@@ -350,7 +350,7 @@ export default function AdminDevisPage() {
           </h1>
           <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
             {meta.total} demandes au total
-            {urgents.length > 0 && <span style={{ marginLeft: 10, fontSize: 11, fontWeight: 700, color: "#dc2626", background: "#fef2f2", padding: "2px 8px", borderRadius: 20, border: "1px solid #fecaca" }}>⚡ {urgents.length} urgente{urgents.length > 1 ? "s" : ""}</span>}
+            {urgents.length > 0 && <span style={{ marginLeft: 10, fontSize: 12, fontWeight: 700, color: "#dc2626", background: "#fef2f2", padding: "2px 8px", borderRadius: 20, border: "1px solid #fecaca" }}>⚡ {urgents.length} urgente{urgents.length > 1 ? "s" : ""}</span>}
           </p>
         </div>
         <button onClick={() => load(curPage)} style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 16px", borderRadius: 10, background: "#f9fafb", border: "1px solid #e5e7eb", cursor: "pointer", fontSize: 13, color: "#374151" }}>
@@ -398,7 +398,7 @@ export default function AdminDevisPage() {
               <thead>
                 <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
                   {["Client", "Produit", "Statut", "Date", "Délai", "Action rapide", ""].map(h => (
-                    <th key={h} style={{ padding: "10px 16px", textAlign: "left" as const, fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.06em", whiteSpace: "nowrap" as const }}>{h}</th>
+                    <th key={h} style={{ padding: "10px 16px", textAlign: "left" as const, fontSize: 12, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.06em", whiteSpace: "nowrap" as const }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -420,9 +420,9 @@ export default function AdminDevisPage() {
                           </div>
                           <div>
                             <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", lineHeight: 1.2 }}>
-                              {item.nom}{isUrgent(item) && <span style={{ marginLeft: 6, fontSize: 10, color: "#dc2626" }}>⚡</span>}
+                              {item.nom}{isUrgent(item) && <span style={{ marginLeft: 6, fontSize: 11, color: "#dc2626" }}>⚡</span>}
                             </p>
-                            <p style={{ fontSize: 11, color: "#9ca3af" }}>{item.email}</p>
+                            <p style={{ fontSize: 12, color: "#9ca3af" }}>{item.email}</p>
                           </div>
                         </div>
                       </td>
@@ -434,21 +434,21 @@ export default function AdminDevisPage() {
                       <td style={{ padding: "12px 16px" }} onClick={e => e.stopPropagation()}>
                         <StatusBadge statut={item.statut} />
                       </td>
-                      <td style={{ padding: "12px 16px", fontSize: 11, color: "#6b7280", whiteSpace: "nowrap" as const }}>{fmt(item.created_at)}</td>
-                      <td style={{ padding: "12px 16px", fontSize: 11, whiteSpace: "nowrap" as const }}>
+                      <td style={{ padding: "12px 16px", fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" as const }}>{fmt(item.created_at)}</td>
+                      <td style={{ padding: "12px 16px", fontSize: 12, whiteSpace: "nowrap" as const }}>
                         <span style={{ color: isUrgent(item) ? "#dc2626" : "#9ca3af", fontWeight: isUrgent(item) ? 700 : 400 }}>{hoursAgo(item.created_at)}</span>
                       </td>
                       {/* Actions rapides : uniquement VALID_TRANSITIONS */}
                       <td style={{ padding: "12px 16px" }} onClick={e => e.stopPropagation()}>
                         <div style={{ display: "flex", gap: 4 }}>
                           {actions.length === 0 ? (
-                            <span style={{ fontSize: 10, color: "#d1d5db", fontStyle: "italic" }}>—</span>
+                            <span style={{ fontSize: 11, color: "#d1d5db", fontStyle: "italic" }}>—</span>
                           ) : (
                             actions.map(key => {
                               const s = STATUT_MAP[key];
                               if (!s) return null;
                               return (
-                                <button key={key} onClick={() => quickStatus(item, key)} style={{ padding: "4px 9px", borderRadius: 20, fontSize: 10, fontWeight: 600, background: s.bg, color: s.textLight, border: `1px solid ${s.border}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                                <button key={key} onClick={() => quickStatus(item, key)} style={{ padding: "4px 9px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: s.bg, color: s.textLight, border: `1px solid ${s.border}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
                                   <s.icon size={9} />{s.label}
                                 </button>
                               );

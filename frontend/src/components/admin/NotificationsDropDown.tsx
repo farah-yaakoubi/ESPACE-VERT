@@ -187,7 +187,7 @@ export function NotificationsDropdown({ isDark, pollInterval = 60000 }: { isDark
               <span style={{ fontSize: 14, fontWeight: 700, color: tPri }}>Notifications</span>
               {unread > 0 && (
                 <span style={{
-                  padding: "2px 8px", borderRadius: 99, fontSize: 11, fontWeight: 700,
+                  padding: "2px 8px", borderRadius: 99, fontSize: 12, fontWeight: 700,
                   background: isDark ? "rgba(46,125,79,0.2)" : "#f0faf4", color: A.accentXl,
                 }}>
                   {unread} non {unread > 1 ? "lues" : "lue"}
@@ -202,7 +202,7 @@ export function NotificationsDropdown({ isDark, pollInterval = 60000 }: { isDark
                     display: "flex", alignItems: "center", gap: 4, padding: "4px 8px",
                     borderRadius: 7, border: "none",
                     background: isDark ? "rgba(46,125,79,0.15)" : "#f0faf4",
-                    color: A.accentXl, fontSize: 11, fontWeight: 600, cursor: "pointer",
+                    color: A.accentXl, fontSize: 12, fontWeight: 600, cursor: "pointer",
                   }}
                 >
                   <Check size={11} /> Tout lire
@@ -286,7 +286,7 @@ export function NotificationsDropdown({ isDark, pollInterval = 60000 }: { isDark
                             alignItems: "center",
                             justifyContent: "center",
                             flexShrink: 0,
-                            fontSize: 10,
+                            fontSize: 11,
                             fontWeight: 700,
                             background: isDark ? "rgba(46,125,79,0.16)" : "#eef6f0",
                             color: isDark ? "#9ed8b1" : A.accent,
@@ -295,16 +295,16 @@ export function NotificationsDropdown({ isDark, pollInterval = 60000 }: { isDark
                           {meta.initials}
                         </span>
                       )}
-                      <p style={{ fontSize: 11.5, color: tSec, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <p style={{ fontSize: 12.5, color: tSec, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {meta.label}
                       </p>
                     </div>
                     {n.corps && (
-                      <p style={{ fontSize: 11.5, color: tSec, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <p style={{ fontSize: 12.5, color: tSec, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {n.corps}
                       </p>
                     )}
-                    <p style={{ fontSize: 11, color: isDark ? "rgba(255,255,255,0.2)" : "#bbb", marginTop: 4 }}>
+                    <p style={{ fontSize: 12, color: isDark ? "rgba(255,255,255,0.2)" : "#bbb", marginTop: 4 }}>
                       {timeAgo(n.created_at)}
                     </p>
                   </div>

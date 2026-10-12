@@ -14,8 +14,8 @@ interface SectionHeaderProps {
 
 export function SectionHeader({ eyebrow, title, subtitle, align = "center", className, icon }: SectionHeaderProps) {
   return (
-    <div className={cn("mb-6", align === "center" ? "text-center" : "text-left", className)}>
-      {eyebrow && <p className="eyebrow mb-3">{eyebrow}</p>}
+    <div className={cn("mb-5", align === "center" ? "text-center" : "text-left", className)}>
+      {eyebrow && <p className="eyebrow mb-2">{eyebrow}</p>}
       <h2 className="section-title">
         {icon ? (
           <SectionTitleLine icon={icon} align={align}>
@@ -31,7 +31,7 @@ export function SectionHeader({ eyebrow, title, subtitle, align = "center", clas
         style={{ background: "linear-gradient(90deg, #7dc040, #15803d)" }}
       />
       {subtitle && (
-        <p className={cn("mt-4 text-gray-500 leading-relaxed", align === "center" ? "max-w-2xl mx-auto" : "max-w-2xl")}>
+        <p className={cn("mt-3 text-[14px] leading-7 text-gray-500 sm:text-[15px]", align === "center" ? "max-w-2xl mx-auto" : "max-w-2xl")}>
           {subtitle}
         </p>
       )}

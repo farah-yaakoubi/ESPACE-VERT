@@ -18,6 +18,8 @@ import { SeedCalculatorWidget } from "@/components/widgets";
 import { detectPlant } from "@/lib/plant-detection";
 import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
 import { translatedField } from "@/i18n/translated-field";
+import { getActivityCategoryHref } from "@/lib/category-url";
+import { toDisplayHtml, stripHtml } from "@/lib/sanitize-html";
 
 
 export const revalidate = 0;
@@ -36,7 +38,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const brandName = p.marque?.nom ?? "Espace Vert";
     return {
       title: `${p.nom} — ${brandName}`,
-      description: p.description ?? `Découvrez ${p.nom}${p.marque ? ` de la gamme ${p.marque.nom}` : ""}.`,
+      description: stripHtml(p.description) || `Découvrez ${p.nom}${p.marque ? ` de la gamme ${p.marque.nom}` : ""}.`,
       openGraph: { images: p.images[0] ? [p.images[0].url] : [] },
     };
   } catch { return { title: "Produit introuvable" }; }
@@ -350,21 +352,32 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
               </>
             )}
 
-            {/* Catégorie parente */}
-            {produit.categorie?.parent && (
-              <>
-                <span className="text-gray-500">{parentCategorieNom}</span>
-                <ChevronRight size={11} />
-              </>
-            )}
-
-            {/* Catégorie directe */}
-            {produit.categorie && (
-              <>
-                <span className="text-gray-500">{categorieNom}</span>
-                <ChevronRight size={11} />
-              </>
-            )}
+            {/* Chemin complet des catégories (activité → ... → catégorie
+                directe), tel qu'il existe réellement en base, quelle que
+                soit sa profondeur — ex. Semences maraîchères / Pro / Hybride
+                / Tomate. Chaque maillon renvoie vers cette catégorie précise
+                sur la page de l'activité avec une URL lisible. */}
+            {produit.categoriePath?.map((cat, i) => {
+              const isLast = i === produit.categoriePath!.length - 1;
+              const href = produit.categorie?.activite
+                ? getActivityCategoryHref(
+                    produit.categorie.activite.slug,
+                    produit.categoriePath!.slice(0, i + 1).map((item) => item.slug),
+                  )
+                : null;
+              return (
+                <span key={cat.id_categorie} className="flex items-center gap-1.5">
+                  {href && !isLast ? (
+                    <Link href={href} className="hover:text-ev-700 transition-colors">
+                      {translatedField(cat, "nom", locale) ?? cat.nom}
+                    </Link>
+                  ) : (
+                    <span className="text-gray-500">{translatedField(cat, "nom", locale) ?? cat.nom}</span>
+                  )}
+                  <ChevronRight size={11} />
+                </span>
+              );
+            })}
 
             <span className="text-gray-700 font-medium">{produitNom}</span>
           </nav>
@@ -445,9 +458,10 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
                           <div className="grid grid-cols-1 sm:grid-cols-[1fr_280px] gap-6 items-start">
                             <div>
                               {produitDescription ? (
-                                <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                                  {produitDescription}
-                                </p>
+                                <div
+                                  className="text-sm text-gray-600 leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-ev-700 [&_a]:underline"
+                                  dangerouslySetInnerHTML={{ __html: toDisplayHtml(produitDescription) }}
+                                />
                               ) : (
                                 <p className="text-sm text-gray-400 italic">
                                   Aucune description disponible pour ce produit.
@@ -597,9 +611,10 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
                 style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
                 <div className={(produit as any).image_description ? "grid grid-cols-1 sm:grid-cols-[1fr_220px] gap-5 items-start" : ""}>
                   {produitDescription && (
-                    <p className="text-gray-600 leading-relaxed text-sm whitespace-pre-line">
-                      {produitDescription}
-                    </p>
+                    <div
+                      className="text-gray-600 leading-relaxed text-sm [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-ev-700 [&_a]:underline"
+                      dangerouslySetInnerHTML={{ __html: toDisplayHtml(produitDescription) }}
+                    />
                   )}
                   {(produit as any).image_description && (
                     <div className="w-full overflow-hidden rounded-xl border border-sand-200 bg-sand-50 shrink-0">
@@ -717,6 +732,7 @@ export default async function ProduitDetailPage({ params }: { params: Promise<{ 
           idProduitActuel={produit.id_produit}
           idCategorieParent={(produit.categorie as any)?.parent?.id_categorie ?? null}
           idActivite={produit.id_activite ?? null}
+          activiteSlug={produit.categorie?.activite?.slug ?? null}
         />
       </div>
     </div>

@@ -23,7 +23,14 @@ export const marqueRepository = {
     return prisma.marque.findMany({
       where:   { actif: true },
       orderBy: { nom: "asc" },
-      select:  { id_marque: true, nom: true, slug: true, logo: true, banniere: true, description: true, translations: true, actif: true, type_marque: true },
+      select:  {
+        id_marque: true, nom: true, slug: true, logo: true, banniere: true, description: true, translations: true, actif: true, type_marque: true,
+        categories: {
+          where:   { actif: true },
+          orderBy: { ordre: "asc" },
+          select:  { id_categorie: true, id_activite: true },
+        },
+      },
     });
   },
 
@@ -57,7 +64,10 @@ export const marqueRepository = {
         fiche_technique: true, division: true, tags: true, created_at: true,
         id_categorie: true,
         categorie: { select: { nom: true, slug: true, translations: true, marque: { select: { nom: true, slug: true, logo: true, translations: true } } } },
-        images: { where: { is_principale: true }, take: 1, select: { url: true, alt: true } },
+        // Toutes les photos du produit (pas seulement la principale) — nécessaire
+        // pour l'effet de défilement au survol sur les cartes produit (variant "seed"),
+        // identique à celui de la page Semences & Plants.
+        images: { orderBy: [{ is_principale: "desc" }, { ordre: "asc" }], select: { url: true, alt: true } },
       },
     });
 

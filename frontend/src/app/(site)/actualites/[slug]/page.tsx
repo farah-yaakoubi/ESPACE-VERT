@@ -2,9 +2,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { ChevronRight, Calendar, User, ArrowLeft } from "lucide-react";
 import { actualitesService } from "@/services";
 import { formatDate } from "@/lib/utils";
+import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
+import { messages } from "@/i18n/messages";
+import { translatedField } from "@/i18n/translated-field";
 
 export const revalidate = 120;
 
@@ -54,6 +58,11 @@ export default async function ActualiteDetailPage({
 
   // TypeScript: article is guaranteed defined after try/catch with notFound()
   const post = article!;
+  const cookieLocale = (await cookies()).get("NEXT_LOCALE")?.value;
+  const locale: Locale = isLocale(cookieLocale) ? cookieLocale : defaultLocale;
+  const t = (key: string, fallback: string) => messages[locale]?.[key] ?? messages[defaultLocale]?.[key] ?? fallback;
+  const titre = translatedField(post as any, "titre", locale) || post.titre;
+  const contenu = translatedField(post as any, "contenu", locale) || post.contenu;
   const dateDisplay = post.published_at ?? post.created_at;
 
   return (
@@ -65,9 +74,9 @@ export default async function ActualiteDetailPage({
           <nav className="flex items-center gap-1.5 text-xs text-gray-400 flex-wrap">
             <Link href="/" className="hover:text-ev-700 transition-colors">Accueil</Link>
             <ChevronRight size={12} />
-            <Link href="/actualites" className="hover:text-ev-700 transition-colors">Actualités</Link>
+            <Link href="/actualites" className="hover:text-ev-700 transition-colors">{t("nav.news", "Actualités")}</Link>
             <ChevronRight size={12} />
-            <span className="text-gray-700 font-medium line-clamp-1">{post.titre}</span>
+            <span className="text-gray-700 font-medium line-clamp-1">{titre}</span>
           </nav>
         </div>
       </div>
@@ -79,7 +88,7 @@ export default async function ActualiteDetailPage({
           className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-ev-700 transition-colors mb-8"
         >
           <ArrowLeft size={15} />
-          Retour aux actualités
+          {t("news.back", "Retour aux actualités")}
         </Link>
 
         {/* Cover image */}
@@ -87,7 +96,7 @@ export default async function ActualiteDetailPage({
           <div className="relative w-full aspect-video rounded-3xl overflow-hidden mb-8 shadow-card">
             <Image
               src={post.image}
-              alt={post.titre}
+              alt={titre}
               fill
               priority
               className="object-cover"
@@ -115,7 +124,7 @@ export default async function ActualiteDetailPage({
           className="text-3xl md:text-4xl font-bold text-ev-950 mb-8 leading-tight text-balance"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          {post.titre}
+          {titre}
         </h1>
 
         {/* Content — stored as HTML in contenu field */}
@@ -128,17 +137,17 @@ export default async function ActualiteDetailPage({
             prose-pre:bg-ev-950 prose-pre:text-ev-100
             text-gray-700 leading-relaxed
           "
-          dangerouslySetInnerHTML={{ __html: post.contenu }}
+          dangerouslySetInnerHTML={{ __html: contenu }}
         />
 
         {/* Footer */}
         <div className="mt-12 pt-8 border-t border-sand-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <Link href="/actualites" className="btn-ghost">
             <ArrowLeft size={15} />
-            Toutes les actualités
+            {t("news.all", "Toutes les actualités")}
           </Link>
           <Link href="/contact" className="btn-outline">
-            Une question ? Contactez-nous
+            {t("news.contact", "Une question ? Contactez-nous")}
           </Link>
         </div>
       </article>

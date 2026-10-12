@@ -9,16 +9,23 @@ import { PageHeroStatic } from "@/components/sections/PageHeroStatic";
 import { JardinageHeroShowcase } from "./JardinageHeroShowcase";
 import { SemencesHeroShowcase } from "./SemencesHeroShowcase";
 import { FertilisationHeroShowcase } from "./FertilisationHeroShowcase";
+import { FertilisantHeroShowcase } from "@/components/sections/FertilisantHeroShowcase";
+import { CategoryTree } from "@/components/catalogue/CategoryTree";
+import { fetchMarqueTree } from "@/lib/api/catalogue";
 import { PulverisationShowcase } from "./PulverisationShowcase";
 import { PollinisationProtectionShowcase } from "./PollinisationProtectionShowcase";
 import { SemencesRecommandation } from "./SemencesRecommandation";
 import { getEtudeInstallationHref, isEtudeInstallationCategory } from "@/lib/etude-installation";
+import { getActivityCategoryHrefById, findCategoryBySlugPath } from "@/lib/category-url";
 import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
 import { translatedField } from "@/i18n/translated-field";
 import { cn } from "@/lib/utils";
 
 interface PageProps {
-  params: Promise<{ slug: string }>;
+  // `catPath` n'existe que sur la route imbriquée
+  // /activites/[slug]/categorie/[[...catPath]] (qui ré-exporte cette même
+  // page) — absent sur /activites/[slug].
+  params: Promise<{ slug: string; catPath?: string[] }>;
   searchParams?: Promise<{ cat?: string | string[] }>;
 }
 
@@ -126,7 +133,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 /* ── Page ────────────────────────────────────────────────────────── */
 export default async function ActiviteDetailPage({ params, searchParams }: PageProps) {
-  const { slug } = await params;
+  const { slug, catPath = [] } = await params;
 
   // ── Page 100% statique — Pollinisation & Protection des Plantes ────
   // Le catalogue (catégories/produits) n'est pas encore prêt en base.
@@ -205,7 +212,9 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
             id_categorie: cat.id_categorie,
             nom: marque?.nom ?? cat.nom,
             image: marque?.logo ?? cat.image ?? null,
-            href: marque ? `/marques/${marque.slug}` : `?cat=${cat.id_categorie}#produits-activite`,
+            href: marque
+              ? `/marques/${marque.slug}`
+              : `${getActivityCategoryHrefById(slug, categories, cat.id_categorie)}#produits-activite`,
           };
         })
     : [];
@@ -238,6 +247,20 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
   const activiteNom = translatedField(activite as any, "nom", locale) || activite.nom;
   const activiteDescription = translatedField(activite as any, "description", locale) || activite.description;
 
+  // ── Fertilisation ────────────────────────────────────────────────
+  // Cette page doit avoir exactement le même affichage que la page
+  // marque Fertivert (/marques/fertivert) : même hero, même catalogue
+  // (onglets Pro/Garden), tout en restant sous l'URL /activites/fertilisation/...
+  // On réutilise donc l'arbre catégories/produits de la marque Fertivert.
+  // Si l'appel échoue (marque absente en base, etc.), on retombe sur
+  // l'ancien affichage (FertilisationHeroShowcase + ActiviteProduitsSection)
+  // pour ne jamais casser la page.
+  const fertivertTree = isFertilisation ? await fetchMarqueTree("fertivert") : null;
+  const fertivertInitialCategoryId =
+    fertivertTree && catPath.length > 0
+      ? findCategoryBySlugPath(fertivertTree.categories, catPath)?.id_categorie ?? null
+      : null;
+
   return (
     <div className={cn(isMachinisme && "theme-machinisme")}>
       {/* ── Hero ── */}
@@ -245,10 +268,24 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
         <JardinageHeroShowcase activiteSlug={activite.slug} categories={rootCategories} />
       ) : isSemences ? (
         <SemencesHeroShowcase activiteSlug={activite.slug} />
+      ) : isFertilisation && fertivertTree ? (
+        <FertilisantHeroShowcase
+          title="Optimisez vos récoltes avec nos engrais naturels"
+          subtitle="Des solutions de fertilisation durables pour une croissance exceptionnelle."
+          heroSlideKey="marque:fertivert"
+          fallbackImage="/images/hero/BANNEQR.webp"
+          categories={fertivertTree.categories}
+          categoryAnchor="produits-activite"
+          ctaHref="#produits-activite"
+          fichesTechniquesHref="/rendez-vous"
+          showTypeCards={false}
+          crossSellHref={null}
+          minimalHero
+        />
       ) : isFertilisation ? (
         <FertilisationHeroShowcase activiteSlug={activite.slug} categories={rootCategories} />
       ) : isPulverisation ? (
-        <PulverisationShowcase categories={categories} />
+        <PulverisationShowcase categories={categories} activiteSlug={activite.slug} />
       ) : isPollinisationProtection ? (
         <PollinisationProtectionShowcase
           title={activiteNom}
@@ -300,7 +337,7 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
                   href={
                     slug === "irrigation" && isEtudeInstallationCategory(cat)
                       ? getEtudeInstallationHref(slug)
-                      : `?cat=${cat.id_categorie}#produits-activite`
+                      : `${getActivityCategoryHrefById(slug, categories, cat.id_categorie)}#produits-activite`
                   }
                   className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-ev-50 text-ev-700 border border-ev-100 whitespace-nowrap"
                 >
@@ -322,7 +359,20 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
       )}
 
       {/* ── Products section (client component) ─────────────────── */}
-      {!isPulverisation && (
+      {isFertilisation && fertivertTree ? (
+        <section id="produits-activite" className="bg-sand-50 border-b border-sand-200">
+          <div className="container-ev py-8">
+            <CategoryTree
+              tree={fertivertTree}
+              produitBasePath="/produits"
+              showProduits
+              cardVariant="seed"
+              rootTabsOnly
+              initialCategoryId={fertivertInitialCategoryId}
+            />
+          </div>
+        </section>
+      ) : !isPulverisation && (
         <ActiviteProduitsSectionWrapper
           id_activite={activite.id_activite}
           activiteSlug={activite.slug}

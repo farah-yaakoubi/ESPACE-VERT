@@ -12,15 +12,15 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
-import { adminStats, tokenStore, isSuperAdmin, type DashboardStats } from "@/lib/admin-api";
+import { adminStats, tokenStore, type DashboardStats } from "@/lib/admin-api";
 import {
   Package, Tag, Layers, Activity, Newspaper, HelpCircle,
   FileText, Calendar, MessageSquare, ArrowUp, ArrowDown,
   ArrowRight, Clock, CheckCircle2, TrendingUp, Eye,
-  Bot, Send, Trash2, Sparkles, X, ChevronDown, ChevronUp,
+  Bot, Send, Trash2, ChevronDown, ChevronUp, AlertTriangle,
+  Plus, Inbox, Search, GaugeCircle,
   type LucideIcon,
 } from "lucide-react";
-import { toast } from "@/components/admin/Toast";
 
 const P = {
   blue:"#3C50E0",green:"#10B981",amber:"#F59E0B",purple:"#8B5CF6",
@@ -124,7 +124,7 @@ function WeekBars({values,color}:{values:number[];color:string}){
         <div key={i} className="flex flex-col items-center gap-1 flex-1">
           <div className="w-full rounded-t-sm transition-all duration-500"
             style={{height:`${Math.max((v/max)*60,4)}px`,background:i===values.length-1?color:color+"66"}}/>
-          <span className="text-[9px] text-gray-400">{days[i]}</span>
+          <span className="text-[10px] text-gray-400">{days[i]}</span>
         </div>
       ))}
     </div>
@@ -139,8 +139,176 @@ const QUICK_QUESTIONS = [
   "Que dois-je faire aujourd'hui ?",
 ];
 
+type SmartAction = {
+  title: string;
+  detail: string;
+  href: string;
+  icon: LucideIcon;
+  tone: "urgent" | "warning" | "success" | "neutral";
+};
+
+const ACTION_TONES: Record<SmartAction["tone"], { color: string; bg: string; border: string }> = {
+  urgent:  { color: "#DC2626", bg: "#FEF2F2", border: "#FECACA" },
+  warning: { color: "#B45309", bg: "#FFFBEB", border: "#FDE68A" },
+  success: { color: "#047857", bg: "#ECFDF5", border: "#A7F3D0" },
+  neutral: { color: "#3C50E0", bg: "#EEF2FF", border: "#C7D2FE" },
+};
+
+function buildSmartActions(stats: DashboardStats): SmartAction[] {
+  const devisNew = stats.devis.par_statut.nouveau ?? 0;
+  const devisProgress = stats.devis.par_statut.en_cours ?? 0;
+  const rdvNew = stats.rdv.par_statut.nouveau ?? 0;
+  const unread = stats.messages.non_lus;
+  const actions: SmartAction[] = [];
+
+  if (devisNew > 0) {
+    actions.push({
+      title: `${devisNew} devis à traiter`,
+      detail: devisNew > 1 ? "Répondez aux nouvelles demandes avant qu'elles refroidissent." : "Une nouvelle demande attend une réponse.",
+      href: "/admin/devis",
+      icon: FileText,
+      tone: "urgent",
+    });
+  }
+  if (rdvNew > 0) {
+    actions.push({
+      title: `${rdvNew} RDV à confirmer`,
+      detail: "Validez les créneaux ou ajoutez une note interne.",
+      href: "/admin/rdv",
+      icon: Calendar,
+      tone: "warning",
+    });
+  }
+  if (unread > 0) {
+    actions.push({
+      title: `${unread} message${unread > 1 ? "s" : ""} non lu${unread > 1 ? "s" : ""}`,
+      detail: "Consultez les demandes client arrivées via le formulaire.",
+      href: "/admin/contact",
+      icon: MessageSquare,
+      tone: "warning",
+    });
+  }
+  if (devisProgress > 0) {
+    actions.push({
+      title: `${devisProgress} devis en cours`,
+      detail: "Passez-les en traité dès que le suivi est terminé.",
+      href: "/admin/devis",
+      icon: GaugeCircle,
+      tone: "neutral",
+    });
+  }
+  if (actions.length === 0) {
+    actions.push({
+      title: "Tout est sous contrôle",
+      detail: "Aucune demande urgente. Profitez-en pour enrichir le catalogue.",
+      href: "/admin/produits",
+      icon: CheckCircle2,
+      tone: "success",
+    });
+  }
+
+  return actions.slice(0, 4);
+}
+
+function SmartBrief({ stats }: { stats: DashboardStats }) {
+  const actions = buildSmartActions(stats);
+  const urgentCount = (stats.devis.par_statut.nouveau ?? 0) + (stats.rdv.par_statut.nouveau ?? 0) + stats.messages.non_lus;
+  const health = urgentCount === 0 ? 100 : Math.max(35, 100 - urgentCount * 12);
+  const healthTone = health >= 80 ? ACTION_TONES.success : health >= 55 ? ACTION_TONES.warning : ACTION_TONES.urgent;
+
+  return (
+    <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-5">
+      <div className="bg-white rounded-xl border overflow-hidden" style={{ borderColor: "#E2E8F0" }}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-5 border-b" style={{ borderColor: "#F1F5F9" }}>
+          <div>
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={16} style={{ color: urgentCount > 0 ? "#F59E0B" : "#10B981" }} />
+              <h2 className="text-sm font-bold text-gray-800">Priorités intelligentes</h2>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Ce que l'admin devrait regarder en premier aujourd'hui.</p>
+          </div>
+          <Link href="/admin/analytics" className="inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors" style={{ background: "#EEF2FF", color: "#3C50E0" }}>
+            Voir les tendances <ArrowRight size={12} />
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-5">
+          {actions.map(({ title, detail, href, icon: Icon, tone }) => {
+            const t = ACTION_TONES[tone];
+            return (
+              <Link key={`${title}-${href}`} href={href} className="group rounded-xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-sm" style={{ borderColor: t.border, background: t.bg }}>
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "#fff", color: t.color }}>
+                    <Icon size={16} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold" style={{ color: "#1f2937" }}>{title}</p>
+                    <p className="text-xs leading-relaxed mt-1" style={{ color: "#64748B" }}>{detail}</p>
+                  </div>
+                  <ArrowRight size={14} className="mt-1 opacity-40 transition-transform group-hover:translate-x-0.5" style={{ color: t.color }} />
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border p-5 flex flex-col justify-between gap-5" style={{ borderColor: "#E2E8F0" }}>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-gray-800">Score de gestion</h2>
+            <p className="text-xs text-gray-400 mt-1">Basé sur les éléments en attente.</p>
+          </div>
+          <span className="text-xs font-bold rounded-full px-2.5 py-1" style={{ background: healthTone.bg, color: healthTone.color }}>{health}/100</span>
+        </div>
+        <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-700" style={{ width: `${health}%`, background: healthTone.color }} />
+        </div>
+        <p className="text-sm leading-relaxed text-gray-600">
+          {urgentCount === 0
+            ? "Aucune urgence client détectée. Le catalogue et le contenu peuvent passer en priorité."
+            : `${urgentCount} élément${urgentCount > 1 ? "s" : ""} demande${urgentCount > 1 ? "nt" : ""} une action rapide.`}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function QuickActionGrid() {
+  const actions = [
+    { label: "Ajouter produit", href: "/admin/produits", icon: Plus, color: "#10B981", bg: "#ECFDF5" },
+    { label: "Traiter devis", href: "/admin/devis", icon: Inbox, color: "#3C50E0", bg: "#EEF2FF" },
+    { label: "Confirmer RDV", href: "/admin/rdv", icon: Calendar, color: "#F59E0B", bg: "#FFFBEB" },
+    { label: "Chercher partout", href: "#command-palette", icon: Search, color: "#8B5CF6", bg: "#F5F3FF" },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {actions.map(({ label, href, icon: Icon, color, bg }) => (
+        <Link
+          key={label}
+          href={href}
+          onClick={(event) => {
+            if (href === "#command-palette") {
+              event.preventDefault();
+              document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true }));
+            }
+          }}
+          className="bg-white rounded-xl border px-4 py-3 flex items-center gap-3 transition-all hover:shadow-sm hover:-translate-y-0.5"
+          style={{ borderColor: "#E2E8F0" }}
+        >
+          <span className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: bg, color }}>
+            <Icon size={16} />
+          </span>
+          <span className="text-sm font-bold text-gray-700 truncate">{label}</span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 // ─── Assistant IA intégré ─────────────────────────────────────────────────────
-interface AiMessage { role: "user"|"assistant"; content: string; ts: Date; }
+interface AiAction { label: string; href?: string; type?: string; }
+interface AiMessage { role: "user"|"assistant"; content: string; ts: Date; actions?: AiAction[]; }
 
 function DashboardAssistant({ stats }: { stats: DashboardStats | null }) {
   const [open,     setOpen]     = useState(false);
@@ -161,46 +329,43 @@ function DashboardAssistant({ stats }: { stats: DashboardStats | null }) {
     setMessages(prev => [...prev, userMsg]);
     setLoading(true);
 
-    // Contexte compact du dashboard
-    const statsContext = stats ? `
-DONNÉES DU SITE EN CE MOMENT :
-- Devis reçus : ${stats.devis.total} total, dont ${stats.devis.par_statut.nouveau ?? 0} nouveaux en attente
-- Rendez-vous : ${stats.rdv.total} total, dont ${stats.rdv.par_statut.nouveau ?? 0} à confirmer
-- Messages : ${stats.messages.non_lus} non lus
-- Catalogue : ${stats.catalogue.produits} produits, ${stats.catalogue.marques} marques, ${stats.catalogue.categories} catégories
-- Derniers devis : ${stats.recents.devis.slice(0,3).map(d=>`${d.nom} (${STATUT_DEVIS[d.statut]?.label??d.statut})`).join(", ") || "aucun"}
-` : "";
-
-    const systemPrompt = `Tu es l'assistant de gestion du site Espace Vert, une entreprise tunisienne spécialisée dans les espaces verts et le jardinage.
-
-Tu aides les administrateurs du site à gérer les demandes clients (devis, rendez-vous, messages), le catalogue de produits, et le contenu du site.
-
-RÈGLES IMPORTANTES :
-- Réponds toujours en français, de façon claire et simple
-- Pas de jargon technique : dis "demandes" au lieu de "CRM", "catalogue" au lieu de "BDD"
-- Sois direct et concis — les admins sont occupés
-- Quand tu conseilles une action, dis précisément où aller dans le menu
-- Si tu n'as pas l'information, dis-le clairement
-
-${statsContext}`;
-
     try {
+      const statsContext = stats ? `
+Résumé dashboard :
+- ${stats.devis.par_statut.nouveau ?? 0} nouveaux devis sur ${stats.devis.total}
+- ${stats.rdv.par_statut.nouveau ?? 0} rendez-vous à confirmer sur ${stats.rdv.total}
+- ${stats.messages.non_lus} messages non lus
+- Catalogue : ${stats.catalogue.produits} produits, ${stats.catalogue.marques} marques, ${stats.catalogue.categories} catégories
+` : "";
       const history = messages.slice(-6).map(m => ({ role: m.role, content: m.content }));
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/chat/admin", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${tokenStore.get() ?? ""}`,
+        },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 800,
-          system: systemPrompt,
-          messages: [...history, { role: "user", content: text.trim() }],
+          message: `${text.trim()}\n\n${statsContext}`,
+          history,
         }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.reply ?? err?.error ?? "Service IA indisponible.");
+      }
       const data = await res.json();
-      const reply = data?.content?.[0]?.text ?? "Désolé, je n'ai pas pu répondre. Réessayez.";
-      setMessages(prev => [...prev, { role: "assistant", content: reply, ts: new Date() }]);
-    } catch {
-      setMessages(prev => [...prev, { role: "assistant", content: "Erreur de connexion. Vérifiez la configuration.", ts: new Date() }]);
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: data?.reply ?? "Désolé, je n'ai pas pu répondre. Réessayez.",
+        actions: Array.isArray(data?.actions) ? data.actions : [],
+        ts: new Date(),
+      }]);
+    } catch (err) {
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: err instanceof Error ? err.message : "Erreur de connexion. Vérifiez la configuration.",
+        ts: new Date(),
+      }]);
     } finally {
       setLoading(false);
     }
@@ -265,12 +430,28 @@ ${statsContext}`;
                   }`}>
                     {m.role === "user" ? "V" : <Bot size={13} />}
                   </div>
-                  <div className={`max-w-[78%] rounded-xl px-4 py-3 text-sm leading-relaxed ${
-                    m.role === "user"
-                      ? "bg-green-600 text-white rounded-tr-sm"
-                      : "bg-gray-50 text-gray-700 rounded-tl-sm border border-gray-100"
-                  }`} style={{ whiteSpace: "pre-wrap" }}>
-                    {m.content}
+                  <div className={`max-w-[78%] flex flex-col gap-2 ${m.role === "user" ? "items-end" : "items-start"}`}>
+                    <div className={`rounded-xl px-4 py-3 text-sm leading-relaxed ${
+                      m.role === "user"
+                        ? "bg-green-600 text-white rounded-tr-sm"
+                        : "bg-gray-50 text-gray-700 rounded-tl-sm border border-gray-100"
+                    }`} style={{ whiteSpace: "pre-wrap" }}>
+                      {m.content}
+                    </div>
+                    {m.role === "assistant" && m.actions && m.actions.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {m.actions.filter(a => a.href).map((action, actionIndex) => (
+                          <Link
+                            key={`${action.label}-${actionIndex}`}
+                            href={action.href ?? "/admin/dashboard"}
+                            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-green-50"
+                            style={{ borderColor: "#A7F3D0", color: "#047857" }}
+                          >
+                            {action.label} <ArrowRight size={11} />
+                          </Link>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -420,7 +601,7 @@ export default function AdminDashboard(){
     <div className="space-y-6">
 
       {/* En-tête */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-800" style={{letterSpacing:"-0.04em"}}>Tableau de bord</h1>
           <p className="text-sm text-gray-400 mt-0.5 capitalize">
@@ -428,11 +609,15 @@ export default function AdminDashboard(){
           </p>
         </div>
         <Link href="/" target="_blank"
-          className="hidden sm:flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
+          className="inline-flex w-fit items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
           style={{background:P.blueLt,color:P.blue}}>
           <Eye size={13}/> Voir le site
         </Link>
       </div>
+
+      <SmartBrief stats={stats} />
+
+      <QuickActionGrid />
 
       {/* Chiffres clés */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -585,8 +770,8 @@ export default function AdminDashboard(){
                       <p className="text-xs text-gray-400 truncate">{d.produit?.nom??d.email}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{background:s.bg,color:s.color}}>{s.label}</span>
-                      <span className="text-[10px] text-gray-400 flex items-center gap-0.5"><Clock size={9}/>{fmt(d.created_at)}</span>
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{background:s.bg,color:s.color}}>{s.label}</span>
+                      <span className="text-[11px] text-gray-400 flex items-center gap-0.5"><Clock size={9}/>{fmt(d.created_at)}</span>
                     </div>
                   </Link>
                 );
@@ -614,7 +799,7 @@ export default function AdminDashboard(){
                   </div>
                   <div className="flex flex-col items-end gap-1.5 shrink-0">
                     {m.lu?<CheckCircle2 size={14} className="text-gray-300"/>:<span className="w-2 h-2 rounded-full" style={{background:P.amber}}/>}
-                    <span className="text-[10px] text-gray-400">{fmt(m.created_at)}</span>
+                    <span className="text-[11px] text-gray-400">{fmt(m.created_at)}</span>
                   </div>
                 </Link>
               ))}
@@ -641,7 +826,7 @@ export default function AdminDashboard(){
                       <p className="text-sm font-semibold text-gray-700 truncate">{r.nom}</p>
                       <p className="text-xs text-gray-400 truncate">{r.agence??fmt(r.date_souhaitee)}</p>
                     </div>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0" style={{background:s.bg,color:s.color}}>{s.label}</span>
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0" style={{background:s.bg,color:s.color}}>{s.label}</span>
                   </Link>
                 );
               })}

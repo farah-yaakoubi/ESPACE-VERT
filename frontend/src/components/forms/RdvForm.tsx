@@ -7,6 +7,7 @@ import { CalendarDays, CheckCircle2 } from "lucide-react";
 import { rdvService } from "@/services";
 import { getVisitorToken } from "@/components/VisiteurTracker";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/I18nProvider";
 
 const AGENCES = ["Tunis", "Soliman", "Borj Amri", "Sfax"];
 const CRENEAUX_FALLBACK = [
@@ -29,6 +30,7 @@ type FormValues = z.infer<typeof schema>;
 const todayStr = new Date().toISOString().split("T")[0];
 
 export function RdvForm() {
+  const { t } = useI18n();
   const [creneaux, setCreneaux] = useState<string[]>(CRENEAUX_FALLBACK);
   const [sent, setSent]         = useState(false);
   const [error, setError]       = useState<string | null>(null);
@@ -56,7 +58,7 @@ export function RdvForm() {
       token_visiteur:  getVisitorToken(),         // ← lie le RDV au visiteur connu
     });
     if (res.success) { setSent(true); reset(); }
-    else setError(res.error ?? "Une erreur s'est produite.");
+    else setError(res.error ?? t("form.error.generic", "Une erreur s'est produite."));
   };
 
   if (sent) return (
@@ -64,9 +66,9 @@ export function RdvForm() {
       <div className="w-14 h-14 rounded-full bg-sky-100 flex items-center justify-center">
         <CheckCircle2 size={28} className="text-sky-600" />
       </div>
-      <h3 className="font-semibold text-ev-900 text-lg">Demande envoyée !</h3>
-      <p className="text-gray-500 text-sm">Notre équipe vous confirmera le rendez-vous rapidement.</p>
-      <button onClick={() => setSent(false)} className="btn-ghost btn-sm mt-2">Nouveau rendez-vous</button>
+      <h3 className="font-semibold text-ev-900 text-lg">{t("rdv.sent.title", "Demande envoyée !")}</h3>
+      <p className="text-gray-500 text-sm">{t("rdv.sent.text", "Notre équipe vous confirmera le rendez-vous rapidement.")}</p>
+      <button onClick={() => setSent(false)} className="btn-ghost btn-sm mt-2">{t("rdv.sent.again", "Nouveau rendez-vous")}</button>
     </div>
   );
 
@@ -74,64 +76,64 @@ export function RdvForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div className="flex items-center gap-3 px-4 py-3 bg-sky-50 border border-sky-200 rounded-xl text-sm text-sky-800">
         <CalendarDays size={16} className="shrink-0 text-sky-500" />
-        <span>Ce service est réservé aux solutions d&apos;irrigation <strong>Matar</strong>.</span>
+        <span>{t("rdv.matar.info", "Ce service est réservé aux solutions d'irrigation")} <strong>Matar</strong>.</span>
       </div>
       {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
-          <label className="field-label" htmlFor="rdv-nom">Nom complet *</label>
-          <input id="rdv-nom" {...register("nom")} placeholder="Votre nom"
+          <label className="field-label" htmlFor="rdv-nom">{t("form.name", "Nom complet")} *</label>
+          <input id="rdv-nom" {...register("nom")} placeholder={t("form.name.ph", "Votre nom")}
             className={cn("field", errors.nom && "field-error")} />
           {errors.nom && <p className="field-hint">{errors.nom.message}</p>}
         </div>
         <div>
-          <label className="field-label" htmlFor="rdv-tel">Téléphone</label>
-          <input id="rdv-tel" type="tel" {...register("telephone")} placeholder="+216 XX XXX XXX" className="field" />
+          <label className="field-label" htmlFor="rdv-tel">{t("form.phone", "Téléphone")}</label>
+          <input id="rdv-tel" type="tel" {...register("telephone")} placeholder={t("form.phone.ph", "+216 XX XXX XXX")} className="field" />
         </div>
       </div>
       <div>
-        <label className="field-label" htmlFor="rdv-email">E-mail *</label>
-        <input id="rdv-email" type="email" {...register("email")} placeholder="vous@exemple.com"
+        <label className="field-label" htmlFor="rdv-email">{t("form.email", "E-mail")} *</label>
+        <input id="rdv-email" type="email" {...register("email")} placeholder={t("form.email.ph", "vous@exemple.com")}
           className={cn("field", errors.email && "field-error")} />
         {errors.email && <p className="field-hint">{errors.email.message}</p>}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
-          <label className="field-label" htmlFor="rdv-date">Date souhaitée *</label>
+          <label className="field-label" htmlFor="rdv-date">{t("rdv.date", "Date souhaitée")} *</label>
           <input id="rdv-date" type="date" min={todayStr} {...register("date_souhaitee")}
             className={cn("field", errors.date_souhaitee && "field-error")} />
           {errors.date_souhaitee && <p className="field-hint">{errors.date_souhaitee.message}</p>}
         </div>
         <div>
-          <label className="field-label" htmlFor="rdv-heure">Créneau horaire</label>
+          <label className="field-label" htmlFor="rdv-heure">{t("rdv.slot", "Créneau horaire")}</label>
           <select id="rdv-heure" {...register("heure")} className="field">
-            <option value="">— Sélectionner —</option>
+            <option value="">{t("rdv.slot.ph", "— Sélectionner —")}</option>
             {creneaux.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
-          <label className="field-label" htmlFor="rdv-agence">Agence</label>
+          <label className="field-label" htmlFor="rdv-agence">{t("rdv.agency", "Agence")}</label>
           <select id="rdv-agence" {...register("agence")} className="field">
-            <option value="">— Choisir une agence —</option>
+            <option value="">{t("rdv.agency.ph", "— Choisir une agence —")}</option>
             {AGENCES.map((a) => <option key={a} value={a}>{a}</option>)}
           </select>
         </div>
         <div>
-          <label className="field-label" htmlFor="rdv-objet">Objet du rendez-vous</label>
-          <input id="rdv-objet" {...register("objet")} placeholder="Ex : installation, maintenance…" className="field" />
+          <label className="field-label" htmlFor="rdv-objet">{t("rdv.subject", "Objet du rendez-vous")}</label>
+          <input id="rdv-objet" {...register("objet")} placeholder={t("rdv.subject.ph", "Ex : installation, maintenance…")} className="field" />
         </div>
       </div>
       <div>
-        <label className="field-label" htmlFor="rdv-msg">Informations complémentaires</label>
+        <label className="field-label" htmlFor="rdv-msg">{t("rdv.extra", "Informations complémentaires")}</label>
         <textarea id="rdv-msg" rows={3} {...register("message")}
-          placeholder="Précisez votre situation ou vos besoins…" className="field resize-none" />
+          placeholder={t("rdv.extra.ph", "Précisez votre situation ou vos besoins…")} className="field resize-none" />
       </div>
       <button type="submit" disabled={isSubmitting}
         className={cn("btn btn-lg w-full bg-sky-700 text-white hover:bg-sky-800", isSubmitting && "btn-loading")}>
         {!isSubmitting && <CalendarDays size={16} />}
-        {isSubmitting ? "Envoi en cours…" : "Confirmer la demande de rendez-vous"}
+        {isSubmitting ? t("form.sending", "Envoi en cours…") : t("rdv.submit", "Confirmer la demande de rendez-vous")}
       </button>
     </form>
   );

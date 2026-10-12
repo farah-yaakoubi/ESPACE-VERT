@@ -328,7 +328,7 @@ export function AdminAIWidget() {
             </div>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: 15, fontWeight: 800, color: "#fff", lineHeight: 1.15 }}>Assistant IA</p>
-              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.78)", fontWeight: 600 }}>Actions confirmées</p>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.78)", fontWeight: 600 }}>Actions confirmées</p>
             </div>
             {messages.length > 0 && (
               <button onClick={() => setMessages([])} title="Effacer" style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
@@ -344,7 +344,7 @@ export function AdminAIWidget() {
           {messages.length === 0 && (
             <div style={{ padding: "14px 16px 0", display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
               {SUGGESTIONS.map(q => (
-                <button key={q} onClick={() => send(q)} style={{ fontSize: 11, padding: "5px 10px", borderRadius: 20, border: "1px solid #a7f3d0", background: "#f0fdf4", color: "#047857", cursor: "pointer", fontWeight: 600 }}>
+                <button key={q} onClick={() => send(q)} style={{ fontSize: 12, padding: "5px 10px", borderRadius: 20, border: "1px solid #a7f3d0", background: "#f0fdf4", color: "#047857", cursor: "pointer", fontWeight: 600 }}>
                   {q}
                 </button>
               ))}
@@ -356,7 +356,7 @@ export function AdminAIWidget() {
             <div style={{ flex: 1, maxHeight: 360, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 14 }}>
               {messages.map((m, i) => (
                 <div key={i} style={{ display: "flex", gap: 8, flexDirection: m.role === "user" ? "row-reverse" : "row", alignItems: "flex-end" }}>
-                  <div style={{ width: 30, height: 30, borderRadius: m.role === "user" ? "50%" : 10, background: m.role === "user" ? "#2e7d4f" : "#ecfdf5", border: m.role === "assistant" ? "1px solid #bbf7d0" : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 10, fontWeight: 800, color: m.role === "user" ? "#fff" : "#047857" }}>
+                  <div style={{ width: 30, height: 30, borderRadius: m.role === "user" ? "50%" : 10, background: m.role === "user" ? "#2e7d4f" : "#ecfdf5", border: m.role === "assistant" ? "1px solid #bbf7d0" : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 11, fontWeight: 800, color: m.role === "user" ? "#fff" : "#047857" }}>
                     {m.role === "user" ? "V" : <Info size={15} />}
                   </div>
                   <div style={{ maxWidth: "78%", display: "flex", flexDirection: "column", gap: 8 }}>
@@ -385,7 +385,7 @@ export function AdminAIWidget() {
                               border: action.risk === "high" ? "1px solid #fecaca" : "1px solid #bbf7d0",
                               background: done ? "#f0fdf4" : action.risk === "high" ? "#fff7f7" : "#f0fdf4",
                               color: action.risk === "high" ? "#b91c1c" : "#047857",
-                              fontSize: 11,
+                              fontSize: 12,
                               fontWeight: 700,
                               textAlign: "left",
                               cursor: done || busy ? "default" : "pointer",
@@ -396,7 +396,7 @@ export function AdminAIWidget() {
                               {action.type === "CREATE_PRODUIT" ? <PackagePlus size={13} /> : action.risk === "high" ? <ShieldAlert size={13} /> : done ? <CheckCircle2 size={13} /> : <ExternalLink size={13} />}
                               {action.label}
                             </span>
-                            <span style={{ fontSize: 9, opacity: 0.7 }}>
+                            <span style={{ fontSize: 10, opacity: 0.7 }}>
                               {done ? "fait" : busy ? "..." : ""}
                             </span>
                           </button>
@@ -449,7 +449,7 @@ export function AdminAIWidget() {
           </span>
         )}
         {!open && messages.filter(m => m.role === "assistant").length > 0 && (
-          <span style={{ position: "absolute", top: -2, right: -2, width: 18, height: 18, borderRadius: "50%", background: "#2563eb", border: "2px solid #fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff" }}>
+          <span style={{ position: "absolute", top: -2, right: -2, width: 18, height: 18, borderRadius: "50%", background: "#2563eb", border: "2px solid #fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#fff" }}>
             {messages.filter(m => m.role === "assistant").length}
           </span>
         )}

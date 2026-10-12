@@ -141,6 +141,11 @@ export interface ProduitCard {
   categorie:       { nom: string; slug: string; translations?: EntityTranslations | null };
   marque?:         { nom: string; slug: string; logo?: string | null; translations?: EntityTranslations | null } | null;
   activite?:       { nom: string; slug: string; translations?: EntityTranslations | null } | null;
+  /** Chemin complet de catégories (racine → catégorie directe), calculé
+   *  côté backend en une seule passe pour toute la liste (pas de requête
+   *  supplémentaire par produit) — permet de construire l'URL canonique
+   *  directement, sans redirection. */
+  categoriePath?: { id_categorie: number; nom: string; slug: string; translations?: EntityTranslations | null }[];
   images:          { url: string; alt: string | null }[];
 }
 
@@ -184,6 +189,17 @@ export interface Produit {
     nom:  string;
     slug: string;
   } | null;
+  /** Chemin complet de catégories, de la racine (activité) jusqu'à la
+   *  catégorie directe du produit — ex. [Semences maraîchères, Pro, Hybride,
+   *  Tomate] — reconstitué côté backend en remontant `parent_id` sur toute
+   *  la profondeur réelle de l'arbre (pas seulement un niveau). Utilisé pour
+   *  le fil d'Ariane complet sur la fiche produit. */
+  categoriePath?: {
+    id_categorie: number;
+    nom:          string;
+    slug:         string;
+    translations?: EntityTranslations | null;
+  }[];
   images: ProduitImage[];
 }
 

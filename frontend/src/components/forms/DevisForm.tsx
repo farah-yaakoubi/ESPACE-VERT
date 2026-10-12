@@ -7,6 +7,7 @@ import { FileText, CheckCircle2 } from "lucide-react";
 import { devisService } from "@/services";
 import { getVisitorToken } from "@/components/VisiteurTracker";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/I18nProvider";
 
 const schema = z.object({
   nom:       z.string().min(2, "Nom requis"),
@@ -35,6 +36,7 @@ interface DevisFormProps {
 }
 
 export function DevisForm({ id_produit, nomProduit }: DevisFormProps) {
+  const { t } = useI18n();
   const [sent, setSent]   = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedNeed, setSelectedNeed] = useState(NEED_OPTIONS[0]);
@@ -57,7 +59,7 @@ export function DevisForm({ id_produit, nomProduit }: DevisFormProps) {
       token_visiteur:  getVisitorToken(),   // ← lie la demande au visiteur connu
     });
     if (res.success) { setSent(true); setSelectedNeed(""); reset(); }
-    else setError(res.error ?? "Une erreur s'est produite.");
+    else setError(res.error ?? t("form.error.generic", "Une erreur s'est produite."));
   };
 
   if (sent) return (
@@ -65,9 +67,9 @@ export function DevisForm({ id_produit, nomProduit }: DevisFormProps) {
       <div className="w-14 h-14 rounded-full bg-ev-100 flex items-center justify-center">
         <CheckCircle2 size={28} className="text-ev-600" />
       </div>
-      <h3 className="font-semibold text-ev-900 text-lg">Demande envoyée !</h3>
-      <p className="text-gray-500 text-sm">Nous vous contacterons rapidement avec votre devis.</p>
-      <button onClick={() => setSent(false)} className="btn-ghost btn-sm mt-2">Nouvelle demande</button>
+      <h3 className="font-semibold text-ev-900 text-lg">{t("devis.sent.title", "Demande envoyée !")}</h3>
+      <p className="text-gray-500 text-sm">{t("devis.sent.text", "Nous vous contacterons rapidement avec votre devis.")}</p>
+      <button onClick={() => setSent(false)} className="btn-ghost btn-sm mt-2">{t("devis.sent.again", "Nouvelle demande")}</button>
     </div>
   );
 
@@ -76,30 +78,30 @@ export function DevisForm({ id_produit, nomProduit }: DevisFormProps) {
       {nomProduit && (
         <div className="flex items-center gap-3 px-4 py-3 bg-ev-50 border border-ev-100 rounded-xl text-sm">
           <FileText size={16} className="text-ev-600 shrink-0" />
-          <span className="text-ev-800">Demande pour : <strong>{nomProduit}</strong></span>
+          <span className="text-ev-800">{t("devis.for", "Demande pour :")} <strong>{nomProduit}</strong></span>
         </div>
       )}
       {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
-          <label className="field-label" htmlFor="dv-nom">Nom complet *</label>
-          <input id="dv-nom" {...register("nom")} placeholder="Votre nom"
+          <label className="field-label" htmlFor="dv-nom">{t("form.name", "Nom complet")} *</label>
+          <input id="dv-nom" {...register("nom")} placeholder={t("form.name.ph", "Votre nom")}
             className={cn("field", errors.nom && "field-error")} />
           {errors.nom && <p className="field-hint">{errors.nom.message}</p>}
         </div>
         <div>
-          <label className="field-label" htmlFor="dv-email">E-mail *</label>
-          <input id="dv-email" type="email" {...register("email")} placeholder="vous@exemple.com"
+          <label className="field-label" htmlFor="dv-email">{t("form.email", "E-mail")} *</label>
+          <input id="dv-email" type="email" {...register("email")} placeholder={t("form.email.ph", "vous@exemple.com")}
             className={cn("field", errors.email && "field-error")} />
           {errors.email && <p className="field-hint">{errors.email.message}</p>}
         </div>
       </div>
       <div>
-        <label className="field-label" htmlFor="dv-tel">Téléphone</label>
-        <input id="dv-tel" type="tel" {...register("telephone")} placeholder="+216 XX XXX XXX" className="field" />
+        <label className="field-label" htmlFor="dv-tel">{t("form.phone", "Téléphone")}</label>
+        <input id="dv-tel" type="tel" {...register("telephone")} placeholder={t("form.phone.ph", "+216 XX XXX XXX")} className="field" />
       </div>
       <div>
-        <label className="field-label" htmlFor="dv-need-options">Type de besoin</label>
+        <label className="field-label" htmlFor="dv-need-options">{t("devis.need", "Type de besoin")}</label>
         <select
           id="dv-need-options"
           value={selectedNeed}
@@ -108,17 +110,17 @@ export function DevisForm({ id_produit, nomProduit }: DevisFormProps) {
         >
           {NEED_OPTIONS.map((option) => (
             <option key={option} value={option}>
-              {option}
+              {t(`devis.need.opt${NEED_OPTIONS.indexOf(option) + 1}`, option)}
             </option>
           ))}
         </select>
-        <label className="field-label mt-3" htmlFor="dv-message">Précisions</label>
+        <label className="field-label mt-3" htmlFor="dv-message">{t("devis.details", "Précisions")}</label>
         <textarea id="dv-message" rows={4} {...register("message")}
-          placeholder="Quantité, modèle, usage spécifique…" className="field resize-none" />
+          placeholder={t("devis.details.ph", "Quantité, modèle, usage spécifique…")} className="field resize-none" />
       </div>
       <button type="submit" disabled={isSubmitting} className={cn("btn-primary btn-lg w-full", isSubmitting && "btn-loading")}>
         {!isSubmitting && <FileText size={16} />}
-        {isSubmitting ? "Envoi en cours…" : "Envoyer ma demande de devis"}
+        {isSubmitting ? t("form.sending", "Envoi en cours…") : t("devis.submit", "Envoyer ma demande de devis")}
       </button>
     </form>
   );

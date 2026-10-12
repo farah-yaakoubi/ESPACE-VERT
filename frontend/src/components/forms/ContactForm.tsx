@@ -7,6 +7,7 @@ import { Send, CheckCircle2 } from "lucide-react";
 import { contactService } from "@/services";
 import { getVisitorToken } from "@/components/VisiteurTracker";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/I18nProvider";
 
 const schema = z.object({
   nom:     z.string().min(2, "Nom requis (2 car. min)"),
@@ -27,6 +28,7 @@ const SUBJECT_OPTIONS = [
 ];
 
 export function ContactForm({ defaultSujet }: { defaultSujet?: string }) {
+  const { t } = useI18n();
   const [sent, setSent]   = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedSubject, setSelectedSubject] = useState(
@@ -57,7 +59,7 @@ export function ContactForm({ defaultSujet }: { defaultSujet?: string }) {
       token_visiteur:  getVisitorToken(),   // ← lie le message au visiteur connu
     });
     if (res.success) { setSent(true); setSelectedSubject(""); reset(); }
-    else setError(res.error ?? "Une erreur s'est produite.");
+    else setError(res.error ?? t("form.error.generic", "Une erreur s'est produite."));
   };
 
   if (sent) return (
@@ -65,9 +67,9 @@ export function ContactForm({ defaultSujet }: { defaultSujet?: string }) {
       <div className="w-14 h-14 rounded-full bg-ev-100 flex items-center justify-center">
         <CheckCircle2 size={28} className="text-ev-600" />
       </div>
-      <h3 className="font-semibold text-ev-900 text-lg">Message envoyé !</h3>
-      <p className="text-gray-500 text-sm">Nous vous répondrons dans les meilleurs délais.</p>
-      <button onClick={() => setSent(false)} className="btn-ghost btn-sm mt-2">Envoyer un autre message</button>
+      <h3 className="font-semibold text-ev-900 text-lg">{t("form.sent.title", "Message envoyé !")}</h3>
+      <p className="text-gray-500 text-sm">{t("form.sent.text", "Nous vous répondrons dans les meilleurs délais.")}</p>
+      <button onClick={() => setSent(false)} className="btn-ghost btn-sm mt-2">{t("form.sent.again", "Envoyer un autre message")}</button>
     </div>
   );
 
@@ -76,20 +78,20 @@ export function ContactForm({ defaultSujet }: { defaultSujet?: string }) {
       {error && <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
-          <label className="field-label" htmlFor="cf-nom">Nom complet *</label>
-          <input id="cf-nom" {...register("nom")} placeholder="Votre nom"
+          <label className="field-label" htmlFor="cf-nom">{t("form.name", "Nom complet")} *</label>
+          <input id="cf-nom" {...register("nom")} placeholder={t("form.name.ph", "Votre nom")}
             className={cn("field", errors.nom && "field-error")} />
           {errors.nom && <p className="field-hint">{errors.nom.message}</p>}
         </div>
         <div>
-          <label className="field-label" htmlFor="cf-email">E-mail *</label>
-          <input id="cf-email" type="email" {...register("email")} placeholder="vous@exemple.com"
+          <label className="field-label" htmlFor="cf-email">{t("form.email", "E-mail")} *</label>
+          <input id="cf-email" type="email" {...register("email")} placeholder={t("form.email.ph", "vous@exemple.com")}
             className={cn("field", errors.email && "field-error")} />
           {errors.email && <p className="field-hint">{errors.email.message}</p>}
         </div>
       </div>
       <div>
-        <label className="field-label" htmlFor="cf-sujet-options">Sujet</label>
+        <label className="field-label" htmlFor="cf-sujet-options">{t("form.subject", "Sujet")}</label>
         <select
           id="cf-sujet-options"
           value={selectedSubject}
@@ -98,7 +100,7 @@ export function ContactForm({ defaultSujet }: { defaultSujet?: string }) {
         >
           {SUBJECT_OPTIONS.map((option) => (
             <option key={option} value={option}>
-              {option}
+              {t(`form.subject.opt${SUBJECT_OPTIONS.indexOf(option) + 1}`, option)}
             </option>
           ))}
         </select>
@@ -106,21 +108,21 @@ export function ContactForm({ defaultSujet }: { defaultSujet?: string }) {
           <input
             id="cf-sujet"
             {...register("sujet")}
-            placeholder="Précisez le sujet"
+            placeholder={t("form.subject.ph", "Précisez le sujet")}
             className="field mt-3"
           />
         )}
       </div>
       <div>
-        <label className="field-label" htmlFor="cf-message">Message *</label>
-        <textarea id="cf-message" rows={5} {...register("message")} placeholder="Décrivez votre demande…"
+        <label className="field-label" htmlFor="cf-message">{t("form.message", "Message")} *</label>
+        <textarea id="cf-message" rows={5} {...register("message")} placeholder={t("form.message.ph", "Décrivez votre demande…")}
           className={cn("field resize-none", errors.message && "field-error")} />
         {errors.message && <p className="field-hint">{errors.message.message}</p>}
       </div>
       <button type="submit" disabled={isSubmitting}
         className={cn("btn-primary btn-lg w-full sm:w-auto", isSubmitting && "btn-loading")}>
         {!isSubmitting && <Send size={16} />}
-        {isSubmitting ? "Envoi en cours…" : "Envoyer le message"}
+        {isSubmitting ? t("form.sending", "Envoi en cours…") : t("form.send", "Envoyer le message")}
       </button>
     </form>
   );

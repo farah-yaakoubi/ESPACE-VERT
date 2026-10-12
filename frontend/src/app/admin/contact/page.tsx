@@ -43,7 +43,7 @@ function StatusBadge({ item }: { item: ContactItem }) {
   const s   = STATUT_CONFIG[key];
   const Icon = s.icon;
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, background: s.bg, color: s.textLight, border: `1px solid ${s.border}`, fontSize: 11, fontWeight: 700 }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, background: s.bg, color: s.textLight, border: `1px solid ${s.border}`, fontSize: 12, fontWeight: 700 }}>
       <Icon size={10} />{s.label}
     </span>
   );
@@ -98,14 +98,14 @@ function ContactDetailPanel({ item, onClose, onSaved }: { item: ContactItem; onC
           {/* Sujet */}
           {item.sujet && (
             <div style={{ background: "#f9fafb", borderRadius: 12, padding: "12px 16px" }}>
-              <p style={{ fontSize: 10, color: "#9ca3af", marginBottom: 4 }}>Sujet</p>
+              <p style={{ fontSize: 11, color: "#9ca3af", marginBottom: 4 }}>Sujet</p>
               <p style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>{item.sujet}</p>
             </div>
           )}
 
           {/* Message original */}
           <section>
-            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
               <Mail size={11} />Message reçu
             </p>
             <div style={{ background: "#f9fafb", borderRadius: 12, padding: "16px", fontSize: 13, color: "#374151", lineHeight: 1.8, whiteSpace: "pre-wrap" as const, borderLeft: "3px solid #e5e7eb" }}>
@@ -116,7 +116,7 @@ function ContactDetailPanel({ item, onClose, onSaved }: { item: ContactItem; onC
           {/* Réponse déjà envoyée */}
           {item.reponse && (
             <section>
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#047857", textTransform: "uppercase" as const, display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#047857", textTransform: "uppercase" as const, display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
                 <Reply size={11} />Réponse envoyée · {item.replied_at ? fmtFull(item.replied_at) : ""}
               </p>
               <div style={{ background: "#ecfdf5", borderRadius: 12, padding: "16px", fontSize: 13, color: "#065f46", lineHeight: 1.8, whiteSpace: "pre-wrap" as const, borderLeft: "3px solid #a7f3d0" }}>
@@ -127,7 +127,7 @@ function ContactDetailPanel({ item, onClose, onSaved }: { item: ContactItem; onC
 
           {/* Indicateur d'état — honnête, pas de faux boutons de statut */}
           <section>
-            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, marginBottom: 10 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, marginBottom: 10 }}>
               État du message
             </p>
             <div style={{ display: "flex", gap: 8 }}>
@@ -144,12 +144,12 @@ function ContactDetailPanel({ item, onClose, onSaved }: { item: ContactItem; onC
                     <div style={{ width: 28, height: 28, borderRadius: "50%", background: isDone || isCurrent ? s.color : "#e5e7eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
                       {isDone ? <CheckCircle2 size={14} style={{ color: "#fff" }} /> : <Icon size={14} style={{ color: isDone || isCurrent ? "#fff" : "#9ca3af" }} />}
                     </div>
-                    <span style={{ fontSize: 10, fontWeight: isCurrent ? 700 : 500, color: isCurrent ? s.textLight : "#9ca3af", textAlign: "center" as const }}>{s.label}</span>
+                    <span style={{ fontSize: 11, fontWeight: isCurrent ? 700 : 500, color: isCurrent ? s.textLight : "#9ca3af", textAlign: "center" as const }}>{s.label}</span>
                   </div>
                 );
               })}
             </div>
-            <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 8 }}>
+            <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 8 }}>
               {statut === "non_lu" && "Ce message n'a pas encore été ouvert."}
               {statut === "lu"     && "Message lu. En attente d'une réponse."}
               {statut === "repondu"&& "Une réponse a déjà été envoyée à ce contact."}
@@ -242,7 +242,7 @@ function MessageCard({ item, onClick, onDelete }: { item: ContactItem; onClick: 
             {isNew && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#2563eb", flexShrink: 0 }} />}
             <StatusBadge item={item} />
           </div>
-          <span style={{ fontSize: 11, color: "#9ca3af", whiteSpace: "nowrap" as const, flexShrink: 0 }}>{fmt(item.created_at)}</span>
+          <span style={{ fontSize: 12, color: "#9ca3af", whiteSpace: "nowrap" as const, flexShrink: 0 }}>{fmt(item.created_at)}</span>
         </div>
         <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 4 }}>{item.email}</p>
         {item.sujet && <p style={{ fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 3 }}>{item.sujet}</p>}
@@ -254,11 +254,11 @@ function MessageCard({ item, onClick, onDelete }: { item: ContactItem; onClick: 
       {/* Actions */}
       <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
         {!item.replied_at && (
-          <div style={{ padding: "4px 10px", borderRadius: 20, fontSize: 10, fontWeight: 600, background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe", display: "flex", alignItems: "center", gap: 4 }}>
+          <div style={{ padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe", display: "flex", alignItems: "center", gap: 4 }}>
             <Reply size={9} />Répondre
           </div>
         )}
-        <button onClick={() => onDelete(item.id_contact)} style={{ padding: "4px 10px", borderRadius: 20, fontSize: 10, fontWeight: 600, background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+        <button onClick={() => onDelete(item.id_contact)} style={{ padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
           <Trash2 size={9} />Supprimer
         </button>
       </div>
@@ -320,7 +320,7 @@ export default function AdminContactPage() {
           </h1>
           <p style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
             {meta.total} messages au total
-            {nonLus > 0 && <span style={{ marginLeft: 10, fontSize: 11, fontWeight: 700, color: "#2563eb", background: "#eff6ff", padding: "2px 8px", borderRadius: 20, border: "1px solid #bfdbfe" }}>{nonLus} non lu{nonLus > 1 ? "s" : ""}</span>}
+            {nonLus > 0 && <span style={{ marginLeft: 10, fontSize: 12, fontWeight: 700, color: "#2563eb", background: "#eff6ff", padding: "2px 8px", borderRadius: 20, border: "1px solid #bfdbfe" }}>{nonLus} non lu{nonLus > 1 ? "s" : ""}</span>}
           </p>
         </div>
         <button onClick={() => load(curPage)} style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 16px", borderRadius: 10, background: "#f9fafb", border: "1px solid #e5e7eb", cursor: "pointer", fontSize: 13, color: "#374151" }}>
@@ -371,7 +371,7 @@ export default function AdminContactPage() {
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 20px", borderBottom: "1px solid #f3f4f6" }}>
           <Inbox size={14} style={{ color: "#9ca3af" }} />
           <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>Boîte de réception</span>
-          {nonLus > 0 && <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, background: "#2563eb", color: "#fff", padding: "2px 8px", borderRadius: 20 }}>{nonLus} nouveau{nonLus > 1 ? "x" : ""}</span>}
+          {nonLus > 0 && <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 700, background: "#2563eb", color: "#fff", padding: "2px 8px", borderRadius: 20 }}>{nonLus} nouveau{nonLus > 1 ? "x" : ""}</span>}
         </div>
 
         {loading ? (

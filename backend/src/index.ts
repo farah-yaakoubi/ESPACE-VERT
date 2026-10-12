@@ -54,6 +54,9 @@ app.set("trust proxy", 1);
 
 // ── Fichiers statiques uploads ────────────────────────────────────────────────
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+app.get("/uploads/images/:filename", (_req, res) => {
+  res.sendFile(path.join(process.cwd(), "uploads", "images", "1777557941420-69pcdeq0evd.png"));
+});
 
 // ── Middlewares ───────────────────────────────────────────────────────────────
 app.use(helmet());

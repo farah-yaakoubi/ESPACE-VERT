@@ -94,6 +94,31 @@ function findNode(nodes: CatNode[], id: number): CatNode | null {
   return null;
 }
 
+/** Une catégorie mérite une grille de couverture (photos des
+ *  sous-catégories) si au moins l'un de ses enfants directs est illustré —
+ *  sinon on passe directement à l'affichage des produits. */
+function shouldUseCatalogueView(node: CatNode | null) {
+  if (!node || (node.children ?? []).length === 0) return false;
+  return (node.children ?? []).some((child) => !!child.image);
+}
+
+/** Descend automatiquement à travers une chaîne de catégories à enfant
+ *  unique (ex. une catégorie qui n'a qu'une seule sous-catégorie) pour
+ *  éviter d'afficher une grille de couverture qui ne contiendrait qu'une
+ *  seule tuile. Renvoie `null` si la chaîne se termine sur une catégorie
+ *  sans sous-catégorie illustrée : il n'y a alors rien à montrer en grille
+ *  et on affiche directement les produits. */
+function resolveCoverNode(node: CatNode | null): CatNode | null {
+  if (!node) return null;
+  let current = node;
+  while ((current.children ?? []).length === 1) {
+    current = current.children![0];
+  }
+  const kids = current.children ?? [];
+  if (kids.length === 0 || !kids.some((child) => !!child.image)) return null;
+  return current;
+}
+
 function collectIds(node: CatNode): Set<number> {
   const ids = new Set([node.id_categorie]);
   (node.children ?? []).forEach((c) =>
@@ -141,10 +166,10 @@ function CategoriesGrid({
           <button
             key={node.id_categorie}
             onClick={() => onSelect(node.id_categorie)}
-            className="group flex w-[calc(50%-8px)] flex-col items-center text-center lg:w-[calc(25%-12px)] focus:outline-none"
+            className="group flex w-full max-w-xs flex-col items-center text-center focus:outline-none sm:w-[calc(50%-8px)] sm:max-w-none lg:w-[calc(25%-12px)]"
             aria-label={`${t("catalog.viewProducts", "Voir produits")} ${catLabel(node, locale)}`}
           >
-            <div className="relative flex h-44 w-full items-center justify-center">
+            <div className="relative flex h-36 w-full items-center justify-center sm:h-44">
               {imgSrc ? (
                 <Image
                   src={imgSrc}
@@ -154,20 +179,20 @@ function CategoriesGrid({
                   sizes="(max-width:640px) 100vw, (max-width:1280px) 50vw, 25vw"
                 />
               ) : (
-                <div className="flex h-44 w-full items-center justify-center rounded-full bg-ev-50 text-3xl text-ev-300">
+                <div className="flex h-36 w-full items-center justify-center rounded-full bg-ev-50 text-3xl text-ev-300 sm:h-44">
                   🌿
                 </div>
               )}
             </div>
 
             <p
-              className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+              className="mt-3 text-[0.95rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700 sm:mt-4 sm:text-[1.05rem]"
               style={{ fontFamily: "var(--font-serif)" }}
             >
               {catLabel(node, locale)}
             </p>
 
-            <span className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
+            <span className="mt-3 inline-flex max-w-full items-center justify-center gap-1.5 rounded-xl bg-ev-700 px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5 sm:mt-4 sm:gap-2 sm:px-5 sm:py-2.5 sm:text-[12.5px]">
               {t("catalog.viewProducts", "Voir produits")}
               <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
             </span>
@@ -219,10 +244,10 @@ function SubCategoriesGrid({
               <button
                 key={subCat.id_categorie}
                 onClick={() => onSelect(subCat.id_categorie)}
-                className="group flex w-[calc(50%-8px)] flex-col items-center text-center lg:w-[calc(25%-12px)] focus:outline-none"
+                className="group flex w-full max-w-xs flex-col items-center text-center focus:outline-none sm:w-[calc(50%-8px)] sm:max-w-none lg:w-[calc(25%-12px)]"
                 aria-label={`${t("catalog.viewProducts", "Voir produits")} ${catLabel(subCat, locale)}`}
               >
-                <div className="relative flex h-44 w-full items-center justify-center">
+                <div className="relative flex h-36 w-full items-center justify-center sm:h-44">
                   <Image
                     src={subCat.image!}
                     alt={catLabel(subCat, locale)}
@@ -233,13 +258,13 @@ function SubCategoriesGrid({
                 </div>
 
                 <p
-                  className="mt-4 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+                  className="mt-3 text-[0.95rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700 sm:mt-4 sm:text-[1.05rem]"
                   style={{ fontFamily: "var(--font-serif)" }}
                 >
                   {catLabel(subCat, locale)}
                 </p>
 
-                <span className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
+                <span className="mt-3 inline-flex max-w-full items-center justify-center gap-1.5 rounded-xl bg-ev-700 px-3.5 py-2 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5 sm:mt-4 sm:gap-2 sm:px-5 sm:py-2.5 sm:text-[12.5px]">
                   {t("catalog.viewProducts", "Voir produits")}
                   <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
                 </span>
@@ -270,9 +295,11 @@ function SubCategoriesGrid({
                     {produitsSubCat.length} {productWord(produitsSubCat.length, t)}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="flex flex-wrap justify-center gap-4">
                   {produitsSubCat.map((p) => (
-                    <ProduitCard key={p.id_produit} produit={p} />
+                    <div key={p.id_produit} className="w-full max-w-xs sm:w-[calc(50%-8px)] sm:max-w-none lg:w-[calc(25%-12px)]">
+                      <ProduitCard produit={p} />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -492,6 +519,15 @@ export function MarqueProduitsSection({ id_marque, categories, cardVariant = "de
     return findNode(tree, filters.categoryId);
   }, [filters.categoryId, tree]);
 
+  // Catégorie sélectionnée dont on doit montrer les sous-catégories
+  // illustrées (comme sur les pages d'activité) avant d'afficher les
+  // produits — `null` si la catégorie n'a pas de sous-catégories illustrées,
+  // auquel cas on passe directement aux produits.
+  const catalogueNode = useMemo(
+    () => resolveCoverNode(activeNode),
+    [activeNode]
+  );
+
   const hasActiveFilters =
     filters.categoryId !== null ||
     filters.tags.length > 0 ||
@@ -531,8 +567,20 @@ export function MarqueProduitsSection({ id_marque, categories, cardVariant = "de
               />
             )}
 
+            {/* ── Sous-catégories illustrées (comme sur les pages
+                d'activité) : on clique une photo de catégorie, on voit
+                d'abord ses sous-catégories illustrées, puis les produits. */}
+            {!showCategoriesGrid && catalogueNode && (
+              <SubCategoriesGrid
+                parentNode={catalogueNode}
+                allProduits={allProduits ?? []}
+                onSelect={handleCategorySelect}
+                onBack={reset}
+              />
+            )}
+
             {/* ── Produits filtrés ──────────────────────────────── */}
-            {!showCategoriesGrid && (
+            {!showCategoriesGrid && !catalogueNode && (
               <>
                 {/* Breadcrumb / filtres actifs */}
                 <div className="mb-4 flex items-center gap-2 flex-wrap">
@@ -641,9 +689,11 @@ export function MarqueProduitsSection({ id_marque, categories, cardVariant = "de
                   </div>
                 ) : (
                   <>
-                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="flex flex-wrap justify-center gap-4">
                       {paginated.map((p) => (
-                        <ProduitCard key={p.id_produit} produit={p} variant={cardVariant} />
+                        <div key={p.id_produit} className="w-full max-w-xs sm:w-[calc(50%-8px)] sm:max-w-none lg:w-[calc(25%-12px)]">
+                          <ProduitCard produit={p} variant={cardVariant} />
+                        </div>
                       ))}
                     </div>
                     <div className="mt-2">

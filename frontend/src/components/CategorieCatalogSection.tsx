@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Package, ChevronRight } from "lucide-react";
+import { Package, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { CategorieDetail, CategorieDetailSousCat } from "@/types/api";
 import { getProductHref } from "@/lib/product-url";
@@ -124,51 +124,21 @@ function ProduitHoverCard({ p }: { p: { id_produit: number; slug: string; nom: s
   );
 }
 
-/* ── Grille produits d'une sous-catégorie ─────────────────────────────────── */
-function ProduitsGrid({ sousCat, onBack, parentNom }: {
-  sousCat:   CategorieDetailSousCat;
-  onBack:    () => void;
-  parentNom: string;
-}) {
-  const produits = sousCat.produits ?? [];
-
-  return (
-    <div>
-      <div className="flex items-center gap-2 mb-6 text-sm">
-        <button onClick={onBack}
-          className="flex items-center gap-1.5 text-gray-500 hover:text-ev-700 transition-colors group font-medium">
-          <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform duration-200" />
-          {parentNom}
-        </button>
-        <ChevronRight size={13} className="text-gray-300" />
-        <span className="text-gray-800 font-semibold">{sousCat.nom}</span>
-      </div>
-
-      {produits.length === 0 ? (
-        <div className="flex flex-col items-center py-20 text-gray-400 gap-3">
-          <Package size={40} strokeWidth={1.5} className="opacity-40" />
-          <p className="text-sm font-medium">Aucun produit dans cette catégorie pour le moment.</p>
-        </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {produits.map(p => <ProduitHoverCard key={p.id_produit} p={p} />)}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-/* ── Carte sous-catégorie — sans cadre, flotte, style aligné sur "Semences" ── */
-function SousCatCoverCard({ souscat, onClick, large = false }: { souscat: CategorieDetailSousCat; onClick: () => void; large?: boolean }) {
+/* ── Carte sous-catégorie — sans cadre, flotte, style aligné sur "Semences" ──
+   Navigue vers /categories/{slug} (vraie navigation Next.js) plutôt que de
+   changer un état local : chaque niveau de l'arborescence obtient ainsi une
+   URL propre, un fil d'Ariane correct et un bouton "retour" du navigateur
+   qui fonctionne de manière logique, même sur des arborescences profondes
+   (ex: Semences et Plants > Semences Maraîchère > Pro > Semences Hybride
+   > Tomate > Alyenta).                                                    ── */
+function SousCatCoverCard({ souscat, large = false }: { souscat: CategorieDetailSousCat; large?: boolean }) {
   const previews = !souscat.image
     ? (souscat.produits ?? []).slice(0, 4).flatMap(p => p.images.slice(0, 1))
     : [];
 
   return (
-    <button
-      onClick={onClick}
+    <Link
+      href={`/categories/${souscat.slug}`}
       className="group flex flex-col items-center text-center focus:outline-none"
     >
       <div className="relative flex h-44 w-full items-center justify-center">
@@ -209,25 +179,19 @@ function SousCatCoverCard({ souscat, onClick, large = false }: { souscat: Catego
         Voir produits
         <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
       </span>
-    </button>
+    </Link>
   );
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
-   Composant principal
+   Composant principal — chaque sous-catégorie est un vrai lien /categories/{slug}
+   (plus de sélection en état local), pour un historique de navigation cohérent
+   et un bouton "retour" du navigateur qui fonctionne à n'importe quelle
+   profondeur d'arborescence.
 ══════════════════════════════════════════════════════════════════════════════ */
 export function CategorieCatalogSection({ cat }: { cat: CategorieDetail }) {
-  const [selectedSousCat, setSelectedSousCat] = useState<CategorieDetailSousCat | null>(null);
   const sousCats = cat.sous_cats ?? [];
   if (sousCats.length === 0) return null;
-
-  if (selectedSousCat) {
-    return (
-      <section className="container-ev pb-16">
-        <ProduitsGrid sousCat={selectedSousCat} parentNom={cat.nom} onBack={() => setSelectedSousCat(null)} />
-      </section>
-    );
-  }
 
   const sousCatsAvecImage = sousCats.filter(sc => !!sc.image && sc.image.trim() !== "");
   const sousCatsSansImage = sousCats.filter(sc => !sc.image || sc.image.trim() === "");
@@ -251,7 +215,6 @@ export function CategorieCatalogSection({ cat }: { cat: CategorieDetail }) {
             <SousCatCoverCard
               key={sc.id_categorie}
               souscat={sc}
-              onClick={() => setSelectedSousCat(sc)}
               large={sousCatsAvecImage.length <= 2}
             />
           ))}
@@ -259,16 +222,34 @@ export function CategorieCatalogSection({ cat }: { cat: CategorieDetail }) {
       )}
       {sousCatsSansImage.map(sc => {
         const produits = sc.produits ?? [];
-        if (produits.length === 0) return null;
+        // Même sans produit direct ni image, la sous-catégorie peut contenir
+        // d'autres niveaux plus bas dans l'arborescence : on affiche toujours
+        // un lien vers sa page plutôt que de la faire disparaître (ancien
+        // comportement qui créait des impasses de navigation).
+        if (produits.length === 0) {
+          return (
+            <Link key={sc.id_categorie} href={`/categories/${sc.slug}`}
+              className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-gray-100 hover:border-ev-200 hover:bg-ev-50/40 transition-colors px-5 py-4 group">
+              <div className="flex items-center gap-2">
+                <Package size={15} className="text-ev-600 shrink-0" />
+                <h3 className="text-base font-bold text-gray-800">{sc.nom}</h3>
+              </div>
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-ev-700 group-hover:translate-x-0.5 transition-transform">
+                Voir <ChevronRight size={14} />
+              </span>
+            </Link>
+          );
+        }
         return (
           <div key={sc.id_categorie} className="mb-10">
-            <div className="flex items-center gap-2 mb-4">
+            <Link href={`/categories/${sc.slug}`} className="flex items-center gap-2 mb-4 w-fit group">
               <Package size={15} className="text-ev-600 shrink-0" />
-              <h3 className="text-base font-bold text-gray-800">{sc.nom}</h3>
+              <h3 className="text-base font-bold text-gray-800 group-hover:text-ev-700 transition-colors">{sc.nom}</h3>
               <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                 {produits.length} produit{produits.length > 1 ? "s" : ""}
               </span>
-            </div>
+              <ChevronRight size={14} className="text-gray-300 group-hover:text-ev-600 group-hover:translate-x-0.5 transition-all" />
+            </Link>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {produits.map(p => <ProduitHoverCard key={p.id_produit} p={p} />)}
             </div>

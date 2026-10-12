@@ -75,16 +75,35 @@
     overflow-x: hidden;
   }
 
+  html[dir="rtl"] body {
+    text-align: right;
+  }
+
+  html[dir="rtl"] input,
+  html[dir="rtl"] textarea,
+  html[dir="rtl"] select {
+    text-align: right;
+  }
+
   ::-webkit-scrollbar        { width: 5px; background: var(--sand-100); }
   ::-webkit-scrollbar-thumb  { background: #86d988; border-radius: 99px; }
 
   h1, h2, h3, h4 {
     font-family: var(--font-display), "Cairo", sans-serif;
-    letter-spacing: -0.025em;
-    line-height: 1.1;
+    letter-spacing: 0;
+    line-height: 1.16;
   }
   img { display: block; }
 }
+
+/* ── Direction helpers ─────────────────────────────────────────────────────── */
+html[dir="rtl"] .rtl\:text-right { text-align: right; }
+html[dir="rtl"] .rtl\:text-left { text-align: left; }
+html[dir="rtl"] .rtl\:flex-row-reverse { flex-direction: row-reverse; }
+html[dir="rtl"] .rtl\:rotate-180 { transform: rotate(180deg); }
+
+html[dir="rtl"] .text-left { text-align: right; }
+html[dir="rtl"] .text-right { text-align: left; }
 
 /* ── Component layer ─────────────────────────────────────────────────────────── */
 @layer components {
@@ -102,7 +121,7 @@
 
   /* Eyebrow label — sous-titre au-dessus des titres de section */
   .eyebrow {
-    @apply text-sm font-extrabold tracking-[.14em] uppercase;
+    @apply text-xs sm:text-[13px] font-bold tracking-[.08em] uppercase;
     color: var(--leaf);
     font-family: var(--font-display), sans-serif;
   }
@@ -110,18 +129,19 @@
   /* Headings */
   .h-display {
     font-family: var(--font-display), sans-serif;
-    @apply text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold;
-    letter-spacing: -0.03em;
+    @apply text-3xl sm:text-4xl md:text-[2.75rem] lg:text-5xl font-extrabold;
+    letter-spacing: 0;
+    line-height: 1.12;
   }
   .h-section {
     font-family: var(--font-display), sans-serif;
-    @apply text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold;
+    @apply text-2xl sm:text-3xl md:text-[2.15rem] lg:text-4xl font-extrabold;
     letter-spacing: 0;
-    line-height: 0.98;
+    line-height: 1.14;
   }
   .h-card {
     font-family: var(--font-display), sans-serif;
-    @apply text-lg font-semibold leading-snug;
+    @apply text-base sm:text-lg font-semibold leading-snug;
   }
 
   /* Unified section title — used for every main section heading across the site.
@@ -130,10 +150,10 @@
      taille démesurée. */
   .section-title {
     font-family: var(--font-script), sans-serif;
-    font-weight: 700;
-    font-size: clamp(1.5rem, 5vw, 2.75rem);
-    line-height: 1.15;
-    letter-spacing: -0.02em;
+    font-weight: 800;
+    font-size: clamp(1.4rem, 2.8vw, 2.15rem);
+    line-height: 1.22;
+    letter-spacing: 0;
     color: #1b2118;
     max-width: 100%;
   }
@@ -141,23 +161,23 @@
 
   .site-heading {
     font-family: var(--font-display), sans-serif;
-    @apply text-3xl sm:text-4xl lg:text-[3.25rem] font-extrabold text-ev-950;
+    @apply text-2xl sm:text-3xl lg:text-4xl font-extrabold text-ev-950;
     letter-spacing: 0;
-    line-height: 0.98;
+    line-height: 1.14;
   }
 
   .site-subheading {
     font-family: var(--font-display), sans-serif;
-    @apply text-xl sm:text-2xl font-bold text-ev-950 leading-tight;
-    letter-spacing: -0.025em;
+    @apply text-lg sm:text-xl font-bold text-ev-950 leading-snug;
+    letter-spacing: 0;
   }
 
   .site-copy {
-    @apply text-[15px] sm:text-[16px] leading-8 text-gray-600;
+    @apply text-[14px] sm:text-[15px] leading-7 text-gray-600;
   }
 
   .site-copy-sm {
-    @apply text-sm sm:text-[15px] leading-7 text-gray-600;
+    @apply text-[13px] sm:text-sm leading-6 text-gray-600;
   }
 
   /* ── Buttons ──────────────────────────────────────────────────────────────── */

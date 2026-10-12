@@ -5,10 +5,14 @@ import {
   adminActivites,
   adminCategories,
   adminMarques,
+  adminProduits,
   type ActiviteAdmin,
   type CategorieAdmin,
   type MarqueAdmin,
+  type ProduitAdmin,
 } from "@/lib/admin-api";
+import { categoriesUnderActivite } from "@/lib/admin-catalog-utils";
+import { QuickAddProduitModal } from "@/components/admin/QuickAddProduitModal";
 import {
   Activity,
   AlertCircle,
@@ -29,7 +33,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 /* ══════════════════════════════════════════════════════════════════
    SECTION — Gestion des Activités (CRUD + bannière)
@@ -50,6 +54,14 @@ function ActivitesCrudPanel() {
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
   const [confirmDel, setConfirmDel] = useState<ActiviteAdmin | null>(null);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [allCategories, setAllCategories] = useState<CategorieAdmin[]>([]);
+
+  useEffect(() => {
+    adminCategories.list().then((c) =>
+      setAllCategories(Array.isArray(c) ? c : ((c as any).data ?? [])),
+    ).catch(() => setAllCategories([]));
+  }, []);
 
   const F = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -186,10 +198,11 @@ function ActivitesCrudPanel() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {items.map((a) => (
-                  <tr key={a.id_activite} className="group hover:bg-gray-50/80 transition-colors">
+                  <React.Fragment key={a.id_activite}>
+                  <tr className="group hover:bg-gray-50/80 transition-colors">
                     <td className="px-4 py-3">
                       <p className="font-medium text-gray-800 text-sm">{a.nom}</p>
-                      <p className="text-[10px] text-gray-400 font-mono">{a.slug}</p>
+                      <p className="text-[11px] text-gray-400 font-mono">{a.slug}</p>
                       {a.description && (
                         <p className="text-xs text-gray-500 mt-0.5 max-w-xs truncate">{a.description}</p>
                       )}
@@ -218,12 +231,19 @@ function ActivitesCrudPanel() {
                     </td>
                     <td className="px-4 py-3 text-center text-xs text-gray-400">{a.ordre}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${a.actif ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${a.actif ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
                         {a.actif ? "Actif" : "Inactif"}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => setExpandedId(expandedId === a.id_activite ? null : a.id_activite)}
+                          className={`p-1.5 rounded-lg hover:text-ev-600 hover:bg-ev-50 ${expandedId === a.id_activite ? "text-ev-600 bg-ev-50" : "text-gray-400"}`}
+                          title="Produits de cette activité"
+                        >
+                          <Layers size={13} />
+                        </button>
                         <Link
                           href={`/activites/${a.slug}`}
                           target="_blank"
@@ -241,6 +261,14 @@ function ActivitesCrudPanel() {
                       </div>
                     </td>
                   </tr>
+                  {expandedId === a.id_activite && (
+                    <tr>
+                      <td colSpan={6} className="bg-gray-50/70 px-4 py-4 border-t border-gray-100">
+                        <ActiviteProduitsPanel activite={a} allCategories={allCategories} />
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
@@ -395,6 +423,100 @@ function ActivitesCrudPanel() {
   );
 }
 
+/* ── Panneau produits déroulant, scopé à une activité ─────────────── */
+function ActiviteProduitsPanel({
+  activite,
+  allCategories,
+}: {
+  activite: ActiviteAdmin;
+  allCategories: CategorieAdmin[];
+}) {
+  const [produits, setProduits] = useState<ProduitAdmin[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [addOpen, setAddOpen] = useState(false);
+
+  const loadProduits = useCallback(() => {
+    setLoading(true);
+    adminProduits
+      .list({ id_activite: String(activite.id_activite), limit: "100" } as any)
+      .then((r) => setProduits(r.data))
+      .catch(() => setProduits([]))
+      .finally(() => setLoading(false));
+  }, [activite.id_activite]);
+
+  useEffect(() => { loadProduits(); }, [loadProduits]);
+
+  const scopedCategories = categoriesUnderActivite(allCategories, activite.id_activite);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-gray-500">
+          {produits.length} produit{produits.length !== 1 ? "s" : ""} — {activite.nom}
+        </p>
+        <button
+          onClick={() => setAddOpen(true)}
+          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl text-white bg-ev-700 hover:bg-ev-800"
+        >
+          <Plus size={13} /> Nouveau produit
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-6">
+          <div className="w-5 h-5 border-4 border-ev-100 border-t-ev-600 rounded-full animate-spin" />
+        </div>
+      ) : produits.length === 0 ? (
+        <p className="text-xs text-gray-400 text-center py-4">Aucun produit pour cette activité.</p>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-100 divide-y divide-gray-50">
+          {produits.map((p) => {
+            const img = p.images.find((i) => i.is_principale) ?? p.images[0];
+            return (
+              <div key={p.id_produit} className="flex items-center gap-3 px-3 py-2">
+                <div className="w-8 h-8 rounded-lg bg-gray-100 overflow-hidden border shrink-0 flex items-center justify-center">
+                  {img ? (
+                    <Image src={img.url} alt={p.nom} width={32} height={32} className="object-contain" />
+                  ) : (
+                    <span className="text-gray-300 text-xs">🌿</span>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">{p.nom}</p>
+                  <p className="text-[12px] text-gray-400 truncate">
+                    {(p.categorie as any)?.nom ?? p.slug}
+                    {(p.marque as any)?.nom ? ` · 🏷 ${(p.marque as any).nom}` : ""}
+                  </p>
+                </div>
+                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${p.actif ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                  {p.actif ? "Actif" : "Inactif"}
+                </span>
+                <a
+                  href={`/produits/${p.slug}`}
+                  target="_blank"
+                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg shrink-0"
+                >
+                  <ExternalLink size={12} />
+                </a>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {addOpen && (
+        <QuickAddProduitModal
+          scopeLabel={activite.nom}
+          categories={scopedCategories}
+          allCategories={allCategories}
+          onClose={() => setAddOpen(false)}
+          onCreated={loadProduits}
+        />
+      )}
+    </div>
+  );
+}
+
 function toSlug(s: string) {
   return s
     .toLowerCase()
@@ -475,7 +597,7 @@ function Badge({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+      className={`inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full font-medium ${
         type === "marque"
           ? "bg-blue-50 text-blue-600 border border-blue-100"
           : "bg-green-50 text-green-600 border border-green-100"
@@ -545,7 +667,7 @@ function TreeRow({
                 <Folder size={14} />
               )
             ) : (
-              <span className="text-[10px] text-gray-300">└</span>
+              <span className="text-[11px] text-gray-300">└</span>
             )}
           </span>
 
@@ -555,7 +677,7 @@ function TreeRow({
             >
               {node.nom}
             </p>
-            <p className="text-[10px] text-gray-400 font-mono">{node.slug}</p>
+            <p className="text-[11px] text-gray-400 font-mono">{node.slug}</p>
           </div>
         </div>
       </td>
@@ -596,7 +718,7 @@ function TreeRow({
       {/* Statut */}
       <td className="px-4 py-2.5">
         <span
-          className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+          className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
             node.actif
               ? "bg-green-100 text-green-700"
               : "bg-red-100 text-red-600"

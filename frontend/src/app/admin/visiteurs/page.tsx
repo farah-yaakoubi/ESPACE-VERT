@@ -146,7 +146,7 @@ function VisiteurRow({ v }: { v: VisiteurItem }) {
               <span className="text-gray-300">—</span>
             )}
           </p>
-          <p className="text-[11px] text-gray-400 font-mono">{v.ip_address}</p>
+          <p className="text-[12px] text-gray-400 font-mono">{v.ip_address}</p>
         </td>
         <td className="px-4 py-3">
           <div className="flex gap-3 text-xs text-gray-600">
@@ -182,7 +182,7 @@ function VisiteurRow({ v }: { v: VisiteurItem }) {
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">
+                <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
                   Pages visitées ({detail.visites_pages?.length ?? 0})
                 </p>
                 <div className="space-y-1 max-h-48 overflow-y-auto">
@@ -195,7 +195,7 @@ function VisiteurRow({ v }: { v: VisiteurItem }) {
                         <p className="truncate text-gray-700">
                           {p.titre ?? p.url}
                         </p>
-                        <p className="text-gray-400 font-mono text-[10px] truncate">
+                        <p className="text-gray-400 font-mono text-[11px] truncate">
                           {p.url}
                         </p>
                       </div>
@@ -212,7 +212,7 @@ function VisiteurRow({ v }: { v: VisiteurItem }) {
                 </div>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">
+                <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
                   Recherches ({detail.search_queries?.length ?? 0})
                 </p>
                 <div className="space-y-1 max-h-48 overflow-y-auto">
@@ -234,7 +234,7 @@ function VisiteurRow({ v }: { v: VisiteurItem }) {
               </div>
             </div>
             {detail.user_agent && (
-              <p className="text-[10px] text-gray-400 mt-3 truncate">
+              <p className="text-[11px] text-gray-400 mt-3 truncate">
                 <span className="font-semibold">UA:</span> {detail.user_agent}
               </p>
             )}

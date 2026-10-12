@@ -1,5 +1,6 @@
 "use client";
 import { ImageUploader } from "@/components/admin/ImageUploader";
+import { QuickAddProduitModal } from "@/components/admin/QuickAddProduitModal";
 import { toast } from "@/components/admin/Toast";
 import Image from "next/image";
 import {
@@ -11,6 +12,15 @@ import {
   type MarqueAdmin,
 } from "@/lib/admin-api";
 import {
+  buildCategoryTree,
+  collectSubtreeIds,
+  flattenCategoriesForSelect,
+  flattenCategoryTree,
+  normalizeCategoryPayload,
+  resolveCategoryContext,
+  type CatTreeNode,
+} from "@/lib/admin-catalog-utils";
+import {
   Activity,
   AlertCircle,
   CheckSquare,
@@ -20,6 +30,7 @@ import {
   Folder,
   FolderOpen,
   Info,
+  Package,
   Plus,
   RefreshCw,
   Square,
@@ -50,62 +61,11 @@ const EMPTY = {
   actif: true,
 };
 
-// ── Nœud d'arbre ─────────────────────────────────────────────────
-interface TreeNode extends CategorieAdmin {
-  children: TreeNode[];
-  depth: number;
-}
-
-function buildTree(flat: CategorieAdmin[]): TreeNode[] {
-  const map = new Map<number, TreeNode>();
-  flat.forEach((c) =>
-    map.set(c.id_categorie, { ...c, children: [], depth: 0 }),
-  );
-  const roots: TreeNode[] = [];
-  map.forEach((node) => {
-    if (node.parent_id && map.has(node.parent_id)) {
-      map.get(node.parent_id)!.children.push(node);
-    } else {
-      roots.push(node);
-    }
-  });
-
-  const sort = (arr: TreeNode[]) =>
-    arr.sort((a, b) => a.ordre - b.ordre || a.nom.localeCompare(b.nom, "fr"));
-
-  const assignDepth = (nodes: TreeNode[], depth: number): TreeNode[] => {
-    sort(nodes);
-    nodes.forEach((n) => {
-      n.depth = depth;
-      assignDepth(n.children, depth + 1);
-    });
-    return nodes;
-  };
-
-  return assignDepth(roots, 0);
-}
-
-function flattenTree(nodes: TreeNode[]): TreeNode[] {
-  const result: TreeNode[] = [];
-  const walk = (arr: TreeNode[]) =>
-    arr.forEach((n) => {
-      result.push(n);
-      walk(n.children);
-    });
-  walk(nodes);
-  return result;
-}
-
-/** Collecte l'id d'un nœud + tous ses descendants */
-function collectSubtreeIds(node: TreeNode): number[] {
-  return [node.id_categorie, ...node.children.flatMap(collectSubtreeIds)];
-}
-
 // ── Badge marque/activité ────────────────────────────────────────
 function Badge({ label, type }: { label: string; type: "marque" | "activite" }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+      className={`inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full font-medium ${
         type === "marque"
           ? "bg-blue-50 text-blue-600 border border-blue-100"
           : "bg-green-50 text-green-600 border border-green-100"
@@ -127,8 +87,9 @@ function TreeRow({
   onEdit,
   onDelete,
   onAddChild,
+  onAddProduct,
 }: {
-  node: TreeNode;
+  node: CatTreeNode;
   expanded: boolean;
   selected: boolean;
   onToggle: () => void;
@@ -136,6 +97,7 @@ function TreeRow({
   onEdit: (c: CategorieAdmin) => void;
   onDelete: (c: CategorieAdmin) => void;
   onAddChild: (parent: CategorieAdmin) => void;
+  onAddProduct: (parent: CatTreeNode) => void;
 }) {
   const hasChildren = node.children.length > 0;
   const count = (node as any)._count;
@@ -185,7 +147,7 @@ function TreeRow({
             {hasChildren ? (
               expanded ? <FolderOpen size={14} /> : <Folder size={14} />
             ) : (
-              <span className="text-[10px] text-gray-300">└</span>
+              <span className="text-[11px] text-gray-300">└</span>
             )}
           </span>
 
@@ -193,7 +155,7 @@ function TreeRow({
             <p className={`font-medium text-gray-800 truncate ${node.depth === 0 ? "text-sm" : "text-xs"}`}>
               {node.nom}
             </p>
-            <p className="text-[10px] text-gray-400 font-mono">{node.slug}</p>
+            <p className="text-[11px] text-gray-400 font-mono">{node.slug}</p>
           </div>
         </div>
       </td>
@@ -202,7 +164,9 @@ function TreeRow({
       <td className="px-4 py-2.5">
         <div className="flex flex-wrap gap-1">
           {node.marque && <Badge label={(node.marque as any).nom} type="marque" />}
+          {!node.marque && node.effective_id_marque && <Badge label="Marque héritée" type="marque" />}
           {node.activite && <Badge label={(node.activite as any).nom} type="activite" />}
+          {!node.activite && node.effective_id_activite && <Badge label="Activité héritée" type="activite" />}
         </div>
       </td>
 
@@ -228,7 +192,7 @@ function TreeRow({
       {/* Statut */}
       <td className="px-4 py-2.5">
         <span
-          className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+          className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
             node.actif ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"
           }`}
         >
@@ -245,6 +209,13 @@ function TreeRow({
             className="p-1.5 text-gray-400 hover:text-ev-600 hover:bg-ev-50 rounded-lg"
           >
             <Plus size={12} />
+          </button>
+          <button
+            onClick={() => onAddProduct(node)}
+            title="Ajouter un produit dans cette catégorie"
+            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+          >
+            <Package size={12} />
           </button>
           <button
             onClick={() => onEdit(node)}
@@ -339,6 +310,7 @@ export default function AdminCategoriesPage() {
   const [confirmDelete, setConfirmDelete] = useState<CategorieAdmin | null>(null);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [addProductCategory, setAddProductCategory] = useState<CatTreeNode | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -367,11 +339,12 @@ export default function AdminCategoriesPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const tree = useMemo(() => buildTree(items), [items]);
+  const tree = useMemo(() => buildCategoryTree(items), [items]);
+  const productCategoryOptions = useMemo(() => flattenCategoriesForSelect(items), [items]);
 
   const visibleRows = useMemo(() => {
-    const result: TreeNode[] = [];
-    const walk = (nodes: TreeNode[]) => {
+    const result: CatTreeNode[] = [];
+    const walk = (nodes: CatTreeNode[]) => {
       nodes.forEach((n) => {
         if (search) {
           const matches =
@@ -379,7 +352,7 @@ export default function AdminCategoriesPage() {
             n.slug.includes(search.toLowerCase());
           if (
             !matches &&
-            !flattenTree([n]).some((x) =>
+            !flattenCategoryTree([n]).some((x) =>
               x.nom.toLowerCase().includes(search.toLowerCase()),
             )
           )
@@ -488,8 +461,8 @@ export default function AdminCategoriesPage() {
     setForm({
       ...EMPTY,
       parent_id:   parentCat ? String(parentCat.id_categorie) : "",
-      id_marque:   parentCat ? String(parentCat.id_marque   ?? "") : "",
-      id_activite: parentCat ? String(parentCat.id_activite ?? "") : "",
+      id_marque:   "",
+      id_activite: "",
     });
     setEditing(null);
     setErr("");
@@ -522,7 +495,7 @@ export default function AdminCategoriesPage() {
     setSaving(true);
     setErr("");
     try {
-      const p = {
+      const rawPayload = {
         nom:         form.nom,
         slug:        form.slug,
         description: form.description || null,
@@ -534,6 +507,7 @@ export default function AdminCategoriesPage() {
         ordre:       form.ordre,
         ...(modal === "edit" ? { actif: form.actif } : {}),
       };
+      const p = normalizeCategoryPayload(rawPayload, items);
       if (modal === "create") {
         await adminCategories.create(p as any);
         toast.success("Catégorie créée", form.nom);
@@ -569,23 +543,30 @@ export default function AdminCategoriesPage() {
 
   const parentOptionsOrdered = useMemo(() => {
     const result: { cat: CategorieAdmin; depth: number }[] = [];
-    const walk = (nodes: TreeNode[]) => {
+    const walk = (nodes: CatTreeNode[]) => {
       nodes.forEach((n) => {
         const orig = parentOptions.find((c) => c.id_categorie === n.id_categorie);
         if (orig) result.push({ cat: orig, depth: n.depth });
         walk(n.children);
       });
     };
-    walk(buildTree(parentOptions));
+    walk(buildCategoryTree(parentOptions));
     return result;
   }, [parentOptions]);
 
   const rootCount = items.filter((c) => !c.parent_id).length;
   const subCount  = items.filter((c) =>  c.parent_id).length;
+  const parentContext = form.parent_id ? resolveCategoryContext(items, Number(form.parent_id)) : null;
+  const inheritedMarque = parentContext?.effective_id_marque
+    ? marques.find((m) => m.id_marque === parentContext.effective_id_marque)
+    : null;
+  const inheritedActivite = parentContext?.effective_id_activite
+    ? activites.find((a) => a.id_activite === parentContext.effective_id_activite)
+    : null;
 
   // Calcul de l'impact de la sélection (inclut les descendants déjà sélectionnés)
   const selectionImpact = useMemo(() => {
-    const nodeMap = new Map(flattenTree(tree).map((n) => [n.id_categorie, n]));
+    const nodeMap = new Map(flattenCategoryTree(tree).map((n) => [n.id_categorie, n]));
     let cats = 0;
     selected.forEach((id) => {
       const node = nodeMap.get(id);
@@ -614,6 +595,17 @@ export default function AdminCategoriesPage() {
           confirmLabel={`Supprimer ${selected.size} catégorie${selected.size > 1 ? "s" : ""}`}
           onConfirm={confirmBulkDeleteAction}
           onCancel={() => setConfirmBulkDelete(false)}
+        />
+      )}
+
+      {addProductCategory && (
+        <QuickAddProduitModal
+          scopeLabel={addProductCategory.nom}
+          categories={productCategoryOptions}
+          allCategories={items}
+          initialCategoryId={addProductCategory.id_categorie}
+          onClose={() => setAddProductCategory(null)}
+          onCreated={load}
         />
       )}
 
@@ -769,6 +761,7 @@ export default function AdminCategoriesPage() {
                     onEdit={openEdit}
                     onDelete={handleDelete}
                     onAddChild={openCreate}
+                    onAddProduct={setAddProductCategory}
                   />
                 ))}
               </tbody>
@@ -826,7 +819,13 @@ export default function AdminCategoriesPage() {
                 </label>
                 <select
                   value={form.parent_id}
-                  onChange={(e) => setForm({ ...form, parent_id: e.target.value })}
+                  onChange={(e) => {
+                    const parentId = e.target.value;
+                    setForm({
+                      ...form,
+                      parent_id: parentId,
+                    });
+                  }}
                   className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white"
                 >
                   <option value="">— Catégorie racine —</option>
@@ -971,6 +970,13 @@ export default function AdminCategoriesPage() {
                 <Alert type="info">
                   Cette catégorie sera rattachée comme sous-catégorie de «{" "}
                   {items.find((c) => String(c.id_categorie) === form.parent_id)?.nom ?? "…"} ».
+                  {(inheritedMarque || inheritedActivite) && (
+                    <>
+                      {" "}Elle héritera de{" "}
+                      {[inheritedMarque?.nom, inheritedActivite?.nom].filter(Boolean).join(" / ")}
+                      {" "}si vous ne définissez pas de rattachement spécifique.
+                    </>
+                  )}
                 </Alert>
               )}
             </div>

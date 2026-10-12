@@ -68,12 +68,12 @@ function ConfirmDialog({ message, sub, onConfirm, onCancel }: {
 
 function RoleBadge({ idRole, nom }: { idRole: number; nom: string }) {
   if (idRole === 1) return (
-    <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+    <span className="inline-flex items-center gap-1 text-[12px] font-bold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
       <Shield size={9} /> Super Admin
     </span>
   );
   return (
-    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-green-50 text-green-700 border border-green-200">
+    <span className="inline-flex items-center gap-1 text-[12px] font-semibold px-2.5 py-1 rounded-lg bg-green-50 text-green-700 border border-green-200">
       <User size={9} /> {nom}
     </span>
   );
@@ -104,7 +104,7 @@ function PermissionsPanel({ permissions, onChange }: { permissions: string[]; on
                 </div>
                 <span className="text-xs font-bold text-gray-700">{group}</span>
               </div>
-              <span className="text-[10px] text-gray-400">{perms.filter(p => permissions.includes(p.key)).length}/{perms.length}</span>
+              <span className="text-[11px] text-gray-400">{perms.filter(p => permissions.includes(p.key)).length}/{perms.length}</span>
             </button>
             <div className="grid grid-cols-2 gap-1 p-2">
               {perms.map(p => (
@@ -250,7 +250,7 @@ export default function AdminAdminsPage() {
           <h1 className="text-2xl font-bold" style={{ color:"var(--admin-text,#111)", letterSpacing:"-0.04em" }}>Administrateurs</h1>
           <p className="text-sm mt-0.5" style={{ color:"var(--admin-text3,#8da898)" }}>
             {admins.length} compte{admins.length!==1?"s":""}
-            {duplicates.size>0 && <span className="ml-2 inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200"><AlertTriangle size={9}/> {duplicates.size} doublon{duplicates.size>1?"s":""} détecté{duplicates.size>1?"s":""}</span>}
+            {duplicates.size>0 && <span className="ml-2 inline-flex items-center gap-1 text-[12px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200"><AlertTriangle size={9}/> {duplicates.size} doublon{duplicates.size>1?"s":""} détecté{duplicates.size>1?"s":""}</span>}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -269,7 +269,7 @@ export default function AdminAdminsPage() {
             <p className="text-sm font-bold text-amber-800">Doublons détectés — même email sur plusieurs comptes</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {admins.filter(a=>duplicates.has(a.id_admin)).map(a => (
-                <span key={a.id_admin} className="inline-flex items-center gap-1.5 text-[11px] font-semibold bg-white border border-amber-200 text-amber-700 px-2 py-1 rounded-lg">
+                <span key={a.id_admin} className="inline-flex items-center gap-1.5 text-[12px] font-semibold bg-white border border-amber-200 text-amber-700 px-2 py-1 rounded-lg">
                   {a.nom} · {a.email}
                   {a.id_admin!==currentAdmin?.id_admin && (
                     <button onClick={()=>{setDeleteTarget(a);setModal("delete");}} className="ml-0.5 text-red-400 hover:text-red-600"><X size={10}/></button>
@@ -329,10 +329,10 @@ export default function AdminAdminsPage() {
                           <div>
                             <p className="font-semibold leading-tight" style={{color:"var(--admin-text)"}}>
                               {a.nom}
-                              {isMe && <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500">vous</span>}
+                              {isMe && <span className="ml-1.5 text-[11px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500">vous</span>}
                             </p>
-                            {isDup && <span className="flex items-center gap-1 text-[10px] text-amber-600 font-semibold"><AlertTriangle size={8}/>Doublon</span>}
-                            {hasHiddenChat(a) && <span className="flex items-center gap-1 text-[10px] text-purple-600 font-semibold"><MessageSquare size={8}/>Chat masqué</span>}
+                            {isDup && <span className="flex items-center gap-1 text-[11px] text-amber-600 font-semibold"><AlertTriangle size={8}/>Doublon</span>}
+                            {hasHiddenChat(a) && <span className="flex items-center gap-1 text-[11px] text-purple-600 font-semibold"><MessageSquare size={8}/>Chat masqué</span>}
                           </div>
                         </div>
                       </td>
@@ -379,7 +379,7 @@ export default function AdminAdminsPage() {
                   ) : perms.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
                       {perms.map(p => (
-                        <span key={p} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-100">
+                        <span key={p} className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-100">
                           {permLabel(p)}
                         </span>
                       ))}
@@ -398,16 +398,16 @@ export default function AdminAdminsPage() {
               return (
                 <div key={`admin-${a.id_admin}`} className="p-3 rounded-xl border border-dashed" style={{background:"var(--admin-surface2)",borderColor:"var(--admin-border)"}}>
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0"
                       style={{background:`linear-gradient(135deg,${A.accent},${A.accentL})`}}>
                       {a.nom[0]?.toUpperCase()}
                     </div>
                     <span className="text-xs font-bold" style={{color:"var(--admin-text)"}}>{a.nom}</span>
-                    <span className="text-[10px] text-gray-400">permissions spécifiques</span>
+                    <span className="text-[11px] text-gray-400">permissions spécifiques</span>
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {perms.map(p => (
-                      <span key={p} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                      <span key={p} className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
                         {permLabel(p)}
                       </span>
                     ))}
@@ -455,7 +455,7 @@ export default function AdminAdminsPage() {
                 {form.password && (
                   <div className="mt-1.5 flex items-center gap-1">
                     {[8,12,16].map(n=><div key={n} className="flex-1 h-1 rounded-full transition-colors" style={{background:form.password.length>=n?"#16a34a":"#e5e7eb"}}/>)}
-                    <span className="text-[10px] ml-1 font-medium" style={{color:form.password.length>=12?"#16a34a":form.password.length>=8?"#f59e0b":"#dc2626"}}>
+                    <span className="text-[11px] ml-1 font-medium" style={{color:form.password.length>=12?"#16a34a":form.password.length>=8?"#f59e0b":"#dc2626"}}>
                       {form.password.length>=12?"Fort":form.password.length>=8?"Moyen":"Faible"}
                     </span>
                   </div>
@@ -467,7 +467,7 @@ export default function AdminAdminsPage() {
                   className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl outline-none bg-white focus:ring-2 focus:ring-green-300">
                   {roles.map(r=><option key={r.id_role} value={r.id_role}>{r.nom}</option>)}
                 </select>
-                {form.id_role===1 && <p className="mt-1 text-[11px] text-amber-600 flex items-center gap-1"><Shield size={9}/>Accès complet au système</p>}
+                {form.id_role===1 && <p className="mt-1 text-[12px] text-amber-600 flex items-center gap-1"><Shield size={9}/>Accès complet au système</p>}
               </div>
               {modal==="edit" && (
                 <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50">

@@ -1,21 +1,35 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { ChevronRight, Wheat } from "lucide-react";
-import { produitsService } from "@/services";
+import { categoriesService, produitsService } from "@/services";
 import { SimilaireCard } from "@/components/cards/SimilaireCard";
 import type { ProduitCard } from "@/types/api";
+import { getActivityCategoryHrefById } from "@/lib/category-url";
+import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
+import { messages } from "@/i18n/messages";
 
 export async function ProduitsSimilaires({
   idCategorie,
   idProduitActuel,
   idCategorieParent,
   idActivite,
+  activiteSlug,
 }: {
   idCategorie: number;
   idProduitActuel: number;
   idCategorieParent?: number | null;
   idActivite?: number | null;
+  /** Slug de l'activité (ex. "semences-et-plants") — permet de construire
+   *  un lien "Voir tout" valide vers l'URL lisible de la catégorie.
+   *  Sans ça, il n'existe aucune page `/produits` listant tous les produits
+   *  du site : ce lien renvoyait vers une page inexistante (404). */
+  activiteSlug?: string | null;
 }) {
+  const cookieLocale = (await cookies()).get("NEXT_LOCALE")?.value;
+  const locale: Locale = isLocale(cookieLocale) ? cookieLocale : defaultLocale;
+  const t = (key: string, fallback: string) => messages[locale]?.[key] ?? messages[defaultLocale]?.[key] ?? fallback;
   let produits: ProduitCard[] = [];
+  let voirToutHref = activiteSlug ? `/activites/${activiteSlug}` : null;
   try {
     // 1. Même catégorie directe
     const res = await produitsService.list({ id_categorie: idCategorie, limit: 10 });
@@ -40,6 +54,11 @@ export async function ProduitsSimilaires({
         .slice(0, 3 - produits.length);
       produits = [...produits, ...extra];
     }
+
+    if (activiteSlug && idActivite) {
+      const categories = await categoriesService.list({ id_activite: idActivite });
+      voirToutHref = getActivityCategoryHrefById(activiteSlug, categories, idCategorie);
+    }
   } catch { /* silencieux */ }
 
   if (!produits.length) return null;
@@ -53,14 +72,16 @@ export async function ProduitsSimilaires({
           style={{ fontFamily: "var(--font-display)" }}
         >
           <Wheat size={20} className="text-ev-600" />
-          Produits similaires
+          {t("catalog.similar", "Produits similaires")}
         </h2>
-        <Link
-          href="/produits"
-          className="flex items-center gap-1 text-sm font-semibold text-ev-700 hover:text-ev-900 transition-colors"
-        >
-          Voir tout <ChevronRight size={14} />
-        </Link>
+        {voirToutHref && (
+          <Link
+            href={voirToutHref}
+            className="flex items-center gap-1 text-sm font-semibold text-ev-700 hover:text-ev-900 transition-colors"
+          >
+            {t("catalog.viewAll", "Voir tout")} <ChevronRight size={14} />
+          </Link>
+        )}
       </div>
 
       {/* Grille */}

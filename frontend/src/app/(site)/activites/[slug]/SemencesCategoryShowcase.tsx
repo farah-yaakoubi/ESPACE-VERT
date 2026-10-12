@@ -7,12 +7,15 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/I18nProvider";
 import { translatedField } from "@/i18n/translated-field";
 import type { Locale } from "@/i18n/config";
+import { getActivityCategoryHrefById } from "@/lib/category-url";
 
 const WHEAT = "#c9a24a";
 
 export interface SemencesCategoryItem {
   id_categorie: number;
   nom: string;
+  slug: string;
+  parent_id?: number | null;
   translations?: unknown;
   image?: string | null;
 }
@@ -26,8 +29,10 @@ function labelOf(item: SemencesCategoryItem, locale: Locale) {
  *  référence, adapté à la palette du site (vert forêt / lin / blé). */
 export function SemencesCategoryShowcase({
   categories,
+  activiteSlug = "semences-et-plants",
 }: {
   categories: SemencesCategoryItem[];
+  activiteSlug?: string;
 }) {
   const { locale } = useI18n();
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -71,7 +76,7 @@ export function SemencesCategoryShowcase({
             {categories.map((cat) => (
               <a
                 key={cat.id_categorie}
-                href={`?cat=${cat.id_categorie}#produits-activite`}
+                href={`${getActivityCategoryHrefById(activiteSlug, categories, cat.id_categorie)}#produits-activite`}
                 className={cn(
                   "group relative shrink-0 w-[180px] sm:w-[200px] aspect-square overflow-hidden rounded-2xl",
                   "bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"

@@ -208,6 +208,7 @@ export default async function MarqueDetailPage({ params }: PageProps) {
           ctaHref="#produits-marque"
           fichesTechniquesHref="/contact"
           showTypeCards={false}
+          crossSellHref={null}
           minimalHero
         />
       ) : isPulvert ? (
@@ -251,7 +252,7 @@ export default async function MarqueDetailPage({ params }: PageProps) {
       )}
 
       {/* ── Categories quick nav ───────────────────────────────── */}
-      {!isPulvert && shownQuickCategories.length > 0 && (
+      {!isPulvert && !isFertivert && shownQuickCategories.length > 0 && (
         <section className="bg-white border-b border-sand-200">
           <div className="container-ev py-4">
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">

@@ -573,6 +573,15 @@ export default function ChatWidget() {
   useEffect(() => {
     if (open) { setUnread(0); setTimeout(() => inputRef.current?.focus(), 180); }
   }, [open]);
+  useEffect(() => {
+    const handleOpenChat = () => {
+      setOpen(true);
+      setHistoryOpen(false);
+    };
+
+    window.addEventListener("ev:open-chat", handleOpenChat);
+    return () => window.removeEventListener("ev:open-chat", handleOpenChat);
+  }, []);
 
   const sendMessage = useCallback(
     async (text: string) => {

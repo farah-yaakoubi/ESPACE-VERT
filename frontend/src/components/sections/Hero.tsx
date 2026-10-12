@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowRight, Bot } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const NAV_H = 80;
@@ -29,34 +29,24 @@ const SLIDES_FALLBACK: HeroSlide[] = [
     ordre: 1,
     actif: true,
   },
-  {
+ {
     id: 2,
-    image: "/images/hero/fertivert-desktop.webp",
-    imageTablet: "/images/hero/fertivert-tablette.webp",
-    imageMobile: "/images/hero/fertivert-mobile.webp",
+    image: "/images/hero/fertivert-marque.webp",
+    imageTablet: "",
+    imageMobile: "",
     href: "/marques/fertivert",
-    ctaLabel: "Explorer",
+    ctaLabel: "Découvrir",
     ordre: 2,
     actif: true,
   },
   {
     id: 3,
-    image: "/images/hero/matar-desktop.webp",
-    imageTablet: "/images/hero/matar-tablette.webp",
-    imageMobile: "/images/hero/matar-mobile.webp",
+    image: "/images/hero/irrigation.webp",
+    imageTablet: "",
+    imageMobile: "",
     href: "/marques/matar",
     ctaLabel: "Découvrir",
     ordre: 3,
-    actif: true,
-  },
-  {
-    id: 4,
-    image: "/images/hero/pulvert-desktop.webp",
-    imageTablet: "/images/hero/pulvert-tablette.webp",
-    imageMobile: "/images/hero/pulvert-mobile.webp",
-    href: "/marques/pulvert",
-    ctaLabel: "Explorer",
-    ordre: 4,
     actif: true,
   },
 ];
@@ -96,10 +86,6 @@ const HERO_SIZES = [
   "100vw",
 ].join(", ");
 
-// Valeurs par défaut — le bouton reste toujours affiché, même si un slide n'a pas de CTA défini
-const CTA_FALLBACK_LABEL = "Découvrir";
-const CTA_FALLBACK_HREF = "/activites";
-
 export function Hero() {
   const slides = useHeroSlides();
   const [current, setCurrent] = useState(0);
@@ -130,8 +116,11 @@ export function Hero() {
   }, [current, slides]);
 
   const slide = slides[current];
-  const ctaLabel = "Découvrir";
-  const ctaHref = slide.href ?? CTA_FALLBACK_HREF;
+  const ctaHref = "/#nos-activites";
+
+  const openChat = () => {
+    window.dispatchEvent(new CustomEvent("ev:open-chat"));
+  };
 
   return (
     <>
@@ -209,27 +198,117 @@ export function Hero() {
           position: absolute;
           left: 0;
           right: 0;
-          bottom: clamp(150px, 24vh, 220px);
+          top: 0;
+          bottom: 0;
           z-index: 6;
           padding: 0 clamp(20px, 5vw, 80px);
+          display: flex;
+          align-items: center;
         }
 
         .hero-copy-inner {
-          width: min(100%, 780px);
+          width: min(100%, 1180px);
+          margin: 0 auto;
+          padding-top: 80px;
         }
 
-        /* Bouton — détaché du bloc titre : il reste en place, à taille lisible,
-           et ne se réanime pas à chaque changement de slide (seul le libellé change).
-           Il occupe désormais la position tout en bas, centrée, qu'occupaient les points. */
-        .hero-cta-fixed {
-          position: absolute;
-          left: 0;
-          right: 0;
-          bottom: clamp(34px, 6vh, 64px);
-          z-index: 7;
-          padding: 0 clamp(20px, 5vw, 80px);
+        .hero-content-pro {
+          width: min(100%, 760px);
+        }
+
+        .hero-title-pro {
+          margin: 0;
+          max-width: 760px;
+          color: #fff;
+          font-size: clamp(2.7rem, 6.5vw, 6rem);
+          font-weight: 950;
+          line-height: 0.92;
+          letter-spacing: 0;
+          text-shadow: 0 20px 60px rgba(0,0,0,0.38);
+        }
+
+        .hero-title-pro span {
+          color: #c8ff75;
+        }
+
+        .hero-subtitle-pro {
+          margin: 22px 0 0;
+          max-width: 620px;
+          color: rgba(255,255,255,0.84);
+          font-size: clamp(1rem, 1.5vw, 1.18rem);
+          line-height: 1.7;
+          font-weight: 500;
+          text-shadow: 0 10px 28px rgba(0,0,0,0.35);
+        }
+
+        .hero-actions-pro {
           display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 12px;
+          margin-top: 30px;
+        }
+
+        .hero-primary-pro,
+        .hero-secondary-pro {
+          display: inline-flex;
+          align-items: center;
           justify-content: center;
+          gap: 10px;
+          min-height: 50px;
+          border-radius: 999px;
+          padding: 0 20px;
+          text-decoration: none;
+          font-size: 0.82rem;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          transition: transform 0.35s cubic-bezier(.16,1,.3,1), box-shadow 0.35s ease, background 0.35s ease;
+        }
+
+        .hero-primary-pro {
+          color: #072716;
+          background: linear-gradient(135deg, #ffffff 0%, #d8ff86 100%);
+          box-shadow: 0 22px 48px -24px rgba(216,255,134,0.75), inset 0 1px 0 rgba(255,255,255,0.92);
+        }
+
+        .hero-secondary-pro {
+          color: #ffffff;
+          border: 1px solid rgba(255,255,255,0.28);
+          background: rgba(255,255,255,0.12);
+          backdrop-filter: blur(16px);
+        }
+
+        .hero-primary-pro:hover,
+        .hero-secondary-pro:hover {
+          transform: translateY(-3px);
+        }
+
+        .hero-trust-row {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 12px;
+          margin-top: 24px;
+          color: rgba(255,255,255,0.78);
+          font-size: 0.82rem;
+          font-weight: 800;
+        }
+
+        .hero-trust-row span {
+          display: inline-flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .hero-trust-row span + span::before {
+          content: "";
+          display: inline-block;
+          width: 5px;
+          height: 5px;
+          border-radius: 999px;
+          background: #c8ff75;
+          opacity: 0.85;
         }
 
         @media (max-width: 640px) {
@@ -245,14 +324,40 @@ export function Hero() {
           }
 
           .hero-copy {
-            bottom: 168px;
+            align-items: flex-end;
             padding: 0 16px;
+            padding-bottom: 42px;
           }
 
-          .hero-cta-fixed {
-            bottom: 28px;
-            padding: 0 16px;
-            justify-content: center;
+          .hero-copy-inner {
+            padding-top: 0;
+          }
+
+          .hero-title-pro {
+            font-size: clamp(2.35rem, 14vw, 4.15rem);
+          }
+
+          .hero-subtitle-pro {
+            line-height: 1.55;
+          }
+
+          .hero-actions-pro {
+            margin-top: 22px;
+          }
+
+          .hero-primary-pro,
+          .hero-secondary-pro {
+            width: 100%;
+          }
+
+          .hero-trust-row {
+            gap: 8px 12px;
+            margin-top: 18px;
+            font-size: 0.76rem;
+          }
+
+          .hero-trust-row span + span::before {
+            display: none;
           }
 
         }
@@ -266,8 +371,8 @@ export function Hero() {
             object-position: center 28% !important;
           }
 
-          .hero-cta-fixed {
-            bottom: 26px;
+          .hero-content-pro {
+            width: min(100%, 680px);
           }
         }
 
@@ -343,105 +448,11 @@ export function Hero() {
           animation: heroTextIn 1.2s 0.6s ease-out both;
         }
 
-        /* Zoom-in + fade doux, même easing/rythme que la transition des bannières hero (opacity 1.8s ease-in-out) */
-        @keyframes heroCtaZoomFade {
-          0%, 100% { transform: scale(1);     opacity: 1;    }
-          50%      { transform: scale(1.025); opacity: 0.94; }
-        }
-
-        .hero-cta {
-          position: relative;
-          overflow: hidden;
-          isolation: isolate;
-          background: linear-gradient(135deg, #0b6b3a 0%, #2e7d4f 45%, #7dc040 100%);
-          border: 1px solid rgba(255,255,255,0.5);
-          color: #ffffff;
-          box-shadow: 0 16px 36px -18px rgba(3,36,18,0.55),
-                      inset 0 1px 0 rgba(255,255,255,0.4),
-                      inset 0 -8px 14px -10px rgba(3,36,18,0.25);
-          backdrop-filter: blur(18px);
-          animation: heroCtaZoomFade 3.8s ease-in-out infinite;
-          transition: transform 0.45s cubic-bezier(.16,1,.3,1),
-                      box-shadow 0.45s cubic-bezier(.16,1,.3,1),
-                      background 0.45s cubic-bezier(.16,1,.3,1),
-                      border-color 0.45s ease,
-                      color 0.35s ease;
-        }
-
-        /* Reflet glossy — bande claire en haut du bouton, façon verre/bonbon */
-        .hero-cta::after {
-          content: "";
-          position: absolute;
-          left: 5%;
-          right: 5%;
-          top: 6%;
-          height: 40%;
-          border-radius: 999px;
-          background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0));
-          opacity: 0.9;
-          pointer-events: none;
-          transition: opacity 0.4s ease;
-        }
-
-        .hero-cta::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          z-index: -1;
-          background: linear-gradient(90deg, rgba(125,192,64,0), rgba(125,192,64,0.18), rgba(125,192,64,0));
-          transform: translateX(-120%) skewX(-16deg);
-          transition: transform 0.65s cubic-bezier(.16,1,.3,1);
-        }
-
-        .hero-cta:hover {
-          animation-play-state: paused;
-          transform: translateY(-3px);
-          background: linear-gradient(180deg, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0.78) 48%, rgba(255,255,255,0.94) 100%);
-          border-color: rgba(255,255,255,0.75);
-          color: #075f35;
-          box-shadow: 0 22px 48px -18px rgba(3,36,18,0.55),
-                      inset 0 1px 0 rgba(255,255,255,0.95),
-                      inset 0 -8px 14px -10px rgba(3,36,18,0.1);
-        }
-
-        .hero-cta:hover::after {
-          opacity: 0.9;
-        }
-
-        .hero-cta:hover::before {
-          transform: translateX(120%) skewX(-16deg);
-        }
-
-        .hero-cta-arrow {
-          display: inline-flex;
-          width: 30px;
-          height: 30px;
-          align-items: center;
-          justify-content: center;
-          border-radius: 999px;
-          color: #0b6b3a;
-          background: #ffffff;
-          box-shadow: 0 10px 20px -12px rgba(7,95,53,0.5);
-          transition: transform 0.5s cubic-bezier(.16,1,.3,1),
-                      box-shadow 0.5s cubic-bezier(.16,1,.3,1),
-                      background 0.4s ease,
-                      color 0.4s ease;
-        }
-
-        .hero-cta:hover .hero-cta-arrow {
-          transform: translate(4px, -4px);
-          background: linear-gradient(135deg, #075f35, #8bc541);
-          color: #ffffff;
-          box-shadow: 0 16px 24px -14px rgba(7,95,53,0.85);
-        }
-
         @media (prefers-reduced-motion: reduce) {
           .hero-slide,
           .hero-slide::after,
           .hero-slide__image,
-          .hero-text-enter,
-          .hero-cta,
-          .hero-cta-arrow {
+          .hero-text-enter {
             animation: none !important;
             transition: opacity 0.01ms !important;
           }
@@ -487,60 +498,49 @@ export function Hero() {
             zIndex: 4,
             pointerEvents: "none",
             background: `linear-gradient(to bottom,
-              rgba(0,0,0,0.24) 0%,
-              rgba(0,0,0,0.08) 25%,
-              rgba(0,0,0,0.04) 55%,
-              rgba(0,0,0,0.46) 80%,
-              rgba(0,0,0,0.66) 100%)`,
+              rgba(0,0,0,0.46) 0%,
+              rgba(0,0,0,0.20) 28%,
+              rgba(0,0,0,0.24) 54%,
+              rgba(0,0,0,0.58) 100%)`,
+          }}
+        />
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 5,
+            pointerEvents: "none",
+            background: "radial-gradient(circle at 12% 28%, rgba(200,255,117,0.18), transparent 30%), linear-gradient(90deg, rgba(3,31,16,0.76) 0%, rgba(3,31,16,0.34) 46%, rgba(3,31,16,0.08) 100%)",
           }}
         />
 
-        {/* Titre — change et se fond avec chaque slide */}
-        {slide.titre && (
-          <div key={`text-${slide.id}`} className="hero-text-enter hero-copy">
-            <div className="hero-copy-inner">
-              <h1
-                style={{
-                  margin: 0,
-                  fontSize: "clamp(2rem, 5vw, 3.6rem)",
-                  fontWeight: 800,
-                  color: "#fff",
-                  lineHeight: 1.1,
-                  letterSpacing: "-0.02em",
-                  textShadow: "0 2px 24px rgba(0,0,0,0.3)",
-                }}
-              >
-                {slide.titre}
+        <div key={`text-${slide.id}`} className="hero-text-enter hero-copy">
+          <div className="hero-copy-inner">
+            <div className="hero-content-pro">
+              <h1 className="hero-title-pro">
+                Des solutions vertes, <span>choisies avec soin.</span>
               </h1>
+              <p className="hero-subtitle-pro">
+                Semences, irrigation, fertilisation et équipements pour accompagner vos projets agricoles, jardins et espaces verts.
+              </p>
+              <div className="hero-actions-pro">
+                <Link href={ctaHref} className="hero-primary-pro">
+                  Découvrir nos solutions
+                  <ArrowRight size={17} strokeWidth={2.6} />
+                </Link>
+                <button type="button" onClick={openChat} className="hero-secondary-pro">
+                  Demander conseil
+                  <Bot size={17} strokeWidth={2.4} />
+                </button>
+              </div>
+              <div className="hero-trust-row" aria-label="Points forts Espace Vert">
+                <span>Conseil terrain</span>
+                <span>Marques spécialisées</span>
+                <span>Produits professionnels</span>
+              </div>
             </div>
           </div>
-        )}
-
-        {/* Bouton — toujours présent, position fixe tout en bas et centré
-            (il occupe désormais la place des anciens points de pagination).
-            Pas de key liée au slide : le nœud DOM reste stable, seul le libellé/lien change. */}
-        <div className="hero-cta-fixed">
-          <Link
-            href={ctaHref}
-            className="hero-cta"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "6px 6px 6px 22px",
-              fontWeight: 800,
-              fontSize: "0.88rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              borderRadius: 999,
-              textDecoration: "none",
-            }}
-          >
-            {ctaLabel}
-            <span className="hero-cta-arrow">
-              <ArrowUpRight size={16} strokeWidth={2.4} />
-            </span>
-          </Link>
         </div>
 
         {slide.href && !slide.titre && (

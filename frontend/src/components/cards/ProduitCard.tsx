@@ -3,12 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Leaf, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getProductHref } from "@/lib/product-url";
 import { useI18n } from "@/i18n/I18nProvider";
 import { translatedField } from "@/i18n/translated-field";
+import { stripHtml } from "@/lib/sanitize-html";
 import type { ProduitCard as ProduitCardType } from "@/types/api";
 
 const DIVISION_BADGE: Record<string, { label: string; cls: string }> = {
@@ -70,7 +71,7 @@ export function SeedImagePreview({
 
   if (images.length === 0) {
     return (
-      <div className="flex h-44 w-full items-center justify-center rounded-full bg-ev-50 text-3xl text-ev-300">
+      <div className="flex h-36 w-full items-center justify-center rounded-full bg-ev-50 text-3xl text-ev-300 sm:h-44">
         🌱
       </div>
     );
@@ -176,25 +177,25 @@ export function ProduitCard({
   className?: string;
   variant?: "default" | "seed" | "light" | "list";
 }) {
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const [hovered, setHovered] = useState(false);
   const img      = produit.images.find((i) => (i as any).is_principale) ?? produit.images[0];
   const divBadge = DIVISION_BADGE[produit.division];
   const href     = getProductHref(produit);
   const nom = translatedField(produit as any, "nom", locale) || produit.nom;
-  const description = translatedField(produit as any, "description", locale) || produit.description;
+  const description = stripHtml(translatedField(produit as any, "description", locale) || produit.description);
 
   if (variant === "list") {
     return (
       <Link
         href={href}
         className={cn(
-          "group flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-3 transition-all duration-300 hover:border-ev-200 hover:shadow-md sm:gap-6 sm:p-4",
+          "group flex items-center gap-4 rounded-[1.15rem] border border-[#dfe8dc] bg-white/95 p-3 shadow-[0_12px_34px_rgba(21,45,27,0.06)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#9bcf67] hover:shadow-[0_18px_46px_rgba(21,45,27,0.12)] sm:gap-6 sm:p-4",
           className
         )}
       >
         {/* Image — carrée, taille fixe, à gauche */}
-        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-[#f4f4f4] sm:h-28 sm:w-28">
+        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[1rem] bg-gradient-to-br from-[#f8faf4] via-white to-[#eaf5df] ring-1 ring-[#dfe8dc] sm:h-28 sm:w-28">
           {img ? (
             <Image
               src={img.url}
@@ -216,21 +217,21 @@ export function ProduitCard({
         {/* Contenu — nom + description, prend l'espace restant */}
         <div className="min-w-0 flex-1">
           <p
-            className="text-[1rem] font-semibold leading-snug text-[#1b2118] line-clamp-1 transition-colors group-hover:text-ev-700 sm:text-[1.1rem]"
+            className="text-[0.9rem] font-bold leading-snug text-[#1b2118] line-clamp-2 transition-colors group-hover:text-ev-700 sm:text-[1rem] sm:line-clamp-1"
             style={{ fontFamily: "var(--font-serif)" }}
           >
             {nom}
           </p>
           {description && (
-            <p className="mt-1 text-[13px] leading-5 text-gray-500 line-clamp-2 sm:line-clamp-1">
+            <p className="mt-1 text-[12px] leading-5 text-gray-500 line-clamp-2 sm:text-[12.5px] sm:line-clamp-1">
               {description}
             </p>
           )}
         </div>
 
         {/* CTA — à droite, masqué sur mobile pour laisser de la place */}
-        <span className="hidden shrink-0 items-center gap-1.5 rounded-xl bg-ev-700 px-4 py-2.5 text-[12px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md sm:inline-flex">
-          Voir le produit
+        <span className="hidden shrink-0 items-center gap-1.5 rounded-full bg-[#103d24] px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.04em] text-white shadow-sm transition-all duration-300 group-hover:bg-[#7dc040] group-hover:text-[#092715] group-hover:shadow-md sm:inline-flex">
+          {t("catalog.viewProduct", "Voir le produit")}
           <ChevronRight size={13} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
         </span>
         <ChevronRight size={18} className="shrink-0 text-gray-300 transition-colors group-hover:text-ev-600 sm:hidden" />
@@ -253,43 +254,47 @@ export function ProduitCard({
         />
 
         <p
-          className="mt-4 flex min-h-[2.7em] items-center justify-center text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
+          className="mt-3 flex min-h-[2.7em] items-center justify-center text-[0.9rem] font-bold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700 sm:mt-4 sm:text-[0.98rem]"
           style={{ fontFamily: "var(--font-serif)" }}
         >
           {nom}
         </p>
 
         {/* Bouton "Voir le produit" — plein, avec flèche qui glisse au survol */}
-        <span className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
-          Voir le produit
+        <span className="mt-3 inline-flex max-w-full items-center justify-center gap-1.5 rounded-xl bg-ev-700 px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.04em] text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5 sm:mt-4 sm:gap-2 sm:px-5 sm:py-2.5 sm:text-[12px]">
+          {t("catalog.viewProduct", "Voir le produit")}
           <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
         </span>
       </Link>
     );
   }
   if (variant === "light") {
+    const lightImages = produit.images?.length
+      ? (img ? [img, ...produit.images.filter((i) => i !== img)] : produit.images)
+      : [];
     return (
-      <Link href={href} className={cn("block group", className)}>
-        <article className="relative flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:border-[#f7c9a0]">
-          <div className="relative h-[150px] sm:h-[170px] bg-[#f7f7f5] flex items-center justify-center overflow-hidden">
-            {img ? (
-              <Image
-                src={img.url}
-                alt={img.alt ?? nom}
-                fill
-                className="object-contain p-6 transition-transform duration-[1600ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.08]"
-                sizes="(max-width:640px)50vw,(max-width:1024px)33vw,25vw"
-              />
+      <Link
+        href={href}
+        className={cn("block group", className)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        <article className="relative flex h-full flex-col overflow-hidden rounded-[1.15rem] border border-[#dfe8dc] bg-white transition-all duration-300 hover:-translate-y-1 hover:border-[#9bcf67] hover:shadow-[0_18px_46px_rgba(21,45,27,0.13)]">
+          <div className="relative h-[150px] sm:h-[170px] bg-gradient-to-br from-[#f8faf4] via-white to-[#eaf5df] flex items-center justify-center overflow-hidden">
+            {lightImages.length ? (
+              <div className="w-full px-6">
+                <SeedImagePreview images={lightImages} nom={nom} active={hovered} />
+              </div>
             ) : (
               <div className="flex h-full w-full items-center justify-center text-5xl opacity-20">🌿</div>
             )}
           </div>
           <div className="flex flex-1 flex-col gap-2 px-4 py-3.5">
-            <h3 className="text-[14px] font-semibold leading-snug text-gray-900 line-clamp-2">
+            <h3 className="text-[13.5px] font-bold leading-snug text-gray-900 line-clamp-2">
               {nom}
             </h3>
-            <span className="mt-auto inline-flex items-center gap-1 text-[12.5px] font-medium text-[#c94e03]">
-              Voir le produit <ChevronRight size={13} />
+            <span className="mt-auto inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-[0.04em] text-[#245c34]">
+              {t("catalog.viewProduct", "Voir le produit")} <ChevronRight size={13} />
             </span>
           </div>
         </article>
@@ -299,35 +304,64 @@ export function ProduitCard({
   return (
     <Link
       href={href}
-      className={cn("group flex h-full flex-col items-center text-center focus:outline-none", className)}
+      className={cn("group block h-full focus:outline-none", className)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* ── Zone image — même comportement que les autres pages (swipe + zoom au survol) ── */}
-      <div className="relative w-full">
-        {divBadge && (
-          <span className={cn("absolute top-0 left-0 z-10 px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wide uppercase", divBadge.cls)}>
-            {divBadge.label}
-          </span>
-        )}
-        <SeedImagePreview
-          images={produit.images?.length ? (img ? [img, ...produit.images.filter((i) => i !== img)] : produit.images) : []}
-          nom={nom}
-          active={hovered}
-        />
-      </div>
-      {/* ── Nom ── */}
-      <p
-        className="mt-4 flex min-h-[2.7em] items-center justify-center text-[1.05rem] font-semibold leading-snug text-[#1b2118] line-clamp-2 transition-colors group-hover:text-ev-700"
-        style={{ fontFamily: "var(--font-serif)" }}
-      >
-        {nom}
-      </p>
-      {/* ── Bouton "Voir le produit" — plein, avec flèche qui glisse au survol ── */}
-      <span className="cta-voir-produit mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
-        Voir le produit
-        <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
-      </span>
+      <article className="relative flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-[#dfe8dc] bg-white shadow-[0_18px_55px_rgba(20,45,28,0.08)] transition-all duration-300 group-hover:-translate-y-1 group-hover:border-[#9bcf67] group-hover:shadow-[0_26px_70px_rgba(20,45,28,0.15)]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#f2f9e9] to-transparent" />
+
+        <div className="relative px-4 pt-4">
+          <div className="relative overflow-hidden rounded-[1.1rem] bg-gradient-to-br from-[#f8faf4] via-white to-[#e7f4dc] px-5 py-5 ring-1 ring-[#dfe8dc]">
+            <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
+              {divBadge && (
+                <span className={cn("inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.06em]", divBadge.cls)}>
+                  {divBadge.label}
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/85 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.06em] text-[#245c34] shadow-sm">
+                <Sparkles size={11} strokeWidth={2.4} />
+                {t("catalog.selection", "Sélection")}
+              </span>
+            </div>
+
+            <SeedImagePreview
+              images={produit.images?.length ? (img ? [img, ...produit.images.filter((i) => i !== img)] : produit.images) : []}
+              nom={nom}
+              active={hovered}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-1 flex-col px-5 pb-5 pt-4 text-left">
+          <div className="mb-3 flex items-center gap-2 text-[10.5px] font-extrabold uppercase tracking-[0.08em] text-[#6a7b66]">
+            <Leaf size={13} strokeWidth={2.2} className="text-[#7dc040]" />
+            {t("catalog.solution", "Solution Espace Vert")}
+          </div>
+
+          <h3
+            className="min-h-[2.8em] text-[0.95rem] font-bold leading-snug text-[#172217] line-clamp-2 transition-colors group-hover:text-[#1f6b36] sm:text-[1.02rem]"
+            style={{ fontFamily: "var(--font-serif)" }}
+          >
+            {nom}
+          </h3>
+
+          {description && (
+            <p className="mt-2 min-h-[3.1em] text-[12.5px] leading-5 text-[#64705f] line-clamp-2">
+              {description}
+            </p>
+          )}
+
+          <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+            <span className="inline-flex items-center rounded-full bg-[#eef8e4] px-3 py-1.5 text-[10.5px] font-extrabold uppercase tracking-[0.06em] text-[#245c34]">
+              {t("catalog.proAdvice", "Conseil pro")}
+            </span>
+            <span className="cta-voir-produit inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#103d24] text-white shadow-sm transition-all duration-300 group-hover:bg-[#7dc040] group-hover:text-[#092715] group-hover:shadow-md">
+              <ChevronRight size={17} strokeWidth={2.7} className="transition-transform duration-300 group-hover:translate-x-0.5" />
+            </span>
+          </div>
+        </div>
+      </article>
     </Link>
   );
 }

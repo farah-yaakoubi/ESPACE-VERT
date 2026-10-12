@@ -306,7 +306,7 @@ export default function HeroAdminPage() {
           {/* Pages statiques */}
           {tab === "static" && (
             <>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-2">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-2">
                 Pages du site
               </p>
               {STATIC_PAGES.map(p => (
@@ -322,7 +322,7 @@ export default function HeroAdminPage() {
                   <Globe size={13} className="shrink-0" />
                   <span className="flex-1 truncate">{p.label}</span>
                   {p.carousel && (
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
                       activePage === p.value ? "bg-white/20 text-white" : "bg-ev-50 text-ev-600"
                     }`}>
                       CAROUSEL
@@ -336,7 +336,7 @@ export default function HeroAdminPage() {
           {/* Marques */}
           {tab === "marques" && (
             <>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-2">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-2">
                 Choisir une marque
               </p>
               {marquesList.length === 0 && (
@@ -364,7 +364,7 @@ export default function HeroAdminPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="truncate font-semibold">{m.nom}</p>
-                      <p className={`text-[10px] font-mono truncate ${active ? "text-white/70" : "text-gray-400"}`}>
+                      <p className={`text-[11px] font-mono truncate ${active ? "text-white/70" : "text-gray-400"}`}>
                         /marques/{m.slug}
                       </p>
                     </div>
@@ -377,7 +377,7 @@ export default function HeroAdminPage() {
           {/* Activités */}
           {tab === "activites" && (
             <>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-2">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-2">
                 Choisir une activité
               </p>
               {activitesList.length === 0 && (
@@ -407,7 +407,7 @@ export default function HeroAdminPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="truncate font-semibold">{a.nom}</p>
-                      <p className={`text-[10px] font-mono truncate ${active ? "text-white/70" : "text-gray-400"}`}>
+                      <p className={`text-[11px] font-mono truncate ${active ? "text-white/70" : "text-gray-400"}`}>
                         /activites/{a.slug}
                       </p>
                     </div>

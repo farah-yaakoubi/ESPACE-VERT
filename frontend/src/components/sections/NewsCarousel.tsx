@@ -7,7 +7,8 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Calendar, Leaf, Newspaper, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Calendar, Newspaper, ChevronLeft, ChevronRight } from "lucide-react";
+import { HomeSectionHeading } from "@/components/sections/HomeSectionHeading";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
@@ -66,19 +67,14 @@ export default function NewsCarousel() {
   return (
     <section className="w-full bg-[#fdfdfc] py-20 overflow-hidden">
       <div className="mx-auto max-w-[1400px] px-6">
-        {/* Header avec Icône Feuille */}
         <div ref={headerRef} className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={headerInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="flex items-center gap-4"
-          >
-            <Leaf className="text-green-800 w-10 h-10 md:w-12 md:h-12" strokeWidth={1.2} />
-            <h2 className="section-title">
-              Nos actualités
-            </h2>
-          </motion.div>
+          <HomeSectionHeading
+            eyebrow="Nos actualités"
+            title="Conseils et"
+            highlight="nouveautés"
+            icon={Newspaper}
+            inView={headerInView}
+          />
 
           <div className="flex items-center gap-4">
             <Link

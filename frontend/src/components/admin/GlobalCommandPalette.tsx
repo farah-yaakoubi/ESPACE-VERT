@@ -462,7 +462,7 @@ function ResultItem({
         {result.sublabel && (
           <p
             style={{
-              fontSize: 11,
+              fontSize: 12,
               color: EV.textDim,
               lineHeight: 1.3,
               overflow: "hidden",
@@ -479,7 +479,7 @@ function ResultItem({
       {result.badge && (
         <span
           style={{
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: 600,
             padding: "2px 7px",
             borderRadius: 20,
@@ -508,7 +508,7 @@ function GroupHeader({ label }: { label: string }) {
     <div
       style={{
         padding: "8px 16px 4px",
-        fontSize: 9.5,
+        fontSize: 10.5,
         fontWeight: 700,
         letterSpacing: "0.12em",
         color: EV.textDim,
@@ -707,7 +707,7 @@ export function GlobalCommandPalette() {
             padding: "1px 6px",
             borderRadius: 5,
             background: "rgba(255,255,255,0.08)",
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: 600,
             color: "rgba(255,255,255,0.35)",
           }}
@@ -813,7 +813,7 @@ export function GlobalCommandPalette() {
           )}
           <kbd
             style={{
-              fontSize: 11,
+              fontSize: 12,
               padding: "2px 7px",
               borderRadius: 5,
               background: "rgba(255,255,255,0.06)",
@@ -844,7 +844,7 @@ export function GlobalCommandPalette() {
               <p style={{ fontSize: 13, color: EV.textMid }}>
                 Aucun résultat pour &quot;{query}&quot;
               </p>
-              <p style={{ fontSize: 11, color: EV.textDim, marginTop: 4 }}>
+              <p style={{ fontSize: 12, color: EV.textDim, marginTop: 4 }}>
                 Essayez un autre terme
               </p>
             </div>
@@ -928,7 +928,7 @@ export function GlobalCommandPalette() {
             >
               <kbd
                 style={{
-                  fontSize: 10,
+                  fontSize: 11,
                   padding: "1px 6px",
                   borderRadius: 4,
                   background: "rgba(255,255,255,0.08)",
@@ -938,10 +938,10 @@ export function GlobalCommandPalette() {
               >
                 {key}
               </kbd>
-              <span style={{ fontSize: 10.5, color: EV.textDim }}>{desc}</span>
+              <span style={{ fontSize: 11.5, color: EV.textDim }}>{desc}</span>
             </div>
           ))}
-          <span style={{ marginLeft: "auto", fontSize: 10, color: EV.textDim }}>
+          <span style={{ marginLeft: "auto", fontSize: 11, color: EV.textDim }}>
             {dedupedItems.length} résultat{dedupedItems.length !== 1 ? "s" : ""}
           </span>
         </div>

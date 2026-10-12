@@ -5,6 +5,8 @@ import { useState } from "react";
 import { ChevronRight, Wheat } from "lucide-react";
 import { getProductHref } from "@/lib/product-url";
 import { SeedImagePreview } from "./ProduitCard";
+import { useI18n } from "@/i18n/I18nProvider";
+import { translatedField } from "@/i18n/translated-field";
 import type { ProduitCard } from "@/types/api";
 
 const DIVISION_BADGE: Record<string, { label: string; bg: string; text: string }> = {
@@ -12,9 +14,12 @@ const DIVISION_BADGE: Record<string, { label: string; bg: string; text: string }
 };
 
 export function SimilaireCard({ produit }: { produit: ProduitCard }) {
+  const { locale, t } = useI18n();
   const [hovered, setHovered] = useState(false);
   const mainImg = produit.images?.find((i: any) => i.is_principale) ?? produit.images?.[0];
   const badge   = DIVISION_BADGE[produit.division];
+  const nom = translatedField(produit as any, "nom", locale) || produit.nom;
+  const categorieNom = produit.categorie ? translatedField(produit.categorie as any, "nom", locale) || produit.categorie.nom : "";
   const images  = produit.images?.length
     ? [mainImg, ...produit.images.filter((i) => i !== mainImg)]
     : [];
@@ -38,7 +43,7 @@ export function SimilaireCard({ produit }: { produit: ProduitCard }) {
         )}
 
         {images.length ? (
-          <SeedImagePreview images={images} nom={produit.nom} active={hovered} />
+          <SeedImagePreview images={images} nom={nom} active={hovered} />
         ) : (
           <div className="flex h-44 w-full items-center justify-center rounded-full bg-ev-50 text-3xl text-ev-300">
             <Wheat size={28} className="opacity-80" />
@@ -48,18 +53,18 @@ export function SimilaireCard({ produit }: { produit: ProduitCard }) {
 
       {/* Infos */}
       <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-        {produit.categorie?.nom}
+        {categorieNom}
       </p>
       <p
         className="mt-1 text-[1.05rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700"
         style={{ fontFamily: "var(--font-serif)" }}
       >
-        {produit.nom}
+        {nom}
       </p>
 
       {/* Bouton "Voir le produit" — plein, avec flèche qui glisse au survol */}
       <span className="mt-4 inline-flex items-center gap-2 rounded-xl bg-ev-700 px-5 py-2.5 text-[12.5px] font-bold uppercase tracking-wide text-white shadow-sm transition-all duration-300 group-hover:bg-ev-800 group-hover:shadow-md group-hover:-translate-y-0.5">
-        Voir le produit
+        {t("catalog.viewProduct", "Voir le produit")}
         <ChevronRight size={14} strokeWidth={2.5} className="transition-transform duration-300 group-hover:translate-x-1" />
       </span>
     </Link>

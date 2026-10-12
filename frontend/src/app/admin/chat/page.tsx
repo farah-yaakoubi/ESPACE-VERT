@@ -166,7 +166,7 @@ function FilePreview({ msg, isMe }: { msg: ChatMsg; isMe: boolean }) {
       <FileText size={22} className={msg.type_message === "pdf" ? "text-red-500" : "text-blue-500"} />
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold truncate">{msg.fichier_nom ?? "Fichier"}</p>
-        <p className={`text-[10px] ${isMe ? "text-white/60" : "text-gray-400"}`}>{fmtSize(msg.fichier_size)}</p>
+        <p className={`text-[11px] ${isMe ? "text-white/60" : "text-gray-400"}`}>{fmtSize(msg.fichier_size)}</p>
       </div>
       <Download size={14} className={isMe ? "text-white/60" : "text-gray-400"} />
     </a>
@@ -191,7 +191,7 @@ function MessageActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[11px] font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[12px] font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
         destructive
           ? "border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
           : active
@@ -223,7 +223,7 @@ function DateSeparator({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-3 my-4">
       <div className="flex-1 h-px bg-gray-100" />
-      <span className="text-[11px] text-gray-400 font-medium">{label}</span>
+      <span className="text-[12px] text-gray-400 font-medium">{label}</span>
       <div className="flex-1 h-px bg-gray-100" />
     </div>
   );
@@ -300,7 +300,7 @@ function GroupModal({
           <div>
             <div className="mb-2 flex items-center justify-between">
               <label className="block text-xs font-bold uppercase tracking-wider text-green-700">Membres</label>
-              <span className="text-[11px] text-gray-400">{memberIds.length} sélectionné(s)</span>
+              <span className="text-[12px] text-gray-400">{memberIds.length} sélectionné(s)</span>
             </div>
             <div className="max-h-64 space-y-2 overflow-y-auto rounded-2xl border border-gray-100 bg-gray-50 p-2">
               {availableAdmins.map((admin) => {
@@ -317,7 +317,7 @@ function GroupModal({
                     <Avatar nom={admin.nom} avatar={admin.avatar} size={36} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-gray-800">{admin.nom}</p>
-                      <p className="truncate text-[11px] text-gray-400">{admin.email}</p>
+                      <p className="truncate text-[12px] text-gray-400">{admin.email}</p>
                     </div>
                     <div
                       className={`flex h-5 w-5 items-center justify-center rounded-full border ${
@@ -799,7 +799,7 @@ export default function AdminChatPage() {
                 <MessageSquare size={16} style={{ color: G }} />
                 <span className="text-sm font-semibold text-gray-800">Messagerie interne</span>
                 {totalUnread > 0 && (
-                  <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: G }}>
+                  <span className="rounded-full px-1.5 py-0.5 text-[11px] font-bold text-white" style={{ background: G }}>
                     {totalUnread}
                   </span>
                 )}
@@ -864,7 +864,7 @@ export default function AdminChatPage() {
           ) : (
             <div className="flex-1 overflow-y-auto">
               <div className="border-b border-gray-100 px-4 py-2.5">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Admins</p>
+                <p className="text-[12px] font-bold uppercase tracking-wider text-gray-400">Admins</p>
               </div>
               {loadingSidebar && directConversations.length === 0 && groupConversations.length === 0 ? (
                 <div className="flex h-24 items-center justify-center text-sm text-gray-400">Chargement…</div>
@@ -896,7 +896,7 @@ export default function AdminChatPage() {
                               {conversation.admin.nom}
                             </span>
                             {conversation.last_message && (
-                              <span className="ml-1 flex-shrink-0 text-[10px] text-gray-400">
+                              <span className="ml-1 flex-shrink-0 text-[11px] text-gray-400">
                                 {fmt(conversation.last_message.created_at)}
                               </span>
                             )}
@@ -904,7 +904,7 @@ export default function AdminChatPage() {
                           <div className="mt-0.5 flex items-center gap-1">
                             <span className="truncate text-xs text-gray-400">{previewLabel(conversation.last_message)}</span>
                             {conversation.unread > 0 && (
-                              <span className="ml-auto flex-shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: G }}>
+                              <span className="ml-auto flex-shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-bold text-white" style={{ background: G }}>
                                 {conversation.unread}
                               </span>
                             )}
@@ -915,7 +915,7 @@ export default function AdminChatPage() {
                   })}
 
                   <div className="border-y border-gray-100 px-4 py-2.5">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Groupes</p>
+                    <p className="text-[12px] font-bold uppercase tracking-wider text-gray-400">Groupes</p>
                   </div>
 
                   {filteredGroupConversations.map((group) => {
@@ -935,18 +935,18 @@ export default function AdminChatPage() {
                               {group.nom}
                             </span>
                             {group.last_message && (
-                              <span className="text-[10px] text-gray-400">{fmt(group.last_message.created_at)}</span>
+                              <span className="text-[11px] text-gray-400">{fmt(group.last_message.created_at)}</span>
                             )}
                           </div>
                           <div className="mt-0.5 flex items-center gap-1">
                             <span className="truncate text-xs text-gray-400">{previewLabel(group.last_message)}</span>
                             {group.unread > 0 && (
-                              <span className="ml-auto flex-shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: G }}>
+                              <span className="ml-auto flex-shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-bold text-white" style={{ background: G }}>
                                 {group.unread}
                               </span>
                             )}
                           </div>
-                          <p className="mt-1 text-[10px] text-gray-400">{group.members.length} membres</p>
+                          <p className="mt-1 text-[11px] text-gray-400">{group.members.length} membres</p>
                         </div>
                       </button>
                     );
@@ -972,7 +972,7 @@ export default function AdminChatPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-800">Traçabilité complète</p>
-                <p className="text-[11px] text-gray-400">Visibilité superadmin sur messages, groupes, modifications et thumbs.</p>
+                <p className="text-[12px] text-gray-400">Visibilité superadmin sur messages, groupes, modifications et thumbs.</p>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5">
@@ -991,15 +991,15 @@ export default function AdminChatPage() {
                     return (
                       <div key={item.trace_id} className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-green-700">
+                          <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-green-700">
                             {item.scope}
                           </span>
                           <span className="text-xs font-semibold text-gray-700">{item.conversation_label}</span>
-                          <span className="text-[11px] text-gray-400">{action}</span>
-                          <span className="ml-auto text-[11px] text-gray-400">{fmt(message.created_at)}</span>
+                          <span className="text-[12px] text-gray-400">{action}</span>
+                          <span className="ml-auto text-[12px] text-gray-400">{fmt(message.created_at)}</span>
                         </div>
                         <p className="mt-2 text-sm text-gray-700">{previewLabel(message)}</p>
-                        <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-gray-500">
+                        <div className="mt-2 flex flex-wrap gap-3 text-[12px] text-gray-500">
                           <span>Émetteur: {message.emetteur.nom}</span>
                           {message.group_name ? <span>Groupe: {message.group_name}</span> : message.recepteur && <span>Destinataire: {message.recepteur.nom}</span>}
                           {message.thumb_admins?.length ? <span>{thumbLabel(message)}</span> : null}
@@ -1031,13 +1031,13 @@ export default function AdminChatPage() {
               )}
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-gray-800">{selectedTitle}</p>
-                <p className="truncate text-[11px] text-gray-400">
+                <p className="truncate text-[12px] text-gray-400">
                   {selectedThread.type === "direct"
                     ? selectedThread.conversation.admin.email
                     : `${selectedThread.conversation.members.length} membres · ${selectedThread.conversation.members.map((member) => member.nom).join(", ")}`}
                 </p>
               </div>
-              <div className="ml-auto hidden items-center gap-2 rounded-full border border-green-100 bg-green-50 px-3 py-1 text-[11px] font-semibold text-green-700 sm:flex">
+              <div className="ml-auto hidden items-center gap-2 rounded-full border border-green-100 bg-green-50 px-3 py-1 text-[12px] font-semibold text-green-700 sm:flex">
                 <MessageSquare size={12} />
                 {traceLabel ?? "Chat interne sécurisé"}
               </div>
@@ -1070,7 +1070,7 @@ export default function AdminChatPage() {
 
                           <div className={`flex max-w-[85%] flex-col ${isMe ? "items-end" : "items-start"} sm:max-w-[68%]`}>
                             {!isMe && selectedThread.type === "group" && (
-                              <p className="mb-1 px-1 text-[11px] font-semibold text-gray-500">{msg.emetteur.nom}</p>
+                              <p className="mb-1 px-1 text-[12px] font-semibold text-gray-500">{msg.emetteur.nom}</p>
                             )}
 
                             {deleted ? (
@@ -1159,13 +1159,13 @@ export default function AdminChatPage() {
                             )}
 
                             {thumbNames && (
-                              <p className="mt-1 px-1 text-[10px] font-medium text-green-700">{thumbNames}</p>
+                              <p className="mt-1 px-1 text-[11px] font-medium text-green-700">{thumbNames}</p>
                             )}
 
                             <div className={`mt-1 flex items-center gap-1 ${isMe ? "flex-row-reverse" : ""}`}>
-                              <p className="text-[10px] text-gray-400">{fmt(msg.created_at)}</p>
+                              <p className="text-[11px] text-gray-400">{fmt(msg.created_at)}</p>
                               {!deleted && msg.edited_at && (
-                                <p className="text-[10px] text-gray-400">modifié</p>
+                                <p className="text-[11px] text-gray-400">modifié</p>
                               )}
                               {msg.scope !== "group" && isMe && (
                                 msg.lu
@@ -1199,7 +1199,7 @@ export default function AdminChatPage() {
                 }
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-semibold text-gray-800">{previewFile.name}</p>
-                  <p className="text-[10px] text-gray-400">{fmtSize(previewFile.size)}</p>
+                  <p className="text-[11px] text-gray-400">{fmtSize(previewFile.size)}</p>
                 </div>
                 <button onClick={() => setPreviewFile(null)} className="p-1 text-gray-400 transition-colors hover:text-red-500">
                   <X size={14} />
@@ -1259,7 +1259,7 @@ export default function AdminChatPage() {
                   }
                 </button>
               </div>
-              <p className="mt-1.5 text-center text-[10px] text-gray-400">
+              <p className="mt-1.5 text-center text-[11px] text-gray-400">
                 Glissez un fichier dans la fenêtre · Entrée pour envoyer · Maj+Entrée pour saut de ligne
               </p>
             </div>

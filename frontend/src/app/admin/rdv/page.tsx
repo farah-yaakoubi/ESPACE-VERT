@@ -108,7 +108,7 @@ function StatusBadge({ statut }: { statut: string }) {
   const s = STATUT_MAP[statut] ?? { label: statut, color: "#6b7280", bg: "#f9fafb", border: "#e5e7eb", textLight: "#374151", icon: AlertCircle };
   const Icon = s.icon;
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, background: s.bg, color: s.textLight, border: `1px solid ${s.border}`, fontSize: 11, fontWeight: 700 }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, background: s.bg, color: s.textLight, border: `1px solid ${s.border}`, fontSize: 12, fontWeight: 700 }}>
       <Icon size={10} />{s.label}
     </span>
   );
@@ -119,7 +119,7 @@ function ServiceBadge({ service }: { service: typeof SERVICE_TYPES[keyof typeof 
   if (!service) return null;
   const Icon = service.icon;
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "2px 8px", borderRadius: 20, background: service.bg, color: service.textLight, border: `1px solid ${service.border}`, fontSize: 10, fontWeight: 700 }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "2px 8px", borderRadius: 20, background: service.bg, color: service.textLight, border: `1px solid ${service.border}`, fontSize: 11, fontWeight: 700 }}>
       <Icon size={9} />{service.labelShort}
     </span>
   );
@@ -149,10 +149,10 @@ function WeekAgenda({ items, onDayClick }: { items: RdvItem[]; onDayClick: (day:
           return (
             <button key={dayStr} onClick={() => rdvsDay.length > 0 && onDayClick(dayStr)}
               style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "8px 4px", borderRadius: 10, background: isNow ? "#2e7d4f" : "transparent", cursor: rdvsDay.length > 0 ? "pointer" : "default", border: "none", transition: "background 0.15s" }}>
-              <span style={{ fontSize: 9, color: isNow ? "rgba(255,255,255,0.7)" : "#9ca3af", textTransform: "uppercase" as const, fontWeight: 600 }}>{dayName}</span>
+              <span style={{ fontSize: 10, color: isNow ? "rgba(255,255,255,0.7)" : "#9ca3af", textTransform: "uppercase" as const, fontWeight: 600 }}>{dayName}</span>
               <span style={{ fontSize: 15, fontWeight: 800, color: isNow ? "#fff" : "#111827" }}>{dayNum}</span>
               {rdvsDay.length > 0 && (
-                <span style={{ width: 18, height: 18, borderRadius: "50%", background: isNow ? "rgba(255,255,255,0.3)" : "#2e7d4f22", color: isNow ? "#fff" : "#2e7d4f", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ width: 18, height: 18, borderRadius: "50%", background: isNow ? "rgba(255,255,255,0.3)" : "#2e7d4f22", color: isNow ? "#fff" : "#2e7d4f", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {rdvsDay.length}
                 </span>
               )}
@@ -236,7 +236,7 @@ function RdvDetailPanel({ item, onClose, onSaved }: { item: RdvItem; onClose: ()
                 <StatusBadge statut={statut} />
                 {service && <ServiceBadge service={service} />}
                 {isToday(item.date_souhaitee) && (
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: "#fef3c7", color: "#b45309", border: "1px solid #fde68a" }}>📅 Aujourd'hui</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: "#fef3c7", color: "#b45309", border: "1px solid #fde68a" }}>📅 Aujourd'hui</span>
                 )}
               </div>
               <p style={{ fontSize: 12, color: "#9ca3af" }}>Demandé le {fmt(item.created_at)}</p>
@@ -250,7 +250,7 @@ function RdvDetailPanel({ item, onClose, onSaved }: { item: RdvItem; onClose: ()
 
           {/* Infos client */}
           <section>
-            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, marginBottom: 10 }}>Client</p>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, marginBottom: 10 }}>Client</p>
             <div style={{ background: "#f9fafb", borderRadius: 12, padding: "14px 16px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               {[
                 { icon: User,   label: "Nom",       val: item.nom },
@@ -259,7 +259,7 @@ function RdvDetailPanel({ item, onClose, onSaved }: { item: RdvItem; onClose: ()
                 { icon: MapPin, label: "Agence",     val: item.agence ?? "—" },
               ].map(({ icon: Icon, label, val }) => (
                 <div key={label}>
-                  <p style={{ fontSize: 10, color: "#9ca3af", marginBottom: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                  <p style={{ fontSize: 11, color: "#9ca3af", marginBottom: 2, display: "flex", alignItems: "center", gap: 4 }}>
                     <Icon size={10} />{label}
                   </p>
                   <p style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{val}</p>
@@ -267,7 +267,7 @@ function RdvDetailPanel({ item, onClose, onSaved }: { item: RdvItem; onClose: ()
               ))}
               {item.objet && (
                 <div style={{ gridColumn: "1/-1" }}>
-                  <p style={{ fontSize: 10, color: "#9ca3af", marginBottom: 2 }}>Objet de la demande</p>
+                  <p style={{ fontSize: 11, color: "#9ca3af", marginBottom: 2 }}>Objet de la demande</p>
                   <p style={{ fontSize: 13, fontWeight: 600, color: service ? service.color : "#111827" }}>{item.objet}</p>
                 </div>
               )}
@@ -277,14 +277,14 @@ function RdvDetailPanel({ item, onClose, onSaved }: { item: RdvItem; onClose: ()
           {/* Message */}
           {item.message && (
             <section>
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, marginBottom: 8 }}>Détails de la demande</p>
+              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, marginBottom: 8 }}>Détails de la demande</p>
               <div style={{ background: "#f9fafb", borderRadius: 12, padding: "14px 16px", fontSize: 13, color: "#374151", lineHeight: 1.7, whiteSpace: "pre-wrap" as const }}>{item.message}</div>
             </section>
           )}
 
           {/* Étapes du dossier — transitions valides uniquement */}
           <section>
-            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, marginBottom: 10 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, marginBottom: 10 }}>
               Avancement du dossier
             </p>
 
@@ -299,7 +299,7 @@ function RdvDetailPanel({ item, onClose, onSaved }: { item: RdvItem; onClose: ()
               </div>
             ) : (
               <div>
-                <p style={{ fontSize: 11, color: "#6b7280", marginBottom: 10 }}>
+                <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 10 }}>
                   Prochaine étape — cliquez pour changer le statut :
                 </p>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
@@ -323,7 +323,7 @@ function RdvDetailPanel({ item, onClose, onSaved }: { item: RdvItem; onClose: ()
                     );
                   })}
                 </div>
-                <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 8 }}>
+                <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 8 }}>
                   Statut actuel : <strong style={{ color: "#374151" }}>{STATUT_MAP[statut]?.label ?? statut}</strong>
                 </p>
               </div>
@@ -332,12 +332,12 @@ function RdvDetailPanel({ item, onClose, onSaved }: { item: RdvItem; onClose: ()
 
           {/* Planification */}
           <section>
-            <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, marginBottom: 10 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, marginBottom: 10 }}>
               Planification du rendez-vous
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
-                <label style={{ fontSize: 11, color: "#6b7280", fontWeight: 600, display: "block", marginBottom: 6 }}>
+                <label style={{ fontSize: 12, color: "#6b7280", fontWeight: 600, display: "block", marginBottom: 6 }}>
                   Date souhaitée (client)
                 </label>
                 <div style={{ padding: "9px 12px", background: "#f9fafb", borderRadius: 10, border: "1px solid #e5e7eb", fontSize: 13, color: "#374151" }}>
@@ -345,7 +345,7 @@ function RdvDetailPanel({ item, onClose, onSaved }: { item: RdvItem; onClose: ()
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: 11, color: "#6b7280", fontWeight: 600, display: "block", marginBottom: 6 }}>
+                <label style={{ fontSize: 12, color: "#6b7280", fontWeight: 600, display: "block", marginBottom: 6 }}>
                   Heure demandée
                 </label>
                 <div style={{ padding: "9px 12px", background: "#f9fafb", borderRadius: 10, border: "1px solid #e5e7eb", fontSize: 13, color: "#374151" }}>
@@ -353,7 +353,7 @@ function RdvDetailPanel({ item, onClose, onSaved }: { item: RdvItem; onClose: ()
                 </div>
               </div>
               <div>
-                <label style={{ fontSize: 11, color: "#059669", fontWeight: 700, display: "block", marginBottom: 6 }}>
+                <label style={{ fontSize: 12, color: "#059669", fontWeight: 700, display: "block", marginBottom: 6 }}>
                   ✓ Date confirmée
                 </label>
                 <input type="date" value={dateConfirmee} onChange={e => setDateConfirmee(e.target.value)}
@@ -361,7 +361,7 @@ function RdvDetailPanel({ item, onClose, onSaved }: { item: RdvItem; onClose: ()
                 />
               </div>
               <div>
-                <label style={{ fontSize: 11, color: "#059669", fontWeight: 700, display: "block", marginBottom: 6 }}>
+                <label style={{ fontSize: 12, color: "#059669", fontWeight: 700, display: "block", marginBottom: 6 }}>
                   ✓ Heure confirmée
                 </label>
                 <select value={heureConfirmee} onChange={e => setHeureConfirmee(e.target.value)}
@@ -377,7 +377,7 @@ function RdvDetailPanel({ item, onClose, onSaved }: { item: RdvItem; onClose: ()
 
           {/* Technicien assigné */}
           <section>
-            <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
               {service?.key === "bureau_etudes" ? "Ingénieur assigné" : "Technicien assigné"}
             </label>
             <input
@@ -393,7 +393,7 @@ function RdvDetailPanel({ item, onClose, onSaved }: { item: RdvItem; onClose: ()
 
           {/* Réponse au client */}
           <section>
-            <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, display: "block", marginBottom: 8 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, display: "block", marginBottom: 8 }}>
               Message de confirmation au client
             </label>
             <textarea value={reponse} onChange={e => setReponse(e.target.value)} rows={3}
@@ -407,7 +407,7 @@ function RdvDetailPanel({ item, onClose, onSaved }: { item: RdvItem; onClose: ()
           {/* Rapport de visite — uniquement si le RDV est terminé */}
           {statut === "termine" && (
             <section>
-              <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
                 <Star size={11} />
                 Rapport de visite / Compte-rendu
               </label>
@@ -420,7 +420,7 @@ function RdvDetailPanel({ item, onClose, onSaved }: { item: RdvItem; onClose: ()
 
           {/* Note interne */}
           <section>
-            <label style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9ca3af", textTransform: "uppercase" as const, display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
               <StickyNote size={11} />
               Note interne (équipe uniquement)
             </label>
@@ -473,14 +473,14 @@ function RdvRow({ rdv, onClick, onQuickStatus }: { rdv: RdvItem; onClick: () => 
           </div>
           <div>
             <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", lineHeight: 1.2 }}>{rdv.nom}</p>
-            <p style={{ fontSize: 11, color: "#9ca3af" }}>{rdv.email}</p>
+            <p style={{ fontSize: 12, color: "#9ca3af" }}>{rdv.email}</p>
           </div>
         </div>
       </td>
 
       {/* Service */}
       <td style={{ padding: "12px 16px" }}>
-        {service ? <ServiceBadge service={service} /> : <span style={{ fontSize: 11, color: "#d1d5db" }}>—</span>}
+        {service ? <ServiceBadge service={service} /> : <span style={{ fontSize: 12, color: "#d1d5db" }}>—</span>}
       </td>
 
       {/* Date souhaitée */}
@@ -490,7 +490,7 @@ function RdvRow({ rdv, onClick, onQuickStatus }: { rdv: RdvItem; onClick: () => 
             {today && "📅 "}
             {fmtDate(rdv.date_souhaitee)}
           </p>
-          <p style={{ fontSize: 11, color: "#9ca3af" }}>{rdv.heure ?? "Heure à confirmer"}</p>
+          <p style={{ fontSize: 12, color: "#9ca3af" }}>{rdv.heure ?? "Heure à confirmer"}</p>
         </div>
       </td>
 
@@ -511,14 +511,14 @@ function RdvRow({ rdv, onClick, onQuickStatus }: { rdv: RdvItem; onClick: () => 
       <td style={{ padding: "12px 16px" }} onClick={e => e.stopPropagation()}>
         <div style={{ display: "flex", gap: 4 }}>
           {nextStatuts.length === 0 ? (
-            <span style={{ fontSize: 10, color: "#d1d5db", fontStyle: "italic" }}>—</span>
+            <span style={{ fontSize: 11, color: "#d1d5db", fontStyle: "italic" }}>—</span>
           ) : (
             nextStatuts.map(key => {
               const s = STATUT_MAP[key];
               if (!s) return null;
               return (
                 <button key={key} onClick={() => onQuickStatus(rdv.id_rdv, key)} style={{
-                  padding: "4px 9px", borderRadius: 20, fontSize: 10, fontWeight: 600,
+                  padding: "4px 9px", borderRadius: 20, fontSize: 11, fontWeight: 600,
                   background: s.bg, color: s.textLight, border: `1px solid ${s.border}`,
                   cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
                 }}>
@@ -638,7 +638,7 @@ export default function AdminRdvPage() {
               <Icon size={15} style={{ color }} />
             </div>
             <p style={{ fontSize: 22, fontWeight: 800, color: "#111827", letterSpacing: "-0.04em", lineHeight: 1 }}>{value}</p>
-            <p style={{ fontSize: 11, color: "#6b7280", marginTop: 4 }}>{label}</p>
+            <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>{label}</p>
           </div>
         ))}
         <WeekAgenda items={items} onDayClick={day => setDayFilter(d => d === day ? "" : day)} />
@@ -657,7 +657,7 @@ export default function AdminRdvPage() {
             <s.icon size={14} style={{ color: statut === s.key ? "#fff" : s.color, flexShrink: 0 }} />
             <div style={{ textAlign: "left" as const }}>
               <p style={{ fontSize: 16, fontWeight: 800, color: statut === s.key ? "#fff" : "#111827", lineHeight: 1 }}>{COUNTS_BY_STATUS[s.key] ?? 0}</p>
-              <p style={{ fontSize: 10, color: statut === s.key ? "rgba(255,255,255,0.75)" : "#9ca3af", marginTop: 2 }}>{s.label}</p>
+              <p style={{ fontSize: 11, color: statut === s.key ? "rgba(255,255,255,0.75)" : "#9ca3af", marginTop: 2 }}>{s.label}</p>
             </div>
           </button>
         ))}
@@ -682,7 +682,7 @@ export default function AdminRdvPage() {
             {t.key === "bureau_etudes" && <Building2 size={13} />}
             {t.key === "irrigation"    && <Droplets size={13} />}
             {t.label}
-            <span style={{ fontSize: 10, padding: "1px 6px", borderRadius: 20, background: tab === t.key ? t.color + "22" : "#e5e7eb", color: tab === t.key ? t.color : "#9ca3af", fontWeight: 700 }}>
+            <span style={{ fontSize: 11, padding: "1px 6px", borderRadius: 20, background: tab === t.key ? t.color + "22" : "#e5e7eb", color: tab === t.key ? t.color : "#9ca3af", fontWeight: 700 }}>
               {t.count}
             </span>
           </button>
@@ -729,7 +729,7 @@ export default function AdminRdvPage() {
               <thead>
                 <tr style={{ background: "#f9fafb", borderBottom: "1px solid #e5e7eb" }}>
                   {["Client", "Service", "Date souhaitée", "Agence", "Statut", "Action rapide", ""].map(h => (
-                    <th key={h} style={{ padding: "10px 16px", textAlign: "left" as const, fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.06em", whiteSpace: "nowrap" as const }}>{h}</th>
+                    <th key={h} style={{ padding: "10px 16px", textAlign: "left" as const, fontSize: 12, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase" as const, letterSpacing: "0.06em", whiteSpace: "nowrap" as const }}>{h}</th>
                   ))}
                 </tr>
               </thead>
