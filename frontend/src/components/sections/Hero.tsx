@@ -9,8 +9,8 @@ const NAV_H = 80;
 export interface HeroSlide {
   id: number;
   image: string;
-  imageMobile?: string;
-  imageTablet?: string;
+  imageMobile?: string | null;
+  imageTablet?: string | null;
   href?: string;
   titre?: string;
   sousTitre?: string;
@@ -51,6 +51,12 @@ const SLIDES_FALLBACK: HeroSlide[] = [
   },
 ];
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+
+function cleanImageUrl(url?: string | null): string | undefined {
+  const value = url?.trim();
+  return value || undefined;
+}
+
 function useHeroSlides() {
   const [slides, setSlides] = useState<HeroSlide[]>(SLIDES_FALLBACK);
 
@@ -58,7 +64,15 @@ function useHeroSlides() {
     fetch(`${BASE}/hero-slides?page=home`)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data: HeroSlide[]) => {
-        const actifs = data.filter((s) => s.actif).sort((a, b) => a.ordre - b.ordre);
+        const actifs = data
+          .filter((s) => s.actif && cleanImageUrl(s.image))
+          .map((s) => ({
+            ...s,
+            image: cleanImageUrl(s.image) as string,
+            imageMobile: cleanImageUrl(s.imageMobile),
+            imageTablet: cleanImageUrl(s.imageTablet),
+          }))
+          .sort((a, b) => a.ordre - b.ordre);
         if (actifs.length > 0) setSlides(actifs);
       })
       .catch(() => undefined);
@@ -66,25 +80,6 @@ function useHeroSlides() {
 
   return slides;
 }
-
-function buildSrcSet(slide: HeroSlide): string {
-  const mobile = slide.imageMobile ?? slide.image;
-  const tablet = slide.imageTablet ?? slide.image;
-  const desktop = slide.image;
-  const entries = new Map<string, number>([
-    [mobile, 768],
-    [tablet, 1200],
-    [desktop, 1920],
-  ]);
-
-  return [...entries.entries()].map(([url, width]) => `${url} ${width}w`).join(", ");
-}
-
-const HERO_SIZES = [
-  "(max-width: 640px) 100vw",
-  "(max-width: 1024px) 100vw",
-  "100vw",
-].join(", ");
 
 export function Hero() {
   const slides = useHeroSlides();
@@ -102,7 +97,7 @@ export function Hero() {
   useEffect(() => {
     const nextIdx = (current + 1) % slides.length;
     const next = slides[nextIdx];
-    const urls = [next.image, next.imageMobile, next.imageTablet].filter(Boolean) as string[];
+    const urls = [next.image, next.imageMobile, next.imageTablet].map(cleanImageUrl).filter(Boolean) as string[];
     const links: HTMLLinkElement[] = urls.map((href) => {
       const link = document.createElement("link");
       link.rel = "preload";
@@ -153,11 +148,13 @@ export function Hero() {
           clip-path: inset(0 0 0 100%);
           transform: translate3d(0, 0, 0);
           will-change: clip-path, opacity;
+          backface-visibility: hidden;
         }
 
         .hero-slide--active {
           opacity: 1;
           z-index: 2;
+          clip-path: inset(0);
           animation: heroImageReveal 1.45s cubic-bezier(.72,0,.18,1) both;
         }
 
@@ -185,6 +182,12 @@ export function Hero() {
 
         .hero-slide--active::after {
           animation: heroRevealSweep 1.25s 0.06s cubic-bezier(.72,0,.18,1) both;
+        }
+
+        .hero-slide picture {
+          display: block;
+          width: 100%;
+          height: 100%;
         }
 
         .hero-slide__image {
@@ -476,16 +479,21 @@ export function Hero() {
                 .filter(Boolean)
                 .join(" ")}
             >
-              <img
-                src={item.image}
-                srcSet={buildSrcSet(item)}
-                sizes={HERO_SIZES}
-                alt=""
-                className="hero-image hero-slide__image"
-                style={{
-                  ...(item.objectPosition ? { objectPosition: item.objectPosition } : {}),
-                }}
-              />
+              <picture>
+                {item.imageMobile && <source media="(max-width: 640px)" srcSet={item.imageMobile} />}
+                {item.imageTablet && <source media="(max-width: 1024px)" srcSet={item.imageTablet} />}
+                <img
+                  src={item.image}
+                  alt=""
+                  className="hero-image hero-slide__image"
+                  loading={index <= 1 ? "eager" : "lazy"}
+                  decoding="async"
+                  fetchPriority={index === 0 ? "high" : "auto"}
+                  style={{
+                    ...(item.objectPosition ? { objectPosition: item.objectPosition } : {}),
+                  }}
+                />
+              </picture>
             </div>
           );
         })}
