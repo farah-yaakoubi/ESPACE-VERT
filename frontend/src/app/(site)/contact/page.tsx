@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <>
-      {/* Bandeau plat + chevrons décoratifs */}
+      {/* Bandeau simple, même style que les pages d'activité */}
       <ContactHero
         eyebrow="Groupe Espace Vert"
         title="Contactez-nous"
@@ -22,7 +22,7 @@ export default function ContactPage() {
       {/* Sélecteur d'agences interactif + carte dynamique — toutes les coordonnées, un seul endroit */}
       <AgencesContactSection agences={AGENCES} />
 
-      <section className="section bg-[linear-gradient(180deg,#faf9f7_0%,#f2f7ee_48%,#ffffff_100%)]">
+      <section className="py-12 md:py-16" style={{ backgroundColor: "#f3ecd9" }}>
         <div className="container-ev">
           <div className="mx-auto max-w-6xl">
             <ContactRequestToggle />

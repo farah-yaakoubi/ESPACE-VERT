@@ -40,19 +40,18 @@ export function ContactRequestToggle() {
   const ActiveIcon = activeMode.icon;
 
   return (
-    <div className="overflow-hidden rounded-[1.5rem] border border-ev-100 bg-white shadow-[0_24px_80px_rgba(10,92,46,0.12)]">
-      <div className="relative border-b border-ev-100 bg-[linear-gradient(135deg,#f5fbf1_0%,#eaf6e3_45%,#fff7e6_100%)] p-5 sm:p-8 lg:p-10">
-        <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#7dc040,#0a5c2e,#f2b84b)]" />
+    <div className="overflow-hidden rounded-2xl border border-[#1b2118]/10 bg-white shadow-sm">
+      <div className="relative border-b border-[#1b2118]/10 bg-white p-5 sm:p-8 lg:p-10">
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-ev-200 bg-white/90 px-3 py-1 text-[11px] font-black uppercase tracking-[0.16em] text-ev-800 shadow-sm">
+            <div className="mb-3 inline-flex items-center gap-2 text-[12px] font-extrabold uppercase tracking-[0.22em] text-[#1b2118]/70">
               <ActiveIcon size={13} />
               {activeMode.eyebrow}
             </div>
-            <h2 className="site-subheading mb-2 text-ev-950">{activeMode.title}</h2>
+            <h2 className="mb-2 text-[clamp(1.5rem,3vw,2.2rem)] font-black leading-[1.1] tracking-tight text-[#1b2118]" style={{ fontFamily: "var(--font-display)" }}>{activeMode.title}</h2>
             <p className="max-w-xl text-sm leading-7 text-gray-600">{activeMode.description}</p>
           </div>
-          <div className="grid grid-cols-2 rounded-2xl border border-white/90 bg-white/80 p-1.5 shadow-[0_12px_34px_rgba(10,92,46,0.10)] backdrop-blur">
+          <div className="grid grid-cols-2 gap-2">
             {MODES.map(({ id, label, icon: Icon }) => {
               const active = id === mode;
               return (
@@ -61,10 +60,10 @@ export function ContactRequestToggle() {
                   type="button"
                   onClick={() => setMode(id)}
                   className={cn(
-                    "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-3 text-xs font-black transition-all sm:min-w-[180px] sm:px-5 sm:text-sm",
+                    "inline-flex min-h-12 items-center justify-center gap-2 rounded-full border px-3 text-xs font-bold uppercase tracking-wide transition-colors duration-200 sm:min-w-[180px] sm:px-5 sm:text-[13px]",
                     active
-                      ? "bg-ev-800 text-white shadow-[0_12px_28px_rgba(10,92,46,0.28)]"
-                      : "text-gray-600 hover:bg-white hover:text-ev-900",
+                      ? "border-transparent bg-ev-700 text-white hover:bg-ev-800"
+                      : "border-[#1b2118]/10 bg-white text-[#1b2118] hover:bg-sand-50",
                   )}
                   aria-pressed={active}
                 >
@@ -77,13 +76,10 @@ export function ContactRequestToggle() {
         </div>
       </div>
       <div className="grid gap-0 lg:grid-cols-[0.9fr_1.6fr]">
-        <aside className="relative overflow-hidden border-b border-ev-900 bg-[linear-gradient(160deg,#0a3c08_0%,#062504_100%)] p-5 sm:p-8 lg:border-b-0 lg:border-r lg:p-10">
-          {/* Halo décoratif */}
-          <div aria-hidden className="pointer-events-none absolute -bottom-16 -left-16 h-52 w-52 rounded-full bg-ev-400/10 blur-3xl" />
-
+        <aside className="relative overflow-hidden border-b border-ev-800 bg-ev-800 p-5 sm:p-8 lg:border-b-0 lg:border-r lg:p-10">
           <div className="relative space-y-5">
             <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-ev-300">Réponse rapide</p>
+              <p className="text-[12px] font-extrabold uppercase tracking-[0.22em] text-white/70">Réponse rapide</p>
               <h3 className="mt-2 text-lg font-black text-white">Un conseiller vous oriente vers la bonne solution.</h3>
               <p className="mt-2 text-sm leading-7 text-white/70">
                 Produits, disponibilité, installation ou devis: ajoutez les détails utiles et l'équipe vous recontacte.
@@ -91,11 +87,11 @@ export function ContactRequestToggle() {
             </div>
 
             <div className="space-y-3 text-sm">
-              <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-white/90 backdrop-blur-sm">
+              <div className="flex items-center gap-3 rounded-xl bg-white/10 px-4 py-3 text-white/90">
                 <Phone size={16} className="text-ev-300" />
                 <span>Conseil commercial et technique</span>
               </div>
-              <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-white/90 backdrop-blur-sm">
+              <div className="flex items-center gap-3 rounded-xl bg-white/10 px-4 py-3 text-white/90">
                 <Mail size={16} className="text-ev-300" />
                 <span>Suivi par e-mail ou téléphone</span>
               </div>

@@ -27,7 +27,7 @@ function toProduitCard(
     id_produit: p.id_produit, id_categorie: p.id_categorie, id_marque: p.id_marque ?? marque.id_marque,
     id_activite: p.id_activite,
     nom: p.nom, slug: p.slug, description: p.description, translations: p.translations,
-    fiche_technique: null, division: p.division, tags: p.tags, created_at: "",
+    fiche_technique: null, division: p.division, tags: p.tags, ordre: p.ordre, created_at: "",
     categorie: { nom: categorieName, slug: "" },
     marque: p.marque ?? marque,
     activite: p.activite,
@@ -842,24 +842,29 @@ export function CategoryTree({ tree, cardVariant = "default", rootTabsOnly = fal
         {/* Barre filtres */}
         <div className="flex items-center gap-3 mb-6 flex-wrap">
           {rootTabsOnly && rootTabs.length > 0 && (
-            <div className="inline-flex overflow-hidden rounded-lg border border-ev-700 bg-white p-0.5 shadow-sm">
-              {rootTabs.map((cat) => {
-                const active = activeRootId === cat.id_categorie;
-                return (
-                  <button
-                    key={cat.id_categorie}
-                    onClick={() => handleSelect(cat.id_categorie)}
-                    className={cn(
-                      "min-w-24 px-5 py-2 text-sm font-black transition-colors",
-                      active
-                        ? "bg-ev-700 text-white"
-                        : "text-ev-700 hover:bg-ev-50",
-                    )}
-                  >
-                    {categoryLabel(cat, locale)}
-                  </button>
-                );
-              })}
+            <div className="flex w-full flex-col items-center gap-4 pb-2">
+              <p className="text-center text-[12px] font-extrabold uppercase tracking-[0.24em] text-[#1b2118]/70">
+                Parcourir par catégorie :
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {rootTabs.map((cat) => {
+                  const active = activeRootId === cat.id_categorie;
+                  return (
+                    <button
+                      key={cat.id_categorie}
+                      onClick={() => handleSelect(cat.id_categorie)}
+                      className={cn(
+                        "inline-flex items-center rounded-full border px-6 py-3 text-[13.5px] font-bold uppercase tracking-wide transition-colors duration-200",
+                        active
+                          ? "border-transparent bg-ev-700 text-white hover:bg-ev-800"
+                          : "border-[#1b2118]/10 bg-white text-[#1b2118] hover:bg-sand-50",
+                      )}
+                    >
+                      {categoryLabel(cat, locale)}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 

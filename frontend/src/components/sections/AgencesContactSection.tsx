@@ -5,7 +5,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Clock, Mail, MapPin, Navigation, Phone } from "lucide-react";
 import type { Agence } from "@/config/agences";
 import { Reveal } from "@/components/ui/Reveal";
-import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
 import { cn } from "@/lib/utils";
 
 /**
@@ -30,14 +29,19 @@ export function AgencesContactSection({ agences }: { agences: Agence[] }) {
       : `https://maps.google.com/maps?q=${encodeURIComponent(active.adresse)}&z=13&output=embed`;
 
   return (
-    <section className="section bg-white">
+    <section className="bg-white py-12 md:py-16">
       <div className="container-ev">
         <Reveal className="mx-auto max-w-2xl text-center">
-          <p className="eyebrow mb-3 justify-center inline-flex items-center gap-2">Nos agences</p>
-          <h2 className="site-heading text-ev-950">
-            <SectionTitleLine icon="Barn" align="left">Une agence près de chez vous</SectionTitleLine>
+          <p className="mb-3 text-[12px] font-extrabold uppercase tracking-[0.24em] text-[#1b2118]/70">
+            Nos agences
+          </p>
+          <h2
+            className="text-[clamp(1.6rem,3.2vw,2.4rem)] font-black leading-[1.1] tracking-tight text-[#1b2118]"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Une agence près de chez vous
           </h2>
-          <p className="site-copy mx-auto mt-4 max-w-xl">
+          <p className="mx-auto mt-4 max-w-lg text-[13.5px] font-medium text-[#1b2118]/70 sm:text-sm">
             Choisissez une agence pour voir ses coordonnées et sa localisation exacte.
           </p>
         </Reveal>
@@ -60,7 +64,7 @@ export function AgencesContactSection({ agences }: { agences: Agence[] }) {
                   className={cn(
                     "group relative flex min-w-[240px] shrink-0 flex-col gap-2 rounded-2xl border p-4 text-left transition-all duration-200 lg:min-w-0",
                     isActive
-                      ? "border-ev-300 bg-ev-50 shadow-[0_10px_32px_rgba(10,60,8,0.10)]"
+                      ? "border-ev-300 bg-ev-50 shadow-sm"
                       : "border-sand-200 bg-white hover:border-ev-200 hover:bg-ev-50/40",
                   )}
                 >
@@ -95,7 +99,7 @@ export function AgencesContactSection({ agences }: { agences: Agence[] }) {
           </div>
 
           {/* Carte + fiche détaillée de l'agence sélectionnée */}
-          <div className="relative overflow-hidden rounded-[1.5rem] border border-sand-200 bg-white shadow-[0_20px_60px_rgba(10,60,8,0.10)]">
+          <div className="relative overflow-hidden rounded-2xl border border-[#1b2118]/10 bg-white shadow-sm">
             <div className="relative h-[280px] w-full sm:h-[340px]">
               <AnimatePresence mode="wait">
                 <motion.iframe
@@ -143,7 +147,7 @@ export function AgencesContactSection({ agences }: { agences: Agence[] }) {
                       href={active.maps}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-full border border-ev-200 bg-ev-50 px-3.5 py-2 text-xs font-black uppercase tracking-[0.06em] text-ev-800 transition-colors hover:bg-ev-100"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-ev-700 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white transition-colors hover:bg-ev-800"
                     >
                       <Navigation size={13} />
                       Itinéraire

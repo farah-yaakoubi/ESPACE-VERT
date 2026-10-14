@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, Droplets, Gauge, ShieldCheck, SprayCan, Tractor, Trees, Wind } from "lucide-react";
 import type { TutorialVideo } from "@/types/api";
 import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
 import type { IcoName } from "@/components/icons/AgriIcons";
@@ -32,13 +31,6 @@ const BRAND_BANNERS = [
   { src: "/images/pulverisation/banner-pulvert-agro.webp", position: "center 55%" },
 ];
 
-const ICONS = [SprayCan, Wind, Tractor, Trees];
-const BENEFITS = [
-  { label: "Précision", Icon: Droplets },
-  { label: "Efficacité", Icon: Gauge },
-  { label: "Fiabilité", Icon: ShieldCheck },
-];
-
 export function PulvertFeatureSections({
   categories = [],
   videos = [],
@@ -53,83 +45,77 @@ export function PulvertFeatureSections({
   if (!showCategories && !showVideos) return null;
 
   return (
-    <section
-      id={showCategories ? categoriesAnchorId : undefined}
-      className="relative overflow-hidden bg-[#eef4e7] py-10 text-[#10214a]"
-    >
-      <BackgroundField />
-      <div className="relative mx-auto max-w-[1080px] px-4">
-        {showCategories && (
-          <>
-            <SectionTitle title="Catégories Pulvert" subtitle="Pulvérisation agricole précise et productive" />
+    <>
+      {showCategories && (
+        <section
+          id={categoriesAnchorId}
+          className="py-12 md:py-16"
+          style={{ backgroundColor: "#f3ecd9" }}
+        >
+          <div className="container-ev">
+            <p className="mb-8 text-center text-[12px] font-extrabold uppercase tracking-[0.24em] text-[#1b2118]/70">
+              Parcourir par catégorie :
+            </p>
+
             {rootCategories.length > 0 ? (
-              <div className="mt-8 grid gap-7 md:grid-cols-2">
+              <div className="flex flex-wrap justify-center gap-4 md:gap-5">
                 {rootCategories.map((category, index) => {
-                  const Icon = ICONS[index % ICONS.length];
                   const logo = BRAND_LOGOS[index % BRAND_LOGOS.length];
                   const banner = BRAND_BANNERS[index % BRAND_BANNERS.length];
                   return (
                     <Link
                       key={category.id_categorie}
                       href={`?cat=${category.id_categorie}#catalogue-marque`}
-                      className="group overflow-hidden rounded-sm bg-white shadow-lg ring-1 ring-black/10 transition duration-300 hover:-translate-y-1.5 hover:scale-[1.025] hover:shadow-2xl hover:ring-[#149a3b]/35"
+                      className="group relative aspect-square w-[260px] shrink-0 overflow-hidden rounded-2xl bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-[340px]"
                     >
-                      <div className="relative h-[280px] overflow-hidden md:h-[340px]">
-                        <Image
-                          src={banner.src}
-                          alt={category.nom}
-                          fill
-                          style={{ objectPosition: banner.position }}
-                          className="object-cover transition duration-500 group-hover:scale-105"
-                          sizes="(max-width:768px) 100vw, 50vw"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
-                        <div className="absolute left-5 top-5 flex h-14 w-14 items-center justify-center rounded-sm bg-white text-[#149a3b] shadow transition duration-300 group-hover:rotate-3 group-hover:bg-[#f4b923] group-hover:text-[#0b3d2a]">
-                          <Icon size={30} />
-                        </div>
-                        <div className="absolute right-5 top-5 flex flex-col gap-2">
-                          {BENEFITS.map(({ label, Icon: BenefitIcon }) => (
-                            <span
-                              key={label}
-                              className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-black uppercase text-[#0b3d2a] shadow-sm backdrop-blur transition duration-300 group-hover:translate-x-[-3px]"
-                            >
-                              <BenefitIcon size={12} className="text-[#149a3b]" />
-                              {label}
-                            </span>
-                          ))}
-                        </div>
-                        <div className="absolute inset-x-5 bottom-5">
-                          <h3 className="text-xl font-black text-white">{category.nom}</h3>
-                          {category.description && (
-                            <p className="mt-2 max-w-[30rem] text-sm font-semibold leading-snug text-white/85">
-                              {category.description}
-                            </p>
-                          )}
-                          <span className="mt-4 inline-flex items-center gap-2 rounded-sm bg-[#f4b923] px-5 py-2 text-xs font-black text-[#0b3d2a] shadow transition group-hover:bg-white">
-                            Voir les produits
-                            <ChevronRight size={14} />
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex h-24 items-center justify-center border-t border-[#e2ead9] bg-white px-6 py-4">
-                        <span className="relative block h-16 w-48">
-                          <Image src={logo.src} alt={logo.alt} fill className="object-contain" sizes="192px" />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={banner.src}
+                        alt={category.nom}
+                        loading="lazy"
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+
+                      <span className="absolute left-4 top-4 block h-12 w-28">
+                        <span className="relative block h-full w-full">
+                          <Image src={logo.src} alt={logo.alt} fill className="object-contain object-left drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]" sizes="112px" />
                         </span>
+                      </span>
+
+                      <div
+                        className="absolute inset-x-0 bottom-0 px-3.5 pb-3.5 pt-10"
+                        style={{
+                          background: "linear-gradient(to top, rgba(27,33,24,0.88) 0%, rgba(27,33,24,0) 100%)",
+                        }}
+                      >
+                        <p className="text-left text-[13.5px] font-bold leading-snug text-white">
+                          {category.nom}
+                        </p>
                       </div>
+
+                      <span
+                        className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full opacity-0 transition-opacity group-hover:opacity-100"
+                        style={{ backgroundColor: "#c9a24a" }}
+                      />
                     </Link>
                   );
                 })}
               </div>
             ) : (
-              <div className="mt-6 rounded-sm bg-white p-8 text-center text-sm font-semibold text-slate-500 shadow ring-1 ring-black/10">
+              <p className="text-center text-sm font-semibold text-[#1b2118]/60">
                 Les catégories Pulvert apparaîtront ici dès leur création.
-              </div>
+              </p>
             )}
-          </>
-        )}
+          </div>
+        </section>
+      )}
 
+      {showVideos && (
+        <section className="relative overflow-hidden bg-[#eef4e7] py-10 text-[#10214a]">
+          <BackgroundField />
+          <div className="relative mx-auto max-w-[1080px] px-4">
         {showVideos && (
-          <div className={showCategories ? "mt-10 border-t border-slate-200 pt-9" : ""}>
+          <div>
             <SectionTitle title="Vidéos tutoriels" subtitle="Conseils pratiques de pulvérisation" />
             {videos.length > 0 ? (
               <div className="mt-6 grid gap-5 md:grid-cols-3">
@@ -171,8 +157,10 @@ export function PulvertFeatureSections({
             )}
           </div>
         )}
-      </div>
-    </section>
+          </div>
+        </section>
+      )}
+    </>
   );
 }
 
