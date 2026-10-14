@@ -65,6 +65,7 @@ export const messages: Record<Locale, Messages> = {
     "catalog.clearAllFilters": "Effacer tous les filtres",
     "catalog.searchShort":   "Rechercher…",
     "catalog.sort.newest":   "Ajoutés en premier",
+    "catalog.sort.catalogue": "Ordre catalogue",
     "catalog.sort.nameAsc":  "Nom A → Z",
     "catalog.sort.nameDesc": "Nom Z → A",
 
@@ -329,6 +330,7 @@ export const messages: Record<Locale, Messages> = {
     "catalog.clearAllFilters": "مسح كل الفلاتر",
     "catalog.searchShort":   "بحث…",
     "catalog.sort.newest":   "الأحدث أولاً",
+    "catalog.sort.catalogue": "ترتيب الكتالوج",
     "catalog.sort.nameAsc":  "الاسم أ → ي",
     "catalog.sort.nameDesc": "الاسم ي → أ",
 
@@ -593,6 +595,7 @@ export const messages: Record<Locale, Messages> = {
     "catalog.clearAllFilters": "Clear all filters",
     "catalog.searchShort":   "Search…",
     "catalog.sort.newest":   "Newest first",
+    "catalog.sort.catalogue": "Catalog order",
     "catalog.sort.nameAsc":  "Name A → Z",
     "catalog.sort.nameDesc": "Name Z → A",
 

@@ -26,7 +26,7 @@ export interface CatNode {
   children:     CatNode[];
 }
 
-export type SortKey = "nom_asc" | "nom_desc" | "newest";
+export type SortKey = "catalogue" | "nom_asc" | "nom_desc";
 
 export interface FilterState {
   categoryId: number | null;
@@ -40,7 +40,7 @@ export const DEFAULT_FILTERS: FilterState = {
   categoryId: null,
   tags:       [],
   divisions:  [],
-  sort:       "newest",
+  sort:       "catalogue",
   search:     "",
 };
 
@@ -93,6 +93,14 @@ function labelOf(item: { nom: string; translations?: ProduitCard["translations"]
 
 function descriptionOf(item: { description?: string | null; translations?: ProduitCard["translations"] | null }, locale: Locale) {
   return translatedField(item as any, "description", locale) || item.description || "";
+}
+
+function catalogOrder(a: ProduitCard, b: ProduitCard) {
+  return (
+    ((a as any).ordre ?? 0) - ((b as any).ordre ?? 0) ||
+    new Date(a.created_at).getTime() - new Date(b.created_at).getTime() ||
+    a.id_produit - b.id_produit
+  );
 }
 
 /* Count produits that would match a given cat (considering other filters too) */
@@ -271,7 +279,7 @@ function CatTreeNode({
 /* ── Sort options ────────────────────────────────────────────────────────── */
 
 const SORT_OPTIONS: { key: SortKey; labelKey: string; fallback: string }[] = [
-  { key: "newest",   labelKey: "catalog.sort.newest", fallback: "Ajoutés en premier" },
+  { key: "catalogue", labelKey: "catalog.sort.catalogue", fallback: "Ordre catalogue" },
   { key: "nom_asc",  labelKey: "catalog.sort.nameAsc", fallback: "Nom A → Z" },
   { key: "nom_desc", labelKey: "catalog.sort.nameDesc", fallback: "Nom Z → A" },
 ];
@@ -294,7 +302,7 @@ export function FilterPanel({ tree, produits, filters, onChange, totalAll, onCat
     if (filters.categoryId !== null) n++;
     n += filters.tags.length;
     n += filters.divisions.length;
-    if (filters.sort !== "newest") n++;
+    if (filters.sort !== "catalogue") n++;
     return n;
   }, [filters]);
 
@@ -679,9 +687,9 @@ export function applyFilters(
 
   // Sort
   list = [...list];
+  if (filters.sort === "catalogue") list.sort(catalogOrder);
   if (filters.sort === "nom_asc")  list.sort((a, b) => labelOf(a, locale).localeCompare(labelOf(b, locale), locale));
   if (filters.sort === "nom_desc") list.sort((a, b) => labelOf(b, locale).localeCompare(labelOf(a, locale), locale));
-  if (filters.sort === "newest")   list.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
   return list;
 }

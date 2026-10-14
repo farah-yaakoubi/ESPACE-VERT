@@ -8,6 +8,7 @@ const NAV_H = 80;
 
 export interface HeroSlide {
   id: number;
+  id_slide?: number;
   image: string;
   imageMobile?: string | null;
   imageTablet?: string | null;
@@ -57,6 +58,21 @@ function cleanImageUrl(url?: string | null): string | undefined {
   return value || undefined;
 }
 
+function normalizeHeroSlide(slide: HeroSlide): HeroSlide | null {
+  const image = cleanImageUrl(slide.image);
+  const id = Number(slide.id ?? slide.id_slide);
+
+  if (!image || !Number.isFinite(id)) return null;
+
+  return {
+    ...slide,
+    id,
+    image,
+    imageMobile: cleanImageUrl(slide.imageMobile),
+    imageTablet: cleanImageUrl(slide.imageTablet),
+  };
+}
+
 function useHeroSlides() {
   const [slides, setSlides] = useState<HeroSlide[]>(SLIDES_FALLBACK);
 
@@ -65,14 +81,9 @@ function useHeroSlides() {
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data: HeroSlide[]) => {
         const actifs = data
-          .filter((s) => s.actif && cleanImageUrl(s.image))
-          .map((s) => ({
-            ...s,
-            image: cleanImageUrl(s.image) as string,
-            imageMobile: cleanImageUrl(s.imageMobile),
-            imageTablet: cleanImageUrl(s.imageTablet),
-          }))
-          .sort((a, b) => a.ordre - b.ordre);
+          .filter((s) => s.actif)
+          .map(normalizeHeroSlide)
+          .filter((s): s is HeroSlide => s !== null);
         if (actifs.length > 0) setSlides(actifs);
       })
       .catch(() => undefined);

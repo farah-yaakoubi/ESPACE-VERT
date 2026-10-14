@@ -137,6 +137,7 @@ export interface ProduitCard {
   fiche_technique: string | null;
   division:        string;
   tags:            unknown;
+  ordre:           number;
   created_at:      string;
   categorie:       { nom: string; slug: string; translations?: EntityTranslations | null };
   marque?:         { nom: string; slug: string; logo?: string | null; translations?: EntityTranslations | null } | null;

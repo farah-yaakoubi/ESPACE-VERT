@@ -1,6 +1,12 @@
 import { prisma } from "../../lib/prisma";
 import { CreateMarqueDto, UpdateMarqueDto } from "./marque.schema";
 
+const PRODUCT_CATALOG_ORDER = [
+  { ordre: "asc" as const },
+  { created_at: "asc" as const },
+  { id_produit: "asc" as const },
+];
+
 async function collectCategorieIdsByMarque(id_marque: number) {
   const allCats = await prisma.categorie.findMany({
     where: { actif: true },
@@ -58,10 +64,10 @@ export const marqueRepository = {
     const catIds = await collectCategorieIdsByMarque(marque.id_marque);
     const produits = await prisma.produit.findMany({
       where: { actif: true, id_categorie: catIds.length > 0 ? { in: catIds } : -1 },
-      orderBy: { ordre: "asc" },
+      orderBy: PRODUCT_CATALOG_ORDER,
       select: {
         id_produit: true, nom: true, slug: true, description: true, translations: true,
-        fiche_technique: true, division: true, tags: true, created_at: true,
+        fiche_technique: true, division: true, tags: true, ordre: true, created_at: true,
         id_categorie: true,
         categorie: { select: { nom: true, slug: true, translations: true, marque: { select: { nom: true, slug: true, logo: true, translations: true } } } },
         // Toutes les photos du produit (pas seulement la principale) — nécessaire

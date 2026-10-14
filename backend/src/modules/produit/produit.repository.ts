@@ -31,6 +31,12 @@ const ADMIN_LIST_INCLUDE = {
   images:    { where: { is_principale: true }, take: 1 },
 } as const;
 
+const PRODUCT_CATALOG_ORDER = [
+  { ordre: "asc" as const },
+  { created_at: "asc" as const },
+  { id_produit: "asc" as const },
+];
+
 function withInheritedRefs<T extends { categorie?: any }>(produit: T) {
   return {
     ...produit,
@@ -210,7 +216,7 @@ export const produitRepository = {
       prisma.produit.count({ where }),
       prisma.produit.findMany({
         where, skip: (page - 1) * limit, take: limit,
-        orderBy: [{ created_at: "asc" }, { id_produit: "asc" }],
+        orderBy: PRODUCT_CATALOG_ORDER,
         include: PUBLIC_INCLUDE,
       }),
     ]);
@@ -285,7 +291,7 @@ export const produitRepository = {
       prisma.produit.count({ where }),
       prisma.produit.findMany({
         where, skip: (page - 1) * limit, take: limit,
-        orderBy: [{ created_at: "asc" }, { id_produit: "asc" }],
+        orderBy: PRODUCT_CATALOG_ORDER,
         include: ADMIN_LIST_INCLUDE,  // liste légère — seulement image principale
       }),
     ]);

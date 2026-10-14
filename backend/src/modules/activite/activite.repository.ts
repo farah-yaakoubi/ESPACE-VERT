@@ -1,6 +1,12 @@
 import { prisma } from "../../lib/prisma";
 import { CreateActiviteDto, UpdateActiviteDto } from "./activite.schema";
 
+const PRODUCT_CATALOG_ORDER = [
+  { ordre: "asc" as const },
+  { created_at: "asc" as const },
+  { id_produit: "asc" as const },
+];
+
 export const activiteRepository = {
 
   async findAllPublic() {
@@ -79,7 +85,7 @@ export const activiteRepository = {
 
     const PRODUIT_SELECT = {
       id_produit: true, nom: true, slug: true, description: true, translations: true,
-      fiche_technique: true, division: true, tags: true, created_at: true,
+      fiche_technique: true, division: true, tags: true, ordre: true, created_at: true,
       id_categorie: true,
       categorie: { select: { nom: true, slug: true, translations: true, marque: { select: { nom: true, slug: true, logo: true, translations: true } } } },
       images:    { where: { is_principale: true }, take: 1, select: { url: true, alt: true } },
@@ -87,7 +93,7 @@ export const activiteRepository = {
 
     const produits = allCatIds.length > 0 ? await (prisma as any).produit.findMany({
       where:   { id_categorie: { in: allCatIds }, actif: true },
-      orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+      orderBy: PRODUCT_CATALOG_ORDER,
       select:  PRODUIT_SELECT,
     }) : [];
 
