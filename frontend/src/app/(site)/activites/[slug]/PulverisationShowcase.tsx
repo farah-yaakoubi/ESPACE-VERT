@@ -23,7 +23,24 @@ interface PulverisationShowcaseProps {
   activiteSlug: string;
 }
 
-const HERO_IMAGE = "/images/activites/pulverisation.webp";
+const HERO_IMAGE = "/images/pulverisation/big-banner-pulverisation.webp";
+const BANNER_PULVERT = "/images/pulverisation/banner-pulvert.webp";
+const BANNER_PULVERAGRO = "/images/pulverisation/banner-pulvert-agro.webp";
+
+const rangeBanners = [
+  {
+    title: "Pulvert",
+    description: "Pulvérisateurs manuels et à batterie pour jardin et petites cultures.",
+    image: BANNER_PULVERT,
+    alt: "Gamme de pulvérisateurs Pulvert dans un jardin",
+  },
+  {
+    title: "PulverAgro",
+    description: "Atomiseurs portés et traînés pour vergers et grandes exploitations.",
+    image: BANNER_PULVERAGRO,
+    alt: "Atomiseur PulverAgro ATR100X dans un verger",
+  },
+];
 const PRODUCT_IMAGE = "/images/hero/pulvert-mobile.webp";
 const FIELD_IMAGE = "/images/activites/pulverisation.webp";
 
@@ -122,8 +139,8 @@ export function PulverisationShowcase({ categories, activiteSlug }: Pulverisatio
   return (
     <main className="bg-[#f5f6f3] text-[#10214a]">
       <section className="relative min-h-[620px] overflow-hidden pt-[calc(var(--nav-h)+12px)]">
-        <Image src={HERO_IMAGE} alt="" fill priority className="object-cover" sizes="100vw" />
-        <div className="absolute inset-0 bg-gradient-to-b from-sky-300/35 via-white/5 to-[#f5f6f3]" />
+        <Image src={HERO_IMAGE} alt="Pulvérisateurs Pulvert et PulverAgro" fill priority className="object-cover object-center" sizes="100vw" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/5 to-[#f5f6f3]" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#f5f6f3] via-transparent to-transparent" />
 
         <div className="relative z-10 mx-auto flex max-w-6xl flex-col items-center px-4 text-center">
@@ -185,6 +202,39 @@ export function PulverisationShowcase({ categories, activiteSlug }: Pulverisatio
                   <p className="mt-1 text-[12px] leading-snug text-slate-600">{description}</p>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden py-7">
+        <BackgroundField />
+        <div className="relative mx-auto max-w-[930px] px-4">
+          <SectionTitle title="Nos gammes" subtitle="Pulvert & PulverAgro" />
+          <div className="mt-6 grid gap-5 md:grid-cols-2">
+            {rangeBanners.map(({ title, description, image, alt }) => (
+              <Link
+                key={title}
+                href="/marques/pulvert"
+                className="group relative block overflow-hidden rounded-sm bg-white shadow-lg ring-1 ring-black/10"
+              >
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <Image
+                    src={image}
+                    alt={alt}
+                    fill
+                    className="object-cover transition duration-500 group-hover:scale-105"
+                    sizes="(max-width:768px) 100vw, 465px"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-5 pb-4 pt-12">
+                    <h3 className="text-xl font-black text-white">{title}</h3>
+                    <p className="mt-1 text-[12px] font-medium text-white/90">{description}</p>
+                    <span className="mt-3 inline-flex items-center gap-1 rounded-sm bg-[#149a3b] px-4 py-1.5 text-[12px] font-black text-white">
+                      Découvrir <ChevronRight size={13} />
+                    </span>
+                  </div>
+                </div>
+              </Link>
             ))}
           </div>
         </div>

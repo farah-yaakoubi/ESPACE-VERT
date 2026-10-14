@@ -23,8 +23,13 @@ interface PulvertFeatureSectionsProps {
 
 const FIELD_IMAGE = "/images/activites/pulverisation.webp";
 const BRAND_LOGOS = [
-  { src: "/logos/PULVERT LOGO1.png", alt: "Pulvert" },
-  { src: "/logos/pulveragro.webp", alt: "PulverAgro" },
+  { src: "/images/pulverisation/logo-pulvert.webp", alt: "Pulvert" },
+  { src: "/images/pulverisation/logo-pulvert-agro.webp", alt: "PulverAgro" },
+];
+
+const BRAND_BANNERS = [
+  { src: "/images/pulverisation/banner-pulvert.webp", position: "center 62%" },
+  { src: "/images/pulverisation/banner-pulvert-agro.webp", position: "center 55%" },
 ];
 
 const ICONS = [SprayCan, Wind, Tractor, Trees];
@@ -62,21 +67,23 @@ export function PulvertFeatureSections({
                 {rootCategories.map((category, index) => {
                   const Icon = ICONS[index % ICONS.length];
                   const logo = BRAND_LOGOS[index % BRAND_LOGOS.length];
+                  const banner = BRAND_BANNERS[index % BRAND_BANNERS.length];
                   return (
                     <Link
                       key={category.id_categorie}
                       href={`?cat=${category.id_categorie}#catalogue-marque`}
                       className="group overflow-hidden rounded-sm bg-white shadow-lg ring-1 ring-black/10 transition duration-300 hover:-translate-y-1.5 hover:scale-[1.025] hover:shadow-2xl hover:ring-[#149a3b]/35"
                     >
-                      <div className="relative h-[250px] overflow-hidden md:h-[270px]">
+                      <div className="relative h-[280px] overflow-hidden md:h-[340px]">
                         <Image
-                          src={category.image || FIELD_IMAGE}
-                          alt=""
+                          src={banner.src}
+                          alt={category.nom}
                           fill
-                          className="object-cover transition duration-500 group-hover:scale-110"
+                          style={{ objectPosition: banner.position }}
+                          className="object-cover transition duration-500 group-hover:scale-105"
                           sizes="(max-width:768px) 100vw, 50vw"
                         />
-                        <div className="absolute inset-0 bg-[linear-gradient(110deg,rgba(11,61,42,0.88),rgba(21,147,58,0.52)_48%,rgba(244,185,35,0.18)_78%,transparent)]" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
                         <div className="absolute left-5 top-5 flex h-14 w-14 items-center justify-center rounded-sm bg-white text-[#149a3b] shadow transition duration-300 group-hover:rotate-3 group-hover:bg-[#f4b923] group-hover:text-[#0b3d2a]">
                           <Icon size={30} />
                         </div>
