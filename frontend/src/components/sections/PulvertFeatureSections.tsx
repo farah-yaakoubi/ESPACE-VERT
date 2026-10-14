@@ -21,10 +21,6 @@ interface PulvertFeatureSectionsProps {
 }
 
 const FIELD_IMAGE = "/images/activites/pulverisation.webp";
-const BRAND_LOGOS = [
-  { src: "/images/pulverisation/logo-pulvert.webp", alt: "Pulvert" },
-  { src: "/images/pulverisation/logo-pulvert-agro.webp", alt: "PulverAgro" },
-];
 
 const BRAND_BANNERS = [
   { src: "/images/pulverisation/banner-pulvert.webp", position: "center 62%" },
@@ -60,7 +56,6 @@ export function PulvertFeatureSections({
             {rootCategories.length > 0 ? (
               <div className="flex flex-wrap justify-center gap-4 md:gap-5">
                 {rootCategories.map((category, index) => {
-                  const logo = BRAND_LOGOS[index % BRAND_LOGOS.length];
                   const banner = BRAND_BANNERS[index % BRAND_BANNERS.length];
                   return (
                     <Link
@@ -75,12 +70,6 @@ export function PulvertFeatureSections({
                         loading="lazy"
                         className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
-
-                      <span className="absolute left-4 top-4 block h-12 w-28">
-                        <span className="relative block h-full w-full">
-                          <Image src={logo.src} alt={logo.alt} fill className="object-contain object-left drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]" sizes="112px" />
-                        </span>
-                      </span>
 
                       <div
                         className="absolute inset-x-0 bottom-0 px-3.5 pb-3.5 pt-10"
