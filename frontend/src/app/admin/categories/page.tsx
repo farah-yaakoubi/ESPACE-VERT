@@ -2,6 +2,7 @@
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { QuickAddProduitModal } from "@/components/admin/QuickAddProduitModal";
 import { toast } from "@/components/admin/Toast";
+import { CategoryTreeSelect, levelStyle } from "@/components/admin/Categorytreeselect";
 import Image from "next/image";
 import {
   adminActivites,
@@ -31,6 +32,7 @@ import {
   FolderOpen,
   Info,
   Package,
+  Pencil,
   Plus,
   RefreshCw,
   Square,
@@ -65,13 +67,13 @@ const EMPTY = {
 function Badge({ label, type }: { label: string; type: "marque" | "activite" }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full font-medium ${
+      className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold ${
         type === "marque"
-          ? "bg-blue-50 text-blue-600 border border-blue-100"
+          ? "bg-[#f0f5f1] text-[#1f4d34] border border-[#dce8df]"
           : "bg-green-50 text-green-600 border border-green-100"
       }`}
     >
-      {type === "marque" ? <Tag size={8} /> : <Activity size={8} />}
+      {type === "marque" ? <Tag size={10} /> : <Activity size={10} />}
       {label}
     </span>
   );
@@ -101,13 +103,14 @@ function TreeRow({
 }) {
   const hasChildren = node.children.length > 0;
   const count = (node as any)._count;
+  const st = levelStyle(node.depth);
 
   return (
     <tr
       className={`group transition-colors ${
         selected
           ? "bg-red-50/70 hover:bg-red-50"
-          : "hover:bg-gray-50/80"
+          : `${st.bg} hover:bg-[#e8f0ea]`
       } ${!node.actif ? "opacity-50" : ""}`}
     >
       {/* Checkbox */}
@@ -124,38 +127,34 @@ function TreeRow({
         </button>
       </td>
 
-      {/* Nom avec indentation */}
-      <td className="px-4 py-2.5">
-        <div
-          className="flex items-center"
-          style={{ paddingLeft: `${node.depth * 22}px` }}
-        >
+      {/* Nom avec indentation, couleur et taille selon le niveau */}
+      <td className="py-3 pr-4" style={{ borderLeft: `5px solid ${st.bar}`, paddingLeft: `${12 + node.depth * 26}px` }}>
+        <div className="flex items-center">
           <button
             onClick={onToggle}
-            className={`shrink-0 w-5 h-5 flex items-center justify-center rounded transition-colors mr-1 ${
+            className={`shrink-0 w-7 h-7 flex items-center justify-center rounded-lg transition-colors mr-1.5 ${
               hasChildren
-                ? "text-gray-500 hover:text-gray-800 hover:bg-gray-200"
+                ? "text-gray-600 hover:text-gray-900 hover:bg-gray-200"
                 : "text-transparent cursor-default"
             }`}
+            title={hasChildren ? (expanded ? "Replier" : "Déplier") : undefined}
           >
             {hasChildren ? (
-              expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />
+              expanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />
             ) : null}
           </button>
 
-          <span className={`shrink-0 mr-2 ${hasChildren ? "text-amber-500" : "text-gray-400"}`}>
+          <span className="shrink-0 mr-2.5" style={{ color: st.bar }}>
             {hasChildren ? (
-              expanded ? <FolderOpen size={14} /> : <Folder size={14} />
+              expanded ? <FolderOpen size={node.depth === 0 ? 22 : 18} /> : <Folder size={node.depth === 0 ? 22 : 18} />
             ) : (
-              <span className="text-[11px] text-gray-300">└</span>
+              <span className="text-sm opacity-60">└</span>
             )}
           </span>
 
           <div className="min-w-0">
-            <p className={`font-medium text-gray-800 truncate ${node.depth === 0 ? "text-sm" : "text-xs"}`}>
-              {node.nom}
-            </p>
-            <p className="text-[11px] text-gray-400 font-mono">{node.slug}</p>
+            <p className={`truncate ${st.name}`}>{node.nom}</p>
+            <p className={`text-gray-500 font-mono ${st.sub}`}>{node.slug}</p>
           </div>
         </div>
       </td>
@@ -173,26 +172,26 @@ function TreeRow({
       {/* Compteurs */}
       <td className="px-4 py-2.5 text-center">
         {count?.sous_cats > 0 && (
-          <span className="text-xs bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full border border-amber-100">
+          <span className="text-sm bg-[#faf6e9] text-[#6b5518] font-semibold px-2.5 py-1 rounded-full border border-[#e8dcb6]">
             {count.sous_cats} sous-cat.
           </span>
         )}
       </td>
       <td className="px-4 py-2.5 text-center">
         {count?.produits > 0 && (
-          <span className="text-xs bg-ev-50 text-ev-600 px-2 py-0.5 rounded-full border border-ev-100">
+          <span className="text-sm bg-[#f0f5f1] text-[#1f4d34] font-semibold px-2.5 py-1 rounded-full border border-[#c3d6c9]">
             {count.produits} produit{count.produits > 1 ? "s" : ""}
           </span>
         )}
       </td>
 
       {/* Ordre */}
-      <td className="px-4 py-2.5 text-center text-xs text-gray-400">{node.ordre}</td>
+      <td className="px-4 py-2.5 text-center text-sm font-medium text-gray-500">{node.ordre}</td>
 
       {/* Statut */}
       <td className="px-4 py-2.5">
         <span
-          className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
+          className={`text-xs px-3 py-1 rounded-full font-semibold ${
             node.actif ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"
           }`}
         >
@@ -200,34 +199,36 @@ function TreeRow({
         </span>
       </td>
 
-      {/* Actions */}
+      {/* Actions — libellées, toujours visibles */}
       <td className="px-4 py-2.5">
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex flex-wrap items-center gap-1.5">
           <button
             onClick={() => onAddChild(node)}
             title="Ajouter une sous-catégorie"
-            className="p-1.5 text-gray-400 hover:text-ev-600 hover:bg-ev-50 rounded-lg"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#1f4d34] px-3 text-sm font-semibold text-white hover:bg-[#173b28]"
           >
-            <Plus size={12} />
+            <Plus size={14} /> Sous-catégorie
           </button>
           <button
             onClick={() => onAddProduct(node)}
             title="Ajouter un produit dans cette catégorie"
-            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[#c3d6c9] bg-white px-3 text-sm font-semibold text-[#1f4d34] hover:bg-[#f0f5f1]"
           >
-            <Package size={12} />
+            <Package size={14} /> Produit
           </button>
           <button
             onClick={() => onEdit(node)}
-            className="p-1.5 text-gray-400 hover:text-ev-600 hover:bg-ev-50 rounded-lg"
+            title="Modifier la catégorie"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
           >
-            <Edit2 size={12} />
+            <Pencil size={14} /> Modifier
           </button>
           <button
             onClick={() => onDelete(node)}
-            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+            title="Supprimer la catégorie"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 text-sm font-semibold text-red-600 hover:bg-red-50"
           >
-            <Trash2 size={12} />
+            <Trash2 size={14} /> Supprimer
           </button>
         </div>
       </td>
@@ -281,7 +282,7 @@ function Alert({ type, children }: { type: "error" | "info"; children: React.Rea
   const s =
     type === "error"
       ? "bg-red-50 border-red-200 text-red-700"
-      : "bg-blue-50 border-blue-200 text-blue-700";
+      : "bg-[#f0f5f1] border-[#c3d6c9] text-[#173b28]";
   const Icon = type === "error" ? AlertCircle : Info;
   return (
     <div className={`flex items-start gap-2.5 border rounded-xl px-4 py-3 text-sm ${s}`}>
@@ -627,7 +628,7 @@ export default function AdminCategoriesPage() {
           </button>
           <button
             onClick={() => openCreate()}
-            className="flex items-center gap-2 bg-ev-700 hover:bg-ev-800 text-white text-sm font-medium px-4 py-2 rounded-xl"
+            className="flex items-center gap-2 bg-[#1f4d34] hover:bg-[#173b28] text-white text-sm font-medium px-4 py-2 rounded-xl"
           >
             <Plus size={16} /> Nouvelle catégorie
           </button>
@@ -641,7 +642,7 @@ export default function AdminCategoriesPage() {
             placeholder="Rechercher une catégorie…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-9 pl-3 pr-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
+            className="w-full h-9 pl-3 pr-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2f6b4a]"
           />
         </div>
         <div className="flex gap-2 text-xs">
@@ -660,7 +661,7 @@ export default function AdminCategoriesPage() {
         </div>
         <div className="flex items-center gap-3 text-xs text-gray-500">
           <span className="flex items-center gap-1">
-            <Tag size={10} className="text-blue-500" />
+            <Tag size={10} className="text-[#2f6b4a]" />
             Marque
           </span>
           <span className="flex items-center gap-1">
@@ -706,7 +707,7 @@ export default function AdminCategoriesPage() {
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-7 h-7 border-4 border-ev-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-7 h-7 border-4 border-[#2a5c40] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : visibleRows.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
@@ -714,7 +715,7 @@ export default function AdminCategoriesPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-base">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   {/* Checkbox tout sélectionner */}
@@ -742,7 +743,7 @@ export default function AdminCategoriesPage() {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                      className="px-4 py-3.5 text-left text-[13px] font-bold text-gray-600 uppercase tracking-wide whitespace-nowrap"
                     >
                       {h}
                     </th>
@@ -773,9 +774,9 @@ export default function AdminCategoriesPage() {
       {/* Modal create/edit */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto">
             <div className="p-5 border-b flex items-center justify-between sticky top-0 bg-white z-10">
-              <h2 className="font-bold text-gray-900">
+              <h2 className="text-xl font-bold text-gray-900">
                 {modal === "create" ? "Nouvelle catégorie" : `Modifier — ${editing?.nom}`}
               </h2>
               <button onClick={() => setModal(null)} className="text-gray-400 hover:text-gray-700">
@@ -787,7 +788,7 @@ export default function AdminCategoriesPage() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Nom *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Nom *</label>
                   <input
                     value={form.nom}
                     onChange={(e) =>
@@ -797,99 +798,60 @@ export default function AdminCategoriesPage() {
                         slug: modal === "create" ? toSlug(e.target.value) : form.slug,
                       })
                     }
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
+                    className="w-full h-11 px-3 text-base text-gray-900 border border-gray-300 rounded-xl focus:outline-none focus:border-[#1f4d34] focus:ring-2 focus:ring-[#2f6b4a]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Slug *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Slug *</label>
                   <input
                     value={form.slug}
                     onChange={(e) =>
                       setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") })
                     }
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 font-mono text-xs"
+                    className="w-full h-11 px-3 text-base text-gray-900 border border-gray-300 rounded-xl focus:outline-none focus:border-[#1f4d34] focus:ring-2 focus:ring-[#2f6b4a] font-mono text-xs"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                   Catégorie parente{" "}
                   <span className="text-gray-400 font-normal">(laisser vide = catégorie racine)</span>
                 </label>
-                <select
+                <CategoryTreeSelect
+                  mode="single"
                   value={form.parent_id}
-                  onChange={(e) => {
-                    const parentId = e.target.value;
-                    setForm({
-                      ...form,
-                      parent_id: parentId,
-                    });
-                  }}
-                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white"
-                >
-                  <option value="">— Catégorie racine —</option>
-                  {parentOptionsOrdered.map(({ cat, depth }) => (
-                    <option key={cat.id_categorie} value={cat.id_categorie}>
-                      {"　".repeat(depth)}
-                      {depth > 0 ? "└ " : ""}
-                      {cat.nom}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(id) => setForm({ ...form, parent_id: id })}
+                  options={parentOptionsOrdered.map(({ cat, depth }) => ({ id: cat.id_categorie, nom: cat.nom, depth }))}
+                  rootLabel="Aucune — catégorie racine"
+                />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                   Catégories parentes supplémentaires{" "}
                   <span className="text-gray-400 font-normal">
                     (optionnel — la catégorie apparaîtra aussi sous celles-ci, en plus de son parent principal)
                   </span>
                 </label>
-                <div className="max-h-40 overflow-y-auto rounded-xl border border-gray-200 p-2 space-y-0.5">
-                  {parentOptionsOrdered
+                <CategoryTreeSelect
+                  mode="multi"
+                  value={form.parent_ids_extra}
+                  onChange={(ids) => setForm({ ...form, parent_ids_extra: ids })}
+                  options={parentOptionsOrdered
                     .filter(({ cat }) => String(cat.id_categorie) !== form.parent_id)
-                    .map(({ cat, depth }) => {
-                      const checked = form.parent_ids_extra.includes(cat.id_categorie);
-                      return (
-                        <label
-                          key={cat.id_categorie}
-                          className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-50 cursor-pointer text-sm"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={(e) =>
-                              setForm({
-                                ...form,
-                                parent_ids_extra: e.target.checked
-                                  ? [...form.parent_ids_extra, cat.id_categorie]
-                                  : form.parent_ids_extra.filter((id) => id !== cat.id_categorie),
-                              })
-                            }
-                            className="accent-ev-600"
-                          />
-                          <span>
-                            {"　".repeat(depth)}
-                            {depth > 0 ? "└ " : ""}
-                            {cat.nom}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  {parentOptionsOrdered.length === 0 && (
-                    <p className="text-xs text-gray-400 px-2 py-1">Aucune autre catégorie disponible.</p>
-                  )}
-                </div>
+                    .map(({ cat, depth }) => ({ id: cat.id_categorie, nom: cat.nom, depth }))}
+                  maxHeightClass="max-h-48"
+                />
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Marque</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Marque</label>
                   <select
                     value={form.id_marque}
                     onChange={(e) => setForm({ ...form, id_marque: e.target.value })}
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white"
+                    className="w-full h-11 px-3 text-base text-gray-900 border border-gray-300 rounded-xl focus:outline-none focus:border-[#1f4d34] bg-white"
                   >
                     <option value="">— Aucune —</option>
                     {marques.map((m) => (
@@ -898,11 +860,11 @@ export default function AdminCategoriesPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Activité</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Activité</label>
                   <select
                     value={form.id_activite}
                     onChange={(e) => setForm({ ...form, id_activite: e.target.value })}
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white"
+                    className="w-full h-11 px-3 text-base text-gray-900 border border-gray-300 rounded-xl focus:outline-none focus:border-[#1f4d34] bg-white"
                   >
                     <option value="">— Aucune —</option>
                     {activites.map((a) => (
@@ -914,16 +876,16 @@ export default function AdminCategoriesPage() {
 
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Ordre d&apos;affichage</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ordre d&apos;affichage</label>
                   <input
                     type="number"
                     value={form.ordre}
                     onChange={(e) => setForm({ ...form, ordre: Number(e.target.value) })}
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
+                    className="w-full h-11 px-3 text-base text-gray-900 border border-gray-300 rounded-xl focus:outline-none focus:border-[#1f4d34] focus:ring-2 focus:ring-[#2f6b4a]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Image</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Image</label>
                   {form.image && (
                     <div className="mb-3 flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3">
                       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -945,12 +907,12 @@ export default function AdminCategoriesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Description</label>
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   rows={2}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 resize-none"
+                  className="w-full px-3 py-2 text-base text-gray-900 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2f6b4a] resize-none"
                 />
               </div>
 
@@ -960,7 +922,7 @@ export default function AdminCategoriesPage() {
                     type="checkbox"
                     checked={form.actif}
                     onChange={(e) => setForm({ ...form, actif: e.target.checked })}
-                    className="accent-ev-600 w-4 h-4"
+                    className="accent-[#2a5c40] w-4 h-4"
                   />
                   Catégorie active
                 </label>
@@ -990,7 +952,7 @@ export default function AdminCategoriesPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 h-10 bg-ev-700 text-white text-sm rounded-xl hover:bg-ev-800 disabled:opacity-60 flex items-center justify-center"
+                className="flex-1 h-10 bg-[#1f4d34] text-white text-sm rounded-xl hover:bg-[#173b28] disabled:opacity-60 flex items-center justify-center"
               >
                 {saving ? (
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

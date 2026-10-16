@@ -12,7 +12,7 @@ import {
   type ProduitAdmin,
 } from "@/lib/admin-api";
 import { categoriesUnderActivite } from "@/lib/admin-catalog-utils";
-import { QuickAddProduitModal } from "@/components/admin/QuickAddProduitModal";
+import { ProduitsManager } from "@/components/admin/ProduitsManager";
 import {
   Activity,
   AlertCircle,
@@ -25,6 +25,8 @@ import {
   Image as ImageIcon,
   Info,
   Layers,
+  Package,
+  Pencil,
   Plus,
   RefreshCw,
   Tag,
@@ -136,24 +138,24 @@ function ActivitesCrudPanel() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <Activity size={18} className="text-green-600" /> Activités
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
+            <Activity size={24} className="text-[#1f4d34]" /> Activités
           </h2>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-sm text-gray-500 mt-1">
             Gérez les activités et leur bannière héro respective
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <button onClick={load} className="p-2 text-gray-500 hover:text-gray-800 rounded-xl hover:bg-gray-100">
             <RefreshCw size={15} />
           </button>
           <button
             onClick={openCreate}
-            className="flex items-center gap-2 bg-ev-700 hover:bg-ev-800 text-white text-sm font-medium px-4 py-2 rounded-xl"
+            className="flex h-10 items-center gap-2 bg-[#1f4d34] hover:bg-[#173b28] text-white text-sm font-semibold px-4 rounded-xl"
           >
             <Plus size={15} /> Nouvelle activité
           </button>
@@ -182,17 +184,17 @@ function ActivitesCrudPanel() {
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="w-7 h-7 border-4 border-ev-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-7 h-7 border-4 border-[#2a5c40] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : items.length === 0 ? (
           <div className="text-center py-12 text-gray-400 text-sm">Aucune activité</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-base">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   {["Activité", "Image", "Bannière", "Ordre", "Statut", "Actions"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                    <th key={h} className="px-4 py-3.5 text-left text-[13px] font-bold text-gray-600 uppercase tracking-wide whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -201,10 +203,10 @@ function ActivitesCrudPanel() {
                   <React.Fragment key={a.id_activite}>
                   <tr className="group hover:bg-gray-50/80 transition-colors">
                     <td className="px-4 py-3">
-                      <p className="font-medium text-gray-800 text-sm">{a.nom}</p>
-                      <p className="text-[11px] text-gray-400 font-mono">{a.slug}</p>
+                      <p className="font-bold text-gray-900 text-lg">{a.nom}</p>
+                      <p className="text-xs text-gray-500 font-mono">{a.slug}</p>
                       {a.description && (
-                        <p className="text-xs text-gray-500 mt-0.5 max-w-xs truncate">{a.description}</p>
+                        <p className="text-sm text-gray-600 mt-0.5 max-w-xs truncate">{a.description}</p>
                       )}
                     </td>
                     {/* Image miniature */}
@@ -231,32 +233,42 @@ function ActivitesCrudPanel() {
                     </td>
                     <td className="px-4 py-3 text-center text-xs text-gray-400">{a.ordre}</td>
                     <td className="px-4 py-3">
-                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${a.actif ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
+                      <span className={`text-xs px-3 py-1 rounded-full font-semibold ${a.actif ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
                         {a.actif ? "Actif" : "Inactif"}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
                           onClick={() => setExpandedId(expandedId === a.id_activite ? null : a.id_activite)}
-                          className={`p-1.5 rounded-lg hover:text-ev-600 hover:bg-ev-50 ${expandedId === a.id_activite ? "text-ev-600 bg-ev-50" : "text-gray-400"}`}
-                          title="Produits de cette activité"
+                          className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#1f4d34] px-4 text-sm font-bold text-white transition-colors hover:bg-[#173b28]"
+                          title="Voir et gérer les produits de cette activité"
                         >
-                          <Layers size={13} />
+                          <Package size={16} />
+                          {expandedId === a.id_activite ? "Masquer les produits" : "Gérer les produits"}
+                          {expandedId === a.id_activite ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                        </button>
+                        <button
+                          onClick={() => openEdit(a)}
+                          className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-[#c3d6c9] bg-[#f0f5f1] px-3.5 text-sm font-semibold text-[#1f4d34] hover:bg-[#dce8df]"
+                          title="Modifier l'activité"
+                        >
+                          <Pencil size={15} /> Modifier
                         </button>
                         <Link
                           href={`/activites/${a.slug}`}
                           target="_blank"
-                          className="p-1.5 text-gray-400 hover:text-ev-600 hover:bg-ev-50 rounded-lg"
-                          title="Voir la page"
+                          className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-gray-300 bg-white px-3.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                          title="Voir la page publique"
                         >
-                          <ExternalLink size={13} />
+                          <ExternalLink size={15} /> Voir
                         </Link>
-                        <button onClick={() => openEdit(a)} className="p-1.5 text-gray-400 hover:text-ev-600 hover:bg-ev-50 rounded-lg">
-                          <Edit2 size={13} />
-                        </button>
-                        <button onClick={() => setConfirmDel(a)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg">
-                          <Trash2 size={13} />
+                        <button
+                          onClick={() => setConfirmDel(a)}
+                          className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3.5 text-sm font-semibold text-red-600 hover:bg-red-50"
+                          title="Supprimer l'activité"
+                        >
+                          <Trash2 size={15} /> Supprimer
                         </button>
                       </div>
                     </td>
@@ -264,7 +276,7 @@ function ActivitesCrudPanel() {
                   {expandedId === a.id_activite && (
                     <tr>
                       <td colSpan={6} className="bg-gray-50/70 px-4 py-4 border-t border-gray-100">
-                        <ActiviteProduitsPanel activite={a} allCategories={allCategories} />
+                        <ProduitsManager scope={{ type: "activite", id: a.id_activite, label: a.nom }} />
                       </td>
                     </tr>
                   )}
@@ -301,7 +313,7 @@ function ActivitesCrudPanel() {
                   <input
                     value={form.nom}
                     onChange={(e) => { F("nom", e.target.value); if (modal === "create") F("slug", toSlugAct(e.target.value)); }}
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
+                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2f6b4a]"
                   />
                 </div>
                 <div>
@@ -309,7 +321,7 @@ function ActivitesCrudPanel() {
                   <input
                     value={form.slug}
                     onChange={(e) => F("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 font-mono text-xs"
+                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2f6b4a] font-mono text-xs"
                   />
                 </div>
               </div>
@@ -321,7 +333,7 @@ function ActivitesCrudPanel() {
                   value={form.description}
                   onChange={(e) => F("description", e.target.value)}
                   rows={2}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 resize-none"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2f6b4a] resize-none"
                 />
               </div>
 
@@ -331,7 +343,7 @@ function ActivitesCrudPanel() {
                 <input
                   type="number" value={form.ordre}
                   onChange={(e) => F("ordre", Number(e.target.value))}
-                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
+                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2f6b4a]"
                 />
               </div>
 
@@ -342,7 +354,7 @@ function ActivitesCrudPanel() {
                 </label>
                 {/* Prévisualisation */}
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-11 h-11 rounded-xl bg-ev-50 border border-ev-100 flex items-center justify-center text-2xl shrink-0">
+                  <div className="w-11 h-11 rounded-xl bg-[#f0f5f1] border border-[#dce8df] flex items-center justify-center text-2xl shrink-0">
                     {form.image || "🌿"}
                   </div>
                   <p className="text-xs text-gray-400">Cliquez une icône ci-dessous pour la sélectionner</p>
@@ -363,7 +375,7 @@ function ActivitesCrudPanel() {
                       onClick={() => F("image", em)}
                       className={`h-9 w-full flex items-center justify-center rounded-lg text-xl transition-all hover:scale-110 ${
                         form.image === em
-                          ? "bg-ev-100 ring-2 ring-ev-500 scale-110"
+                          ? "bg-[#dce8df] ring-2 ring-[#2f6b4a] scale-110"
                           : "hover:bg-gray-200"
                       }`}
                     >
@@ -376,7 +388,7 @@ function ActivitesCrudPanel() {
                   type="text" value={form.image}
                   onChange={(e) => F("image", e.target.value)}
                   placeholder="Ou saisissez un emoji manuellement…"
-                  className="mt-2 w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
+                  className="mt-2 w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2f6b4a]"
                 />
               </div>
 
@@ -395,13 +407,13 @@ function ActivitesCrudPanel() {
                   type="text" value={form.banniere}
                   onChange={(e) => F("banniere", e.target.value)}
                   placeholder="/images/hero/mon-activite-banner.webp"
-                  className="mt-1 w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
+                  className="mt-1 w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2f6b4a]"
                 />
               </div>
 
               {modal === "edit" && (
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" checked={form.actif} onChange={(e) => F("actif", e.target.checked)} className="accent-ev-600 w-4 h-4" />
+                  <input type="checkbox" checked={form.actif} onChange={(e) => F("actif", e.target.checked)} className="accent-[#2a5c40] w-4 h-4" />
                   Activité active
                 </label>
               )}
@@ -411,7 +423,7 @@ function ActivitesCrudPanel() {
               <button onClick={() => setModal(null)} className="flex-1 h-10 border text-sm text-gray-600 rounded-xl hover:bg-gray-50">Annuler</button>
               <button
                 onClick={handleSave} disabled={saving}
-                className="flex-1 h-10 bg-ev-700 text-white text-sm rounded-xl hover:bg-ev-800 disabled:opacity-60 flex items-center justify-center"
+                className="flex-1 h-10 bg-[#1f4d34] text-white text-sm rounded-xl hover:bg-[#173b28] disabled:opacity-60 flex items-center justify-center"
               >
                 {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : modal === "create" ? "Créer" : "Enregistrer"}
               </button>
@@ -424,979 +436,6 @@ function ActivitesCrudPanel() {
 }
 
 /* ── Panneau produits déroulant, scopé à une activité ─────────────── */
-function ActiviteProduitsPanel({
-  activite,
-  allCategories,
-}: {
-  activite: ActiviteAdmin;
-  allCategories: CategorieAdmin[];
-}) {
-  const [produits, setProduits] = useState<ProduitAdmin[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [addOpen, setAddOpen] = useState(false);
-
-  const loadProduits = useCallback(() => {
-    setLoading(true);
-    adminProduits
-      .list({ id_activite: String(activite.id_activite), limit: "100" } as any)
-      .then((r) => setProduits(r.data))
-      .catch(() => setProduits([]))
-      .finally(() => setLoading(false));
-  }, [activite.id_activite]);
-
-  useEffect(() => { loadProduits(); }, [loadProduits]);
-
-  const scopedCategories = categoriesUnderActivite(allCategories, activite.id_activite);
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-gray-500">
-          {produits.length} produit{produits.length !== 1 ? "s" : ""} — {activite.nom}
-        </p>
-        <button
-          onClick={() => setAddOpen(true)}
-          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl text-white bg-ev-700 hover:bg-ev-800"
-        >
-          <Plus size={13} /> Nouveau produit
-        </button>
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center py-6">
-          <div className="w-5 h-5 border-4 border-ev-100 border-t-ev-600 rounded-full animate-spin" />
-        </div>
-      ) : produits.length === 0 ? (
-        <p className="text-xs text-gray-400 text-center py-4">Aucun produit pour cette activité.</p>
-      ) : (
-        <div className="bg-white rounded-xl border border-gray-100 divide-y divide-gray-50">
-          {produits.map((p) => {
-            const img = p.images.find((i) => i.is_principale) ?? p.images[0];
-            return (
-              <div key={p.id_produit} className="flex items-center gap-3 px-3 py-2">
-                <div className="w-8 h-8 rounded-lg bg-gray-100 overflow-hidden border shrink-0 flex items-center justify-center">
-                  {img ? (
-                    <Image src={img.url} alt={p.nom} width={32} height={32} className="object-contain" />
-                  ) : (
-                    <span className="text-gray-300 text-xs">🌿</span>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800 truncate">{p.nom}</p>
-                  <p className="text-[12px] text-gray-400 truncate">
-                    {(p.categorie as any)?.nom ?? p.slug}
-                    {(p.marque as any)?.nom ? ` · 🏷 ${(p.marque as any).nom}` : ""}
-                  </p>
-                </div>
-                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${p.actif ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
-                  {p.actif ? "Actif" : "Inactif"}
-                </span>
-                <a
-                  href={`/produits/${p.slug}`}
-                  target="_blank"
-                  className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg shrink-0"
-                >
-                  <ExternalLink size={12} />
-                </a>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {addOpen && (
-        <QuickAddProduitModal
-          scopeLabel={activite.nom}
-          categories={scopedCategories}
-          allCategories={allCategories}
-          onClose={() => setAddOpen(false)}
-          onCreated={loadProduits}
-        />
-      )}
-    </div>
-  );
-}
-
-function toSlug(s: string) {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-const EMPTY = {
-  nom: "",
-  slug: "",
-  description: "",
-  image: "",
-  id_activite: "",
-  id_marque: "",
-  parent_id: "",
-  ordre: 0,
-  actif: true,
-};
-
-// ── Nœud d'arbre ─────────────────────────────────────────────────
-interface TreeNode extends CategorieAdmin {
-  children: TreeNode[];
-  depth: number;
-}
-
-function buildTree(flat: CategorieAdmin[]): TreeNode[] {
-  const map = new Map<number, TreeNode>();
-  // Créer tous les nœuds sans depth (sera calculé après construction)
-  flat.forEach((c) =>
-    map.set(c.id_categorie, { ...c, children: [], depth: 0 }),
-  );
-  const roots: TreeNode[] = [];
-  map.forEach((node) => {
-    if (node.parent_id && map.has(node.parent_id)) {
-      map.get(node.parent_id)!.children.push(node);
-    } else {
-      // Parent absent ou null → nœud racine
-      roots.push(node);
-    }
-  });
-
-  // Tri à chaque niveau : ordre ASC, puis nom ASC (même règle que le backend)
-  const sort = (arr: TreeNode[]) =>
-    arr.sort((a, b) => a.ordre - b.ordre || a.nom.localeCompare(b.nom, "fr"));
-
-  // Calcul récursif du depth APRÈS construction complète de l'arbre
-  const assignDepth = (nodes: TreeNode[], depth: number): TreeNode[] => {
-    sort(nodes);
-    nodes.forEach((n) => {
-      n.depth = depth;
-      assignDepth(n.children, depth + 1);
-    });
-    return nodes;
-  };
-
-  return assignDepth(roots, 0);
-}
-
-function flattenTree(nodes: TreeNode[]): TreeNode[] {
-  const result: TreeNode[] = [];
-  const walk = (arr: TreeNode[]) =>
-    arr.forEach((n) => {
-      result.push(n);
-      walk(n.children);
-    });
-  walk(nodes);
-  return result;
-}
-
-// ── Badge marque/activité ────────────────────────────────────────
-function Badge({
-  label,
-  type,
-}: {
-  label: string;
-  type: "marque" | "activite";
-}) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full font-medium ${
-        type === "marque"
-          ? "bg-blue-50 text-blue-600 border border-blue-100"
-          : "bg-green-50 text-green-600 border border-green-100"
-      }`}
-    >
-      {type === "marque" ? <Tag size={8} /> : <Activity size={8} />}
-      {label}
-    </span>
-  );
-}
-
-// ── Ligne de l'arbre ─────────────────────────────────────────────
-function TreeRow({
-  node,
-  expanded,
-  onToggle,
-  onEdit,
-  onDelete,
-  onAddChild,
-}: {
-  node: TreeNode;
-  expanded: boolean;
-  onToggle: () => void;
-  onEdit: (c: CategorieAdmin) => void;
-  onDelete: (c: CategorieAdmin) => void;
-  onAddChild: (parent: CategorieAdmin) => void;
-}) {
-  const hasChildren = node.children.length > 0;
-  const count = (node as any)._count;
-
-  return (
-    <tr
-      className={`group hover:bg-gray-50/80 transition-colors ${!node.actif ? "opacity-50" : ""}`}
-    >
-      {/* Nom avec indentation */}
-      <td className="px-4 py-2.5">
-        <div
-          className="flex items-center"
-          style={{ paddingLeft: `${node.depth * 22}px` }}
-        >
-          {/* Toggle expand */}
-          <button
-            onClick={onToggle}
-            className={`shrink-0 w-5 h-5 flex items-center justify-center rounded transition-colors mr-1 ${
-              hasChildren
-                ? "text-gray-500 hover:text-gray-800 hover:bg-gray-200"
-                : "text-transparent cursor-default"
-            }`}
-          >
-            {hasChildren ? (
-              expanded ? (
-                <ChevronDown size={13} />
-              ) : (
-                <ChevronRight size={13} />
-              )
-            ) : null}
-          </button>
-
-          {/* Icône dossier */}
-          <span
-            className={`shrink-0 mr-2 ${hasChildren ? "text-amber-500" : "text-gray-400"}`}
-          >
-            {hasChildren ? (
-              expanded ? (
-                <FolderOpen size={14} />
-              ) : (
-                <Folder size={14} />
-              )
-            ) : (
-              <span className="text-[11px] text-gray-300">└</span>
-            )}
-          </span>
-
-          <div className="min-w-0">
-            <p
-              className={`font-medium text-gray-800 truncate ${node.depth === 0 ? "text-sm" : "text-xs"}`}
-            >
-              {node.nom}
-            </p>
-            <p className="text-[11px] text-gray-400 font-mono">{node.slug}</p>
-          </div>
-        </div>
-      </td>
-
-      {/* Badges marque / activité */}
-      <td className="px-4 py-2.5">
-        <div className="flex flex-wrap gap-1">
-          {node.marque && (
-            <Badge label={(node.marque as any).nom} type="marque" />
-          )}
-          {node.activite && (
-            <Badge label={(node.activite as any).nom} type="activite" />
-          )}
-        </div>
-      </td>
-
-      {/* Compteurs */}
-      <td className="px-4 py-2.5 text-center">
-        {count?.sous_cats > 0 && (
-          <span className="text-xs bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full border border-amber-100">
-            {count.sous_cats} sous-cat.
-          </span>
-        )}
-      </td>
-      <td className="px-4 py-2.5 text-center">
-        {count?.produits > 0 && (
-          <span className="text-xs bg-ev-50 text-ev-600 px-2 py-0.5 rounded-full border border-ev-100">
-            {count.produits} produit{count.produits > 1 ? "s" : ""}
-          </span>
-        )}
-      </td>
-
-      {/* Ordre */}
-      <td className="px-4 py-2.5 text-center text-xs text-gray-400">
-        {node.ordre}
-      </td>
-
-      {/* Statut */}
-      <td className="px-4 py-2.5">
-        <span
-          className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
-            node.actif
-              ? "bg-green-100 text-green-700"
-              : "bg-red-100 text-red-600"
-          }`}
-        >
-          {node.actif ? "Actif" : "Inactif"}
-        </span>
-      </td>
-
-      {/* Actions */}
-      <td className="px-4 py-2.5">
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={() => onAddChild(node)}
-            title="Ajouter une sous-catégorie"
-            className="p-1.5 text-gray-400 hover:text-ev-600 hover:bg-ev-50 rounded-lg"
-          >
-            <Plus size={12} />
-          </button>
-          <button
-            onClick={() => onEdit(node)}
-            className="p-1.5 text-gray-400 hover:text-ev-600 hover:bg-ev-50 rounded-lg"
-          >
-            <Edit2 size={12} />
-          </button>
-          <button
-            onClick={() => onDelete(node)}
-            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-          >
-            <Trash2 size={12} />
-          </button>
-        </div>
-      </td>
-    </tr>
-  );
-}
-
-// ── Confirm Dialog ────────────────────────────────────────────────
-function ConfirmDialog({
-  message,
-  onConfirm,
-  onCancel,
-}: {
-  message: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
-        <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
-          <AlertCircle size={22} className="text-red-600" />
-        </div>
-        <p className="text-gray-700 text-sm text-center mb-6">{message}</p>
-        <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 h-10 border border-gray-200 text-sm text-gray-600 rounded-xl hover:bg-gray-50"
-          >
-            Annuler
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 h-10 bg-red-600 text-white text-sm rounded-xl hover:bg-red-700"
-          >
-            Supprimer
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Alert inline ─────────────────────────────────────────────────
-function Alert({
-  type,
-  children,
-}: {
-  type: "error" | "info";
-  children: React.ReactNode;
-}) {
-  const s =
-    type === "error"
-      ? "bg-red-50 border-red-200 text-red-700"
-      : "bg-blue-50 border-blue-200 text-blue-700";
-  const Icon = type === "error" ? AlertCircle : Info;
-  return (
-    <div
-      className={`flex items-start gap-2.5 border rounded-xl px-4 py-3 text-sm ${s}`}
-    >
-      <Icon size={15} className="shrink-0 mt-0.5" />
-      <span className="leading-relaxed">{children}</span>
-    </div>
-  );
-}
-
-// ── Page principale ───────────────────────────────────────────────
 export default function AdminActivitesPage() {
-  const [items, setItems] = useState<CategorieAdmin[]>([]);
-  const [marques, setMarques] = useState<MarqueAdmin[]>([]);
-  const [activites, setActivites] = useState<ActiviteAdmin[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState<"create" | "edit" | null>(null);
-  const [editing, setEditing] = useState<CategorieAdmin | null>(null);
-  const [form, setForm] = useState(EMPTY);
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState("");
-  const [search, setSearch] = useState("");
-  const [expanded, setExpanded] = useState<Set<number>>(new Set());
-  const [confirmDelete, setConfirmDelete] = useState<CategorieAdmin | null>(
-    null,
-  );
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [cats, mrqs, acts] = await Promise.all([
-        adminCategories.list(),
-        adminMarques.list(),
-        adminActivites.list(),
-      ]);
-      const catArr = Array.isArray(cats) ? cats : ((cats as any).data ?? []);
-      setItems(catArr);
-      setMarques(Array.isArray(mrqs) ? mrqs : ((mrqs as any).data ?? []));
-      setActivites(Array.isArray(acts) ? acts : ((acts as any).data ?? []));
-      // Auto-expand racines
-      setExpanded(
-        new Set(
-          catArr
-            .filter((c: CategorieAdmin) => !c.parent_id)
-            .map((c: CategorieAdmin) => c.id_categorie),
-        ),
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  // Arbre complet
-  const tree = useMemo(() => buildTree(items), [items]);
-
-  // Aplatissement pour l'affichage (respecte expanded)
-  const visibleRows = useMemo(() => {
-    const result: TreeNode[] = [];
-    const walk = (nodes: TreeNode[]) => {
-      nodes.forEach((n) => {
-        // Filtre recherche
-        if (search) {
-          const matches =
-            n.nom.toLowerCase().includes(search.toLowerCase()) ||
-            n.slug.includes(search.toLowerCase());
-          if (
-            !matches &&
-            !flattenTree([n]).some((x) =>
-              x.nom.toLowerCase().includes(search.toLowerCase()),
-            )
-          )
-            return;
-        }
-        result.push(n);
-        if (expanded.has(n.id_categorie)) walk(n.children);
-      });
-    };
-    walk(tree);
-    return result;
-  }, [tree, expanded, search]);
-
-  const toggleExpand = (id: number) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
-  const expandAll = () =>
-    setExpanded(new Set(items.map((c) => c.id_categorie)));
-  const collapseAll = () =>
-    setExpanded(
-      new Set(items.filter((c) => !c.parent_id).map((c) => c.id_categorie)),
-    );
-
-  const openCreate = (parentCat?: CategorieAdmin) => {
-    setForm({
-      ...EMPTY,
-      parent_id: parentCat ? String(parentCat.id_categorie) : "",
-      id_marque: parentCat ? String(parentCat.id_marque ?? "") : "",
-      id_activite: parentCat ? String(parentCat.id_activite ?? "") : "",
-    });
-    setEditing(null);
-    setErr("");
-    setModal("create");
-  };
-
-  const openEdit = (c: CategorieAdmin) => {
-    setForm({
-      nom: c.nom,
-      slug: c.slug,
-      description: c.description ?? "",
-      image: c.image ?? "",
-      id_activite: c.id_activite ? String(c.id_activite) : "",
-      id_marque: c.id_marque ? String(c.id_marque) : "",
-      parent_id: c.parent_id ? String(c.parent_id) : "",
-      ordre: c.ordre,
-      actif: c.actif,
-    });
-    setEditing(c);
-    setErr("");
-    setModal("edit");
-  };
-
-  const handleSave = async () => {
-    if (!form.nom.trim() || !form.slug.trim()) {
-      setErr("Nom et slug sont requis.");
-      return;
-    }
-    setSaving(true);
-    setErr("");
-    try {
-      const p = {
-        nom: form.nom,
-        slug: form.slug,
-        description: form.description || null,
-        image: form.image || null,
-        id_activite: form.id_activite ? Number(form.id_activite) : null,
-        id_marque: form.id_marque ? Number(form.id_marque) : null,
-        parent_id: form.parent_id ? Number(form.parent_id) : null,
-        ordre: form.ordre,
-        ...(modal === "edit" ? { actif: form.actif } : {}),
-      };
-      if (modal === "create") {
-        await adminCategories.create(p as any);
-        toast.success("Catégorie créée", form.nom);
-      } else if (editing) {
-        await adminCategories.update(editing.id_categorie, p as any);
-        toast.success("Catégorie mise à jour", form.nom);
-      }
-      setModal(null);
-      load();
-    } catch (e) {
-      setErr((e as Error).message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = (c: CategorieAdmin) => {
-    const hasChildren = items.some((x) => x.parent_id === c.id_categorie);
-    if (hasChildren) {
-      toast.warning(
-        "Suppression impossible",
-        `« ${c.nom} » a des sous-catégories. Supprimez-les d'abord.`,
-      );
-      return;
-    }
-    setConfirmDelete(c);
-  };
-
-  const confirmDeleteAction = async () => {
-    if (!confirmDelete) return;
-    const c = confirmDelete;
-    setConfirmDelete(null);
-    try {
-      await adminCategories.remove(c.id_categorie);
-      toast.success("Catégorie supprimée", c.nom);
-      load();
-    } catch (e) {
-      const msg = (e as Error).message;
-      if (
-        msg.includes("produit") ||
-        msg.includes("Foreign") ||
-        msg.includes("constraint")
-      ) {
-        toast.error(
-          "Suppression impossible",
-          `« ${c.nom} » est liée à des produits. Retirez-les d'abord.`,
-        );
-      } else {
-        toast.error("Erreur", msg);
-      }
-    }
-  };
-
-  // Options catégories parentes pour le select (exclut soi-même et ses descendants)
-  const parentOptions = useMemo(() => {
-    if (!editing) return items;
-    const descendants = new Set<number>();
-    const collect = (id: number) => {
-      items
-        .filter((c) => c.parent_id === id)
-        .forEach((c) => {
-          descendants.add(c.id_categorie);
-          collect(c.id_categorie);
-        });
-    };
-    collect(editing.id_categorie);
-    return items.filter(
-      (c) =>
-        c.id_categorie !== editing.id_categorie &&
-        !descendants.has(c.id_categorie),
-    );
-  }, [items, editing]);
-
-  // Pour le select parent : affichage indenté
-  const parentOptionsOrdered = useMemo(() => {
-    const result: { cat: CategorieAdmin; depth: number }[] = [];
-    const walk = (nodes: TreeNode[]) => {
-      nodes.forEach((n) => {
-        const orig = parentOptions.find(
-          (c) => c.id_categorie === n.id_categorie,
-        );
-        if (orig) result.push({ cat: orig, depth: n.depth });
-        walk(n.children);
-      });
-    };
-    walk(buildTree(parentOptions));
-    return result;
-  }, [parentOptions]);
-
-  const rootCount = items.filter((c) => !c.parent_id).length;
-  const subCount = items.filter((c) => c.parent_id).length;
-
-  return (
-    <div className="space-y-8">
-      {/* ── Section Activités (CRUD + bannière) ── */}
-      <ActivitesCrudPanel />
-
-      {/* ── Séparateur ── */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 h-px bg-gray-200" />
-        <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-          <Layers size={13} /> Catégories
-        </div>
-        <div className="flex-1 h-px bg-gray-200" />
-      </div>
-
-      <div className="space-y-5">
-      {/* Confirm delete dialog */}
-      {confirmDelete && (
-        <ConfirmDialog
-          message={`Supprimer « ${confirmDelete.nom} » ? Cette action est irréversible.`}
-          onConfirm={confirmDeleteAction}
-          onCancel={() => setConfirmDelete(null)}
-        />
-      )}
-
-      {/* En-tête */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Catégories</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {rootCount} catégorie{rootCount !== 1 ? "s" : ""} racine ·{" "}
-            {subCount} sous-catégorie{subCount !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={load}
-            className="p-2 text-gray-500 hover:text-gray-800 rounded-xl hover:bg-gray-100"
-          >
-            <RefreshCw size={16} />
-          </button>
-          <button
-            onClick={() => openCreate()}
-            className="flex items-center gap-2 bg-ev-700 hover:bg-ev-800 text-white text-sm font-medium px-4 py-2 rounded-xl"
-          >
-            <Plus size={16} /> Nouvelle catégorie
-          </button>
-        </div>
-      </div>
-
-      {/* Légende + contrôles */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-4 flex flex-wrap items-center gap-4">
-        <div className="relative flex-1 min-w-[200px]">
-          <input
-            placeholder="Rechercher une catégorie…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-9 pl-3 pr-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
-          />
-        </div>
-        <div className="flex gap-2 text-xs">
-          <button
-            onClick={expandAll}
-            className="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600"
-          >
-            Tout déplier
-          </button>
-          <button
-            onClick={collapseAll}
-            className="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600"
-          >
-            Réduire
-          </button>
-        </div>
-        <div className="flex items-center gap-3 text-xs text-gray-500">
-          <span className="flex items-center gap-1">
-            <Tag size={10} className="text-blue-500" />
-            Marque
-          </span>
-          <span className="flex items-center gap-1">
-            <Activity size={10} className="text-green-500" />
-            Activité
-          </span>
-        </div>
-      </div>
-
-      {/* Arbre */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-7 h-7 border-4 border-ev-600 border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : visibleRows.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            Aucune catégorie trouvée
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  {[
-                    "Catégorie / Sous-catégorie",
-                    "Rattachement",
-                    "Sous-cats",
-                    "Produits",
-                    "Ordre",
-                    "Statut",
-                    "Actions",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {visibleRows.map((node) => (
-                  <TreeRow
-                    key={node.id_categorie}
-                    node={node}
-                    expanded={expanded.has(node.id_categorie)}
-                    onToggle={() => toggleExpand(node.id_categorie)}
-                    onEdit={openEdit}
-                    onDelete={handleDelete}
-                    onAddChild={openCreate}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Modal */}
-      {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[92vh] overflow-y-auto">
-            <div className="p-5 border-b flex items-center justify-between sticky top-0 bg-white z-10">
-              <h2 className="font-bold text-gray-900">
-                {modal === "create"
-                  ? "Nouvelle catégorie"
-                  : `Modifier — ${editing?.nom}`}
-              </h2>
-              <button
-                onClick={() => setModal(null)}
-                className="text-gray-400 hover:text-gray-700"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <div className="p-5 space-y-4">
-              {err && <Alert type="error">{err}</Alert>}
-
-              {/* Nom + Slug */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Nom *
-                  </label>
-                  <input
-                    value={form.nom}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        nom: e.target.value,
-                        slug:
-                          modal === "create"
-                            ? toSlug(e.target.value)
-                            : form.slug,
-                      })
-                    }
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Slug *
-                  </label>
-                  <input
-                    value={form.slug}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        slug: e.target.value
-                          .toLowerCase()
-                          .replace(/[^a-z0-9-]/g, ""),
-                      })
-                    }
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 font-mono text-xs"
-                  />
-                </div>
-              </div>
-
-              {/* Catégorie parente (hiérarchie indentée) */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Catégorie parente{" "}
-                  <span className="text-gray-400 font-normal">
-                    (laisser vide = catégorie racine)
-                  </span>
-                </label>
-                <select
-                  value={form.parent_id}
-                  onChange={(e) =>
-                    setForm({ ...form, parent_id: e.target.value })
-                  }
-                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white"
-                >
-                  <option value="">— Catégorie racine —</option>
-                  {parentOptionsOrdered.map(({ cat, depth }) => (
-                    <option key={cat.id_categorie} value={cat.id_categorie}>
-                      {"　".repeat(depth)}
-                      {depth > 0 ? "└ " : ""}
-                      {cat.nom}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Marque + Activité */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Marque
-                  </label>
-                  <select
-                    value={form.id_marque}
-                    onChange={(e) =>
-                      setForm({ ...form, id_marque: e.target.value })
-                    }
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white"
-                  >
-                    <option value="">— Aucune —</option>
-                    {marques.map((m) => (
-                      <option key={m.id_marque} value={m.id_marque}>
-                        {m.nom}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Activité
-                  </label>
-                  <select
-                    value={form.id_activite}
-                    onChange={(e) =>
-                      setForm({ ...form, id_activite: e.target.value })
-                    }
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white"
-                  >
-                    <option value="">— Aucune —</option>
-                    {activites.map((a) => (
-                      <option key={a.id_activite} value={a.id_activite}>
-                        {a.nom}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Ordre + Image */}
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Ordre d&apos;affichage
-                  </label>
-                  <input
-                    type="number"
-                    value={form.ordre}
-                    onChange={(e) =>
-                      setForm({ ...form, ordre: Number(e.target.value) })
-                    }
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Image
-                  </label>
-                  <ImageUploader
-                    onUpload={(v) => setForm({ ...form, image: v })}
-                  />
-                </div>
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
-                  rows={2}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 resize-none"
-                />
-              </div>
-
-              {modal === "edit" && (
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.actif}
-                    onChange={(e) =>
-                      setForm({ ...form, actif: e.target.checked })
-                    }
-                    className="accent-ev-600 w-4 h-4"
-                  />
-                  Catégorie active
-                </label>
-              )}
-
-              {form.parent_id && (
-                <Alert type="info">
-                  Cette catégorie sera rattachée comme sous-catégorie de «{" "}
-                  {items.find((c) => String(c.id_categorie) === form.parent_id)
-                    ?.nom ?? "…"}{" "}
-                  ».
-                </Alert>
-              )}
-            </div>
-            <div className="p-5 pt-0 flex gap-3">
-              <button
-                onClick={() => setModal(null)}
-                className="flex-1 h-10 border text-sm text-gray-600 rounded-xl hover:bg-gray-50"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex-1 h-10 bg-ev-700 text-white text-sm rounded-xl hover:bg-ev-800 disabled:opacity-60 flex items-center justify-center"
-              >
-                {saving ? (
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : modal === "create" ? (
-                  "Créer"
-                ) : (
-                  "Enregistrer"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      </div>
-    </div>
-  );
+  return <ActivitesCrudPanel />;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useZoom, ZoomControl } from "@/components/admin/ZoomControl";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -44,7 +45,8 @@ const NAV_GROUPS: NavGroup[] = [
     { href: "/admin/analytics",  icon: BarChart3,       label: "Analytiques",   permission: PERMISSIONS.ANALYTICS_READ },
   ]},
   { label: "CATALOGUE", items: [
-    { href: "/admin/produits",   icon: Package,   label: "Produits",     permission: PERMISSIONS.PRODUITS_READ },
+    // Page « Produits » masquée pour le moment : les produits se gèrent sous les marques et les activités.
+    // { href: "/admin/produits",   icon: Package,   label: "Produits",     permission: PERMISSIONS.PRODUITS_READ },
     { href: "/admin/marques",    icon: Tag,       label: "Marques",      permission: PERMISSIONS.PRODUITS_READ },
     { href: "/admin/activites",  icon: Activity,  label: "Activités",    permission: PERMISSIONS.PRODUITS_READ },
     { href: "/admin/categories", icon: Layers,    label: "Catégories",   permission: PERMISSIONS.PRODUITS_READ },
@@ -142,6 +144,7 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const [sideOpen,  setSideOpen]  = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const { zoom, setZoom } = useZoom("ev_admin_zoom");
 
   const isLoginPage = pathname === "/admin/login";
 
@@ -365,6 +368,11 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                 <GlobalCommandPalette />
               </div>
 
+              {/* Taille d'affichage de tout le back-office */}
+              <div className="hidden sm:block">
+                <ZoomControl zoom={zoom} setZoom={setZoom} />
+              </div>
+
               <LanguageSwitcher compact />
 
               {/* Voir le site */}
@@ -411,7 +419,7 @@ export function AdminLayoutInner({ children }: { children: React.ReactNode }) {
           </header>
 
           {/* Contenu */}
-          <main className="flex-1 p-4 lg:p-7 admin-themed" style={{ maxWidth: 1440, width: "100%", margin: "0 auto" }}>
+          <main className="flex-1 p-4 lg:p-7 admin-themed" style={{ maxWidth: 1440, width: "100%", margin: "0 auto", zoom }}>
             {children}
           </main>
 

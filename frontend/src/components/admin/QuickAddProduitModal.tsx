@@ -5,6 +5,7 @@ import { type CatNodeFlat } from "@/lib/admin-catalog-utils";
 import type { CategorieAdmin } from "@/lib/admin-api";
 import { AlertCircle, X } from "lucide-react";
 import { useState } from "react";
+import { CategoryPicker } from "@/components/admin/CategoryPicker";
 
 function toSlug(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -41,7 +42,6 @@ export function QuickAddProduitModal({
   const F = (k: keyof typeof EMPTY, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
   const options = categories;
-  void allCategories;
 
   const handleSave = async () => {
     if (!form.nom.trim() || !form.slug.trim() || !form.id_categorie) {
@@ -101,7 +101,7 @@ export function QuickAddProduitModal({
                 <input
                   value={form.nom}
                   onChange={(e) => { F("nom", e.target.value); F("slug", toSlug(e.target.value)); }}
-                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
+                  className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-[#1f4d34] focus:ring-[#1f4d34]/20"
                 />
               </div>
               <div>
@@ -109,23 +109,18 @@ export function QuickAddProduitModal({
                 <input
                   value={form.slug}
                   onChange={(e) => F("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 font-mono text-xs"
+                  className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-[#1f4d34] focus:ring-[#1f4d34]/20 font-mono text-xs"
                 />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Catégorie *</label>
-                <select
+                <CategoryPicker
+                  inline
                   value={form.id_categorie}
-                  onChange={(e) => F("id_categorie", e.target.value)}
-                  className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white"
-                >
-                  <option value="">— Choisir —</option>
-                  {options.map((c) => (
-                    <option key={c.optionKey ?? c.id_categorie} value={c.id_categorie}>
-                      {"　".repeat(c.depth)}{c.depth > 0 ? "└ " : ""}{c.nom}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(id) => F("id_categorie", id)}
+                  options={options}
+                  allCategories={allCategories}
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -133,7 +128,7 @@ export function QuickAddProduitModal({
                   <select
                     value={form.division}
                     onChange={(e) => F("division", e.target.value)}
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white"
+                    className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none bg-white"
                   >
                     <option value="standard">Standard</option>
                     <option value="pro">Pro</option>
@@ -145,7 +140,7 @@ export function QuickAddProduitModal({
                   <input
                     type="number" value={form.ordre}
                     onChange={(e) => F("ordre", Number(e.target.value))}
-                    className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500"
+                    className="w-full h-10 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-[#1f4d34] focus:ring-[#1f4d34]/20"
                   />
                 </div>
               </div>
@@ -155,7 +150,7 @@ export function QuickAddProduitModal({
                   value={form.description}
                   onChange={(e) => F("description", e.target.value)}
                   rows={2}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-ev-500 resize-none"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:border-[#1f4d34] focus:ring-[#1f4d34]/20 resize-none"
                 />
               </div>
               <p className="text-[12px] text-gray-400">
@@ -173,7 +168,7 @@ export function QuickAddProduitModal({
           <button
             onClick={handleSave}
             disabled={saving || options.length === 0}
-            className="flex-1 h-10 bg-ev-700 text-white text-sm rounded-xl hover:bg-ev-800 disabled:opacity-60 flex items-center justify-center"
+            className="flex-1 h-10 bg-[#1f4d34] text-white text-sm rounded-xl hover:bg-[#173b28] disabled:opacity-60 flex items-center justify-center"
           >
             {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : "Créer"}
           </button>

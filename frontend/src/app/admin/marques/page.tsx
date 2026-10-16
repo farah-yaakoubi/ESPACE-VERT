@@ -10,7 +10,7 @@ import {
   type CategorieAdmin,
 } from "@/lib/admin-api";
 import { categoriesUnderMarque } from "@/lib/admin-catalog-utils";
-import { QuickAddProduitModal } from "@/components/admin/QuickAddProduitModal";
+import { ProduitsManager } from "@/components/admin/ProduitsManager";
 import {
   AlertCircle,
   ArrowLeft,
@@ -128,7 +128,7 @@ function MarqueModal({
                   onFieldChange("nom", value);
                   if (modal === "create") onFieldChange("slug", toSlug(value));
                 }}
-                className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2f6b4a]"
               />
             </div>
             <div>
@@ -143,7 +143,7 @@ function MarqueModal({
                     e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
                   )
                 }
-                className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs"
+                className="w-full h-10 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2f6b4a] font-mono text-xs"
               />
             </div>
           </div>
@@ -155,7 +155,7 @@ function MarqueModal({
               value={form.description}
               onChange={(e) => onFieldChange("description", e.target.value)}
               rows={2}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2f6b4a] resize-none"
             />
           </div>
           <div>
@@ -174,7 +174,7 @@ function MarqueModal({
               value={form.logo}
               onChange={(e) => onFieldChange("logo", e.target.value)}
               placeholder="/logos/ma-marque.png"
-              className="mt-1 w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2f6b4a]"
             />
           </div>
           <div>
@@ -193,7 +193,7 @@ function MarqueModal({
               value={form.banniere}
               onChange={(e) => onFieldChange("banniere", e.target.value)}
               placeholder="/images/hero/fertivert.webp"
-              className="mt-1 w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full h-9 px-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2f6b4a]"
             />
           </div>
           {modal === "edit" && (
@@ -202,7 +202,7 @@ function MarqueModal({
                 type="checkbox"
                 checked={form.actif}
                 onChange={(e) => onFieldChange("actif", e.target.checked)}
-                className="w-4 h-4 accent-blue-600"
+                className="w-4 h-4 accent-[#1f4d34]"
               />
               Marque active
             </label>
@@ -234,7 +234,7 @@ function MarqueModal({
             onClick={onSave}
             disabled={saving}
             className="flex-1 h-10 text-white text-sm rounded-xl disabled:opacity-60 flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg,#3C50E0,#4F60E8)" }}
+            style={{ background: "#1f4d34" }}
           >
             {saving ? (
               <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -323,11 +323,11 @@ function MarqueDetail({
           ) : (
             <div
               className="w-20 h-20 rounded-2xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg,#EEF2FF,#C7D2FE)" }}
+              style={{ background: "linear-gradient(135deg,#dce8df,#C7D2FE)" }}
             >
               <span
                 className="text-4xl font-black"
-                style={{ color: "#3C50E0" }}
+                style={{ color: "#1f4d34" }}
               >
                 {marque.nom[0]}
               </span>
@@ -388,8 +388,8 @@ function MarqueDetail({
               label: "Produits",
               val: marque._count?.produits ?? produits.length,
               icon: Package,
-              color: "#3C50E0",
-              bg: "#EEF2FF",
+              color: "#1f4d34",
+              bg: "#dce8df",
             },
             {
               label: "Catégories",
@@ -426,117 +426,8 @@ function MarqueDetail({
         </div>
       </div>
 
-      {/* Produits */}
-      <div
-        className="bg-white rounded-2xl border overflow-hidden"
-        style={{ borderColor: "#E2E8F0" }}
-      >
-        <div
-          className="flex items-center justify-between px-5 py-4 border-b"
-          style={{ borderColor: "#F1F5F9" }}
-        >
-          <div>
-            <h2 className="font-bold text-gray-800 text-sm">
-              Produits de cette marque
-            </h2>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {produits.length} produit{produits.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search
-                size={13}
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Rechercher…"
-                className="h-8 pl-7 pr-3 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-44"
-              />
-            </div>
-            <button
-              onClick={() => setAddOpen(true)}
-              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-xl text-white"
-              style={{ background: "linear-gradient(135deg,#3C50E0,#4F60E8)" }}
-            >
-              <Plus size={13} /> Nouveau produit
-            </button>
-          </div>
-        </div>
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <div
-              className="w-6 h-6 rounded-full border-4 animate-spin"
-              style={{ borderColor: "#EEF2FF", borderTopColor: "#3C50E0" }}
-            />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-gray-400">
-            <Package size={28} className="mx-auto mb-2 opacity-30" />
-            <p className="text-sm">
-              {search ? "Aucun résultat" : "Aucun produit pour cette marque"}
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y" style={{ borderColor: "#F8FAFC" }}>
-            {filtered.map((p) => {
-              const img = p.images.find((i) => i.is_principale) ?? p.images[0];
-              return (
-                <div
-                  key={p.id_produit}
-                  className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden border shrink-0 flex items-center justify-center">
-                    {img ? (
-                      <Image
-                        src={img.url}
-                        alt={p.nom}
-                        width={40}
-                        height={40}
-                        className="object-contain"
-                      />
-                    ) : (
-                      <span className="text-gray-300">🌿</span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">
-                      {p.nom}
-                    </p>
-                    <p className="text-xs text-gray-400 truncate">
-                      {(p.categorie as any)?.nom ?? p.slug}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${p.actif ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}
-                  >
-                    {p.actif ? "Actif" : "Inactif"}
-                  </span>
-                  <a
-                    href={`/produits/${p.slug}`}
-                    target="_blank"
-                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg shrink-0 transition-colors"
-                  >
-                    <ExternalLink size={12} />
-                  </a>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {addOpen && (
-        <QuickAddProduitModal
-          scopeLabel={marque.nom}
-          categories={scopedCategories}
-          allCategories={allCategories}
-          onClose={() => setAddOpen(false)}
-          onCreated={loadProduits}
-        />
-      )}
+      {/* Produits — gestion complète, limitée aux catégories de cette marque */}
+      <ProduitsManager scope={{ type: "marque", id: marque.id_marque, label: marque.nom }} />
     </div>
   );
 }
@@ -690,7 +581,7 @@ export default function AdminMarquesPage() {
             {items.length} marque{items.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <button
             onClick={load}
             className="p-2 text-gray-400 hover:text-gray-700 rounded-xl hover:bg-gray-100"
@@ -700,7 +591,7 @@ export default function AdminMarquesPage() {
           <button
             onClick={openCreate}
             className="flex items-center gap-2 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm"
-            style={{ background: "linear-gradient(135deg,#3C50E0,#4F60E8)" }}
+            style={{ background: "#1f4d34" }}
           >
             <Plus size={16} />
             Nouvelle marque
@@ -712,7 +603,7 @@ export default function AdminMarquesPage() {
         <div className="flex justify-center py-20">
           <div
             className="w-8 h-8 rounded-full animate-spin"
-            style={{ border: "3px solid #EEF2FF", borderTopColor: "#3C50E0" }}
+            style={{ border: "3px solid #dce8df", borderTopColor: "#1f4d34" }}
           />
         </div>
       ) : (
@@ -746,12 +637,12 @@ export default function AdminMarquesPage() {
                   <div
                     className="w-14 h-14 rounded-2xl flex items-center justify-center"
                     style={{
-                      background: "linear-gradient(135deg,#EEF2FF,#C7D2FE)",
+                      background: "linear-gradient(135deg,#dce8df,#C7D2FE)",
                     }}
                   >
                     <span
                       className="text-2xl font-black"
-                      style={{ color: "#3C50E0" }}
+                      style={{ color: "#1f4d34" }}
                     >
                       {m.nom[0]}
                     </span>
@@ -789,13 +680,13 @@ export default function AdminMarquesPage() {
                       href={`/marques/${m.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                      className="p-1.5 text-gray-400 hover:text-[#1f4d34] hover:bg-[#f0f5f1] rounded-lg"
                     >
                       <ExternalLink size={12} />
                     </a>
                     <button
                       onClick={() => openEdit(m)}
-                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                      className="p-1.5 text-gray-400 hover:text-[#1f4d34] hover:bg-[#f0f5f1] rounded-lg"
                     >
                       <Edit2 size={12} />
                     </button>
@@ -824,7 +715,7 @@ export default function AdminMarquesPage() {
                   </div>
                   <span
                     className="flex items-center gap-1 text-xs font-semibold"
-                    style={{ color: "#3C50E0" }}
+                    style={{ color: "#1f4d34" }}
                   >
                     Gérer <ChevronRight size={11} />
                   </span>
