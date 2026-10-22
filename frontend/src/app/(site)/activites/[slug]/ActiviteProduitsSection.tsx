@@ -25,9 +25,7 @@ import {
   findCategoryPathInTree,
   getActivityCategoryHref,
 } from "@/lib/category-url";
-// Widget "Quelle semence pour moi ?" masqué pour le moment — décommenter
-// pour le réactiver dans le layout ci-dessous.
-// import { SemencesRecommandationCard } from "./SemencesRecommandation";
+import { SemencesRecommandationCard } from "./SemencesRecommandation";
 import { JardinageSidebar, JardinageCategoryGrid, JardinageProductGrid } from "./JardinageCatalogShowcase";
 import { useI18n } from "@/i18n/I18nProvider";
 import { translatedField } from "@/i18n/translated-field";
@@ -116,7 +114,7 @@ function shouldUseCatalogueView(node: CatNode | null, isMachinisme = false, isFe
   // CatalogueCoverGrid). Sans ça, une sous-catégorie Fertilisation dont les
   // enfants n'ont pas encore d'image passée par l'admin tombait directement
   // sur la liste de produits générique au lieu d'afficher ses tuiles.
-  if (isFertilisationPage) return (node.children ?? []).length > 0;
+  if (isFertilisationPage) return (node.children ?? []).some(child => !!child.image);
   // La grille "cover" n'affiche que les sous-catégories illustrées : on ne
   // bascule en vue grille que s'il y en a au moins une — comportement
   // uniforme sur toutes les autres activités, Jardinage & Machinisme inclus.
@@ -138,7 +136,7 @@ function shouldUseCatalogueView(node: CatNode | null, isMachinisme = false, isFe
 function resolveCoverNode(node: CatNode | null, isFertilisationPage = false): CatNode | null {
   if (!node) return null;
   let current = node;
-  while ((current.children ?? []).length === 1) {
+  while (!isFertilisationPage && (current.children ?? []).length === 1) {
     current = current.children![0];
   }
   const kids = current.children ?? [];
@@ -393,9 +391,8 @@ function SemencesCategoryTiles({
   onSelect: (id: number | null) => void;
 }) {
   const { locale, t } = useI18n();
-  // On n'affiche que les catégories illustrées : une sous-catégorie sans
-  // image ne doit pas apparaître dans cette rangée de tuiles (pas de
-  // pictogramme de secours ici, contrairement à d'autres écrans du site).
+  // Chaque niveau affiche uniquement ses catégories illustrées. Les enfants
+  // apparaissent dans la grille suivante après sélection de leur parent.
   const illustrated = nodes.filter(n => !!n.image);
   if (illustrated.length === 0) return null;
 
@@ -481,6 +478,108 @@ function SemencesCategoryTiles({
   );
 }
 
+function FertilisationCategorySelector({
+  nodes, activeId, onSelect,
+}: {
+  nodes: CatNode[];
+  activeId: number | null;
+  onSelect: (id: number | null) => void;
+}) {
+  const { locale, t } = useI18n();
+  const activePath = activeId ? findPath(nodes, activeId) : null;
+  const activeRoot = activePath?.[0] ?? null;
+  const roots = nodes.filter((node) => !!node.image);
+  const activeBranch = activePath ?? [];
+  const categoryLevels = activeBranch.flatMap((parent, depth) => {
+    const children = (parent.children ?? []).filter((node) => !!node.image);
+    return children.length > 0
+      ? [{ parent, children, selectedId: activeBranch[depth + 1]?.id_categorie ?? null }]
+      : [];
+  });
+  if (roots.length === 0) return null;
+
+  return (
+    <div className="relative left-1/2 right-1/2 -mx-[50vw] mb-3 w-screen bg-[#ecdfc0] px-4 py-5 md:py-6">
+      <div className="container-ev">
+        <p className="text-center text-[11.5px] font-extrabold uppercase tracking-[0.24em] text-[#8a6d3b]">
+          {t("catalog.shopByCategory", "Choisissez votre gamme")}
+        </p>
+        <div className="mx-auto mt-5 flex max-w-xl justify-center gap-3 rounded-2xl border border-[#b99c6d]/35 bg-white/60 p-2 shadow-sm">
+          {roots.map((root) => {
+            const selected = activeRoot?.id_categorie === root.id_categorie;
+            return (
+              <button
+                key={root.id_categorie}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => onSelect(selected ? null : root.id_categorie)}
+                className={cn(
+                  "min-h-12 w-full max-w-[220px] flex-1 rounded-xl px-5 py-3 text-sm font-extrabold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ev-700 focus-visible:ring-offset-2",
+                  selected
+                    ? "bg-ev-800 text-white shadow-md"
+                    : "bg-white text-ev-900 hover:bg-ev-50"
+                )}
+              >
+                {catLabel(root, locale)}
+                {selected && <span className="ml-2 text-xs font-semibold text-white/75">✓</span>}
+              </button>
+            );
+          })}
+        </div>
+        {categoryLevels.map(({ parent, children, selectedId }) => (
+          <div key={parent.id_categorie} className="mt-4 border-t border-[#b99c6d]/30 pt-4">
+            <p className="text-center text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#8a6d3b]">
+              {t("catalog.subcategories", "Sous-catégories de")} {catLabel(parent, locale)}
+            </p>
+            <div className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-6">
+              {children.map((node, index) => {
+                const selected = selectedId === node.id_categorie;
+                const dimmed = selectedId !== null && !selected;
+                return (
+                  <Reveal key={node.id_categorie} delay={index * 0.06} y={24} className="w-full max-w-[210px] min-[420px]:w-[calc(50%-10px)] sm:w-[calc(33.333%-14px)] lg:w-[calc(20%-16px)]">
+                    <button
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => onSelect(selected ? parent.id_categorie : node.id_categorie)}
+                      className={cn(
+                        "group flex w-full flex-col items-center text-center transition-all duration-300 focus:outline-none",
+                        selected ? "scale-[1.04]" : dimmed ? "scale-95 opacity-40 grayscale hover:scale-100 hover:opacity-100 hover:grayscale-0" : ""
+                      )}
+                    >
+                      <span className={cn(
+                        "relative aspect-square w-full overflow-hidden rounded-2xl transition-shadow duration-300",
+                        selected && "ring-2 ring-ev-700 ring-offset-2 shadow-lg"
+                      )}>
+                        <Image
+                          src={node.image!}
+                          alt={catLabel(node, locale)}
+                          fill
+                          className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                          sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 20vw"
+                        />
+                      </span>
+                      <span className="mt-3 text-[0.95rem] font-semibold leading-snug text-[#1b2118] transition-colors group-hover:text-ev-700 sm:mt-4 sm:text-[1.05rem]" style={{ fontFamily: "var(--font-serif)" }}>
+                        {catLabel(node, locale)}
+                      </span>
+                      <span className={cn(
+                        "mt-3 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm transition-all sm:mt-4 sm:text-[12.5px]",
+                        selected ? "bg-ev-800" : "bg-ev-700 group-hover:bg-ev-800"
+                      )}>
+                        {selected ? t("catalog.selected", "Sélectionnée") : t("catalog.viewProducts", "Voir les produits")}
+                        <ChevronRight size={14} />
+                      </span>
+                    </button>
+                  </Reveal>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ── Pagination ─────────────────────────────────────────────────────────── */
 function Pagination({ page, totalPages, onPageChange }: {
   page: number; totalPages: number; onPageChange: (p: number) => void;
@@ -525,7 +624,9 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
   const router = useRouter();
   const pathname = usePathname();
   const catParam = searchParams.get("cat");
-  const isSemencesPage = activiteSlug === "semences-et-plants";
+  // Fertilisation partage exactement la mise en page de Semences & plants
+  // (tuiles catégories, panneau de filtres, grille/liste, pagination).
+  const isSemencesPage = activiteSlug === "semences-et-plants" || activiteSlug === "fertilisation";
   const isMachinisme = activiteSlug === "jardinage-et-machinisme";
   const isFertilisationPage = activiteSlug === "fertilisation";
   // Cartes produits "plein format" (image en ratio naturel, non recadrée) —
@@ -607,7 +708,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
   const [gridView, setGridView] = useState<"comfortable" | "list">("comfortable");
 
   const [catalogueCatId, setCatalogueCatId] = useState<number | null>(() => {
-    if (!selectedCategoryIdFromUrl) return null;
+    if (!selectedCategoryIdFromUrl || isFertilisationPage) return null;
     const node = findNode(tree, selectedCategoryIdFromUrl);
     if (shouldUseCatalogueView(node, isMachinisme, isFertilisationPage)) return selectedCategoryIdFromUrl;
     return null;
@@ -618,6 +719,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
     setFilters(f => ({ ...f, categoryId: id }));
     setPage(1);
     if (!id) { setCatalogueCatId(null); return; }
+    if (isFertilisationPage) { setCatalogueCatId(null); return; }
     const node = findNode(tree, id);
     if (shouldUseCatalogueView(node, isMachinisme, isFertilisationPage)) setCatalogueCatId(id);
     else setCatalogueCatId(null);
@@ -711,6 +813,12 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
     const node = findNode(tree, id);
     if (node && isEtudeInstallationCategory(node)) {
       router.push(getEtudeInstallationHref(activiteSlug));
+      return;
+    }
+    if (isFertilisationPage) {
+      setCatalogueCatId(null);
+      handleFiltersChange({ ...filters, categoryId: id });
+      syncCategoryRoute(id);
       return;
     }
     if (shouldUseCatalogueView(node, isMachinisme, isFertilisationPage)) {
@@ -981,6 +1089,11 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
         </div>
       )}
       <div className={cn("container-ev", isSemencesPage ? "pb-5" : "py-5")}>
+        {activiteSlug === "semences-et-plants" && (
+          <div className="mb-8 mt-3">
+            <SemencesRecommandationCard products={scopedProduits} />
+          </div>
+        )}
         {isMachinisme && (
           <div className="mb-6 mt-2">
             <p className="text-[12px] font-extrabold uppercase tracking-[0.22em] mb-2" style={{ color: "#e30613" }}>
@@ -1006,19 +1119,24 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
         )}
         {isSemencesPage ? (
           <div className="mb-2">
-            <SemencesCategoryTiles
-              nodes={tree}
-              // La tuile active doit rester celle de premier niveau cliquée
-              // au départ (ex. "Semences maraîchères"), même après avoir
-              // sélectionné une sous-catégorie plus profonde (ex.
-              // "Standard") dans le panneau de filtres — sinon
-              // `filters.categoryId` pointe vers la sous-catégorie, qui ne
-              // correspond à aucune tuile, et toutes les tuiles retombent en
-              // gris comme si plus rien n'était sélectionné.
-              activeId={semencesRootNode?.id_categorie ?? filters.categoryId}
-              allProduits={scopedProduits}
-              onSelect={(id) => handleCategorySelect(id)}
-            />
+            {isFertilisationPage ? (
+              <FertilisationCategorySelector
+                nodes={tree}
+                activeId={filters.categoryId}
+                onSelect={(id) => handleCategorySelect(id)}
+              />
+            ) : (
+              <SemencesCategoryTiles
+                nodes={tree}
+                // La tuile active doit rester celle de premier niveau cliquée
+                // au départ (ex. "Semences maraîchères"), même après avoir
+                // sélectionné une sous-catégorie plus profonde (ex.
+                // "Standard") dans le panneau de filtres.
+                activeId={semencesRootNode?.id_categorie ?? filters.categoryId}
+                allProduits={scopedProduits}
+                onSelect={(id) => handleCategorySelect(id)}
+              />
+            )}
 
             {/* Bandeau d'options : icône pour ouvrir/fermer le panneau de
                 filtres (masqué par défaut) + options d'affichage (densité
@@ -1081,8 +1199,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
                * la largeur disponible, comme sur le site de référence —
                * SAUF si la catégorie cliquée a des sous-catégories illustrées
                * ("hybride", etc.), auquel cas on affiche d'abord la grille
-               * de couverture (comme en mode "panneau ouvert"), jusqu'à ce
-               * qu'une sous-catégorie feuille soit choisie. */
+               * de couverture jusqu'à ce qu'une sous-catégorie feuille soit choisie. */
               <>
                 {catalogueNode ? (
                   <CatalogueCoverGrid
@@ -1090,6 +1207,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
                     allProduits={facetProduits}
                     onSelectChild={(id) => handleCategorySelect(id)}
                     onClose={() => handleCategorySelect(null)}
+                    requireImage
                   />
                 ) : (
                   <>
@@ -1125,14 +1243,12 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
                 {/* Zone principale */}
                 <div className="flex-1 min-w-0">
                   {catalogueNode ? (
-                    /* Catégorie avec sous-catégories (issues de la BDD, pas en dur) :
-                       on affiche la grille de sous-catégories au lieu des produits,
-                       jusqu'à ce qu'une sous-catégorie feuille soit choisie. */
                     <CatalogueCoverGrid
                       node={catalogueNode}
                       allProduits={facetProduits}
                       onSelectChild={(id) => handleCategorySelect(id)}
                       onClose={() => handleCategorySelect(null)}
+                      requireImage
                     />
                   ) : (
                     <>
@@ -1141,8 +1257,6 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
                     </>
                   )}
                 </div>
-
-                {/* Widget "Quelle semence pour moi ?" masqué pour le moment. */}
               </div>
             )}
           </div>
@@ -1231,7 +1345,7 @@ function ActiviteProduitsSection({ id_activite, activiteSlug, categories, catego
                   allProduits={scopedProduits}
                   onSelectChild={(id) => handleCategorySelect(id)}
                   onClose={reset}
-                  requireImage={!isFertilisationPage}
+                  requireImage
                 />
               )
             )}

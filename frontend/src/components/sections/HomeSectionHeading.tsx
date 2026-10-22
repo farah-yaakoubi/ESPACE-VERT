@@ -43,43 +43,42 @@ export function HomeSectionHeading({
 
   return (
     <div className={centered ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
-      <motion.div
-        className={`mb-2 flex items-center gap-2 ${centered ? "justify-center" : ""}`}
-        initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-        animate={{ opacity: motionReady ? 1 : 0, y: motionReady ? 0 : 10 }}
-        transition={{ duration: 0.45, ease: EASE_SMOOTH }}
-      >
-        {Icon && (
-          <motion.span
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 shadow-sm ring-1 ring-[#1f4d34]/10"
-            initial={reduceMotion ? false : { opacity: 0, scale: 0.82, rotate: -12 }}
-            animate={{
-              opacity: motionReady ? 1 : 0,
-              scale: motionReady ? [1, 1.08, 1] : 0.82,
-              rotate: motionReady ? 0 : -12,
-            }}
-            transition={{
-              opacity: { duration: 0.55, ease: EASE_SMOOTH, delay: 0.05 },
-              rotate: { duration: 0.55, ease: EASE_SMOOTH, delay: 0.05 },
-              scale: reduceMotion
-                ? { duration: 0 }
-                : { duration: 2.8, ease: "easeInOut", repeat: Infinity, repeatDelay: 1.1 },
-            }}
-          >
-            <Icon className="h-3.5 w-3.5" strokeWidth={2} style={{ color: FOREST }} />
-          </motion.span>
-        )}
-        <span
-          className="text-[11px] font-extrabold uppercase tracking-[0.12em] sm:text-xs"
-          style={{ color: FOREST }}
+      {eyebrow && (
+        <motion.div
+          className={`mb-2 flex items-center gap-2 ${centered ? "justify-center" : ""}`}
+          initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: motionReady ? 1 : 0, y: motionReady ? 0 : 10 }}
+          transition={{ duration: 0.45, ease: EASE_SMOOTH }}
         >
-          {eyebrow}
-        </span>
-      </motion.div>
+          {Icon && (
+            <motion.span
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-white/80 shadow-sm ring-1 ring-[#1f4d34]/10"
+              initial={reduceMotion ? false : { opacity: 0, scale: 0.82, rotate: -12 }}
+              animate={{
+                opacity: motionReady ? 1 : 0,
+                scale: motionReady ? [1, 1.08, 1] : 0.82,
+                rotate: motionReady ? 0 : -12,
+              }}
+              transition={{
+                opacity: { duration: 0.55, ease: EASE_SMOOTH, delay: 0.05 },
+                rotate: { duration: 0.55, ease: EASE_SMOOTH, delay: 0.05 },
+                scale: reduceMotion
+                  ? { duration: 0 }
+                  : { duration: 2.8, ease: "easeInOut", repeat: Infinity, repeatDelay: 1.1 },
+              }}
+            >
+              <Icon className="h-3.5 w-3.5" strokeWidth={2} style={{ color: FOREST }} />
+            </motion.span>
+          )}
+          <span className="text-xs font-bold uppercase tracking-[0.12em] sm:text-[13px]" style={{ color: FOREST }}>
+            {eyebrow}
+          </span>
+        </motion.div>
+      )}
 
       <h2
-        className="text-[clamp(1.55rem,3.2vw,2.35rem)] font-extrabold leading-[1.16]"
-        style={{ color: INK, fontFamily: "var(--font-cairo), Cairo, sans-serif", letterSpacing: 0 }}
+        className="text-[clamp(1.6rem,3.3vw,2.4rem)] font-bold leading-[1.16]"
+        style={{ color: INK, fontFamily: "var(--font-body), Cairo, sans-serif", letterSpacing: 0 }}
       >
         <span className="inline-flex flex-wrap gap-x-2 gap-y-1">
           {titleWords.map((word, index) => (
@@ -186,7 +185,7 @@ export function HomeSectionHeading({
 
       {subtitle && (
         <motion.p
-          className={`mt-3 text-[14px] font-semibold leading-7 sm:text-[15px] ${centered ? "mx-auto" : ""}`}
+          className={`mt-3 text-base font-medium leading-7 sm:text-[17px] ${centered ? "mx-auto" : ""}`}
           style={{ color: BODY, maxWidth: 620 }}
           initial={reduceMotion ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: motionReady ? 1 : 0, y: motionReady ? 0 : 12 }}

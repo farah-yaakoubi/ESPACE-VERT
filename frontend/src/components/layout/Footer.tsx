@@ -119,14 +119,14 @@ function AgencesMap() {
 
           {/* Informations — liens réellement fonctionnels */}
           <div className="flex flex-col gap-2 px-5 pb-6 pt-4">
-            <p className="flex items-start gap-2 text-[13px] font-bold leading-snug text-gray-600">
+            <p className="flex items-start gap-2 text-[15px] font-semibold leading-relaxed text-gray-700">
               <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#1a3d0a]" />
               {ag.adresse}
             </p>
 
             <a
               href={`tel:${ag.tel.replace(/[^+\d]/g, "")}`}
-              className="flex items-center gap-2 text-[13px] font-bold text-gray-600 transition-colors hover:text-[#1a3d0a]"
+              className="flex items-center gap-2 text-[15px] font-semibold text-gray-700 transition-colors hover:text-[#1a3d0a]"
             >
               <Phone className="h-3.5 w-3.5 shrink-0 text-[#1a3d0a]" />
               {ag.tel}
@@ -135,7 +135,7 @@ function AgencesMap() {
             {ag.tel2 && (
               <a
                 href={`tel:${ag.tel2.replace(/[^+\d]/g, "")}`}
-                className="flex items-center gap-2 text-[12px] font-bold text-gray-500 transition-colors hover:text-[#1a3d0a]"
+                className="flex items-center gap-2 text-[14px] font-medium text-gray-600 transition-colors hover:text-[#1a3d0a]"
               >
                 <Phone className="h-3.5 w-3.5 shrink-0 text-[#1a3d0a]/60" />
                 {ag.tel2}
@@ -145,7 +145,7 @@ function AgencesMap() {
             {ag.email && (
               <a
                 href={`mailto:${ag.email}`}
-                className="flex items-center gap-2 break-all text-[13px] font-bold text-gray-600 transition-colors hover:text-[#1a3d0a]"
+                className="flex items-center gap-2 break-all text-[15px] font-semibold text-gray-700 transition-colors hover:text-[#1a3d0a]"
               >
                 <Mail className="h-3.5 w-3.5 shrink-0 text-[#1a3d0a]" />
                 {ag.email}
@@ -176,7 +176,7 @@ export function Footer() {
       { href: "/marques/fertivert", label: "Fertilisation" },
       { href: "/activites/pollinisation-et-protection-des-plantes", label: "Pollinisation & Protection" },
       { href: "/marques/pulvert", label: "Pulvérisation" },
-      { href: "/activites/machinisme-et-jardinage", label: "Jardinage & Machinisme" },
+      { href: "/activites/jardinage-et-machinisme", label: "Jardinage & Machinisme" },
     ],
     Marques: [
       { href: "/marques/fertivert", label: "Fertivert" },
@@ -242,12 +242,12 @@ export function Footer() {
                     transition={{ delay: 0.14 + i * 0.06, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
                     whileHover={{ y: -3, scale: 1.08 }} whileTap={{ scale: 0.9 }}
                     title={s.name}
-                    className="relative w-10 h-10 rounded-2xl overflow-hidden group shadow-md hover:shadow-xl transition-shadow flex items-center justify-center text-white"
+                    className="relative w-12 h-12 rounded-2xl overflow-hidden group shadow-md hover:shadow-xl transition-shadow flex items-center justify-center text-white"
                     style={{ background: (s as any).gradient ?? s.bg }}>
                     <span className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity"
                       style={{ background: "linear-gradient(135deg,#fff 0%,transparent 60%)" }} />
                     <motion.span className="relative z-10" whileHover={{ rotate: [0, -8, 8, 0] }} transition={{ duration: 0.3 }}>
-                      {s.icon}
+                      <span className="[&_svg]:h-5 [&_svg]:w-5">{s.icon}</span>
                     </motion.span>
                   </motion.a>
                 ))}
@@ -257,11 +257,11 @@ export function Footer() {
 
           {/* Services */}
           <motion.div {...fadeUp(0.14)} className="lg:col-span-2">
-            <h4 className="text-sm font-bold text-[#1a7a2e] mb-5 border-b border-[#1a7a2e]/25 pb-2 inline-block">{t("footer.services")}</h4>
+            <h4 className="text-lg font-bold text-[#1a7a2e] mb-5 border-b border-[#1a7a2e]/25 pb-2 inline-block">{t("footer.services")}</h4>
             <ul className="space-y-3 mt-3">
               {navLinks.Activités.map((l, i) => (
                 <li key={i}>
-                  <Link href={l.href} className="group flex items-center gap-2 text-gray-600 hover:text-[#1a3d0a] text-sm font-bold transition-colors">
+                  <Link href={l.href} className="group flex items-center gap-2 text-gray-600 hover:text-[#1a3d0a] text-[15px] font-bold leading-relaxed transition-colors">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#3cb648]/60 group-hover:bg-[#1a7a2e] transition-colors shrink-0" />
                     {l.label}
                   </Link>
@@ -272,11 +272,11 @@ export function Footer() {
 
           {/* Marques */}
           <motion.div {...fadeUp(0.17)} className="lg:col-span-2">
-            <h4 className="text-sm font-bold text-[#1a7a2e] mb-5 border-b border-[#1a7a2e]/25 pb-2 inline-block">{t("footer.brands")}</h4>
+            <h4 className="text-lg font-bold text-[#1a7a2e] mb-5 border-b border-[#1a7a2e]/25 pb-2 inline-block">{t("footer.brands")}</h4>
             <ul className="space-y-3 mt-3">
               {navLinks.Marques.map((l, i) => (
                 <li key={i}>
-                  <Link href={l.href} className="group flex items-center gap-2 text-gray-600 hover:text-[#1a3d0a] text-sm font-bold transition-colors">
+                  <Link href={l.href} className="group flex items-center gap-2 text-gray-600 hover:text-[#1a3d0a] text-[15px] font-bold leading-relaxed transition-colors">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#3cb648]/60 group-hover:bg-[#1a7a2e] transition-colors shrink-0" />
                     {l.label}
                   </Link>
@@ -287,11 +287,11 @@ export function Footer() {
 
           {/* Entreprise */}
           <motion.div {...fadeUp(0.20)} className="lg:col-span-2">
-            <h4 className="text-sm font-bold text-[#1a7a2e] mb-5 border-b border-[#1a7a2e]/25 pb-2 inline-block">{t("footer.company")}</h4>
+            <h4 className="text-lg font-bold text-[#1a7a2e] mb-5 border-b border-[#1a7a2e]/25 pb-2 inline-block">{t("footer.company")}</h4>
             <ul className="space-y-3 mt-3">
               {navLinks.Entreprise.map((l, i) => (
                 <li key={i}>
-                  <Link href={l.href} className="group flex items-center gap-2 text-gray-600 hover:text-[#1a3d0a] text-sm font-bold transition-colors">
+                  <Link href={l.href} className="group flex items-center gap-2 text-gray-600 hover:text-[#1a3d0a] text-[15px] font-bold leading-relaxed transition-colors">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#3cb648]/60 group-hover:bg-[#1a7a2e] transition-colors shrink-0" />
                     {l.label}
                   </Link>

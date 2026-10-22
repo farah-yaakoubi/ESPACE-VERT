@@ -17,8 +17,13 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 
 const TRANSLATABLE_ATTRS = ["placeholder", "title", "aria-label", "alt"] as const;
 const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "TEXTAREA", "CODE", "PRE"]);
+type TranslationState = { source: string; rendered: string };
+const textState = new WeakMap<Text, TranslationState>();
+const attributeState = new WeakMap<Element, Map<string, TranslationState>>();
+const translationCache = new Map<string, string>();
+const inFlight = new Set<string>();
 
-function translateDom(locale: Locale) {
+async function translateDom(locale: Locale) {
   if (typeof document === "undefined" || !document.body) return;
 
   const lookup = buildDomTranslationMap(locale);
@@ -27,10 +32,7 @@ function translateDom(locale: Locale) {
     const trailing = source.match(/\s*$/)?.[0] ?? "";
     return `${leading}${translated}${trailing}`;
   };
-  const translateValue = (value: string) => {
-    const translated = lookup.get(value.replace(/\s+/g, " ").trim());
-    return translated ? preserveWhitespace(value, translated) : value;
-  };
+  const pending = new Map<string, Array<() => void>>();
 
   const shouldSkip = (node: Node) => {
     const parent = node.parentElement;
@@ -43,17 +45,105 @@ function translateDom(locale: Locale) {
 
   for (const node of textNodes) {
     if (shouldSkip(node)) continue;
-    const next = translateValue(node.nodeValue ?? "");
-    if (next !== node.nodeValue) node.nodeValue = next;
+    const current = node.nodeValue ?? "";
+    const state = textState.get(node);
+    const source = state && current === state.rendered ? state.source : current;
+    const normalized = source.replace(/\s+/g, " ").trim();
+    if (!normalized) continue;
+    if (locale === "fr") {
+      if (current !== source) node.nodeValue = source;
+      textState.set(node, { source, rendered: source });
+      continue;
+    }
+    const known = lookup.get(normalized);
+    const cached = translationCache.get(`${locale}:${normalized}`);
+    const translated = known ?? cached;
+    if (translated) {
+      const rendered = preserveWhitespace(source, translated);
+      if (rendered !== current) node.nodeValue = rendered;
+      textState.set(node, { source, rendered });
+    } else if (!inFlight.has(`${locale}:${normalized}`)) {
+      const key = `${locale}:${normalized}`;
+      const setter = () => {
+        const latest = node.nodeValue ?? "";
+        const latestState = textState.get(node);
+        const latestSource = latestState && latest === latestState.rendered ? latestState.source : latest;
+        if (latestSource.replace(/\s+/g, " ").trim() !== normalized) return;
+        const rendered = preserveWhitespace(latestSource, translationCache.get(key) ?? latestSource);
+        if (rendered !== latest) node.nodeValue = rendered;
+        textState.set(node, { source: latestSource, rendered });
+      };
+      const setters = pending.get(normalized) ?? [];
+      setters.push(setter);
+      pending.set(normalized, setters);
+    }
   }
 
   for (const el of Array.from(document.body.querySelectorAll<HTMLElement>("*"))) {
     if (el.closest("[data-no-translate]") || SKIP_TAGS.has(el.tagName)) continue;
     for (const attr of TRANSLATABLE_ATTRS) {
-      const value = el.getAttribute(attr);
-      if (!value) continue;
-      const next = translateValue(value);
-      if (next !== value) el.setAttribute(attr, next);
+      const current = el.getAttribute(attr);
+      if (!current) continue;
+      const states = attributeState.get(el) ?? new Map<string, TranslationState>();
+      const state = states.get(attr);
+      const source = state && current === state.rendered ? state.source : current;
+      const normalized = source.replace(/\s+/g, " ").trim();
+      if (locale === "fr") {
+        if (current !== source) el.setAttribute(attr, source);
+        states.set(attr, { source, rendered: source });
+        attributeState.set(el, states);
+        continue;
+      }
+      const known = lookup.get(normalized);
+      const cached = translationCache.get(`${locale}:${normalized}`);
+      const translated = known ?? cached;
+      if (translated) {
+        const rendered = preserveWhitespace(source, translated);
+        if (rendered !== current) el.setAttribute(attr, rendered);
+        states.set(attr, { source, rendered });
+        attributeState.set(el, states);
+      } else if (normalized && !inFlight.has(`${locale}:${normalized}`)) {
+        const key = `${locale}:${normalized}`;
+        const setters = pending.get(normalized) ?? [];
+        setters.push(() => {
+          const latest = el.getAttribute(attr) ?? "";
+          const latestStates = attributeState.get(el) ?? new Map<string, TranslationState>();
+          const latestState = latestStates.get(attr);
+          const latestSource = latestState && latest === latestState.rendered ? latestState.source : latest;
+          if (latestSource.replace(/\s+/g, " ").trim() !== normalized) return;
+          const rendered = preserveWhitespace(latestSource, translationCache.get(key) ?? latestSource);
+          if (rendered !== latest) el.setAttribute(attr, rendered);
+          latestStates.set(attr, { source: latestSource, rendered });
+          attributeState.set(el, latestStates);
+        });
+        pending.set(normalized, setters);
+      }
+    }
+  }
+
+  const entries = [...pending.entries()];
+  for (let start = 0; start < entries.length; start += 40) {
+    const batch = entries.slice(start, start + 40);
+    batch.forEach(([value]) => inFlight.add(`${locale}:${value}`));
+    try {
+      const response = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ locale, texts: batch.map(([value]) => value) }),
+      });
+      if (!response.ok) continue;
+      const result = await response.json() as { translations?: unknown };
+      if (!Array.isArray(result.translations) || result.translations.length !== batch.length) continue;
+      batch.forEach(([source, setters], index) => {
+        const translated = result.translations![index];
+        if (typeof translated !== "string" || !translated.trim()) return;
+        translationCache.set(`${locale}:${source}`, translated);
+        setters.forEach((setter) => setter());
+      });
+    } catch {
+      // Keep the source text visible when the translation service is unavailable.
+    } finally {
+      batch.forEach(([value]) => inFlight.delete(`${locale}:${value}`));
     }
   }
 }
@@ -96,7 +186,7 @@ export function I18nProvider({
     let frame = 0;
     const run = () => {
       cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => translateDom(locale));
+      frame = requestAnimationFrame(() => { void translateDom(locale); });
     };
 
     run();

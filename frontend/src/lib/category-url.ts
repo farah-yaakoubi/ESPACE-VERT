@@ -11,6 +11,7 @@ function encodeSlugPath(slugs: string[]) {
 }
 
 export function getActivityCategoryHref(activiteSlug: string, slugs: string[]) {
+  if (activiteSlug === "pulverisation") return "/marques/pulvert";
   const path = encodeSlugPath(slugs.filter(Boolean));
   return path ? `/activites/${activiteSlug}/categorie/${path}` : `/activites/${activiteSlug}`;
 }
@@ -20,6 +21,12 @@ export function getActivityCategoryHrefById(
   categories: CategoryPathNode[],
   id: number,
 ) {
+  // La page Pulvert héberge le catalogue de Pulvérisation. Conserver l'ID
+  // sélectionné permet d'ouvrir directement la bonne catégorie depuis la navbar.
+  if (activiteSlug === "pulverisation") {
+    return `/marques/pulvert?cat=${encodeURIComponent(String(id))}#catalogue-marque`;
+  }
+
   const byId = new Map(categories.map((cat) => [cat.id_categorie, cat]));
   const slugs: string[] = [];
   const seen = new Set<number>();
@@ -74,6 +81,10 @@ export function getActivityCategoryHrefFromTree(
   nodes: CategoryPathNode[],
   id: number,
 ) {
+  if (activiteSlug === "pulverisation") {
+    return `/marques/pulvert?cat=${encodeURIComponent(String(id))}#catalogue-marque`;
+  }
+
   const path = findCategoryPathInTree(nodes, id);
   return path
     ? getActivityCategoryHref(activiteSlug, path.map((cat) => cat.slug))

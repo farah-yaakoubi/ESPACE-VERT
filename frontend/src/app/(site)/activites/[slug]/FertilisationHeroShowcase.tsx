@@ -1,38 +1,28 @@
 "use client";
 
 /**
- * Ré-export — la page activité Fertilisation utilise désormais le hero
- * partagé FertilisantHeroShowcase (voir src/components/sections/), avec
- * son titre propre et ses catégories d'activité.
+ * Hero de la page activité Fertilisation : exactement le même design que
+ * la page Semences & plants (photo plein format, titre animé, deux boutons),
+ * avec ses propres textes et sa propre image.
  */
-import { FertilisantHeroShowcase } from "@/components/sections/FertilisantHeroShowcase";
-
-interface FertilisationCategory {
-  id_categorie: number;
-  nom: string;
-  slug?: string;
-  parent_id?: number | null;
-  image?: string | null;
-}
+import { SemencesHeroShowcase } from "./SemencesHeroShowcase";
 
 export function FertilisationHeroShowcase({
   activiteSlug,
-  categories = [],
 }: {
   activiteSlug: string;
-  categories?: FertilisationCategory[];
+  /** Conservé pour compatibilité avec les anciens appels (non utilisé) */
+  categories?: unknown[];
 }) {
   return (
-    <FertilisantHeroShowcase
-      title="Optimisez vos récoltes avec nos engrais naturels"
-      heroSlideKey={`activite:${activiteSlug}`}
-      staticImage="/images/hero/BANER%20TEST.webp"
-      categories={categories}
+    <SemencesHeroShowcase
       activiteSlug={activiteSlug}
-      categoryAnchor="produits-activite"
-      ctaHref="#produits-activite"
-      fichesTechniquesHref="/rendez-vous"
-      crossSellHref={null}
+      image="/images/hero/BANNEQR.webp"
+      imageAlt="Fertilisation"
+      eyebrow="Fertilisation"
+      titleLines={["Nourrissez vos sols.", "Optimisez vos récoltes."]}
+      subtitle="Des engrais naturels et des solutions de fertilisation durables pour une croissance exceptionnelle, du sol à la récolte."
+      ctaLabel="Voir le catalogue"
     />
   );
 }

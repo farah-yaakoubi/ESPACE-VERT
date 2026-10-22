@@ -69,9 +69,8 @@ export default function NewsCarousel() {
       <div className="mx-auto max-w-[1400px] px-6">
         <div ref={headerRef} className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <HomeSectionHeading
-            eyebrow="Nos actualités"
-            title="Conseils et"
-            highlight="nouveautés"
+            eyebrow=""
+            title="Nos actualités"
             icon={Newspaper}
             inView={headerInView}
           />
@@ -149,15 +148,15 @@ export default function NewsCarousel() {
 
                   {/* Infos */}
                   <div className="space-y-3 px-1">
-                    <span className={`text-xs font-black uppercase tracking-wide ${CATEGORIES[index % CATEGORIES.length].color}`}>
+                    <span className={`text-xs font-semibold uppercase tracking-wide ${CATEGORIES[index % CATEGORIES.length].color}`}>
                       {CATEGORIES[index % CATEGORIES.length].name}
                     </span>
                     
-                    <h3 className="text-xl font-bold text-[#1b2118] leading-tight group-hover:text-green-800 transition-colors line-clamp-2">
+                    <h3 className="text-lg font-medium text-[#1b2118] leading-snug group-hover:text-green-800 transition-colors line-clamp-2 sm:text-xl">
                       {item.titre}
                     </h3>
                     
-                    <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 font-light">
+                    <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 font-normal">
                       {stripHtml(item.contenu)}...
                     </p>
 

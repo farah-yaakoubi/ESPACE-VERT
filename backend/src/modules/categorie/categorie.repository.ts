@@ -105,12 +105,22 @@ function buildTree(flat: CatFlat[]): CatNode[] {
   return sortNodesByOrder(roots);
 }
 
-async function collectCategorieIdsByMarque(id_marque: number) {
+async function collectCategorieIdsByMarque(id_marque: number, marqueSlug?: string) {
   const allCats = await prisma.categorie.findMany({
     where: { actif: true },
-    select: { id_categorie: true, parent_id: true, id_marque: true },
+    select: { id_categorie: true, parent_id: true, id_marque: true, id_activite: true },
   });
-  const roots = allCats.filter(c => c.id_marque === id_marque).map(c => c.id_categorie);
+  let pulverisationId: number | null = null;
+  if (marqueSlug === "pulvert") {
+    const activity = await prisma.activite.findUnique({
+      where: { slug: "pulverisation" },
+      select: { id_activite: true },
+    });
+    pulverisationId = activity?.id_activite ?? null;
+  }
+  const roots = allCats
+    .filter(c => c.id_marque === id_marque || (pulverisationId !== null && c.id_activite === pulverisationId && c.parent_id === null))
+    .map(c => c.id_categorie);
   const collected = new Set<number>();
   const collect = (id: number) => {
     if (collected.has(id)) return;
@@ -228,7 +238,7 @@ export const categorieRepository = {
     if (!marque) return null;
 
     // 2. Tous les produits de la marque via categorie → marque.
-    const marqueCatIds = await collectCategorieIdsByMarque(marque.id_marque);
+    const marqueCatIds = await collectCategorieIdsByMarque(marque.id_marque, marque.slug);
     const produits = await prisma.produit.findMany({
       where:   { id_categorie: marqueCatIds.length > 0 ? { in: marqueCatIds } : -1, actif: true },
       orderBy: PRODUCT_CATALOG_ORDER,

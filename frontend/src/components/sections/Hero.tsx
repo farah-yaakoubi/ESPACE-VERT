@@ -234,9 +234,9 @@ export function Hero() {
           margin: 0;
           max-width: 760px;
           color: #fff;
-          font-size: clamp(2.7rem, 6.5vw, 6rem);
-          font-weight: 950;
-          line-height: 0.92;
+          font-size: clamp(2.55rem, 5.4vw, 5rem);
+          font-weight: 700;
+          line-height: 1.02;
           letter-spacing: 0;
           text-shadow: 0 20px 60px rgba(0,0,0,0.38);
         }
@@ -249,7 +249,7 @@ export function Hero() {
           margin: 22px 0 0;
           max-width: 620px;
           color: rgba(255,255,255,0.84);
-          font-size: clamp(1rem, 1.5vw, 1.18rem);
+          font-size: clamp(1.08rem, 1.65vw, 1.28rem);
           line-height: 1.7;
           font-weight: 500;
           text-shadow: 0 10px 28px rgba(0,0,0,0.35);
@@ -348,7 +348,7 @@ export function Hero() {
           }
 
           .hero-title-pro {
-            font-size: clamp(2.35rem, 14vw, 4.15rem);
+            font-size: clamp(2.25rem, 12vw, 3.65rem);
           }
 
           .hero-subtitle-pro {

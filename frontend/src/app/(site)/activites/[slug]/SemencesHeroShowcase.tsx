@@ -3,12 +3,15 @@
 import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 
-/** Hero statique : image fixe, pas de récupération dynamique depuis l'admin. */
-const HERO_IMAGE = "/images/hero/banner semences.webp";
-
-/** Texte du titre, avec un retour à la ligne explicite entre les 2 phrases. */
-const TITLE_LINES = ["Fraîches. Locales.", "Adaptées à votre terre."];
-const TITLE_TEXT = TITLE_LINES.join("\n");
+/** Valeurs par défaut : page Semences & plants.
+ *  Le même hero sert aussi à la page Fertilisation (voir FertilisationHeroShowcase),
+ *  qui passe ses propres textes et son image. */
+const DEFAULT_IMAGE = "/images/hero/banner semences.webp";
+const DEFAULT_EYEBROW = "Semences & plants";
+const DEFAULT_TITLE_LINES = ["Fraîches. Locales.", "Adaptées à votre terre."];
+const DEFAULT_SUBTITLE =
+  "Découvrez nos semences et plants sélectionnés pour vos cultures — des variétés testées, du semis à la récolte.";
+const DEFAULT_CTA_LABEL = "Voir le catalogue";
 /** Délai entre chaque caractère (ms) — plus grand = plus lent. */
 const TYPE_SPEED_MS = 115;
 const LETTER_FADE_MS = 850;
@@ -16,6 +19,13 @@ const LETTER_FADE_MS = 850;
 interface SemencesHeroShowcaseProps {
   activiteSlug: string;
   ctaHref?: string;
+  image?: string;
+  imageAlt?: string;
+  eyebrow?: string;
+  /** Une entrée par ligne du titre (retour à la ligne entre chaque) */
+  titleLines?: string[];
+  subtitle?: string;
+  ctaLabel?: string;
 }
 
 /** Effet machine à écrire : révèle le titre caractère par caractère. */
@@ -42,15 +52,22 @@ function useTypewriter(text: string, speedMs: number) {
 
 export function SemencesHeroShowcase({
   ctaHref = "#produits-activite",
+  image = DEFAULT_IMAGE,
+  imageAlt,
+  eyebrow = DEFAULT_EYEBROW,
+  titleLines = DEFAULT_TITLE_LINES,
+  subtitle = DEFAULT_SUBTITLE,
+  ctaLabel = DEFAULT_CTA_LABEL,
 }: SemencesHeroShowcaseProps) {
-  const { count } = useTypewriter(TITLE_TEXT, TYPE_SPEED_MS);
+  const TITLE_LINES = titleLines;
+  const { count } = useTypewriter(TITLE_LINES.join("\n"), TYPE_SPEED_MS);
 
   return (
     <section className="relative overflow-hidden bg-sand-50">
       {/* ── Photo plein format ─────────────────────────────────────────── */}
       <div className="relative min-h-[480px] lg:min-h-[560px] flex items-center justify-center overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={HERO_IMAGE} alt="Semences et plants" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={image} alt={imageAlt ?? eyebrow} className="absolute inset-0 h-full w-full object-cover" />
 
         {/* ── Contenu texte ─────────────────────────────────────────────── */}
         <div
@@ -61,7 +78,7 @@ export function SemencesHeroShowcase({
             className="text-[12px] sm:text-[13px] font-extrabold tracking-[0.22em] uppercase mb-3 text-white"
             style={{ textShadow: "0 1px 6px rgba(0,0,0,0.35)" }}
           >
-            Semences &amp; plants
+            {eyebrow}
           </p>
 
           <h1
@@ -102,8 +119,7 @@ export function SemencesHeroShowcase({
             className="mt-4 text-[13.5px] sm:text-sm font-medium text-white/85 max-w-lg"
             style={{ textShadow: "0 1px 6px rgba(0,0,0,0.3)" }}
           >
-            Découvrez nos semences et plants sélectionnés pour vos cultures — des variétés
-            testées, du semis à la récolte.
+            {subtitle}
           </p>
 
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
@@ -111,7 +127,7 @@ export function SemencesHeroShowcase({
               href={ctaHref}
               className="inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-[13.5px] font-bold text-white uppercase tracking-wide bg-ev-700 hover:bg-ev-800 transition-colors duration-200"
             >
-              Voir le catalogue
+              {ctaLabel}
               <ArrowRight size={16} />
             </a>
             <a

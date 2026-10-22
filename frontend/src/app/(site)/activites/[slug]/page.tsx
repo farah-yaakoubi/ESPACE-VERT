@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
-import { CalendarDays } from "lucide-react";
 import { cookies } from "next/headers";
 import { activitesService, categoriesService, marquesService } from "@/services";
 import { ActiviteProduitsSectionWrapper } from "./ActiviteProduitsSection";
@@ -9,14 +7,10 @@ import { PageHeroStatic } from "@/components/sections/PageHeroStatic";
 import { JardinageHeroShowcase } from "./JardinageHeroShowcase";
 import { SemencesHeroShowcase } from "./SemencesHeroShowcase";
 import { FertilisationHeroShowcase } from "./FertilisationHeroShowcase";
-import { FertilisantHeroShowcase } from "@/components/sections/FertilisantHeroShowcase";
-import { CategoryTree } from "@/components/catalogue/CategoryTree";
-import { fetchMarqueTree } from "@/lib/api/catalogue";
 import { PulverisationShowcase } from "./PulverisationShowcase";
 import { PollinisationProtectionShowcase } from "./PollinisationProtectionShowcase";
-import { SemencesRecommandation } from "./SemencesRecommandation";
 import { getEtudeInstallationHref, isEtudeInstallationCategory } from "@/lib/etude-installation";
-import { getActivityCategoryHrefById, findCategoryBySlugPath } from "@/lib/category-url";
+import { getActivityCategoryHrefById } from "@/lib/category-url";
 import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
 import { translatedField } from "@/i18n/translated-field";
 import { cn } from "@/lib/utils";
@@ -29,7 +23,9 @@ interface PageProps {
   searchParams?: Promise<{ cat?: string | string[] }>;
 }
 
-export const revalidate = 300;
+// La langue est lue dans un cookie (layout racine) : la page est rendue à chaque requête.
+// Le cache des données reste actif via fetch(..., { next: { revalidate } }) dans services/.
+export const dynamic = "force-dynamic";
 
 function getActiviteHeroSettings(slug: string) {
   switch (slug) {
@@ -134,6 +130,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 /* ── Page ────────────────────────────────────────────────────────── */
 export default async function ActiviteDetailPage({ params, searchParams }: PageProps) {
   const { slug, catPath = [] } = await params;
+
+  // La pulvérisation est désormais présentée sur la page de marque Pulvert.
+  // Les anciens liens d'activité et de catégories profondes restent valides
+  // et redirigent vers la page canonique.
+  if (slug === "pulverisation") redirect("/marques/pulvert");
 
   // ── Page 100% statique — Pollinisation & Protection des Plantes ────
   // Le catalogue (catégories/produits) n'est pas encore prêt en base.
@@ -248,18 +249,8 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
   const activiteDescription = translatedField(activite as any, "description", locale) || activite.description;
 
   // ── Fertilisation ────────────────────────────────────────────────
-  // Cette page doit avoir exactement le même affichage que la page
-  // marque Fertivert (/marques/fertivert) : même hero, même catalogue
-  // (onglets Pro/Garden), tout en restant sous l'URL /activites/fertilisation/...
-  // On réutilise donc l'arbre catégories/produits de la marque Fertivert.
-  // Si l'appel échoue (marque absente en base, etc.), on retombe sur
-  // l'ancien affichage (FertilisationHeroShowcase + ActiviteProduitsSection)
-  // pour ne jamais casser la page.
-  const fertivertTree = isFertilisation ? await fetchMarqueTree("fertivert") : null;
-  const fertivertInitialCategoryId =
-    fertivertTree && catPath.length > 0
-      ? findCategoryBySlugPath(fertivertTree.categories, catPath)?.id_categorie ?? null
-      : null;
+  // Même conception que la page Semences & plants : hero plein format,
+  // rangée de tuiles catégories puis catalogue (voir ActiviteProduitsSection).
 
   return (
     <div className={cn(isMachinisme && "theme-machinisme")}>
@@ -268,19 +259,15 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
         <JardinageHeroShowcase activiteSlug={activite.slug} categories={rootCategories} />
       ) : isSemences ? (
         <SemencesHeroShowcase activiteSlug={activite.slug} />
-      ) : isFertilisation && fertivertTree ? (
-        <FertilisantHeroShowcase
-          title="Optimisez vos récoltes avec nos engrais naturels"
-          subtitle="Des solutions de fertilisation durables pour une croissance exceptionnelle."
-          heroSlideKey="marque:fertivert"
-          fallbackImage="/images/hero/BANNEQR.webp"
-          categories={fertivertTree.categories}
-          categoryAnchor="produits-activite"
-          ctaHref="#produits-activite"
-          fichesTechniquesHref="/rendez-vous"
-          showTypeCards={false}
-          crossSellHref={null}
-          minimalHero
+      ) : isIrrigation ? (
+        <SemencesHeroShowcase
+          activiteSlug={activite.slug}
+          image="/images/hero/irrigation.webp"
+          imageAlt="Solutions d’irrigation"
+          eyebrow="Irrigation"
+          titleLines={["L’eau au bon endroit.", "Au bon moment."]}
+          subtitle="Des solutions d’irrigation adaptées à vos cultures et à vos besoins."
+          ctaLabel="Voir les solutions"
         />
       ) : isFertilisation ? (
         <FertilisationHeroShowcase activiteSlug={activite.slug} categories={rootCategories} />
@@ -308,25 +295,8 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
           SemencesCategoryTiles, plus bas, dans ActiviteProduitsSection —
           on ne le duplique pas ici. */}
 
-      {/* CTA Irrigation / Matar */}
-      {isIrrigation && (
-        <div className="bg-sky-50 border-b border-sky-100 py-3">
-          <div className="container-ev flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <CalendarDays size={18} className="text-sky-600 shrink-0" />
-              <p className="text-sm text-sky-800 font-medium">
-                Solutions d&apos;irrigation Matar — Prenez rendez-vous avec un expert pour un audit personnalisé.
-              </p>
-            </div>
-            <Link href="/rendez-vous" className="shrink-0 btn btn-sm bg-sky-500 text-white hover:bg-sky-400">
-              Prendre RDV
-            </Link>
-          </div>
-        </div>
-      )}
-
       {/* ── Categories quick nav ─────────────────────────────────── */}
-      {!isMachinisme && !isSemences && !isFertilisation && !isPulverisation && !isPollinisationProtection && (rootCategories.length > 0 || isIrrigation) && (
+      {!isMachinisme && !isSemences && !isIrrigation && !isFertilisation && !isPulverisation && !isPollinisationProtection && rootCategories.length > 0 && (
         <section className="bg-white border-b border-sand-200">
           <div className="container-ev py-4">
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
@@ -349,30 +319,8 @@ export default async function ActiviteDetailPage({ params, searchParams }: PageP
         </section>
       )}
 
-      {/* ── Widget recommandation IA (Semences) — masqué pour le moment ── */}
-      {false && isSemences && (
-        <section className="bg-white border-b border-sand-200">
-          <div className="container-ev py-3.5 flex justify-center">
-            <SemencesRecommandation />
-          </div>
-        </section>
-      )}
-
       {/* ── Products section (client component) ─────────────────── */}
-      {isFertilisation && fertivertTree ? (
-        <section id="produits-activite" className="bg-sand-50 border-b border-sand-200">
-          <div className="container-ev py-8">
-            <CategoryTree
-              tree={fertivertTree}
-              produitBasePath="/produits"
-              showProduits
-              cardVariant="seed"
-              rootTabsOnly
-              initialCategoryId={fertivertInitialCategoryId}
-            />
-          </div>
-        </section>
-      ) : !isPulverisation && (
+      {!isPulverisation && (!isIrrigation || catPath.length > 0 || hasCategoryFilter) && (
         <ActiviteProduitsSectionWrapper
           id_activite={activite.id_activite}
           activiteSlug={activite.slug}

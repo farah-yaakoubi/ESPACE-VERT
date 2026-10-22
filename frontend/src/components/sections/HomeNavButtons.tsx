@@ -31,7 +31,7 @@ const ACTIVITES = [
     labelKey: "home.activity.seeds.label",
     tagline: "Des semences de qualité pour des cultures performantes",
     taglineKey: "home.activity.seeds.tagline",
-    image: "/images/activites/semences-plants.webp",
+    image: "/images/hero/banner semences.webp",
     icon: Ico.SeedBag,
     accent: WHEAT,
   },
@@ -41,7 +41,7 @@ const ACTIVITES = [
     labelKey: "home.activity.fertilization.label",
     tagline: "Des nutriments essentiels pour des plantes en pleine santé",
     taglineKey: "home.activity.fertilization.tagline",
-    image: "/images/activites/fertilisation.webp",
+    image: "/images/hero/BANNEQR.webp",
     icon: Ico.WateringCan,
     accent: FOREST,
   },
@@ -61,27 +61,27 @@ const ACTIVITES = [
     labelKey: "home.activity.irrigation.label",
     tagline: "L'eau qu'il faut, quand il faut pour des rendements optimaux",
     taglineKey: "home.activity.irrigation.tagline",
-    image: "/images/activites/irrigation.webp",
+    image: "/images/hero/irrigation.webp",
     icon: Ico.HoseCoil,
     accent: "#3f7bb0",
   },
   {
-    href: "/activites/pulverisation",
+    href: "/marques/pulvert",
     label: "Pulvérisation",
     labelKey: "home.activity.spraying.label",
     tagline: "Des solutions efficaces pour protéger vos cultures",
     taglineKey: "home.activity.spraying.tagline",
-    image: "/images/activites/pulverisation.webp",
+    image: "/images/pulverisation/big-banner-pulverisation.webp",
     icon: Ico.Spray,
     accent: SAGE,
   },
   {
-    href: "/activites/machinisme-et-jardinage",
-    label: "Machinisme",
+    href: "/activites/jardinage-et-machinisme",
+    label: "Jardinage & Machinisme",
     labelKey: "home.activity.machinery.label",
     tagline: "Des équipements fiables pour une agriculture performante",
     taglineKey: "home.activity.machinery.tagline",
-    image: "/images/activites/machinisme.webp",
+    image: "/images/activites/jardinage-machinisme.png",
     icon: Ico.Tractor,
     accent: INK,
   },
@@ -154,12 +154,12 @@ const MARQUES = [
 
 // ─── Activity Tile — galerie immersive, sans cadre, collée aux voisines ──
 const AREA_CLASSES = [
-  "lg:[grid-area:a]",
-  "lg:[grid-area:b]",
-  "lg:[grid-area:c]",
-  "lg:[grid-area:d]",
-  "lg:[grid-area:e]",
-  "lg:[grid-area:f]",
+  "lg:[grid-area:a] xl:[grid-area:a]",
+  "lg:[grid-area:b] xl:[grid-area:e]",
+  "lg:[grid-area:c] xl:[grid-area:d]",
+  "lg:[grid-area:d] xl:[grid-area:b]",
+  "lg:[grid-area:e] xl:[grid-area:c]",
+  "lg:[grid-area:f] xl:[grid-area:f]",
 ] as const;
 
 function ActivityTile({
@@ -174,7 +174,7 @@ function ActivityTile({
   const { t } = useI18n();
   const [hovered, setHovered] = useState(false);
   const label = t(item.labelKey, item.label);
-  const tagline = t(item.taglineKey, item.tagline);
+  const titleAtBottom = item.labelKey === "home.activity.pollination.label";
 
   // Durée et délai légèrement différents par tuile
   // pour que le "souffle" de zoom ne soit jamais parfaitement synchronisé.
@@ -183,7 +183,7 @@ function ActivityTile({
 
   return (
     <motion.div
-      className={`group relative h-full min-h-[280px] w-full overflow-hidden ${areaClass}`}
+      className={`group relative h-full min-h-[280px] w-full overflow-hidden lg:min-h-0 ${areaClass}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       variants={{
@@ -229,57 +229,42 @@ function ActivityTile({
         </motion.div>
       </motion.div>
 
-      {/* Dégradé sombre en bas — pas de boîte, juste assez pour la lisibilité */}
+      {/* Voile placé près du titre pour garder le texte lisible sans masquer l’image. */}
       <div
         aria-hidden
         className="absolute inset-0"
         style={{
-          background: "linear-gradient(180deg, rgba(16,24,18,0) 50%, rgba(16,24,18,0.72) 100%)",
+          background: titleAtBottom
+            ? "linear-gradient(0deg, rgba(9,28,18,0.5) 0%, rgba(9,28,18,0.18) 24%, transparent 48%)"
+            : "linear-gradient(180deg, rgba(9,28,18,0.42) 0%, rgba(9,28,18,0.18) 24%, transparent 48%)",
         }}
       />
 
-      {/* Titre — icône + label gras + trait + légende, comme la maquette de référence */}
+      {/* Titre compact avec une flèche animée à sa fin. */}
       <motion.div
-        className="absolute bottom-0 left-0 p-6 sm:p-8"
-        animate={{ opacity: hovered ? 1 : 0.95, y: hovered ? -4 : 6 }}
-        transition={{ duration: 0.5, ease: EASE_SMOOTH }}
+        className={`pointer-events-none absolute left-0 right-0 z-20 flex justify-start p-3 sm:p-4 lg:p-5 ${titleAtBottom ? "bottom-0" : "top-0"}`}
+        animate={{ opacity: hovered ? 1 : 0.94 }}
+        transition={{ duration: 0.24, ease: EASE_SMOOTH }}
       >
-        <div className="mb-2 flex items-center gap-2.5">
-          <item.icon
-            className="h-5 w-5 sm:h-6 sm:w-6 shrink-0"
-            strokeWidth={1.8}
-            style={{ color: item.accent === INK ? WHEAT : "#ffffff" }}
-          />
+        <div className="flex w-fit max-w-full items-center justify-start gap-2 text-left sm:gap-2.5">
           <h3
-            className="text-[1.25rem] font-semibold leading-tight tracking-[0.015em] text-white sm:text-[1.55rem]"
+            className="text-[clamp(0.9rem,1.4vw,1.25rem)] font-bold leading-tight tracking-[0.01em] text-white"
             style={{
-              fontFamily: "var(--font-display), 'Cairo', sans-serif",
-              textShadow: "0 2px 18px rgba(0,0,0,0.35)",
+              fontFamily: "var(--font-body), Cairo, sans-serif",
+              textShadow: "0 2px 8px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,0.8)",
             }}
           >
             {label}
           </h3>
+          <motion.span
+            className="shrink-0 text-white"
+            animate={{ x: hovered ? 3 : 0 }}
+            transition={{ duration: 0.2, ease: EASE_SMOOTH }}
+            aria-hidden="true"
+          >
+            <ArrowRight className="h-4 w-4" strokeWidth={2.4} />
+          </motion.span>
         </div>
-        <motion.div
-          className="h-px"
-          style={{ background: WHEAT }}
-          animate={{ width: hovered ? 60 : 28, opacity: hovered ? 1 : 0.65 }}
-          transition={{ duration: 0.5, ease: EASE_SMOOTH }}
-        />
-        <p
-          className="mt-2 max-w-[15rem] text-[13px] font-light leading-snug text-white/90 sm:max-w-[17rem] sm:text-[13.5px]"
-          style={{ textShadow: "0 1px 8px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.35)" }}
-        >
-          {tagline}
-        </p>
-        <motion.span
-          className="mt-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1f4d34] shadow-[0_8px_24px_rgba(0,0,0,0.22)]"
-          animate={{ x: hovered ? 6 : 0, opacity: hovered ? 1 : 0.86 }}
-          transition={{ duration: 0.35, ease: EASE_SMOOTH }}
-          aria-hidden="true"
-        >
-          <ArrowRight className="h-4 w-4" strokeWidth={2.4} />
-        </motion.span>
       </motion.div>
     </motion.div>
   );
@@ -313,12 +298,8 @@ function MarqueLogoItem({ item, index }: { item: (typeof MARQUES)[number]; index
     >
       <Link href={item.href} className="absolute inset-0 z-10" aria-label={label} />
 
-      <div className="relative h-[182px] overflow-hidden sm:h-[190px]">
-        <motion.div
-          className="absolute inset-0"
-          animate={{ scale: hovered ? 1.07 : 1 }}
-          transition={{ duration: 0.8, ease: EASE_LUXE }}
-        >
+      <div className="relative h-[160px] overflow-hidden sm:h-[170px]">
+        <motion.div className="absolute inset-0" animate={{ scale: hovered ? 1.07 : 1 }} transition={{ duration: 0.8, ease: EASE_LUXE }}>
           <Image
             src={item.cover}
             alt=""
@@ -327,67 +308,17 @@ function MarqueLogoItem({ item, index }: { item: (typeof MARQUES)[number]; index
             className="object-cover"
           />
         </motion.div>
-        <div
-          aria-hidden
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.22) 48%, rgba(255,255,255,0) 100%)",
-          }}
-        />
-        <div
-          aria-hidden
-          className="absolute -right-12 -top-14 h-36 w-36 rounded-bl-[70%] rounded-br-[42%] rounded-tl-[42%] rounded-tr-[70%] opacity-80 blur-[1px]"
-          style={{ background: `linear-gradient(135deg, ${item.tint}, rgba(255,255,255,0.2))` }}
-        />
-        <motion.div
-          className="absolute left-7 top-7 h-20 w-[190px] sm:h-24"
-          animate={{ scale: hovered ? 1.04 : 1 }}
-          transition={{ duration: 0.5, ease: EASE_LUXE }}
-          style={{ filter: "drop-shadow(0 8px 14px rgba(27,33,24,0.14))" }}
-        >
-          <Image
-            src={item.logo}
-            alt={label}
-            fill
-            sizes="190px"
-            className="object-contain"
-          />
+        <div aria-hidden className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0.22) 48%, rgba(255,255,255,0) 100%)" }} />
+        <div aria-hidden className="absolute -right-12 -top-14 h-36 w-36 rounded-bl-[70%] rounded-br-[42%] rounded-tl-[42%] rounded-tr-[70%] opacity-80 blur-[1px]" style={{ background: `linear-gradient(135deg, ${item.tint}, rgba(255,255,255,0.2))` }} />
+        <motion.div className="absolute left-7 top-7 h-20 w-[190px] sm:h-24" animate={{ scale: hovered ? 1.04 : 1 }} transition={{ duration: 0.5, ease: EASE_LUXE }} style={{ filter: "drop-shadow(0 8px 14px rgba(27,33,24,0.14))" }}>
+          <Image src={item.logo} alt={label} fill sizes="190px" className="object-contain" />
         </motion.div>
       </div>
 
-      <div
-        className="flex min-h-[226px] flex-col px-7 py-6"
-        style={{ fontFamily: "'Segoe UI', Arial, Helvetica, sans-serif" }}
-      >
-        <h3
-          className="text-[1.45rem] font-extrabold leading-tight normal-case sm:text-[1.55rem]"
-          style={{
-            color: "#173f2d",
-            fontFamily: "'Segoe UI', Arial, Helvetica, sans-serif",
-            fontVariantCaps: "normal",
-            textTransform: "none",
-          }}
-        >
-          {label}
-        </h3>
-
-        <p className="mt-3 max-w-[14rem] text-[15px] font-medium leading-7" style={{ color: "#68746a" }}>
-          {tagline}
-        </p>
-
-        <motion.span
-          className="mt-auto inline-flex h-11 w-fit items-center gap-3 rounded-full border px-5 text-[14px] font-extrabold text-white shadow-[0_10px_22px_rgba(31,121,57,0.18)]"
-          style={{
-            borderColor: item.accent,
-            backgroundColor: item.accent,
-            backgroundImage: "none",
-            color: "#ffffff",
-            boxShadow: buttonShadow,
-          }}
-          animate={{ x: hovered ? 4 : 0, filter: hovered ? "brightness(0.94)" : "brightness(1)" }}
-          transition={{ duration: 0.35, ease: EASE_SMOOTH }}
-        >
+      <div className="flex min-h-[190px] flex-col px-6 py-5">
+        <h3 className="text-[1.55rem] font-bold leading-tight normal-case sm:text-[1.7rem]" style={{ color: "#173f2d", fontVariantCaps: "normal", textTransform: "none" }}>{label}</h3>
+        <p className="mt-3 max-w-[14rem] text-[16px] font-normal leading-6" style={{ color: "#4f5d52" }}>{tagline}</p>
+        <motion.span className="mt-auto inline-flex h-10 w-fit items-center gap-3 rounded-full border px-5 text-[14px] font-extrabold text-white shadow-[0_10px_22px_rgba(31,121,57,0.18)]" style={{ borderColor: item.accent, backgroundColor: item.accent, backgroundImage: "none", color: "#ffffff", boxShadow: buttonShadow }} animate={{ x: hovered ? 4 : 0, filter: hovered ? "brightness(0.94)" : "brightness(1)" }} transition={{ duration: 0.35, ease: EASE_SMOOTH }}>
           {t("home.discover", "Découvrir")}
           <ArrowRight className="h-4 w-4" strokeWidth={2.4} />
         </motion.span>
@@ -409,7 +340,7 @@ export default function HomeNavButtonsNewStyle() {
       {/* ═══════════════════════════════════════════════════════════════════
           NOS ACTIVITÉS — grille bento, cartes séparées
           ═══════════════════════════════════════════════════════════════════ */}
-      <div id="nos-activites" className="relative overflow-hidden" style={{ background: LINEN }}>
+      <div id="nos-activites" className="relative scroll-mt-24 overflow-hidden" style={{ background: LINEN }}>
         {/* Filigrane panoramique — couvre toute la largeur de la section, respire lentement */}
         <div className="pointer-events-none absolute inset-0" aria-hidden>
           <motion.div
@@ -456,29 +387,14 @@ export default function HomeNavButtonsNewStyle() {
             transition={{ duration: 0.8, ease: EASE_SMOOTH }}
             className="flex flex-col gap-6 pt-10 sm:pt-12 pb-5 sm:pb-6"
           >
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="w-full">
               <HomeSectionHeading
-                eyebrow={t("home.activities.eyebrow", "Nos activités")}
+                eyebrow=""
                 title={t("home.activities.title", "Nos activités")}
                 subtitle={t("home.activities.subtitle", "Une solution claire pour chaque besoin agricole.")}
                 icon={Leaf}
                 inView={activitiesInView}
               />
-
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: activitiesInView ? 1 : 0, y: activitiesInView ? 0 : 12 }}
-                transition={{ duration: 0.6, ease: EASE_SMOOTH, delay: 0.45 }}
-              >
-                <Link
-                  href="/activites"
-                  className="group inline-flex items-center gap-3 rounded-full border border-[#1f4d34]/20 bg-white/80 px-5 py-3 text-[12px] font-bold uppercase tracking-[0.14em] text-[#1f4d34] shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:shadow-md"
-                >
-                  <Ico.Barn className="h-4 w-4" />
-                  {t("home.activities.browse", "Parcourir par activité")}
-                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" strokeWidth={2.4} />
-                </Link>
-              </motion.div>
             </div>
           </motion.div>
         </div>
@@ -491,7 +407,7 @@ export default function HomeNavButtonsNewStyle() {
             hidden: {},
             visible: { transition: { staggerChildren: 0.06, delayChildren: 0.7 } },
           }}
-          className="relative grid grid-cols-1 gap-1 bg-white p-1 sm:grid-cols-2 lg:grid-cols-4 lg:[grid-template-rows:minmax(280px,1fr)_minmax(280px,1fr)_minmax(240px,1fr)] lg:[grid-template-areas:'a_a_b_c'_'a_a_d_c'_'e_e_f_f']"
+          className="relative grid grid-cols-1 min-[420px]:grid-cols-2 gap-1 bg-transparent p-1 lg:h-[60vh] lg:min-h-[400px] lg:max-h-[560px] lg:grid-cols-3 lg:[grid-template-rows:repeat(2,minmax(0,1fr))] lg:[grid-template-areas:'a_b_c'_'d_e_f'] xl:grid-cols-10 xl:[grid-template-rows:repeat(4,minmax(0,1fr))] xl:[grid-template-areas:'a_a_b_b_b_b_c_c_f_f'_'a_a_b_b_b_b_c_c_f_f'_'a_a_d_d_e_e_e_e_f_f'_'a_a_d_d_e_e_e_e_f_f']"
         >
           {ACTIVITES.map((item, index) => (
             <ActivityTile key={item.href} item={item} areaClass={AREA_CLASSES[index]} index={index} />
@@ -505,21 +421,38 @@ export default function HomeNavButtonsNewStyle() {
       <div
         id="nos-marques"
         className="relative overflow-hidden border-t border-[#e1ddd2]"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 0%, rgba(125,192,64,0.11), transparent 34%), linear-gradient(180deg, #fbfdf8 0%, #f7faf2 100%)",
-        }}
+        style={{ background: LINEN }}
       >
         <div className="pointer-events-none absolute inset-0" aria-hidden>
-          <div className="absolute -left-12 top-6 h-36 w-56 rotate-[-24deg] rounded-[75%_15%_75%_15%] bg-[#7aa66f]/25 blur-[0.5px]" />
-          <div className="absolute left-12 top-32 h-8 w-20 rotate-[-18deg] rounded-[75%_15%_75%_15%] bg-[#7aa66f]/28" />
-          <div className="absolute -right-8 bottom-14 h-28 w-20 rotate-[42deg] rounded-[75%_15%_75%_15%] bg-[#7aa66f]/30" />
-          <div
-            className="absolute inset-x-0 bottom-0 h-36"
+          <motion.div
+            className="absolute inset-0"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 1.8, ease: EASE_SMOOTH }}
+            viewport={{ once: true }}
             style={{
-              background:
-                "linear-gradient(155deg, transparent 0 63%, rgba(159,190,146,0.16) 63.3% 100%)",
+              maskImage: "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, rgba(0,0,0,0) 100%)",
+              WebkitMaskImage: "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, rgba(0,0,0,0) 100%)",
             }}
+          >
+            <motion.div
+              className="absolute inset-0"
+              animate={{ scale: [1.08, 1.16, 1.08] }}
+              transition={{ duration: 22, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" }}
+            >
+              <Image
+                src="/images/activites/watermark-panorama.webp"
+                alt=""
+                fill
+                sizes="100vw"
+                className="object-cover"
+                style={{ filter: "saturate(0.9) contrast(0.95)", opacity: 0.55 }}
+              />
+            </motion.div>
+          </motion.div>
+          <div
+            className="absolute inset-0 bg-[#fbfdf8]/35"
+            aria-hidden="true"
           />
         </div>
 
@@ -529,10 +462,10 @@ export default function HomeNavButtonsNewStyle() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: marquesInView ? 1 : 0, y: marquesInView ? 0 : 40 }}
             transition={{ duration: 0.8, ease: EASE_SMOOTH }}
-            className="pt-12 pb-7 text-center sm:pt-16 sm:pb-8"
+            className="pt-8 pb-4 text-center sm:pt-10 sm:pb-5"
           >
             <HomeSectionHeading
-              eyebrow={t("home.brands.eyebrow", "Nos marques")}
+              eyebrow=""
               title={t("home.brands.title", "Nos marques")}
               subtitle={t("home.brands.subtitle", "Chaque marque porte une expertise précise du groupe.")}
               icon={Leaf}
@@ -541,7 +474,7 @@ export default function HomeNavButtonsNewStyle() {
             />
           </motion.div>
 
-          <div className="relative pb-14 sm:pb-16">
+          <div className="relative pb-8 sm:pb-10">
             <motion.div
               initial="hidden"
               animate={marquesInView ? "visible" : "hidden"}
@@ -549,7 +482,7 @@ export default function HomeNavButtonsNewStyle() {
                 hidden: {},
                 visible: { transition: { staggerChildren: 0.1, delayChildren: 0.5 } },
               }}
-              className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-[1.14fr_repeat(4,1fr)]"
+              className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-4 lg:grid-cols-[1.14fr_repeat(4,1fr)]"
             >
               {MARQUES.map((item, index) => (
                 <MarqueLogoItem key={item.href} item={item} index={index} />

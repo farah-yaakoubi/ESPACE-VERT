@@ -10,6 +10,7 @@ import { FertilisantHeroShowcase } from "@/components/sections/FertilisantHeroSh
 import { PulvertHero } from "@/components/sections/PulvertHero";
 import { PulvertFeatureSections } from "@/components/sections/PulvertFeatureSections";
 import { ActiviteProduitsSectionWrapper } from "../../activites/[slug]/ActiviteProduitsSection";
+import { FertilisationHeroShowcase } from "../../activites/[slug]/FertilisationHeroShowcase";
 import { MarqueProduitsSectionWrapper } from "./MarqueProduitsSection";
 import { defaultLocale, isLocale, type Locale } from "@/i18n/config";
 import { translatedField } from "@/i18n/translated-field";
@@ -18,7 +19,9 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-export const revalidate = 300;
+// La langue est lue dans un cookie (layout racine) : la page est rendue à chaque requête.
+// Le cache des données reste actif via fetch(..., { next: { revalidate } }) dans services/.
+export const dynamic = "force-dynamic";
 
 function getMarqueHeroSettings(slug: string) {
   switch (slug) {
@@ -181,7 +184,16 @@ export default async function MarqueDetailPage({ params }: PageProps) {
   ) ?? null;
   const useMachinismeCatalogue = Boolean(machinismeActivite && machinismeMarqueCategory);
 
-  const tree = (useIrrigationMatarCatalogue || useMachinismeCatalogue) ? null : hideBaddarGenericCategory(await fetchMarqueTree(slug));
+  // ── Fertivert reprend toujours la présentation de Semences & plants. ──
+  const fertilisationActivite = isFertivert
+    ? (await activitesService.list()).find((activite) => activite.slug === "fertilisation")
+    : undefined;
+  const fertilisationCategories = fertilisationActivite
+    ? await categoriesService.list({ id_activite: fertilisationActivite.id_activite })
+    : [];
+  const useFertilisationCatalogue = Boolean(fertilisationActivite);
+
+  const tree = (useIrrigationMatarCatalogue || useMachinismeCatalogue || useFertilisationCatalogue) ? null : hideBaddarGenericCategory(await fetchMarqueTree(slug));
   const pulvertTutorialVideos = isPulvert ? await tutorialVideosService.list("pulvert").catch(() => []) : [];
   const quickCategories = useIrrigationMatarCatalogue
     ? matarCategories.filter((cat) => cat.parent_id === matarCategory!.id_categorie)
@@ -197,7 +209,9 @@ export default async function MarqueDetailPage({ params }: PageProps) {
   return (
     <>
       {/* ── Hero — récupère le slide "marque:{slug}" depuis l'admin Hero ── */}
-      {isFertivert ? (
+      {isFertivert && useFertilisationCatalogue ? (
+        <FertilisationHeroShowcase activiteSlug="fertilisation" />
+      ) : isFertivert ? (
         <FertilisantHeroShowcase
           title="Optimisez vos récoltes avec nos engrais naturels"
           subtitle="Des solutions de fertilisation durables pour une croissance exceptionnelle."
@@ -252,7 +266,7 @@ export default async function MarqueDetailPage({ params }: PageProps) {
       )}
 
       {/* ── Categories quick nav ───────────────────────────────── */}
-      {!isPulvert && !isFertivert && shownQuickCategories.length > 0 && (
+      {!isPulvert && !isFertivert && !useFertilisationCatalogue && shownQuickCategories.length > 0 && (
         <section className="bg-white border-b border-sand-200">
           <div className="container-ev py-4">
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
@@ -299,6 +313,15 @@ export default async function MarqueDetailPage({ params }: PageProps) {
         />
       )}
 
+      {/* ── Catalogue Fertilisation — même composant que la page Semences & plants ── */}
+      {useFertilisationCatalogue && fertilisationActivite && (
+        <ActiviteProduitsSectionWrapper
+          id_activite={fertilisationActivite.id_activite}
+          activiteSlug={fertilisationActivite.slug}
+          categories={fertilisationCategories}
+        />
+      )}
+
       {isPulvert && tree && (
         <MarqueProduitsSectionWrapper
           id_marque={marque.id_marque}
@@ -316,7 +339,7 @@ export default async function MarqueDetailPage({ params }: PageProps) {
       )}
 
       {/* ── Arbre catégories / produits ────────────────────────── */}
-      {tree && !isPulvert && (
+      {tree && !isPulvert && !useFertilisationCatalogue && (
         <section id="produits-marque" className="bg-sand-50 border-b border-sand-200">
           <div className="container-ev py-8">
             <CategoryTree

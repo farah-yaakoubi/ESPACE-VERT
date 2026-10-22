@@ -18,6 +18,7 @@ import {
   CalendarDays,
   CheckCircle2,
   ChevronLeft,
+  ChevronDown,
   ChevronRight,
   Circle,
   Cloud,
@@ -25,7 +26,6 @@ import {
   Download,
   Droplets,
   FlaskConical,
-  Flower2,
   Globe,
   Layers,
   Leaf,
@@ -52,6 +52,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -81,7 +82,7 @@ const T = {
     subtitle: (n: number) => `${n} produits dans le catalogue`,
     step1: "Localisation",
     step2: "Sol & Climat",
-    step3: "Culture",
+    step3: "Expérience & objectifs",
     step4: "Résultats",
     yourCountry: "Votre pays",
     yourRegion: "Votre région",
@@ -90,7 +91,6 @@ const T = {
     sowingMonth: "Mois de semis prévu",
     soilType: "Type de sol",
     climate: "Climat / Exposition",
-    cultureMode: "Mode de culture",
     experience: "Votre expérience",
     objectives: "Vos objectifs",
     oneOrMore: "Un ou plusieurs objectifs",
@@ -125,7 +125,7 @@ const T = {
     cardAnalyzes: [
       "Pays, région & climat",
       "Sol, mois & conditions",
-      "Mode de culture & objectifs",
+      "Expérience & objectifs",
     ],
     cardResults: "Résultats IA",
     cardResultItems: [
@@ -145,7 +145,7 @@ const T = {
     subtitle: (n: number) => `${n} منتج في الكتالوج`,
     step1: "الموقع",
     step2: "التربة والمناخ",
-    step3: "الزراعة",
+    step3: "الخبرة والأهداف",
     step4: "النتائج",
     yourCountry: "بلدك",
     yourRegion: "منطقتك",
@@ -154,7 +154,6 @@ const T = {
     sowingMonth: "شهر الزراعة المتوقع",
     soilType: "نوع التربة",
     climate: "المناخ / التعرض",
-    cultureMode: "طريقة الزراعة",
     experience: "خبرتك",
     objectives: "أهدافك",
     oneOrMore: "هدف واحد أو أكثر",
@@ -187,7 +186,7 @@ const T = {
     cardAnalyzes: [
       "البلد والمنطقة والمناخ",
       "التربة والشهر والظروف",
-      "طريقة الزراعة والأهداف",
+      "الخبرة والأهداف",
     ],
     cardResults: "نتائج الذكاء الاصطناعي",
     cardResultItems: [
@@ -207,7 +206,7 @@ const T = {
     subtitle: (n: number) => `${n} products in catalog`,
     step1: "Location",
     step2: "Soil & Climate",
-    step3: "Culture",
+    step3: "Experience & goals",
     step4: "Results",
     yourCountry: "Your country",
     yourRegion: "Your region",
@@ -216,7 +215,6 @@ const T = {
     sowingMonth: "Planned sowing month",
     soilType: "Soil type",
     climate: "Climate / Exposure",
-    cultureMode: "Growing method",
     experience: "Your experience",
     objectives: "Your objectives",
     oneOrMore: "One or more objectives",
@@ -250,7 +248,7 @@ const T = {
     cardAnalyzes: [
       "Country, region & climate",
       "Soil, month & conditions",
-      "Growing method & objectives",
+      "Experience & objectives",
     ],
     cardResults: "AI Results",
     cardResultItems: [
@@ -486,37 +484,6 @@ const SOLS = [
   },
 ];
 
-const MODES = [
-  {
-    value: "Culture maraîchère",
-    Icon: Tractor,
-    labelFr: "Culture maraîchère",
-    labelAr: "زراعة خضرية",
-    labelEn: "Market gardening",
-  },
-  {
-    value: "Culture standard",
-    Icon: Sprout,
-    labelFr: "Culture standard",
-    labelAr: "زراعة عادية",
-    labelEn: "Standard crop",
-  },
-  {
-    value: "Culture hybride",
-    Icon: FlaskConical,
-    labelFr: "Culture hybride",
-    labelAr: "زراعة هجينة",
-    labelEn: "Hybrid crop",
-  },
-  {
-    value: "Culture potagère",
-    Icon: Flower2,
-    labelFr: "Culture potagère",
-    labelAr: "حديقة خضروات",
-    labelEn: "Vegetable garden",
-  },
-];
-
 const EXPERIENCES = [
   {
     value: "Débutant",
@@ -680,14 +647,12 @@ function recommendationTextFile({
   categoryName,
   rec,
   lang,
-  mode,
   mois,
 }: {
   productName: string;
   categoryName?: string;
   rec: RecommandationResult;
   lang: Lang;
-  mode?: string;
   mois?: number;
 }) {
   const harvestMonth =
@@ -700,7 +665,6 @@ function recommendationTextFile({
     categoryName ? `Catégorie: ${categoryName}` : null,
     `Score: ${rec.score}/100`,
     `Niveau: ${rec.niveau}`,
-    mode ? `Mode de culture: ${mode}` : null,
     mois !== undefined
       ? `${T[lang].recommendedSowing}: ${monthName(mois, lang)}`
       : null,
@@ -805,7 +769,7 @@ function NiveauBadge({
   }[niveau];
   return (
     <span
-      className="rounded-full px-2 py-0.5 text-[9px] font-black"
+      className="rounded-full px-2.5 py-1 text-[10px] font-bold"
       style={{
         background: config.bg,
         color: config.text,
@@ -894,7 +858,6 @@ function ResultCard({
           categoryName,
           rec,
           lang,
-          mode,
           mois,
         }),
       ],
@@ -933,7 +896,7 @@ function ResultCard({
           </span>
         </div>
       )}
-      <div className="p-4 space-y-3">
+      <div className="space-y-4 p-4 sm:p-5">
         <div className="flex items-start gap-3">
           <div
             className="relative h-16 w-16 shrink-0 rounded-2xl overflow-hidden"
@@ -956,7 +919,7 @@ function ResultCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <p
-                className="text-[13px] font-black leading-tight"
+                className="text-base font-bold leading-snug"
                 style={{ color: EV.text }}
               >
                 {productName}
@@ -971,13 +934,13 @@ function ResultCard({
                 >
                   {rec.score}
                 </span>
-                <span className="text-[7px] font-bold text-gray-400">
+                <span className="text-[10px] font-semibold text-gray-500">
                   / 100
                 </span>
               </div>
             </div>
             <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-[10px] text-gray-400">{categoryName}</span>
+              <span className="text-xs text-gray-500">{categoryName}</span>
               <NiveauBadge niveau={rec.niveau} lang={lang} />
             </div>
             <div className="mt-2">
@@ -992,10 +955,10 @@ function ResultCard({
           >
             <CalendarDays size={13} className="shrink-0 text-green-700" />
             <div className="min-w-0">
-              <p className="text-[8px] font-black uppercase tracking-wider text-green-700">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-green-800">
                 {t.recommendedSowing}
               </p>
-              <p className="text-[11px] font-bold text-green-950">
+              <p className="text-sm font-semibold text-green-950">
                 {monthName(mois, lang)}
               </p>
             </div>
@@ -1006,10 +969,10 @@ function ResultCard({
           >
             <Ruler size={13} className="shrink-0 text-orange-700" />
             <div className="min-w-0">
-              <p className="text-[8px] font-black uppercase tracking-wider text-orange-700">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-orange-800">
                 {t.estimatedHarvest}
               </p>
-              <p className="text-[11px] font-bold text-orange-950">
+              <p className="text-sm font-semibold text-orange-950">
                 {monthName(harvestMonth, lang)}
               </p>
             </div>
@@ -1025,7 +988,7 @@ function ResultCard({
             style={{ color: EV.mid }}
           />
           <p
-            className="text-[11px] leading-relaxed font-medium"
+            className="text-sm font-medium leading-relaxed"
             style={{ color: "#2d5a3a" }}
           >
             {rec.raison}
@@ -1033,7 +996,7 @@ function ResultCard({
         </div>
         <button
           onClick={() => setOpen((o) => !o)}
-          className="flex items-center gap-1.5 text-[10px] font-semibold transition-colors"
+          className="flex items-center gap-2 text-xs font-semibold transition-colors"
           style={{ color: open ? EV.forest : "#9ca3af" }}
         >
           {open ? <ChevronLeft size={11} /> : <ChevronRight size={11} />}
@@ -1044,12 +1007,12 @@ function ResultCard({
             className="rounded-xl p-3 space-y-3"
             style={{ background: "#f9fafb", border: "1px solid #f0f0f0" }}
           >
-            <p className="text-[11px] text-gray-600 leading-relaxed">
+            <p className="text-sm leading-relaxed text-gray-700">
               {rec.details}
             </p>
             {rec.points_forts?.length > 0 && (
               <div className="space-y-1.5">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-gray-400">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
                   {t.strongPoints}
                 </p>
                 {rec.points_forts.map((pt, i) => (
@@ -1059,7 +1022,7 @@ function ResultCard({
                       className="mt-0.5 shrink-0"
                       style={{ color: EV.leaf }}
                     />
-                    <p className="text-[11px] text-gray-600">{pt}</p>
+                    <p className="text-sm text-gray-700">{pt}</p>
                   </div>
                 ))}
               </div>
@@ -1073,7 +1036,7 @@ function ResultCard({
                   size={11}
                   className="mt-0.5 shrink-0 text-amber-500"
                 />
-                <p className="text-[10px] text-amber-700">
+                <p className="text-xs text-amber-800">
                   {rec.avertissement}
                 </p>
               </div>
@@ -1144,31 +1107,35 @@ function Step1({
     <div className="space-y-5" dir={t.dir}>
       <div>
         <label
-          className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider mb-2"
+          htmlFor="seed-country"
+          className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider sm:text-[13px]"
           style={{ color: EV.forest }}
         >
-          <Globe size={12} /> {t.yourCountry}
+          <Globe size={15} /> {t.yourCountry}
         </label>
         <input
+          id="seed-country"
           value={pays}
           onChange={(e) => setPays(e.target.value)}
           placeholder={t.countryPlaceholder}
-          className="w-full rounded-xl border bg-white px-4 py-3 text-sm font-semibold outline-none transition focus:ring-2 focus:ring-green-100"
+          className="w-full rounded-xl border bg-white px-4 py-3.5 text-base outline-none transition focus:ring-2 focus:ring-green-100"
           style={{ borderColor: EV.border, color: EV.text }}
         />
       </div>
       <div>
         <label
-          className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider mb-2"
+          htmlFor="seed-region"
+          className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider sm:text-[13px]"
           style={{ color: EV.forest }}
         >
-          <MapPin size={12} /> {t.yourRegion}
+          <MapPin size={15} /> {t.yourRegion}
         </label>
         <input
+          id="seed-region"
           value={region}
           onChange={(e) => setRegion(e.target.value)}
           placeholder={t.regionPlaceholder}
-          className="w-full rounded-xl border bg-white px-4 py-3 text-sm font-semibold outline-none transition focus:ring-2 focus:ring-green-100"
+          className="w-full rounded-xl border bg-white px-4 py-3.5 text-base outline-none transition focus:ring-2 focus:ring-green-100"
           style={{ borderColor: EV.border, color: EV.text }}
         />
         <div
@@ -1180,7 +1147,7 @@ function Step1({
             className="mt-0.5 shrink-0"
             style={{ color: EV.forest }}
           />
-          <p className="text-[11px] leading-relaxed text-gray-600">
+          <p className="text-sm leading-relaxed text-gray-700">
             Ces deux informations permettent d'adapter les semences au terrain
             réel, sans imposer une liste fermée.
           </p>
@@ -1213,17 +1180,19 @@ function Step2({
     <div className="space-y-5" dir={t.dir}>
       <div>
         <p
-          className="text-[11px] font-bold uppercase tracking-wider mb-3"
+          className="mb-3 text-xs font-bold uppercase tracking-wider sm:text-[13px]"
           style={{ color: EV.forest }}
         >
           {t.sowingMonth}
         </p>
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {moisLabels.map((m, i) => (
             <button
+              type="button"
               key={m}
+              aria-pressed={mois === i}
               onClick={() => setMois(i)}
-              className="rounded-xl py-2 text-[10px] font-bold transition-all"
+              className="rounded-xl py-2.5 text-xs font-semibold transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3F8050] sm:py-3"
               style={
                 mois === i
                   ? {
@@ -1241,19 +1210,21 @@ function Step2({
       </div>
       <div>
         <p
-          className="text-[11px] font-bold uppercase tracking-wider mb-3"
+          className="mb-3 text-xs font-bold uppercase tracking-wider sm:text-[13px]"
           style={{ color: EV.forest }}
         >
           {t.soilType}
         </p>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {SOLS.map((s) => {
             const Ic = s.Icon;
             return (
               <button
+                type="button"
                 key={s.value}
+                aria-pressed={sol === s.value}
                 onClick={() => setSol(s.value)}
-                className="flex items-center gap-2 rounded-xl px-3 py-2 text-left transition-all"
+                className="flex min-h-14 items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all hover:border-[#A8BE9B] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#3F8050]"
                 style={
                   sol === s.value
                     ? {
@@ -1264,25 +1235,25 @@ function Step2({
                 }
               >
                 <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                   style={{ background: `${s.color}18` }}
                 >
-                  <Ic size={13} style={{ color: s.color }} />
+                  <Ic size={16} style={{ color: s.color }} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p
-                    className="text-[10px] font-bold truncate"
+                    className="text-sm font-semibold"
                     style={{ color: EV.text }}
                   >
                     {getLabel(s, lang)}
                   </p>
-                  <p className="text-[9px] text-gray-400 truncate">
+                  <p className="text-xs text-gray-500">
                     {getDesc(s, lang)}
                   </p>
                 </div>
                 {sol === s.value && (
                   <CheckCircle2
-                    size={10}
+                    size={15}
                     className="shrink-0"
                     style={{ color: EV.forest }}
                   />
@@ -1294,19 +1265,21 @@ function Step2({
       </div>
       <div>
         <p
-          className="text-[11px] font-bold uppercase tracking-wider mb-3"
+          className="mb-3 text-xs font-bold uppercase tracking-wider sm:text-[13px]"
           style={{ color: EV.forest }}
         >
           {t.climate}
         </p>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {CLIMATS.map((c) => {
             const Ic = c.Icon;
             return (
               <button
+                type="button"
                 key={c.value}
+                aria-pressed={climat === c.value}
                 onClick={() => setClimat(c.value)}
-                className="flex items-center gap-2 rounded-xl px-3 py-2 text-left transition-all"
+                className="flex min-h-14 items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all hover:border-[#A8BE9B] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#3F8050]"
                 style={
                   climat === c.value
                     ? {
@@ -1317,25 +1290,25 @@ function Step2({
                 }
               >
                 <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                   style={{ background: `${c.color}18` }}
                 >
-                  <Ic size={13} style={{ color: c.color }} />
+                  <Ic size={16} style={{ color: c.color }} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p
-                    className="text-[10px] font-bold truncate"
+                    className="text-sm font-semibold"
                     style={{ color: EV.text }}
                   >
                     {getLabel(c, lang)}
                   </p>
-                  <p className="text-[9px] text-gray-400 truncate">
+                  <p className="text-xs text-gray-500">
                     {getDesc(c, lang)}
                   </p>
                 </div>
                 {climat === c.value && (
                   <CheckCircle2
-                    size={10}
+                    size={15}
                     className="shrink-0"
                     style={{ color: EV.forest }}
                   />
@@ -1350,16 +1323,12 @@ function Step2({
 }
 
 function Step3({
-  mode,
-  setMode,
   experience,
   setExperience,
   objectifs,
   setObjectifs,
   lang,
 }: {
-  mode: string;
-  setMode: (v: string) => void;
   experience: string;
   setExperience: (v: string) => void;
   objectifs: string[];
@@ -1378,72 +1347,21 @@ function Step3({
     <div className="space-y-5" dir={t.dir}>
       <div>
         <p
-          className="text-[11px] font-bold uppercase tracking-wider mb-3"
-          style={{ color: EV.forest }}
-        >
-          {t.cultureMode}
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          {MODES.map((m) => {
-            const Ic = m.Icon;
-            return (
-              <button
-                key={m.value}
-                onClick={() => setMode(m.value)}
-                className="flex items-center gap-2.5 rounded-xl px-3 py-3 text-left transition-all"
-                style={
-                  mode === m.value
-                    ? {
-                        background: EV.pale2,
-                        border: `1.5px solid ${EV.border}`,
-                      }
-                    : { background: "#fafafa", border: "1.5px solid #f0f0f0" }
-                }
-              >
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{
-                    background: mode === m.value ? EV.forest : "#f0f0f0",
-                  }}
-                >
-                  <Ic
-                    size={15}
-                    style={{ color: mode === m.value ? "#fff" : "#9ca3af" }}
-                  />
-                </div>
-                <p
-                  className="text-[11px] font-bold flex-1"
-                  style={{ color: EV.text }}
-                >
-                  {getLabel(m, lang)}
-                </p>
-                {mode === m.value && (
-                  <CheckCircle2
-                    size={11}
-                    className="shrink-0"
-                    style={{ color: EV.forest }}
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      <div>
-        <p
-          className="text-[11px] font-bold uppercase tracking-wider mb-3"
+          className="mb-3 text-xs font-bold uppercase tracking-wider sm:text-[13px]"
           style={{ color: EV.forest }}
         >
           {t.experience}
         </p>
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {EXPERIENCES.map((e) => {
             const Ic = e.Icon;
             return (
               <button
+                type="button"
                 key={e.value}
+                aria-pressed={experience === e.value}
                 onClick={() => setExperience(e.value)}
-                className="w-full flex items-center gap-3 rounded-xl px-4 py-2.5 text-left transition-all"
+                className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-all hover:border-[#A8BE9B] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#3F8050]"
                 style={
                   experience === e.value
                     ? {
@@ -1468,12 +1386,12 @@ function Step3({
                 </div>
                 <div className="flex-1">
                   <p
-                    className="text-[12px] font-bold"
+                    className="text-sm font-semibold"
                     style={{ color: EV.text }}
                   >
                     {getLabel(e, lang)}
                   </p>
-                  <p className="text-[10px] text-gray-400">
+                  <p className="text-xs text-gray-500">
                     {getDesc(e, lang)}
                   </p>
                 </div>
@@ -1489,21 +1407,23 @@ function Step3({
       </div>
       <div>
         <p
-          className="text-[11px] font-bold uppercase tracking-wider mb-1"
+          className="mb-1 text-xs font-bold uppercase tracking-wider sm:text-[13px]"
           style={{ color: EV.forest }}
         >
           {t.objectives}
         </p>
-        <p className="text-[10px] text-gray-400 mb-3">{t.oneOrMore}</p>
-        <div className="grid grid-cols-2 gap-1.5">
+        <p className="mb-3 text-xs text-gray-500">{t.oneOrMore}</p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {OBJECTIFS.map((o) => {
             const sel = objectifs.includes(o.value);
             const Ic = o.Icon;
             return (
               <button
+                type="button"
                 key={o.value}
+                aria-pressed={sel}
                 onClick={() => toggle(o.value)}
-                className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-left transition-all"
+                className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-left transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#3F8050]"
                 style={
                   sel
                     ? {
@@ -1559,7 +1479,8 @@ function RecommandationDialog({
   const [mois, setMois] = useState(new Date().getMonth());
   const [sol, setSol] = useState("");
   const [climat, setClimat] = useState("");
-  const [mode, setMode] = useState("Culture standard");
+  // Valeur historique transmise à l'API pour préserver le contrat existant.
+  const mode = "Culture standard";
   const [experience, setExperience] = useState("Intermédiaire");
   const [objectifs, setObjectifs] = useState<string[]>(["Rendement maximal"]);
   const [results, setResults] = useState<RecommandationResult[]>([]);
@@ -1571,6 +1492,15 @@ function RecommandationDialog({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [open, onClose]);
 
   const productMap = Object.fromEntries(products.map((p) => [p.id_produit, p]));
 
@@ -1623,7 +1553,6 @@ function RecommandationDialog({
     setSol("");
     setClimat("");
     setObjectifs(["Rendement maximal"]);
-    setMode("Culture standard");
   }
 
   const canProceed =
@@ -1632,7 +1561,7 @@ function RecommandationDialog({
       : step === 2
         ? !!sol && !!climat
         : step === 3
-          ? !!mode && objectifs.length > 0
+          ? !!experience && objectifs.length > 0
           : true;
 
   if (!open || !mounted) return null;
@@ -1641,22 +1570,25 @@ function RecommandationDialog({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[1000] isolate flex items-end justify-center bg-black/85 px-0 py-0 backdrop-blur-xl sm:items-center sm:px-4 sm:py-6"
+      className="fixed inset-0 z-[1000] isolate flex items-end justify-center bg-[#17271d]/65 px-0 py-0 backdrop-blur-sm sm:items-center sm:px-4 sm:py-6"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className="relative w-full sm:max-w-lg max-h-[95vh] sm:max-h-[90vh] flex flex-col rounded-t-[28px] sm:rounded-[28px] bg-white overflow-hidden"
+        className="relative flex max-h-[94vh] w-full flex-col overflow-hidden rounded-t-[28px] bg-[#F7F7F2] sm:max-h-[90vh] sm:max-w-2xl sm:rounded-[28px]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="seed-recommendation-title"
         style={{
-          border: `1.5px solid ${EV.border}`,
-          boxShadow: "0 32px 80px rgba(0,0,0,0.28)",
+          border: `1px solid ${EV.border}`,
+          boxShadow: "0 28px 72px rgba(13,36,22,0.30)",
           direction: t.dir,
         }}
       >
         {/* ── Header ── */}
         <div
-          className="flex items-center justify-between px-5 py-4 shrink-0"
+          className="flex shrink-0 items-center justify-between px-5 py-4 sm:px-7"
           style={{
             background: `linear-gradient(135deg, ${EV.forest}, ${EV.mid})`,
           }}
@@ -1669,8 +1601,8 @@ function RecommandationDialog({
               <Wheat size={19} className="text-white" />
             </div>
             <div>
-              <h2 className="text-[15px] font-black text-white">{t.title}</h2>
-              <p className="text-[10px] text-white/60">
+              <h2 id="seed-recommendation-title" className="text-base font-bold text-white sm:text-lg">{t.title}</h2>
+              <p className="mt-0.5 text-xs text-white/75">
                 {t.subtitle(products.length)}
               </p>
             </div>
@@ -1678,8 +1610,10 @@ function RecommandationDialog({
           <div className="flex items-center gap-2">
             <LangSwitcher lang={lang} setLang={setLang} />
             <button
+              type="button"
+              aria-label={lang === "ar" ? "إغلاق" : lang === "en" ? "Close" : "Fermer"}
               onClick={onClose}
-              className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+              className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-white/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
               style={{ background: "rgba(255,255,255,0.18)" }}
             >
               <X size={15} className="text-white" />
@@ -1689,8 +1623,8 @@ function RecommandationDialog({
 
         {/* ── Stepper ── */}
         <div
-          className="flex items-center px-5 py-3 bg-white border-b shrink-0"
-          style={{ borderColor: "#f0f0f0" }}
+          className="flex shrink-0 items-center border-b bg-[#F7F7F2] px-5 py-4 sm:px-8"
+          style={{ borderColor: EV.border }}
         >
           {steps.map((label, i) => {
             const Icon = STEPS_ICONS[i];
@@ -1698,10 +1632,10 @@ function RecommandationDialog({
             const done = step > id;
             const cur = step === id;
             return (
-              <div key={id} className="flex items-center flex-1">
+              <div key={id} className="flex flex-1 items-center">
                 <div className="flex flex-col items-center gap-0.5">
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                    className="flex h-9 w-9 items-center justify-center rounded-full transition-all"
                     style={
                       done
                         ? { background: EV.leaf, color: "#fff" }
@@ -1717,7 +1651,7 @@ function RecommandationDialog({
                     {done ? <CheckCircle2 size={14} /> : <Icon size={13} />}
                   </div>
                   <span
-                    className="text-[8px] font-bold text-center leading-tight max-w-[48px]"
+                    className="max-w-[68px] text-center text-[10px] font-semibold leading-tight sm:text-[11px]"
                     style={{
                       color: cur ? EV.forest : done ? EV.leaf : "#c0c0c0",
                     }}
@@ -1737,7 +1671,7 @@ function RecommandationDialog({
         </div>
 
         {/* ── Contenu ── */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-6 sm:px-8 sm:py-7">
           {step === 1 && (
             <Step1
               pays={pays}
@@ -1760,8 +1694,6 @@ function RecommandationDialog({
           )}
           {step === 3 && (
             <Step3
-              mode={mode}
-              setMode={setMode}
               experience={experience}
               setExperience={setExperience}
               objectifs={objectifs}
@@ -1791,7 +1723,6 @@ function RecommandationDialog({
                     MOIS[lang][mois],
                     sol || null,
                     climat || null,
-                    mode,
                     experience,
                     ...objectifs,
                   ]
@@ -1909,8 +1840,8 @@ function RecommandationDialog({
         {/* ── Footer ── */}
         {step < 4 && (
           <div
-            className="flex items-center justify-between px-5 py-4 border-t bg-white shrink-0"
-            style={{ borderColor: "#f0f0f0" }}
+            className="flex shrink-0 items-center justify-between border-t bg-white px-5 py-4 sm:px-8"
+            style={{ borderColor: EV.border }}
           >
             <button
               onClick={() => setStep((s) => s - 1)}
@@ -2000,6 +1931,8 @@ export function SemencesRecommandationCard({
   products: ProduitCardType[];
 }) {
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const reduceMotion = useReducedMotion();
   // Lire la locale depuis le contexte i18n du site
   const { locale, t: tSite } = useI18n();
   const lang: Lang =
@@ -2010,129 +1943,100 @@ export function SemencesRecommandationCard({
     <>
       <aside
         id="recommandations-semences"
-        className="rounded-[24px] overflow-hidden border"
+        className="overflow-hidden rounded-[26px] border"
         style={{
           borderColor: EV.border,
-          boxShadow: "0 8px 32px rgba(10,92,46,0.10)",
-          background: `linear-gradient(180deg, #ffffff, ${EV.pale})`,
+          boxShadow: "0 12px 32px rgba(36,60,40,0.10)",
+          background: "#F7F7F2",
         }}
       >
-        {/* En-tête */}
-        <div
-          className="px-5 py-4"
-          style={{
-            background: `linear-gradient(135deg, ${EV.forest}, ${EV.mid})`,
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
-              <Wheat size={18} className="text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-black text-white">{t.cardTitle}</p>
-                <span className="rounded-full bg-white/20 px-2 py-0.5 text-[9px] font-black text-white/90">
-                  IA
-                </span>
-              </div>
-              <p className="text-[10px] text-white/60 mt-0.5">
-                {t.cardDesc(products.length)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="px-5 py-4 space-y-4">
-          <p className="text-[12px] leading-relaxed text-gray-600" dir={t.dir}>
-            {t.cardBody.split("3 étapes rapides").length > 1 ? (
-              <>
-                {
-                  t.cardBody.split(
-                    /3 étapes rapides|3 quick steps|3 خطوات سريعة/,
-                  )[0]
-                }
-                <strong className="font-bold" style={{ color: EV.forest }}>
-                  {lang === "ar"
-                    ? "3 خطوات سريعة"
-                    : lang === "en"
-                      ? "3 quick steps"
-                      : "3 étapes rapides"}
-                </strong>
-                {
-                  t.cardBody.split(
-                    /3 étapes rapides|3 quick steps|3 خطوات سريعة/,
-                  )[1]
-                }
-              </>
-            ) : (
-              t.cardBody
-            )}
-          </p>
-
-          {/* Les 3 étapes avec icônes Lucide */}
-          <div className="space-y-2" dir={t.dir}>
-            {t.cardAnalyzes.map((label, i) => {
-              const Icon = CARD_STEP_ICONS[i];
-              return (
-                <div key={label} className="flex items-center gap-2.5">
-                  <div
-                    className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                    style={{
-                      background: EV.pale2,
-                      border: `1px solid ${EV.border}`,
-                    }}
-                  >
-                    <Icon size={13} style={{ color: EV.forest }} />
-                  </div>
-                  <p className="text-[11px] font-semibold text-gray-700">
-                    {label}
-                  </p>
-                </div>
-              );
-            })}
+        <div className="flex flex-wrap items-center gap-3 p-3 sm:gap-4 sm:p-4" dir={t.dir}>
+          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#EAF2E6] sm:h-16 sm:w-16">
+            <Image
+              src="/images/activites/semences-plants.webp"
+              alt="Jeunes plants cultivés en pépinière"
+              fill
+              sizes="64px"
+              className="object-cover"
+            />
           </div>
 
-          {/* Résultats IA */}
-          <div
-            className="rounded-xl px-3 py-3 space-y-2.5"
-            style={{ background: EV.pale, border: `1px solid ${EV.border}` }}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles size={11} style={{ color: EV.forest }} />
-              <p
-                className="text-[10px] font-black uppercase tracking-wider"
-                style={{ color: EV.forest }}
-              >
-                {t.cardResults}
-              </p>
+          <div className="min-w-[140px] flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-base font-bold leading-tight text-[#243128] sm:text-lg">{t.cardTitle}</h2>
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#EAF2E6] px-2 py-1 text-[10px] font-bold text-[#245C38]">
+                <Sparkles size={11} /> IA
+              </span>
             </div>
-            {t.cardResultItems.map((text, i) => {
-              const Icon = CARD_RESULT_ICONS[i];
-              return (
-                <div key={text} className="flex items-center gap-2.5">
-                  <div
-                    className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ background: EV.pale2 }}
-                  >
-                    <Icon size={11} style={{ color: EV.mid }} />
-                  </div>
-                  <p className="text-[10px] text-gray-600">{text}</p>
-                </div>
-              );
-            })}
+            <p className="mt-1 text-xs text-[#536257] sm:text-sm">{t.cardDesc(products.length)}</p>
           </div>
 
           <button
-            onClick={() => setOpen(true)}
-            className="w-full flex items-center justify-center gap-2.5 rounded-2xl py-3.5 text-[13px] font-black text-white transition-transform active:scale-[0.98] hover:-translate-y-0.5"
-            style={{
-              background: `linear-gradient(135deg, ${EV.leaf}, ${EV.forest})`,
-              boxShadow: "0 6px 20px rgba(10,92,46,0.25)",
-            }}
+            type="button"
+            aria-expanded={expanded}
+            aria-controls="recommandations-semences-details"
+            aria-label={expanded
+              ? (lang === "ar" ? "إخفاء التفاصيل" : lang === "en" ? "Hide details" : "Masquer les détails")
+              : (lang === "ar" ? "عرض التفاصيل" : lang === "en" ? "Show details" : "Afficher les détails")}
+            onClick={() => setExpanded((value) => !value)}
+            className="order-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#d7e4d2] bg-white text-[#245C38] transition hover:bg-[#EAF2E6] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3F8050] sm:order-none"
           >
-            <Wheat size={15} /> {t.findSeeds} <ArrowRight size={14} />
+            <ChevronDown
+              size={19}
+              className={`transition-transform ${expanded ? "rotate-180" : "rotate-0"}`}
+              style={{ transitionDuration: reduceMotion ? "0ms" : "220ms" }}
+            />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="order-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245C38] sm:order-none sm:w-auto sm:px-5"
+            style={{ background: "#3F8050", boxShadow: "0 5px 15px rgba(36,92,56,0.16)" }}
+          >
+            <Wheat size={16} /> {t.findSeeds} <ArrowRight size={15} />
           </button>
         </div>
+
+        <AnimatePresence initial={false}>
+          {expanded && (
+            <motion.div
+              id="recommandations-semences-details"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: reduceMotion ? 0 : 0.26, ease: [0.22, 1, 0.36, 1] }}
+              className="overflow-hidden border-t border-[#dce8d8]"
+            >
+              <div className="grid gap-4 p-4 sm:p-5 md:grid-cols-[0.8fr_1.2fr] md:items-center" dir={t.dir}>
+                <div className="relative min-h-36 overflow-hidden rounded-2xl sm:min-h-44">
+                  <Image
+                    src="/images/activites/semences-plants.webp"
+                    alt="Jeunes plants cultivés en pépinière"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 35vw"
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#183d2b]/50 to-transparent" />
+                </div>
+                <div>
+                  <p className="text-sm leading-6 text-[#536257] sm:text-[15px]">{t.cardBody}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {t.cardAnalyzes.map((label) => (
+                      <span
+                        key={label}
+                        className="rounded-full border px-3 py-1.5 text-xs font-medium text-[#425647]"
+                        style={{ borderColor: EV.border, background: "#EAF2E6" }}
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </aside>
 
       <RecommandationDialog

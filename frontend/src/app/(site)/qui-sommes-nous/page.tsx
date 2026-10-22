@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { AnimatedCount } from "@/components/qui-sommes-nous/AnimatedCount";
 import AgenceSection from "@/components/qui-sommes-nous/AgenceSection";
+import { ContactHero } from "@/components/sections/ContactHero";
 import { SectionTitleLine } from "@/components/ui/SectionTitleIcon";
 import type { IcoName } from "@/components/icons/AgriIcons";
 
@@ -68,8 +69,8 @@ function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 
 function SectionTitle({ label, light = false, icon }: { label: string; light?: boolean; icon?: IcoName }) {
   return (
-    <div className="mb-6">
-      <h2 className={`section-title text-[2rem] sm:text-[2.4rem] ${light ? "section-title--light" : ""}`}>
+    <div className="mb-5">
+      <h2 className={`text-[1.55rem] font-bold leading-tight sm:text-[1.8rem] ${light ? "text-white" : "text-[#1b2118]"}`}>
         {icon ? (
           <SectionTitleLine icon={icon} color={light ? "#9dce78" : "#5d8a45"} align="left">
             {label}
@@ -78,14 +79,14 @@ function SectionTitle({ label, light = false, icon }: { label: string; light?: b
           label
         )}
       </h2>
-      <div className={`mt-2.5 h-[3px] w-10 rounded-full ${light ? "bg-[#9dce78]" : "bg-[#5d8a45]"}`} />
+      <div className={`mt-3 h-1 w-12 rounded-full ${light ? "bg-[#9dce78]" : "bg-[#7dc040]"}`} />
     </div>
   );
 }
 
 function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-[#ddd5c4] bg-white p-7 shadow-[0_4px_24px_rgba(50,40,20,0.07)] sm:p-8 ${className}`}>
+    <div className={`rounded-[24px] border border-[#e5e8df] bg-white p-6 shadow-[0_8px_28px_rgba(27,33,24,0.06)] sm:p-8 ${className}`}>
       {children}
     </div>
   );
@@ -138,61 +139,24 @@ function LogoMarquee() {
 export default function QuiSommesNousPage() {
   return (
     <>
-      <style>{`
-        .qsn-root {
-          background:
-            radial-gradient(ellipse 80% 35% at 0% 15%, rgba(93,138,69,0.12) 0%, transparent 55%),
-            radial-gradient(ellipse 60% 40% at 100% 75%, rgba(93,138,69,0.08) 0%, transparent 55%),
-            #f0ebe0;
-          min-height: 100vh;
-        }
-        @media (min-width: 1280px) {
-          .qsn-root {
-            background:
-              radial-gradient(ellipse 80% 35% at 0% 15%, rgba(93,138,69,0.12) 0%, transparent 55%),
-              radial-gradient(ellipse 60% 40% at 100% 75%, rgba(93,138,69,0.08) 0%, transparent 55%),
-              linear-gradient(90deg,
-                #5d8245 0%, #5d8245 3%,
-                #f0ebe0 3%, #f0ebe0 97%,
-                #5d8245 97%, #5d8245 100%
-              );
-          }
-        }
-      `}</style>
+      <ContactHero
+        eyebrow="Le groupe Espace Vert"
+        title="Qui sommes-nous ?"
+        subtitle="Un groupe tunisien qui réunit expertise terrain, réseau d'agences et solutions agricoles complètes."
+      />
 
-      <div className="qsn-root">
-        <div className="container-ev py-10 sm:py-16">
+      <div className="bg-[#f7f8f4]">
+        <div className="container-ev py-10 sm:py-14 lg:py-16">
 
-          {/* ══ HERO : titre seul, grand, aéré ══ */}
-          <Reveal>
-            <div className="mb-3">
-              <p
-                className="mb-3 text-[11px] font-black uppercase tracking-[0.25em] text-[#5d8a45]"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                Le groupe Espace Vert
-              </p>
-              <h1
-                className="text-[clamp(4rem,9vw,7.5rem)] font-black leading-[0.85] tracking-[-0.06em] text-[#161616]"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                Qui sommes{" "}
-                <span className="text-[#5d8a45]">nous?</span>
-              </h1>
-            </div>
-          </Reveal>
-
-          {/* ══ BANDEAU INTRO : sous-titre dans son propre espace ══ */}
+          {/* Présentation */}
           <Reveal delay={0.08}>
-            <div className="mb-10 mt-6 rounded-2xl border border-[#c8dbb8] bg-[#eef6e7] px-7 py-5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[1.15rem] leading-8 font-medium text-[#2a4a1e]">
-                Un groupe tunisien qui réunit <span className="font-black text-[#5d8a45]">expertise terrain</span>,{" "}
-                <span className="font-black text-[#5d8a45]">réseau d'agences</span> et{" "}
-                <span className="font-black text-[#5d8a45]">solutions agricoles complètes</span>.
+            <div className="mb-8 flex flex-col gap-3 rounded-[20px] border border-[#e5e8df] bg-white px-6 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-8">
+              <p className="max-w-4xl text-base leading-7 text-[#5b655a] sm:text-[17px]">
+                Fondé en <span className="font-semibold text-[#1f4d34]">1995</span>, le groupe accompagne les agriculteurs tunisiens avec des solutions intégrées en semences, irrigation et fertilisation.
               </p>
-              <div className="flex-shrink-0 flex items-center gap-2 mt-2 sm:mt-0">
-                <div className="h-2 w-2 rounded-full bg-[#5d8a45]" />
-                <span className="text-[0.85rem] font-semibold text-[#4a7236]">Depuis 1995 · Tunisie</span>
+              <div className="flex shrink-0 items-center gap-2 text-sm font-semibold text-[#1f4d34]">
+                <span className="h-2 w-2 rounded-full bg-[#7dc040]" />
+                Depuis 1995 · Tunisie
               </div>
             </div>
           </Reveal>
@@ -218,8 +182,7 @@ export default function QuiSommesNousPage() {
                       Groupe Espace Vert
                     </p>
                     <p className="text-[1.05rem] leading-7 text-[#4d463e]">
-                      Fondé en 1995, nous accompagnons les agriculteurs tunisiens
-                      avec des solutions intégrées — semences, irrigation, fertilisation.
+                      Nos équipes conseillent les professionnels et les accompagnent au quotidien avec des solutions adaptées à leurs cultures.
                     </p>
                   </div>
                 </div>
@@ -476,13 +439,13 @@ export default function QuiSommesNousPage() {
             </div>
           </Reveal>
 
-          {/* ── AGENCES ── */}
-          <Reveal delay={0.08}>
-            <AgenceSection />
-          </Reveal>
-
         </div>
       </div>
+
+      {/* La section agences garde son fond et sa largeur de page, comme les autres sections du site. */}
+      <Reveal delay={0.08}>
+        <AgenceSection />
+      </Reveal>
     </>
   );
 }

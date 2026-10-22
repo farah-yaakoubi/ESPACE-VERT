@@ -139,7 +139,7 @@ function LuxuryTitle({
     >
       <h2
         className="overflow-y-hidden max-w-full text-[clamp(1.5rem,5vw,2.75rem)] font-bold leading-[1.15] tracking-tight"
-        style={{ fontFamily: "var(--font-script)", color: dark ? "#ffffff" : INK }}
+        style={{ fontFamily: "var(--font-body), Cairo, sans-serif", color: dark ? "#ffffff" : INK }}
       >
         <motion.span
           className="inline-flex items-center gap-2 sm:gap-4"
@@ -172,12 +172,12 @@ function PartnerSlide({ item }: { item: (typeof PARTENAIRES)[number] }) {
 
   return (
     <div
-      className="mx-6 flex h-32 w-[220px] shrink-0 snap-start items-center justify-center"
+      className="mx-6 flex h-32 w-[240px] shrink-0 snap-start items-center justify-center"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       <motion.div
-        className="relative h-20 w-full"
+        className="relative h-24 w-full"
         style={{ willChange: "transform" }}
         animate={{ scale: hovered ? 1.1 : 1, y: hovered ? -3 : 0 }}
         transition={{ duration: 0.4, ease: EASE_SMOOTH }}
@@ -330,7 +330,7 @@ function SocietesTimeline() {
             initial={{ scaleX: 0, opacity: 0.35 }}
             animate={{ scaleX: inView ? 1 : 0, opacity: inView ? 1 : 0.35 }}
             transition={{ duration: 2.2, ease: EASE_SMOOTH }}
-            className="absolute left-0 right-0 top-[124px] h-px origin-left sm:top-[152px]"
+            className="absolute left-0 right-0 top-[146px] h-px origin-left sm:top-[182px]"
             style={{ background: `linear-gradient(90deg, ${WHEAT} 0%, ${FOREST} 100%)` }}
           />
 
@@ -368,8 +368,8 @@ function SocietesTimeline() {
                 }}
                 className="relative z-10 flex flex-col items-center text-center"
               >
-                {/* Logo en grand format, sans cadre ni fond */}
-                <div className={`relative h-28 w-full sm:h-40 ${s.compact ? "p-3 sm:p-5" : ""}`}>
+                {/* Même emplacement et mêmes dimensions pour les cinq logos. */}
+                <div className="relative h-32 w-full sm:h-40">
                   <TransparentLogo src={s.image} alt={s.name} className="h-full w-full object-contain" />
                 </div>
 
@@ -386,7 +386,7 @@ function SocietesTimeline() {
 
                 {/* Contenu — carte pleine, opaque, lisible en toutes circonstances */}
                 <div
-                  className="relative w-full overflow-hidden rounded-[1.25rem] px-4 pb-5 pt-4 transition-all duration-700 sm:px-5"
+                  className="relative h-[320px] w-full overflow-hidden rounded-[1.25rem] px-4 pb-5 pt-4 transition-all duration-700 sm:h-[340px] sm:px-5"
                   style={{
                     background: "#fdfbf6",
                     boxShadow:
@@ -406,33 +406,32 @@ function SocietesTimeline() {
 
                   <div className="flex flex-col items-center gap-1.5">
                     <span
-                      className="inline-flex rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em]"
+                      className="inline-flex rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.12em]"
                       style={{ color: i === 0 ? "#8a6d1f" : FOREST, borderColor: i === 0 ? `${WHEAT}55` : `${FOREST}33` }}
                     >
                       {s.year}
                     </span>
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.24em]" style={{ color: SAGE }}>
-                      {s.label}
+                    <span className="min-h-[15px] text-[10px] font-semibold uppercase tracking-[0.24em]" style={{ color: SAGE }}>
+                      {s.label ?? " "}
                     </span>
-                    {i === 0 && (
-                      <span
-                        className="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em]"
-                        style={{ background: FOREST, color: "#fff" }}
-                      >
-                        Société mère
-                      </span>
-                    )}
+                    <span
+                      className="inline-flex min-h-[22px] items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em]"
+                      style={i === 0 ? { background: FOREST, color: "#fff" } : { visibility: "hidden" }}
+                      aria-hidden={i !== 0}
+                    >
+                      Société mère
+                    </span>
 
                     <h3
-                      className="mt-1.5 text-[1.1rem] font-semibold leading-tight sm:text-[1.25rem]"
-                      style={{ color: INK, fontFamily: "var(--font-display)" }}
+                      className="mt-1.5 min-h-[2.5rem] text-lg font-bold leading-tight sm:text-xl"
+                      style={{ color: INK, fontFamily: "var(--font-body), Cairo, sans-serif" }}
                     >
                       {s.name}
                     </h3>
 
                     <span className="h-px w-8" style={{ background: `${FOREST}30` }} />
 
-                    <p className="max-w-[170px] text-[12.5px] font-normal leading-relaxed sm:max-w-[190px]" style={{ color: "#4a5245" }}>
+                    <p className="max-w-[200px] text-[15px] font-medium leading-relaxed" style={{ color: "#405447" }}>
                       {s.description}
                     </p>
                   </div>
@@ -499,10 +498,10 @@ function TrustBadges() {
               <Icon className="h-4.5 w-4.5" strokeWidth={1.5} style={{ color: FOREST }} />
             </div>
             <div>
-              <p className="text-sm font-medium" style={{ color: INK }}>
+              <p className="text-base font-semibold" style={{ color: INK }}>
                 {c.title}
               </p>
-              <p className="text-xs font-light" style={{ color: BODY }}>
+              <p className="text-sm font-normal" style={{ color: BODY }}>
                 {c.text}
               </p>
             </div>
@@ -589,7 +588,7 @@ export default function GroupeEtPartenaires() {
         <div className="container-ev relative z-10" ref={partnersRef}>
           <div className="mb-10">
             <HomeSectionHeading
-              eyebrow="Nos partenaires"
+              eyebrow=""
               title="Des partenaires"
               highlight="de confiance"
               subtitle="Ils nous accompagnent au quotidien, sur le terrain comme dans nos ateliers."
@@ -613,7 +612,7 @@ export default function GroupeEtPartenaires() {
         <div className="container-ev relative z-10" ref={societiesRef}>
           <div className="mb-8">
             <HomeSectionHeading
-              eyebrow="Nos sociétés"
+              eyebrow=""
               title="Un groupe,"
               highlight="plusieurs expertises"
               icon={Building2}

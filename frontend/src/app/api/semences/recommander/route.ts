@@ -31,6 +31,11 @@ spécialisé sur les pays du Maghreb (Tunisie, Algérie, Maroc) et la région m�
 Ton rôle : analyser le profil d'un agriculteur/jardinier et évaluer la compatibilité
 de chaque semence proposée avec son contexte (pays, région, climat, sol, saison, objectifs).
 
+Les documents fournis sont les fiches réelles du catalogue. Ils constituent la source de vérité
+pour les caractéristiques des produits. Tu peux appliquer tes connaissances agronomiques générales
+pour évaluer le profil, mais ne présente jamais une caractéristique absente de la fiche comme un fait.
+Signale explicitement les informations manquantes et n'invente aucun produit.
+
 RÈGLES STRICTES :
 1. Tu réponds UNIQUEMENT en JSON valide, sans aucun texte avant ou après.
 2. Tu retournes un tableau JSON dans l'ordre : meilleure semence en premier.
@@ -54,16 +59,18 @@ CRITÈRES DE SCORING (total 100 pts) :
 - Niveau de difficulté adapté à l'expérience du cultivateur : 5 pts
 
 IMPORTANT :
-- Utilise tes connaissances agronomiques réelles, pas seulement les données fournies.
+- Base chaque résultat sur les fiches récupérées ci-dessous. Les données du catalogue priment.
+- N'invente ni saison, résistance, rendement, certification ni caractéristique absente des fiches.
+- Si les données ne permettent pas de confirmer une compatibilité, indique-le dans details ou avertissement.
 - Les pays/régions sont déjà limités côté interface : ne propose pas d'hypothèse hors du pays/région indiqué.
 - Traite correctement les catégories gazon/pelouse et florales, pas uniquement les légumes.
-- Si un produit a peu de données, base-toi sur le nom et la catégorie pour inférer.
+- Si un produit a peu de données, indique cette limite au lieu de lui attribuer des caractéristiques.
 - Sois précis sur les réalités climatiques du pays/région indiqué.
 - N'inclus que les semences avec score > 20 (filtre les incompatibles totales).
 - Retourne au maximum 6 résultats, minimum 1.`;
 }
 
-function buildUserPrompt(profil: VisiteurProfil, produits: ProduitSemence[]): string {
+function buildUserPrompt(profil: VisiteurProfil, produits: ProduitSemence[], totalCatalogue: number): string {
   const moisLabel = MOIS_LABELS[profil.mois] ?? "Mai";
   const objetifsStr = profil.objectifs.join(", ") || "Rendement général";
 
@@ -77,7 +84,7 @@ function buildUserPrompt(profil: VisiteurProfil, produits: ProduitSemence[]): st
 - Expérience : ${profil.experience}
 - Objectifs : ${objetifsStr}
 
-CATALOGUE DE SEMENCES À ÉVALUER (${produits.length} produits) :
+FICHES RÉCUPÉRÉES DU CATALOGUE (${produits.length} sur ${totalCatalogue} produits) :
 ${produits.map(p => `
 ID:${p.id_produit} | Slug:${p.slug}
 Nom: ${p.nom}
@@ -92,12 +99,89 @@ Description: ${p.descriptif_var ?? p.description ?? "—"}
 Tags: ${p.tags.join(", ") || "—"}
 `).join("\n---\n")}
 
-Analyse chaque semence et retourne le JSON.`;
+Évalue uniquement les fiches récupérées ci-dessus. Retourne au maximum 6 produits existants,
+avec leur id_produit et slug exacts. N'ajoute pas de produit absent de ces fiches.`;
+}
+
+// Recherche lexicale locale dans le catalogue transmis par le site (RAG sans service vectoriel).
+// Les champs du profil servent de requête et les fiches produit sont le contexte récupéré.
+const SEARCH_STOP_WORDS = new Set([
+  "avec", "dans", "pour", "une", "des", "les", "sur", "par", "plus", "mon", "mes",
+  "the", "and", "for", "from", "with", "this", "that", "aux", "est", "sont", "sol",
+]);
+
+function normalizeSearchText(value: unknown): string {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+}
+
+function searchTokens(value: unknown): string[] {
+  return normalizeSearchText(value)
+    .split(/\s+/)
+    .filter(token => token.length > 2 && !SEARCH_STOP_WORDS.has(token));
+}
+
+function retrieveRelevantProducts(
+  profil: VisiteurProfil,
+  produits: ProduitSemence[],
+  limit = 40,
+): ProduitSemence[] {
+  const month = typeof profil.mois === "number" ? profil.mois : -1;
+  const monthLabel = MOIS_LABELS[month] ?? "";
+  const objectives = (profil.objectifs ?? []).map(value => normalizeSearchText(value));
+  const query = searchTokens([
+    profil.pays, profil.region, profil.climat, profil.sol, profil.mode,
+    profil.experience, ...(profil.objectifs ?? []), monthLabel,
+  ].join(" "));
+
+  return produits
+    .map((product, index) => {
+      const name = searchTokens(product.nom);
+      const category = searchTokens(product.categorie);
+      const type = searchTokens(product.type_semence);
+      const tags = searchTokens((product.tags ?? []).join(" "));
+      const description = searchTokens([
+        product.descriptif_var, product.description, product.resistance,
+        product.productivite, product.saison,
+      ].join(" "));
+      const fields = [
+        { tokens: name, weight: 4 },
+        { tokens: category, weight: 3 },
+        { tokens: type, weight: 3 },
+        { tokens: tags, weight: 2 },
+        { tokens: description, weight: 1 },
+      ];
+      const productTokens = new Set(fields.flatMap(field => field.tokens));
+      let score = query.reduce((total, token) => {
+        if (!productTokens.has(token)) return total;
+        const bestWeight = Math.max(...fields.filter(field => field.tokens.includes(token)).map(field => field.weight));
+        return total + bestWeight;
+      }, 0);
+
+      const rawSeason = String(product.saison ?? "").trim();
+      const season = normalizeSearchText(rawSeason);
+      const monthMatches = /^[01]{12}$/.test(rawSeason)
+        ? rawSeason[month] === "1"
+        : Boolean(monthLabel && season.includes(normalizeSearchText(monthLabel)));
+      if (month >= 0 && monthMatches) {
+        score += 8;
+      }
+      if (product.biologique && objectives.some(objective => /bio|biolog|organic/.test(objective))) score += 5;
+
+      return { product, index, score };
+    })
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .slice(0, Math.min(limit, produits.length))
+    .map(entry => entry.product);
 }
 
 // ── Handler POST ───────────────────────────────────────────────────────────────
 
-// Simple local fallback recommender used when the upstream LLM is rate-limited.
+// Recommender local pour garder le service disponible si l'API IA est indisponible.
 function computeFallbackRecommendations(profil: VisiteurProfil, produits: ProduitSemence[]): RecommandationResult[] {
   const mois = typeof profil.mois === 'number' ? profil.mois : -1;
   const moisLabel = MOIS_LABELS[mois] ?? "";
@@ -175,13 +259,6 @@ function computeFallbackRecommendations(profil: VisiteurProfil, produits: Produi
 
 export async function POST(req: NextRequest) {
   try {
-    if (!GROQ_API_KEY) {
-      return NextResponse.json(
-        { error: "Service IA indisponible (clé manquante)" },
-        { status: 503 }
-      );
-    }
-
     const body = await req.json() as { profil: VisiteurProfil; produits: ProduitSemence[] };
     const { profil, produits } = body;
 
@@ -192,8 +269,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Limiter à 30 produits max pour ne pas dépasser le contexte
-    const produitsLimites = produits.slice(0, 30);
+    // Récupérer les fiches les plus proches du profil avant d'augmenter le prompt IA.
+    const produitsRecuperes = retrieveRelevantProducts(profil, produits);
+
+    // L'outil reste utilisable même sans clé IA (ou pendant une panne du fournisseur).
+    if (!GROQ_API_KEY) {
+      return NextResponse.json({ results: computeFallbackRecommendations(profil, produitsRecuperes) });
+    }
 
     const groqBody = {
       model:       GROQ_MODEL,
@@ -201,38 +283,30 @@ export async function POST(req: NextRequest) {
       max_tokens:  2048,
       messages: [
         { role: "system", content: buildSystemPrompt() },
-        { role: "user",   content: buildUserPrompt(profil, produitsLimites) },
+        { role: "user",   content: buildUserPrompt(profil, produitsRecuperes, produits.length) },
       ],
     };
 
-    const groqRes = await fetch(GROQ_URL, {
-      method:  "POST",
-      headers: {
-        "Content-Type":  "application/json",
-        "Authorization": `Bearer ${GROQ_API_KEY}`,
-      },
-      body: JSON.stringify(groqBody),
-    });
+    let groqRes: Response;
+    try {
+      groqRes = await fetch(GROQ_URL, {
+        method:  "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Bearer ${GROQ_API_KEY}`,
+        },
+        body: JSON.stringify(groqBody),
+      });
+    } catch (upstreamError) {
+      console.error("[semences/recommander] Groq request failed:", upstreamError);
+      return NextResponse.json({ results: computeFallbackRecommendations(profil, produitsRecuperes) });
+    }
 
     if (!groqRes.ok) {
       const errText = await groqRes.text().catch(() => "");
       console.error("[semences/recommander] Groq error:", groqRes.status, errText);
 
-      // If Groq rate limit (429) or explicit rate-limit error, compute a local fallback
-      if (groqRes.status === 429 || /rate[_-]?limit/i.test(errText)) {
-        try {
-          const fallback = computeFallbackRecommendations(profil, produitsLimites);
-          return NextResponse.json({ results: fallback });
-        } catch (fbErr) {
-          console.error("[semences/recommander] Fallback failed:", fbErr);
-          return NextResponse.json({ error: "Service IA temporairement indisponible" }, { status: 503 });
-        }
-      }
-
-      return NextResponse.json(
-        { error: `Erreur IA (${groqRes.status})` },
-        { status: 502 }
-      );
+      return NextResponse.json({ results: computeFallbackRecommendations(profil, produitsRecuperes) });
     }
 
     const groqData = await groqRes.json();
@@ -251,19 +325,18 @@ export async function POST(req: NextRequest) {
       results = Array.isArray(parsed) ? parsed : [];
     } catch (parseErr) {
       console.error("[semences/recommander] JSON parse failed:", parseErr, "\nRaw:", rawContent);
-      return NextResponse.json(
-        { error: "Réponse IA invalide, réessayez." },
-        { status: 500 }
-      );
+      return NextResponse.json({ results: computeFallbackRecommendations(profil, produitsRecuperes) });
     }
 
     // Validation + nettoyage des résultats
+    const allowedProducts = new Map(produitsRecuperes.map(product => [product.id_produit, product]));
     const validated = results
       .filter(r =>
         typeof r.id_produit === "number" &&
         typeof r.slug === "string" &&
         typeof r.score === "number" &&
-        typeof r.raison === "string"
+        typeof r.raison === "string" &&
+        allowedProducts.get(r.id_produit)?.slug === r.slug
       )
       .map(r => ({
         id_produit:   r.id_produit,
@@ -278,7 +351,9 @@ export async function POST(req: NextRequest) {
       .sort((a, b) => b.score - a.score)
       .slice(0, 6);
 
-    return NextResponse.json({ results: validated });
+    return NextResponse.json({
+      results: validated.length ? validated : computeFallbackRecommendations(profil, produitsRecuperes),
+    });
 
   } catch (err) {
     console.error("[semences/recommander] Unexpected error:", err);

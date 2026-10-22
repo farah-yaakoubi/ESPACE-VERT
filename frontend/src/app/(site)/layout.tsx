@@ -13,6 +13,7 @@ const hasRouteHero = (pathname: string) => {
   if (pathname === "/contact" || pathname === "/rendez-vous") return true;
   if (/^\/marques\/[^/]+$/.test(pathname)) return true;
   if (/^\/activites\/[^/]+$/.test(pathname)) return true;
+  if (/^\/activites\/[^/]+\/categorie(?:\/|$)/.test(pathname)) return true;
   return false;
 };
 

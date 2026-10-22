@@ -333,6 +333,8 @@ function ActivitesDropdown({
   isDark: boolean;
 }) {
   const { t } = useI18n();
+  const pathname = usePathname();
+  const router = useRouter();
   const [selectedAct, setSelectedAct] = useState<number | null>(null);
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [swipeDir, setSwipeDir] = useState<1 | -1>(1);
@@ -345,6 +347,35 @@ function ActivitesDropdown({
 
   const act = activites.find((a) => a.id_activite === selectedAct);
   const hasCategories = (act?.categories?.length ?? 0) > 0;
+
+  // Refléter la page courante dans le panneau quand le menu est rouvert.
+  useEffect(() => {
+    const segments = pathname.split("/").filter(Boolean);
+    const activityIndex = segments.indexOf("activites");
+    const isPulvertCatalogue = segments[0] === "marques" && segments[1] === "pulvert";
+    if (activityIndex < 0 && !isPulvertCatalogue) return;
+
+    const activitySlug = isPulvertCatalogue ? "pulverisation" : segments[activityIndex + 1];
+    const currentActivity = activites.find((item) => item.slug === activitySlug);
+    if (!currentActivity) return;
+
+    setSelectedAct(currentActivity.id_activite);
+    const categoryMarker = segments.indexOf("categorie", activityIndex + 2);
+    const leafSlug = categoryMarker >= 0 ? segments[segments.length - 1] : null;
+    const queryCategoryId = isPulvertCatalogue
+      ? Number(new URLSearchParams(window.location.search).get("cat"))
+      : NaN;
+    const selectedRoot = leafSlug
+      ? currentActivity.categories?.find((category) =>
+          category.slug === leafSlug || category.sous_cats?.some((child) => child.slug === leafSlug),
+        )
+      : Number.isFinite(queryCategoryId)
+        ? currentActivity.categories?.find((category) =>
+            category.id_categorie === queryCategoryId || category.sous_cats?.some((child) => child.id_categorie === queryCategoryId),
+          )
+        : null;
+    setSelectedCat(selectedRoot?.slug ?? null);
+  }, [pathname, activites]);
 
   // Aligne le haut de la colonne 2 sur le haut de l'activité survolée dans la colonne 1.
   // La borne n'est PAS la hauteur de la colonne 1 (sinon, sur la dernière activité, la
@@ -446,7 +477,7 @@ function ActivitesDropdown({
                   <button
                     type="button"
                     onMouseEnter={() => handleSelectAct(a.id_activite)}
-                    onClick={() => { onClose(); window.location.href = href; }}
+                    onClick={() => { onClose(); router.push(href); }}
                     style={{
                       display: "flex", width: "100%", alignItems: "center", gap: 12,
                       padding: "10px 12px",
@@ -560,7 +591,7 @@ function ActivitesDropdown({
                         <div style={{
                           borderRadius: 12,
                           border: `1px solid ${expanded ? BRAND_DARK : "#efe8d6"}`,
-                          background: "#fff",
+                          background: expanded ? `${BRAND_LIME}20` : "transparent",
                           overflow: "hidden",
                           boxShadow: expanded ? `0 8px 18px ${BRAND_DARK}1c` : "0 1px 2px rgba(31,26,14,0.03)",
                           transition: "border-color 0.16s ease, box-shadow 0.16s ease",
@@ -581,7 +612,7 @@ function ActivitesDropdown({
                               onMouseEnter={() => { if (hasSub) setSelectedCat(c.slug); }}
                               onClick={() => {
                                 onClose();
-                                window.location.href = getActivityCategoryHrefFromTree(act.slug, act.categories ?? [], c.id_categorie);
+                                router.push(getActivityCategoryHrefFromTree(act.slug, act.categories ?? [], c.id_categorie));
                               }}
                               style={{
                                 position: "relative", zIndex: 1,
@@ -593,7 +624,7 @@ function ActivitesDropdown({
                             >
                               <div style={{
                                 width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                                background: expanded ? "#fff" : `${BRAND_LIME}30`,
+                                background: expanded ? `${BRAND_LIME}38` : `${BRAND_LIME}30`,
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 transition: "background 0.15s ease",
                               }}>
@@ -1351,14 +1382,19 @@ export function Navbar() {
     "0 20px 60px rgba(0,0,0,0.13),0 0 0 1.5px rgba(46,125,79,0.14)";
 
   const path = pathname ?? "";
+  const isCategoryRoute =
+    /^\/activites\/[^/]+\/categorie(?:\/|$)/.test(path) ||
+    /^\/categories(?:\/|$)/.test(path) ||
+    path === "/marques/pulvert";
   const hasPageHero =
     path === "/marques" ||
     path === "/activites" ||
+    isCategoryRoute ||
     path === "/contact" ||
     path === "/rendez-vous" ||
     /^\/marques\/[^/]+$/.test(path) ||
     /^\/activites\/[^/]+$/.test(path);
-  const onHero = (isHome || hasPageHero) && !scrolled;
+  const onHero = (isHome || hasPageHero) && (!scrolled || isCategoryRoute);
   const navTextColor = onHero ? "#ffffff" : isDark ? C.darkInk2 : C.ink;
   const navActiveColor = onHero ? "#ffffff" : C.sage;
   const navBorderActive = onHero ? "#7dc040" : C.sage;
